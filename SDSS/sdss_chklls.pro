@@ -1,6 +1,6 @@
 ;+ 
 ; NAME:
-; sdss_finchk
+; sdss_chklls
 ;    Version 1.0
 ;
 ; PURPOSE:
@@ -8,7 +8,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   
-;   sdss_finchk, x, maskid, expsr, XSIZE=, YSIZE=
+;   sdss_chklls, x, maskid, expsr, XSIZE=, YSIZE=
 ;
 ; INPUTS:
 ;
@@ -25,7 +25,7 @@
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   sdss_finchk, x, maskid, expsr
+;   sdss_chklls, x, maskid, expsr
 ;
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
@@ -40,43 +40,33 @@
 
 ;;;
 
-pro sdss_finchk_icmmn, dlafil, STRNG=strng, MAG=mag, RA=ra
+pro sdss_chklls_icmmn, qalfil, dlafil
 
-  common sdss_finchk_cmm, $
+  common sdss_chklls_cmm, $
     npix, $
     fx, $
     wv, $
     sig, $
     conti, $
     fit, $
-    dlastr, $
-    gddla
+    qalstr, $
+    dlastr
 
   ;; QALSTR
-;  qalstr = xmrdfits(qalfil, 1, /silent)
+  qalstr = xmrdfits(qalfil, 1, /silent)
 
-  if not keyword_set( STRNG ) then strng = 4
-  if not keyword_set( MAG ) then mag = 99.
-  if not keyword_set( DRA ) then dra = 2.
+  ;; Grab LLS only
+  gd = where(qalstr.flg_lls NE 0, ngd)
+  srt = sort(qalstr[gd].qso_mag)
+  gd = gd[srt]
+  qalstr = qalstr[gd]
 
   ;; DLA str
   if x_chkfil(dlafil, /silent) EQ 1 then $
     dlastr = xmrdfits(dlafil, 1, /silent) $
-  else stop
-
-
-  gddla = where(dlastr.flg_mtl GE strng AND dlastr.rmag LT mag)
-
-  ;; RA
-  if keyword_set( RA) then begin
-      tmp =  where(abs(dlastr[gddla].ra/15.  - RA) LT dra, ntmp)
-      if ntmp EQ 0 then stop
-      gddla = gddla[tmp]
-  endif
-
-  ;; Sort on Mag
-  srt = sort(dlastr[gddla].rmag)
-  gddla = gddla[srt]
+  else begin
+      dlastr = { sdssdlastrct }
+  endelse
 
   return
 end
@@ -86,27 +76,26 @@ end
 ; Events
 ;;;;
 
-pro sdss_finchk_event, ev
+pro sdss_chklls_event, ev
 
-  common sdss_finchk_cmm
+  common sdss_chklls_cmm
 
   WIDGET_CONTROL, ev.top, get_uvalue = state, /no_copy
   WIDGET_CONTROL, ev.id, get_uvalue = uval
 
   case uval of
-      'PRINT': sdss_finchk_print, state
       'SPLT': x_specplot, fx, sig, wave=wv, zin=state.zabs, /qal, /block, $
         inflg=4
-      'SAVE': sdss_finchk_svdla, state
+      'SAVE': sdss_chklls_svdla, state
       'NEXT': begin
-          sdss_finchk_next, state
-          sdss_finchk_setup, state
-          sdss_finchk_update, state
+          sdss_chklls_next, state
+          sdss_chklls_setup, state
+          sdss_chklls_update, state
       end
       'PREV': begin
-          sdss_finchk_prev, state
-          sdss_finchk_setup, state
-          sdss_finchk_update, state
+          sdss_chklls_prev, state
+          sdss_chklls_setup, state
+          sdss_chklls_update, state
       end
       'LDRAW_BASE' : begin
           if ev.enter EQ 0 then begin ; Turn off keyboard
@@ -126,15 +115,15 @@ pro sdss_finchk_event, ev
                           state.zabs = state.xpos / 1215.6701 - 1.
                           state.dla_lin.zabs = state.zabs
                           state.dla_conti = state.ypos
-                          sdss_finchk_updfit, state
+                          sdss_chklls_updfit, state
                           widget_control, state.zabs_id, $
                             set_value=strtrim(state.zabs,2)
                       end
                       4 : state.dla_lin.N = state.dla_lin.N - 0.05
                   endcase
-                  sdss_finchk_updinfo, state
-                  sdss_finchk_updfit, state
-                  sdss_finchk_Lya, state
+                  sdss_chklls_updinfo, state
+                  sdss_chklls_updfit, state
+                  sdss_chklls_LLS, state
               end
               1 :
               2 : begin         ; Motion event
@@ -156,7 +145,7 @@ pro sdss_finchk_event, ev
               'r': state.xymnx[2] = xgetx_plt(state, /strct) ; right
               else: 
           endcase
-          sdss_finchk_Lya, state
+          sdss_chklls_LLS, state
       end
 ;;;;;;;;; Metals ;;;;;;;;;;
       'ZABS' : begin
@@ -170,7 +159,7 @@ pro sdss_finchk_event, ev
           endif
       end
       'DONE' : begin
-          sdss_finchk_svdla, state
+          sdss_chklls_svdla, state
           widget_control, ev.top, /destroy
           return
       end
@@ -181,7 +170,7 @@ pro sdss_finchk_event, ev
       else :
   endcase
 
-  sdss_finchk_upddstr, state
+  sdss_chklls_upddstr, state
 
   WIDGET_CONTROL, state.base_id, set_uvalue = state, /no_copy
 end
@@ -190,13 +179,13 @@ end
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;
-;  Lya Plot
+;  LLS Plot
 ;;;;;;;;;;;;;;;;;;;;
 
 
-pro sdss_finchk_Lya, state
+pro sdss_chklls_LLS, state
   
-  common sdss_finchk_cmm
+  common sdss_chklls_cmm
 
   ; Set plot window
   if state.psfile NE 1 then begin
@@ -235,9 +224,9 @@ end
 ;;;;;;;;;;;;;;;;;;;;
 
 
-pro sdss_finchk_Metals, state
+pro sdss_chklls_Metals, state
   
-  common sdss_finchk_cmm
+  common sdss_chklls_cmm
 
   ; Set plot window
   if state.psfile NE 1 then begin
@@ -295,19 +284,19 @@ end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;
 ; UPDATE LYA+METALS
-pro sdss_finchk_update, state
-  sdss_finchk_updfit, state
-  sdss_finchk_updinfo, state
-  sdss_finchk_Lya, state
-  sdss_finchk_Metals, state
+pro sdss_chklls_update, state
+  sdss_chklls_updfit, state
+  sdss_chklls_updinfo, state
+  sdss_chklls_LLS, state
+  sdss_chklls_Metals, state
   return
 end
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-pro sdss_finchk_updfit, state
+pro sdss_chklls_updfit, state
 
-  common sdss_finchk_cmm
+  common sdss_chklls_cmm
 
   fit[*] = 1.
   fit = x_allvoigt(wv, state.dla_lin, SIGMA=3.)
@@ -320,25 +309,25 @@ end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;
 ; Setup data
-pro sdss_finchk_setup, state
-  common sdss_finchk_cmm
+pro sdss_chklls_setup, state
+  common sdss_chklls_cmm
 
   ;; Read data
-  parse_sdss, strtrim(dlastr[state.curdla].sdss_obs[0],2), fx, wv, conti, $
+  parse_sdss, strtrim(qalstr[state.curqso].file_name,2), fx, wv, conti, $
     SIG=sig, NPIX=npix, CDIR=state.con_dir
 
   ;; Set zabs
-  state.zabs = dlastr[state.curdla].zabs
-  state.zqso = dlastr[state.curdla].z_qso
+  state.zabs = qalstr[state.curqso].lls_zabs
+  state.zqso = qalstr[state.curqso].z_qso
 
   ;; xymnx
-  state.xymnx[0] = 1215.6701*(1.+state.zabs) - 200.
-  state.xymnx[2] = 1215.6701*(1.+state.zabs) + 200.
+  state.xymnx[0] = 912.4*(1.+state.zabs) - 500.
+  state.xymnx[2] = 912.4*(1.+state.zabs) + 500.
   gd = where(wv GT state.xymnx[0] AND wv LT state.xymnx[2], ngd)
   
   if ngd GT 1 then begin
       srt = sort(fx[gd])
-      ymd = fx[gd[srt[round(0.9*ngd)]]]
+      ymd = fx[gd[srt[round(0.9*ngd)<(ngd-1)]]]
   endif else ymd = 0.
   state.xymnx[1] = -1.
   state.xymnx[3] = ymd*1.5
@@ -370,7 +359,7 @@ pro sdss_finchk_setup, state
   state.all_pmnx[*,gd] = all_pmnx
 
   ;; Set DLA structure
-;  sdss_finchk_setdla, state
+  sdss_chklls_setdla, state
 
   return
 end
@@ -378,7 +367,7 @@ end
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; Set Lines
-pro sdss_finchk_llist, state
+pro sdss_chklls_llist, state
 
   llist = getenv('XIDL_DIR')+'/SDSS/sdss_dla.lst'
   lines = x_setllst(llist, 0)
@@ -395,20 +384,38 @@ pro sdss_finchk_llist, state
   
   state.velplt[weak].ymnx = [0.7, 1.1]
                
-  
 
 end
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; Next
-pro sdss_finchk_next, state
-  common sdss_finchk_cmm
+pro sdss_chklls_next, state
+  common sdss_chklls_cmm
 
-  idx = where(state.curdla EQ gddla)
-  idx = idx + 1
-  ndla = n_elements(gddla)
-  if idx EQ ndla then idx = 0L
-  state.curdla = gddla[idx]
+  state.curqso = state.curqso + 1
+  ;; Check for end
+  nqso = n_elements(qalstr)
+  if state.curqso EQ nqso then state.curqso = 0L
+  state.curqal = 0L
+
+  return
+
+end
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; Next
+pro sdss_chklls_new, state
+  common sdss_chklls_cmm
+
+  na = 1
+  while( na NE 0 ) do begin
+      a = where(abs(dlastr.ra - qalstr[state.curqso].ra) LT 0.00001 AND $
+                abs(dlastr.dec - qalstr[state.curqso].dec) LT 0.0001 AND $
+                abs(dlastr.zabs - qalstr[state.curqso].dla_z[state.curqal]) $
+                LT 0.01,  na)
+      if na NE 0 then sdss_chklls_next, state
+  endwhile
+  sdss_chklls_setup, state
 
   return
 
@@ -416,8 +423,22 @@ end
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; Prev
-pro sdss_finchk_prev, state
-  common sdss_finchk_cmm
+pro sdss_chklls_prev, state
+  common sdss_chklls_cmm
+
+  if state.curqal EQ 0 then begin
+      state.curqso = state.curqso - 1
+      if state.curqso EQ -1 then stop
+      gd = where(qalstr[state.curqso].dla_z GT 0. AND $
+                 qalstr[state.curqso].dla_quality GT state.minval, ngd)
+      ;; Good?
+      if ngd EQ 0 then sdss_chklls_prev, state $
+      else state.curqal = ngd-1
+  endif else begin
+      state.curqal = state.curqal - 1
+      if qalstr[state.curqso].dla_quality[state.curqal] LT state.minval then $
+        sdss_chklls_prev, state
+  endelse
 
   return
 
@@ -425,39 +446,125 @@ end
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; Next
-pro sdss_finchk_updinfo, state
-  common sdss_finchk_cmm
+pro sdss_chklls_updinfo, state
+  common sdss_chklls_cmm
 
   ;; Namej
   widget_control, state.name_id, $
-    set_value=strtrim(dlastr[state.curdla].qso_name,2)
+    set_value=strtrim(qalstr[state.curqso].qso_name,2)
 
   ;; RA, DEC
-  widget_control, state.mag_id, set_value=dlastr[state.curdla].rmag
-  widget_control, state.ra_id, set_value=dlastr[state.curdla].ra/15.
-  widget_control, state.dec_id, set_value=dlastr[state.curdla].dec
+  widget_control, state.mag_id, set_value=qalstr[state.curqso].qso_mag
+  widget_control, state.ra_id, set_value=qalstr[state.curqso].ra/15.
+  widget_control, state.dec_id, set_value=qalstr[state.curqso].dec
 
   ;; Quality
-  widget_control, state.quality_id, set_value=dlastr[state.curdla].quality
+  widget_control, state.quality_id, $
+    set_value=qalstr[state.curqso].dla_quality[state.curqal]
 
   ;; zabs
   widget_control, state.zabs_id, set_value=state.zabs
 
-  ;; Metals and NHI
-  widget_control, state.mtl_id, set_value=dlastr[state.curdla].flg_mtl
-  widget_control, state.NHI_id, set_value=dlastr[state.curdla].NHI
-  widget_control, state.NHIb_id, set_value=dlastr[state.curdla].flg_NHI
+  ;; Metals
+  mn = min(abs(qalstr[state.curqso].dla_zabs2-state.zabs), imn)
+  if mn LT 0.01 then begin
+      widget_control, state.hits_id, $
+        set_value=round(qalstr[state.curqso].dla_hits[imn])
+      widget_control, state.scr2_id, set_value=qalstr[state.curqso].dla_score2[imn]
+  endif else begin
+      widget_control, state.hits_id, set_value=0.
+      widget_control, state.scr2_id, set_value=0.
+  endelse
+
+  ;; NHI
+  mn = min(abs(qalstr[state.curqso].dla_zabs1-state.zabs), imn)
+  if mn LT 0.01 then $
+    widget_control, state.scr1_id, set_value=qalstr[state.curqso].dla_score1[imn] $
+  else $
+    widget_control, state.scr1_id, set_value=0.
+
+  widget_control, state.NHI_id, set_value=state.dla_lin.N
+
+  if state.flg_new NE 0 then begin
+      if state.dla_lin.N GE 20.8 then $
+        widget_control, state.NHIb_id, set_value=3
+      if state.dla_lin.N LE 20.2 then $
+        widget_control, state.NHIb_id, set_value=1
+      if state.dla_lin.N GT 20.2 AND state.dla_lin.N LT 20.8 then $
+        widget_control, state.NHIb_id, set_value=2
+  endif 
+
+  ;; Metals
+  if state.flg_new NE 0 then $
+      widget_control, state.mtl_id, set_value=0
 
   return
 
 end
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; Set DLA structure
+pro sdss_chklls_setdla, state
+
+  common sdss_chklls_cmm
+
+  ;; New?
+  a = where(abs(dlastr.ra - qalstr[state.curqso].ra) LT 0.00001 AND $
+            abs(dlastr.dec - qalstr[state.curqso].dec) LT 0.0001 AND $
+            abs(dlastr.zabs - state.zabs) LT 0.01,  na)
+  case na of 
+      0: begin  ;; New
+          tmp = { sdssdlastrct }
+          dlastr = [dlastr, tmp]
+          ndla = n_elements(dlastr)
+          state.curdla = ndla-1
+          state.flg_new = 1
+          ;; Name, etc
+          dlastr[state.curdla].qso_name = qalstr[state.curqso].qso_name
+          dlastr[state.curdla].ra = qalstr[state.curqso].ra
+          dlastr[state.curdla].Rmag = qalstr[state.curqso].qso_mag
+          dlastr[state.curdla].dec = qalstr[state.curqso].dec
+          dlastr[state.curdla].sdss_obs[0] = qalstr[state.curqso].file_name
+          dlastr[state.curdla].zabs = state.zabs
+          dlastr[state.curdla].quality = $
+            qalstr[state.curqso].dla_quality[state.curqal]
+          dlastr[state.curdla].z_qso = qalstr[state.curqso].z_qso
+          dlastr[state.curdla].conti = state.dla_conti
+          ;; Widget
+          widget_control, state.stat_id, set_value='New'
+          widget_control, state.mtl_id, set_value=0
+      end
+      1: begin  ;; Old
+          state.curdla = a[0]
+          state.dla_lin.N = dlastr[state.curdla].NHI
+          state.dla_conti = dlastr[state.curdla].conti
+          state.flg_new = 0
+          ;; Widgets
+          widget_control, state.NHIb_id, set_value=dlastr[state.curdla].flg_NHI
+          widget_control, state.mtl_id, set_value=dlastr[state.curdla].flg_mtl
+          ;; Name
+          b = where(dlastr[state.curdla].sdss_obs EQ $
+                    qalstr[state.curqso].file_name, nb)
+          if nb EQ 0 then begin
+              bb = where(strlen(strtrim(dlastr[state.curdla].sdss_obs,2)) NE 0)
+              dlastr[state.curdla].sdss_obs[bb[0]] = qalstr[state.curqso].file_name
+          endif $
+          else dlastr[state.curdla].sdss_obs[0] = qalstr[state.curqso].file_name
+          ;; Widget
+          widget_control, state.stat_id, set_value='Old'
+      end
+      else: stop
+  endcase
+          
+  return
+
+end
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; Update DLA structure
-pro sdss_finchk_upddstr, state
+pro sdss_chklls_upddstr, state
 
-  common sdss_finchk_cmm
+  common sdss_chklls_cmm
 
   ;; zabs, conti
   dlastr[state.curdla].zabs = state.zabs
@@ -476,30 +583,15 @@ pro sdss_finchk_upddstr, state
 
 end
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;; Print
-pro sdss_finchk_print, state
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+pro sdss_chklls_svdla, state
 
-  common sdss_finchk_cmm
+  common sdss_chklls_cmm
 
-  x_radec, ras, decs, dlastr[state.curdla].ra, dlastr[state.curdla].dec, /FLIP
-  if (dlastr[state.curdla].zabs+1)*1215.67 GT 3850. then $
-    NHI = strtrim(dlastr[state.curdla].NHI,2) else NHI = '-99.99'
-  ;; Create line
-  lin = strtrim(dlastr[state.curdla].qso_name,2)+' '+$
-    strtrim(ras,2)+' '+strtrim(decs,2)+' '+$
-    strtrim(dlastr[state.curdla].Rmag,2)+' '+$
-    strtrim(dlastr[state.curdla].z_qso,2)+' '+$
-    strtrim(dlastr[state.curdla].zabs,2)+' '+NHI
-
-  openw, 55, state.outfil, /append
-  printf, state.filnum, lin
-  close, 55
-
+  sdss_chklls_upddstr, state
+  mwrfits, dlastr, state.dlafil, /create
   return
-
 end
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -510,16 +602,16 @@ end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-pro sdss_finchk, dlafil, con_dir, IQSO=iqso, MAG=mag, $
-                 XSIZE=xsize, L_YSIZE=i_ysize, M_YSIZE=s_ysize, $
-                 YSIZE=ysize, OBJNM=objnm, ZIN=zin, XMAX=xmax, LLIST=llist, $
-                 OUTFIL=outfil, RA=ra
+pro sdss_chklls, qalfil, dlafil, con_dir, IQSO=iqso, FNEW=fnew, $
+              XSIZE=xsize, L_YSIZE=i_ysize, M_YSIZE=s_ysize, $
+              YSIZE=ysize, OBJNM=objnm, ZIN=zin, XMAX=xmax, LLIST=llist
 
-  common sdss_finchk_cmm
+  common sdss_chklls_cmm
 ;
-  if  N_params() LT 2  then begin 
+  if  N_params() LT 3  then begin 
     print,'Syntax - ' + $
-      'sdss_finchk, dlafil, con_dir, MAG=, [v1.0]'
+      'sdss_chklls, qalfil, dlafil, con_dir, /FNEW'
+    print, '        I_YSIZE=, S_YSIZE= [v1.0]'
     return
   endif 
 
@@ -529,11 +621,9 @@ pro sdss_finchk, dlafil, con_dir, IQSO=iqso, MAG=mag, $
   if not keyword_set( YSIZE ) then ysize = 800
   if not keyword_set( MINVAL ) then minval = 6.
   if not keyword_set( IQSO ) then iqso = 0L
-  if not keyword_set( OUTFIL ) then outfil='finchk.lst'
-  if not keyword_set( FILNUM ) then filnum = 55L
 
 ; Initialize the common blcok
-  sdss_finchk_icmmn, dlafil, MAG=mag, RA=ra
+  sdss_chklls_icmmn, qalfil, dlafil
 
   tmp = { velpltstrct }
   tmp2 = { abslinstrct }
@@ -541,8 +631,10 @@ pro sdss_finchk, dlafil, con_dir, IQSO=iqso, MAG=mag, $
 ; STATE
 
   state = {             $
-            ndla: 0L, $
-            curdla: gddla[0], $
+            nqal: 0L, $
+            curqso: iqso, $
+            curqal: 0, $
+            curdla: 0L, $
             dlafil: dlafil, $
             flg_new: 0, $
             zabs: 0., $
@@ -554,8 +646,6 @@ pro sdss_finchk, dlafil, con_dir, IQSO=iqso, MAG=mag, $
             nplt: 0, $
             dla_lin: tmp2, $
             dla_conti: 0., $
-            outfil: outfil, $
-            filnum: filnum, $
             all_velo: dblarr(5000, 300), $  
             all_pmnx: lonarr(3, 300), $  
             velplt: replicate(tmp, 300), $
@@ -607,16 +697,15 @@ pro sdss_finchk, dlafil, con_dir, IQSO=iqso, MAG=mag, $
 
 ;;;;;;;;;;;;;;
 ; SETUP LINES
-
-  sdss_finchk_llist, state
+  sdss_chklls_llist, state
   state.dla_lin = x_setline(1215.6701d)
 
 ; Other setup
-  state.ndla = n_elements(dlastr)
+  state.nqal = n_elements(qalstr)
   state.con_dir = con_dir
 
 ;    WIDGET
-  base = WIDGET_BASE( title = 'sdss_finchk: Check spectra', /row, $
+  base = WIDGET_BASE( title = 'sdss_chklls: Check spectra', /row, $
                     UNAME='BASE', /tlb_size_events, xoffset=200L)
   state.base_id = base
   
@@ -626,7 +715,7 @@ pro sdss_finchk, dlafil, con_dir, IQSO=iqso, MAG=mag, $
                               uvalue='RHS_BASE', frame=2)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;  Lya DRAW
+;  LLS DRAW
   state.ldrawbase_id = $
     WIDGET_BASE( state.lhs_id, /row, /base_align_center,/align_center, $
                /tracking_events, uvalue='LDRAW_BASE', frame=2)
@@ -639,7 +728,7 @@ pro sdss_finchk, dlafil, con_dir, IQSO=iqso, MAG=mag, $
   state.size[1]=2*ysize/3.
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ; Lya TEXT
+  ; LLS TEXT
   state.ltext_id = widget_text(state.ldrawbase_id, $
                               /all_events, $
                               scr_xsize = 1, $
@@ -668,7 +757,7 @@ pro sdss_finchk, dlafil, con_dir, IQSO=iqso, MAG=mag, $
   state.ra_id = cw_field(radeci, title='RA: ', value=0., xsize=10)
   state.dec_id = cw_field(radeci, title='DEC: ', value=0., xsize=10)
 
-  ;; Lya
+  ;; LLS
   lyainf = widget_base(state.info_id, /row, /align_center, frame=2)
   state.NHI_id = cw_field(lyainf, title='NHI: ', value=20.3, xsize=7)
   state.NHIb_id = cw_bgroup(lyainf, ['NG', 'S', 'M', 'GD'], /exclusive, column=4, $
@@ -681,7 +770,6 @@ pro sdss_finchk, dlafil, con_dir, IQSO=iqso, MAG=mag, $
 ;      BUTTONS
   butbase = widget_base(state.info_id, /row, /align_center, frame=2)
   state.stat_id = cw_field(butbase, title='Status: ', value='New', xsize=3)
-  print = WIDGET_BUTTON(butbase, value='PRINT',uvalue='PRINT')
   splt = WIDGET_BUTTON(butbase, value='SPLT',uvalue='SPLT')
   save = WIDGET_BUTTON(butbase, value='SAVE',uvalue='SAVE')
   prev = WIDGET_BUTTON(butbase, value='PREV',uvalue='PREV')
@@ -715,20 +803,20 @@ pro sdss_finchk, dlafil, con_dir, IQSO=iqso, MAG=mag, $
 ; Realize
   WIDGET_CONTROL, base, /realize
 
-  ; Set qso and qal
-;  if qalstr[0].DLA_z[0] EQ 0. then sdss_finchk_next, state
-
   ; Load data
-  sdss_finchk_setup, state
+  sdss_chklls_setup, state
 
+  ; New
+  if keyword_set( FNEW ) then sdss_chklls_new, state
+  
   ; PLOT
-  sdss_finchk_update, state
+  sdss_chklls_update, state
   
   WIDGET_CONTROL, base, set_uvalue = state, /no_copy
 
 ; Send to the xmanager
-  xmanager, 'sdss_finchk', base
-  delvarx, fx, wv, npix, sig
+  xmanager, 'sdss_chklls', base
+  delvarx, fx, wv, npix, sig, qalstr
 
   return
 end

@@ -35,7 +35,7 @@
 ;-
 ;------------------------------------------------------------------------------
 
-pro getion, wave, ion, elm
+pro getion, wave, ion, elm, Z=z
 
   if (N_params() LT 2) then begin 
     print,'Syntax - ' + $
@@ -45,8 +45,6 @@ pro getion, wave, ion, elm
 
 ;
   getfnam, wave, fval, nam
-
-  nam = nam
 
 ;     Parse nam
   for i=0,10 do begin
@@ -77,5 +75,11 @@ pro getion, wave, ion, elm
       'VIII': ion = 8
       else: stop
   endcase
+
+  ;; Z value
+  if arg_present(Z) then begin
+      getabnd, nam, Z, abnd
+  endif
+
   return
 end

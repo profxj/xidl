@@ -29,6 +29,8 @@
 ;
 ; EXAMPLES:
 ;   cldy_cuba, fil, z, outfil
+; cldy_cuba, '/u/xavier/Cloudy/Spec/Data/CUBA/Q1G0/bkgthick.out',
+; 0.35, '/u/xavier/Cloudy/Spec/Output/q1g0_z035.spec'
 ;
 ;
 ; PROCEDURES/FUNCTIONS CALLED:

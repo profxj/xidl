@@ -100,6 +100,8 @@ pro fuse_calcewn, strct_fil, instr_list
           ;; Convert to rest EW
           strct[lin[ii]].EW[qq+1] = ew / (1.+(strct[lin[ii]].zabs > 0.))
           strct[lin[ii]].sigEW[qq+1] = sigew / (1.+(strct[lin[ii]].zabs > 0.))
+;          if abs(strct[lin[ii]].wrest - 1031.9261) LT 0.001 and $
+;            strct[lin[ii]].zabs GT 0.361 then stop
       endfor
   endfor
 

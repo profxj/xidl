@@ -68,6 +68,10 @@ pro fill_ion, stddla
           readf, 2, dumc 
           stddla[j].Ufil = dumc
       endif
+      if(dumi mod 16 GT 7) then begin
+          readf, 2, dumc 
+          stddla[j].Xfil = dumc
+      endif
       readf, 2, dumc
       readf, 2, dumc
       close, 2

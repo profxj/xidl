@@ -27,6 +27,7 @@
 ;         2  - Flux, sig, wave in one fits file
 ;         3  - FUSE format
 ;         4  - Flux in first argument, sigma in SIG (data arrays)
+;         5  - SDSS format
 ;
 ; OPTIONAL OUTPUTS:
 ;  HEAD        - Header
@@ -112,6 +113,10 @@ function x_readspec, spec, dataunit, INFLG=inflg, FSCALE=fscale, $
           dat = spec
           npix = n_elements(dat)
           if arg_present(WAV) then wav = findgen(npix)
+      end
+      5: begin ; SDSS
+          ;; Parse
+          parse_sdss, spec, dat, wav, SIG=sig, HEAD=head, NPIX=npix
       end
           
       else: begin

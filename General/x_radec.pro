@@ -37,6 +37,7 @@
 ;
 ; REVISION HISTORY:
 ;   04-Aug-2001 Written by JXP
+;   20-Nov-2003 Added + sign for /flip
 ;-
 ;------------------------------------------------------------------------------
 
@@ -106,8 +107,8 @@ pro x_radec, ra, dec, rad, decd, ARCS=arcs, FLIP=flip
           if abs(decd) LT 10 then sdec = '-0'+strtrim(fix(abs(decd)),2) $
           else sdec = strtrim(fix(decd),2) 
       endif else begin
-          if abs(decd) LT 10 then sdec = '0'+strtrim(fix(decd),2) $
-          else sdec = strtrim(fix(decd),2) 
+          if abs(decd) LT 10 then sdec = '+0'+strtrim(fix(decd),2) $
+          else sdec = '+'+strtrim(fix(decd),2) 
       endelse
 
       adecd = abs(decd)

@@ -69,7 +69,8 @@ pro x_aodm, wave, fx, sig, rwave, colm, sig_colm, LOG=log, TAU=tau
 
   ; Set delv
   cent = (wave[0]+wave[npix-1])/2.d
-  spl = x_constants('spl')
+  cnst = x_constants()
+  spl = cnst.c / 1e5
 
   velo = (wave-cent)*spl/cent
   delv = dblarr(npix)
@@ -83,9 +84,14 @@ pro x_aodm, wave, fx, sig, rwave, colm, sig_colm, LOG=log, TAU=tau
       
   ; Log as requested
   if keyword_set( LOG ) then begin
-      if ntot GT 0. then colm = alog10( ntot ) else colm = -9.99
-      lgvar = ((1.d / (alog(10.0)*ntot))^2)*tvar
-      sig_colm = sqrt(lgvar)
+      if ntot GT 0. then begin
+          colm = alog10( ntot ) 
+          lgvar = ((1.d / (alog(10.0)*ntot))^2)*tvar
+          sig_colm = sqrt(lgvar)
+      endif else begin
+          colm = -9.99
+          sig_colm = sqrt(tvar)
+      endelse
   endif else begin
       colm = ntot
       sig_colm = sqrt(tvar)

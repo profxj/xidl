@@ -35,7 +35,7 @@
 ;   11-Sep-2003 Written by JXP
 ;-
 ;------------------------------------------------------------------------------
-pro fuse_calcion, strct_fil, zabs, ion_fil, NHI=nhi
+pro fuse_calcion, strct_fil, zabs, ion_fil, NHI=nhi, HAND=hand
 
   if (N_params() LT 3) then begin 
     print,'Syntax - ' + $
@@ -44,6 +44,12 @@ pro fuse_calcion, strct_fil, zabs, ion_fil, NHI=nhi
   endif 
 
   if not keyword_set( NSIG ) then nsig = 3.
+
+  if keyword_set( HAND ) then begin
+      print, 'fuse_calcion:  Overriding values using the file in '+$
+        strtrim(hand,2)+' !!!'
+      readcol, hand, h_za, h_z, h_i, h_f, h_N, h_s, FORMAT='F,I,I,I,F,F'
+  endif
 
 ; Open ionfil for writing
   close, /all
@@ -96,11 +102,32 @@ pro fuse_calcion, strct_fil, zabs, ion_fil, NHI=nhi
   for nZ=2L,100 do begin
       for nion = 1L, 10L do begin
 
+          ;; By hand
+          flg_h = 0
+          if keyword_set( HAND ) then begin
+              for kk = 0L,n_elements(h_za)-1 do begin
+                  a = where(abs(h_za - zabs) LT 0.0002 AND $
+                            h_Z EQ nz AND h_i EQ nion, na)
+                  case na of 
+                      0: 
+                      1: begin
+                          cnt = cnt + 1
+                          fflg[cnt] = h_f[a]
+                          fcolm[cnt] = h_N[a]
+                          fsig[cnt] = h_s[a]
+                          flg_h = 1
+                      end
+                      else: stop
+                  endcase
+                  if flg_h EQ 1 then break
+              endfor
+          endif
           ;; Lines
           glin = where(atmval EQ nZ AND ionval EQ nion $
                        AND strct.flg MOD 2 EQ 1, ngd)
-          if ngd EQ 0 then continue else cnt = cnt+1
 
+          if flg_h NE 1 then begin
+          if ngd EQ 0 then continue else cnt = cnt+1
           case ngd of
               1:  begin  ; Set value
                   ;; Check n sigma
@@ -167,6 +194,7 @@ pro fuse_calcion, strct_fil, zabs, ion_fil, NHI=nhi
                   endcase
               end
           endcase
+      endif
           printf, 11, nZ, nion, fcolm[cnt], fsig[cnt], fflg[cnt], $
             FORMAT='(i2,1x,i2,1x, f7.4,1x,f7.4,1x,i2)'
           print, nZ, nion, fcolm[cnt], fsig[cnt], fflg[cnt], $

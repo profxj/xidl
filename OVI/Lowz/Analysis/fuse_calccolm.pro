@@ -71,7 +71,24 @@ pro fuse_calccolm, strct_fil, instr_list, abs_list, NSIG=nsig
       
       ;; Set by hand
       readf, 1, nhand, format='(i3)'
-      if nhand NE 0 then stop
+      if nhand NE 0 then begin
+          hnd_i = lonarr(100,3)
+          hnd_N = fltarr(100)
+          hnd_s = fltarr(100)
+          i1 = 0
+          i2 = 0
+          i3 = 0
+          f1 = 0.
+          f2 = 0.
+          for jj=0L,nhand-1 do begin
+              readf, 1, i1, i2, i3, f1, f2
+              hnd_i[jj,0] = i1
+              hnd_i[jj,1] = i2
+              hnd_i[jj,2] = i3
+              hnd_N[jj] = f1
+              hnd_s[jj] = f2
+          endfor
+      endif
       
       ;; Calculate
       readf, 1, ncalc, format='(i3)'
@@ -181,9 +198,21 @@ pro fuse_calccolm, strct_fil, instr_list, abs_list, NSIG=nsig
           if weight_N GT 0. then colm = alog10( weight_N ) else colm = weight_N
           lgvar = ((1.d / (alog(10.0)*weight_N))^2)*(weight_sN^2)
           sig_colm = sqrt(lgvar)
+
           ;; Fill up
           strct[jj].Ncolm = colm
           strct[jj].sigNcolm = sig_colm
+
+          ;; By hand!
+          if nhand NE 0 then begin
+              getion, strct[jj].wrest, ion, Z=zval
+              for vv=0L,nhand-1 do begin
+                  if hnd_i[vv,1] EQ ion AND hnd_i[vv,0] EQ zval then begin
+                      strct[jj].Ncolm = hnd_N[vv]
+                      strct[jj].sigNcolm = hnd_s[vv]
+                  endif  
+              endfor
+          endif
 
           ;; Check flags
           if strct[jj].flg NE flg_lin[ii] AND flg_lin[ii] NE 1  AND $

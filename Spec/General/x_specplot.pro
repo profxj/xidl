@@ -254,8 +254,8 @@ common x_specplot_lines
     title=state.title, $
     background=clr.white, $
     color=clr.black, $
-    xcharsize=1.7, $
-    ycharsize=1.7 $
+    xcharsize=1.9, $
+    ycharsize=1.9 $
   else $
     plot, state.wave, state.smooth, psym=state.psym, $
     position=state.pos, xrange=[state.xymnx[0],state.xymnx[2]], $
@@ -264,8 +264,8 @@ common x_specplot_lines
     title=state.title, $
     background=clr.white, $
     color=clr.black, $
-    xcharsize=1.7, $
-    ycharsize=1.7 
+    xcharsize=1.9, $
+    ycharsize=1.9 
 
   ;; YWO
   if state.flg_ytwo EQ 1 then $
@@ -574,8 +574,13 @@ common x_specplot_lines
         state.fx[pxmin:pxmax], $
         state.sig[pxmin:pxmax], $
         gdwave, clm, sig_clm, /LOG
-      state.colm = clm
-      state.sig_colm = sig_clm
+      if clm GT 0. then begin
+          state.colm = clm
+          state.sig_colm = sig_clm
+      endif else begin
+          state.colm = alog10(sig_clm*3.)
+          state.sig_colm = -9.99
+      endelse
       state.flg_Colm = 2
   endelse
 
@@ -601,6 +606,8 @@ pro x_specplot_PltClm, state
             ' Err = '+strtrim(state.sig_colm,2), $
             /normal, charsize=1.5, alignment=0.5, color=clr.green
           state.flg_colm = 0
+          print, 'Colm = '+strtrim(state.Colm,2)+$
+            ' Err = '+strtrim(state.sig_colm,2)
       end
       else :
   endcase
@@ -641,6 +648,8 @@ pro x_specplot_guess, state, val, IMG=img
           xyouts, xpt, ypt - 0.05*scrn, 'LLS', $
             charsize=1.5, color=pclr
           print, 'zabs = [ '+strtrim((xpt/914.039 - 1),2)+' ]'
+          xyouts, 0.2, 0.9, 'zabs = [ '+strtrim((xpt/914.039 - 1),2)+' ]', $
+            /normal, color=pclr, charsize=2.
       end
       'A': begin  ; AlIII
           oplot, [ xpt*1854.7164/1862.7895, $
@@ -651,6 +660,9 @@ pro x_specplot_guess, state, val, IMG=img
             charsize=1.5, color=pclr
           print, 'zabs = [ '+strtrim((xpt/1854.7164 - 1),2)+', '+$
             strtrim((xpt/1862.7164 -1),2)+']'
+          xyouts, 0.2, 0.9, 'zabs = [ '+strtrim((xpt/1854.7164 - 1),2)+', '+$
+            strtrim((xpt/1862.7164 -1),2)+']', $
+            /normal, color=pclr, charsize=2.
       end
       'C': begin  ; CIV
           oplot, [ xpt*1548.195/1550.770, $
@@ -661,6 +673,8 @@ pro x_specplot_guess, state, val, IMG=img
             charsize=1.5, color=pclr
           print, 'zabs = [ '+strtrim((xpt/1548.195 - 1),2)+', '+$
             strtrim((xpt/1550.770 -1),2)+']'
+          xyouts, 0.2, 0.9, 'zabs = [ '+strtrim((xpt/1548.195 - 1),2)+', '+$
+            strtrim((xpt/1550.770 -1),2)+']',  /normal, color=pclr, charsize=2.
       end
       'S': begin  ; SiIV
           oplot, [ xpt*1393.755/1402.770, $
