@@ -415,7 +415,6 @@ pro sdss_chkdla_new, state
                 LT 0.01,  na)
       if na NE 0 then sdss_chkdla_next, state
   endwhile
-  stop
   sdss_chkdla_setup, state
 
   return

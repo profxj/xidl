@@ -40,7 +40,7 @@
 
 ;;;
 
-pro sdss_finchk_icmmn, dlafil, STRNG=strng, MAG=mag
+pro sdss_finchk_icmmn, dlafil, STRNG=strng, MAG=mag, RA=ra
 
   common sdss_finchk_cmm, $
     npix, $
@@ -57,13 +57,22 @@ pro sdss_finchk_icmmn, dlafil, STRNG=strng, MAG=mag
 
   if not keyword_set( STRNG ) then strng = 4
   if not keyword_set( MAG ) then mag = 99.
+  if not keyword_set( DRA ) then dra = 2.
 
   ;; DLA str
   if x_chkfil(dlafil, /silent) EQ 1 then $
     dlastr = xmrdfits(dlafil, 1, /silent) $
   else stop
 
+
   gddla = where(dlastr.flg_mtl GE strng AND dlastr.rmag LT mag)
+
+  ;; RA
+  if keyword_set( RA) then begin
+      tmp =  where(abs(dlastr[gddla].ra/15.  - RA) LT dra, ntmp)
+      if ntmp EQ 0 then stop
+      gddla = gddla[tmp]
+  endif
 
   return
 end
@@ -393,7 +402,7 @@ pro sdss_finchk_next, state
 
   idx = where(state.curdla EQ gddla)
   idx = idx + 1
-  ndla = n_elements(dlastr)
+  ndla = n_elements(gddla)
   if idx EQ ndla then idx = 0L
   state.curdla = gddla[idx]
 
@@ -498,9 +507,9 @@ end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 pro sdss_finchk, dlafil, con_dir, IQSO=iqso, MAG=mag, $
-              XSIZE=xsize, L_YSIZE=i_ysize, M_YSIZE=s_ysize, $
-              YSIZE=ysize, OBJNM=objnm, ZIN=zin, XMAX=xmax, LLIST=llist, $
-                 OUTFIL=outfil
+                 XSIZE=xsize, L_YSIZE=i_ysize, M_YSIZE=s_ysize, $
+                 YSIZE=ysize, OBJNM=objnm, ZIN=zin, XMAX=xmax, LLIST=llist, $
+                 OUTFIL=outfil, RA=ra
 
   common sdss_finchk_cmm
 ;
@@ -520,7 +529,7 @@ pro sdss_finchk, dlafil, con_dir, IQSO=iqso, MAG=mag, $
   if not keyword_set( FILNUM ) then filnum = 55L
 
 ; Initialize the common blcok
-  sdss_finchk_icmmn, dlafil, MAG=mag
+  sdss_finchk_icmmn, dlafil, MAG=mag, RA=ra
 
   tmp = { velpltstrct }
   tmp2 = { abslinstrct }
@@ -529,7 +538,7 @@ pro sdss_finchk, dlafil, con_dir, IQSO=iqso, MAG=mag, $
 
   state = {             $
             ndla: 0L, $
-            curdla: 1L, $
+            curdla: gddla[0], $
             dlafil: dlafil, $
             flg_new: 0, $
             zabs: 0., $
