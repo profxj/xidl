@@ -1,0 +1,707 @@
+\documentclass[11pt,letterpaper,dvips]{article}
+ 
+ 
+\usepackage{latexsym}
+\usepackage{fancybox}
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{color}
+%\usepackage{amstex}
+\usepackage{ulem}
+\usepackage{float}
+ 
+\pretolerance=10000
+\textwidth=7.0in
+\textheight=9.6in
+\voffset = -0.3in
+\topmargin=0.0in
+\headheight=0.00in
+\hoffset = -0.3in
+\headsep=0.00in
+\oddsidemargin=0in
+\evensidemargin=0in
+\parindent=2em
+\parskip=1.5ex
+ 
+\input{/u/xavier/bin/defs}
+\input{/u/xavier/bin/latex}
+
+\newcommand{\nnn}{ccd\#\#\#}
+ 
+\special{papersize=8.5in,11in}
+
+\renewcommand{\theenumi}{\Roman{enumi}}
+
+\begin{document}
+%\pagestyle{empty}
+ 
+
+\begin{center}
+{{\huge \bf ESI (Echellette) Data Reduction [v0.3]}}
+\end{center}
+
+\begin{enumerate}
+
+{\Large   \item Echellette Suggested Calibrations }
+   \begin{itemize}
+	\item five Bias (0s) frames
+	\item five Pin Hole images (dome?)
+	\item ten QTZ Flats (Dome preferred) \quad  ({\it each slit size})
+	\item Arc Calib:  five CuAr (600s) + five HgXe \quad  ({\it each slit size})
+	\item one Standard star \quad ({\it each slit size})
+   \end{itemize}
+
+{\Large   \item Pre-Reduction Setup }
+   \begin{itemize}
+	\item Computer Resources
+	\begin{itemize}
+	  \item $>$300 MHz processor
+	  \item 5G disk space / night
+	  \item 750M RAM (1G on Solaris)
+	  \item Linux or Solaris
+	\end{itemize}
+	\item Solaris WARNINGS (These do not apply to Linux)
+	\begin{itemize}
+	  \item Solaris+IDL does not release memory until IDL is exited
+	  \item Consider exiting IDL occasionally and monitor memory usage
+	  \item IDL+Solaris freezes up on the CPU intermittently
+	  \begin{itemize}
+		\item Possibly bug in licensing software
+		\item Forced to kill IDL process and restart
+	  \end{itemize}
+	\end{itemize}
+	\item Software
+	\begin{itemize}
+	  \item gcc or cc
+	  \item IDL v5.4
+	  \item IDL packages
+		\begin{enumerate}
+		  \item {\bf djs} IDL package  (Schlegel)
+		  \item {\bf idlspec2d} IDL package  (Sloan public)
+		  \item {\bf coyote} IDL package  
+		  \item {\bf astron} IDL package   (Goddard)
+		  \item {\bf xidl} IDL package   (JXP)
+		\end{enumerate}
+	\end{itemize}
+	\item Log sheets [somewhat optional]
+	\item This cookbook
+   \end{itemize}
+
+{\Large  \item Initial Setup (Repeat for each night) }
+
+  \begin{enumerate}
+
+    \item Create a new directory for the night (e.g.\ 06aug02) and enter it
+    \item Create a 'Raw/' directory and put all the raw data in it.  
+    \item If the filenames do not read esi\#\#\#\#.fits, it is quite likely
+	the code will be unhappy
+    \item gzip the data (gzip *.fits)
+    \item Create a 'pro/' directory and copy the files from 
+	$\$$XIDL\_DIR/ESI/pro/redux into it 
+	(e.g.\ {\it proc\_ech.pro, extract\_ech.pro}).
+	{\bf These files can and should be used to run most of the steps that follow.}
+    \item Launch idl in the directory above Raw/ 
+    \item {\bf esi\_strct} :: Create the esi structure.  
+	\begin{itemize}
+	\item This structure organizes
+	the entire night of data and is the most important file created.  The 
+	structure is listed on the next page.  
+	\item The routine creates a few things: (1) an IDL structure in memory with
+	whatever name you choose (e.g.\ esi); 
+	(2) the file 'esistrct.fits' which is a fits
+	version of the structure; (3) the file 'esi.list' which is an ASCII
+	version of the fits file which lists the values of some but not all tags.
+	To view the structure outside of IDL, I 
+	recommend the program 'fv' which I think stands for fitsview.  It allows
+	you to examine binary fits tables.  
+	\item If the EDIT keyword is set, a
+	gui will launch which allows some editing of the esi structure 
+	(see below). \\
+         \quad Example: IDL$> \;$ {\bf esi\_strct}, esi, /MKDIR, [/EDIT] \\  
+         \quad Example: IDL$> \;$ {\bf proc\_ech}, esi, /MKSTRCT \\  
+         \quad Time   : 1s per image
+	\end{itemize}
+
+	\begin{center}
+	{\Large {\bf esistrct}}
+	\end{center}
+
+	{\small
+	\begin{tabular}{lcl}
+	  \hline
+	  Tag & Type & Comment \\
+	  \hline
+         frame & 0     & FRAME Number \\
+         flg\_anly & 0   &  Analysis flag 0=Don't Analyse, 2 = bias sub, 4=scatt \\
+         Obj & ' '       & Object Name \\
+         obj\_id & 0L     & Obj ID \\
+         type & ' '    & ObjTyp : OBJ,STD,DRK,ZRO,IFLT,DFLT,ARC,MSK,IMG,TWI \\
+         slit & 0.    & Slit width \\
+         exp & 0.d        & Exposure time \\
+         imfilt & ' '     & Image Filter : U,B,V,R,I, C \\
+         mode & 0L     & Mode:  0=Image, 1=LowD, 2=Echellette \\
+         CCD & ' '     & CCD \\
+         TEL & ' '    & Telescope \\
+         namp & 0     & Number of Amps \\
+         arclamp& 0 & Arc Lamps: (Binary flag)  1=CuAr, 2=Xe, 4=HgNe \\
+         qtzlamp& 0 & QTZ Lamp: 0=off, 1=On \\
+         rotmode& 0&  Rotation mode: 0=Stationary\\ 
+         ccdspeed& ' ' &        CCD Speed \\
+         gain & 0.     & Gain \\
+         readno & 0.     & Read Noise \\
+         date & 0.0d    & Date of Obs \\
+         UT & ' '    & UT \\
+         RA & ' '    & RA \\
+         DEC & ' '    & DEC \\
+         Equinox & 0.     & EQUINOX \\
+         refordr& 0L &         Reference order (ECH only) \\
+         rootpth & ' '    & Path of the Root \\
+         img\_root & ' '   & Root name (usually in Raw directory) \\
+         flg\_ov &  0     & OV FILE?  0=No, 1=Yes   \\
+         img\_ov &  ' '   & Name of OV file (with directory) \\
+         flg\_final & 0   & Final File? 0=No \\
+         img\_final & ' '  & Name of Final img \\
+         ystrt & 0L      & Column for initiating the trace \\
+         arc\_fil & ' '   & Name of the Arc image file (fits) \\
+         map\_fil & ' '   & Name of the Map image file (fits) \\
+         flat\_fil & ' '   & Name of the Flat image file (fits) \\
+         obj\_fil & ' '  &  Name of object structure (fits) \\
+	  \hline
+	\end{tabular}
+	}
+	
+
+    \item {\bf esi\_editstrct} :: Modify the ESI structure.
+	The previous step creates the structure and takes a guess at the 
+	initial values of many of the tags based on the header card info.  It
+	is difficult, however, to automate all of the values for the tags and
+	therefore the user should carefully edit the structure.  For most of
+	the important tags, one can use {\bf esi\_editstrct}.  The rest must
+	be done from the command line by hand.
+	The obvious tags to modify are: 
+	 \begin{itemize}
+	  \item Obj :: Object name (this propagates into the final spectra 
+		and {\bf should have no spaces!})
+	  \item flg\_anly :: Include in analysis (defaulted to 1 for yes)
+	  \item type :: ARC, IFLT, TWI, OBJ, STD, etc.  
+	  \item mode :: ECH, LWD, IMG 
+	 \end{itemize}
+
+         \quad Example: IDL$> \;$ {\bf esi\_editstrct}, esi \\  
+         \quad Time   : User interaction
+
+    \item Writing the ESI structure to disk:: In IDL you can modify the values
+	of any of the tags.  You can then save the structure in fits form and 
+	rewrite the ASCII file  with the routine {\bf esi\_wrstrct}. \\
+         \quad Example: IDL$> \;$ {\bf esi\_wrstrct}, esi, FITS='name' \\
+         \quad Time   : fast
+
+    \item Reading the ESI structure from disk:: {\bf esi\_ar}
+         \quad Example: IDL$> \;$ esi = {\bf esi\_ar()} \\
+         \quad Example: IDL$> \;$ esi = {\bf esi\_ar('esi\_name.fits')} \\
+         \quad Time   : fast
+
+    \item {\bf esi\_echsetup} :: ECH Setup
+	\begin{itemize}
+	  \item This routine examines the esi structure and looks for calibration
+	files associated with the various slit widths of your ECH files.  
+	It groups together exposures with identical Obj name and ESI mode and
+	sets the obj\_id tags accordingly.
+	A summary of the ECH exposures is put in 'esiECH\_summ.txt'. \\
+         \quad Example: IDL$> \;$ {\bf esi\_echsetup}, esi \\
+         \quad Example: IDL$> \;$ {\bf proc\_ech}, esi, /SETUP \\
+         \quad Time   : Fast
+	\end{itemize}
+
+  \end{enumerate}
+
+{\Large    \item Create Bias (Zero) frame}
+	\begin{itemize}
+	  \item We have found that creating a Zero frame is preferred
+	over an overscan subtraction.  If you have taken Bias (0s) frames,
+	the process is straightforward.  If you haven't, you can copy the image
+	(or make a soft link) 'BiasS.fits' from 
+	$\$$XIDL\_DIR/ESI/CALIBS into the 'Bias/' directory.\\
+         \quad Example: IDL$> \;$ {\bf esi\_mkzero}, esi \\
+         \quad Example: IDL$> \;$ {\bf proc\_ech}, esi, /MKZERO \\
+         \quad Time   : 3-5min 
+	  \item To check the Bias frame : {\bf xatv}, 'Bias/BiasS.fits'
+	\end{itemize}
+
+{\Large  \item Pinhole Map}
+  \begin{itemize}
+	\item One may have taken a series of pinhole traces using the
+	pinhole mask and the QTZ lamp to trace out the light path along
+	the CCD.  If so, the following task can be used to fit the pinhole
+	traces and create a MAP which is required for the data reduction.
+	In lieu of your own pinhole images, you will need to copy the files
+	(or make soft links)
+	{\it hole\_fit.idl, ECH\_map.fits, img\_hole.fits} from 
+	$\$$XIDL/ESI/CALIBS to Maps/.  {\bf At this point, I would recommend
+	using the CALIBS files over creating new ones.}
+	
+	\item {\bf esi\_trcholes} :: This routine will combine all pinhole
+	images (denoted by the 9.99 slit width) and then trace the pinholes.
+	Output is 'Maps/img\_hole.fits' and 'Maps/hole\_fit.idl' \\
+         \quad Example: IDL$> \;$ {\bf esi\_echtrcholes}, esi \\
+         \quad Example: IDL$> \;$ {\bf proc\_ech}, esi, maskid, /MKMAP \\
+         \quad Time   : $<1$min 
+  \end{itemize}
+
+{\Large  \item Process Flats }
+  \begin{itemize}
+	\item This routine processes your QTZ calibration frames to (1) trace
+	the edges of each order, (2) calculate the gain mismatch between multiple
+	amplifiers, and (3) correct pixel-to-pixel variations.  
+	Dome flats show significantly less scattered light than the internal
+	flats and should be used when possible.
+	Use the /IFLAT switch to use internal flats.
+	\item The first routine simply combines the flats.  The output is
+	a bias subtracted, median flat placed in 'Flats/'.  If one does not specify
+	the slit size, the program loops through all sizes. \\
+         \quad Example: IDL$> \;$ {\bf esi\_echmkflat}, esi, [slit], [/IFLAT]\\
+         \quad Example: IDL$> \;$ {\bf proc\_ech}, esi, [slit], /MKFLAT [/IFLAT] \\
+         \quad Time   : 30s per flat 
+	\item The next step is to subtract scattered light and normalize the flat.
+	The scattered light is quite significant for Internal flats but also
+	important for Dome flats.  This code requires the slit size 
+	explicitly.  The routine also normalizes the flat and also matches the
+	gain on the two halves of the amplified CCD.  The
+	output is 'Flats/FlatECH{\it slit}N.fits' where slit = 50, 75, or 10.\\
+         \quad Example: IDL$> \;$ {\bf esi\_echfltsct}, esi, slit, [/IFLAT]\\
+         \quad Example: IDL$> \;$ {\bf proc\_ech}, esi, slit, /NRMFLAT, [/IFLAT] \\
+         \quad Time   : 1min 
+	\item Check the Flat: {\bf xatv}, 'Flats/FlatECH{\it slit}N.fits'
+  \end{itemize}
+
+{\Large  \item Arc Image }
+  \begin{enumerate}
+	\item This is the most important step.  The sky subtraction
+	algorithm will only succeed with a good Arc Image.  It should be 
+	emphasized that we only create one Arc Image per slit size and apply
+	this to all of the exposures taken with that slit size.  The following
+	routines are well automated but should be checked carefully if you are
+	doing a 'final' reduction.  I think it is possible that one could use
+	an Arc image from a previous run or the CALIBS database 
+	but wouldn't recommend it just
+	yet.  All of the following routines require a specific slit size.
+
+	\item {\bf esi\_echmkarc} :: Process the Arcs.  
+	This step bias subtracts
+	and flat fields the arc images.  If there is an image taken with all
+	the lamps on (arclamp = 7) then the code will take that.  Otherwise,
+	it will add two Arcs together to make a CuAr+HgNe+Xe image.  Output
+	is: 'Arcs/ArcECH\_{\it slit}.fits' \\
+         \quad Example: IDL$> \;$ {\bf esi\_echmkarc}, esi, slit \\
+         \quad Time   : 1-15min
+
+	\item {\bf esi\_echfitarc} :: This routine extracts a 1D spectrum down the
+	center of each order and determines the wavelength solution.  
+	There are two levels of interatction with this routine.  The most
+	interaction (not recommended) is to use /INTER which prompts the
+	user to identify and fit the Arc lines.  I recommend using the
+	option /PINTER which has the program attempt to identify a set of
+	lines in each order.  The user than interactively fits the lines
+	using the routine {\bf x\_identify} which calls {\bf x1dfit}.
+	As long as your arc lines are within several 
+	pixels of my solution, things ought to run smoothly.
+	The output is an IDL file containing the polynomial fits for each
+	order: 'Arcs/ArcECH\_{\it slit}fit.idl'.  The program also creates
+	a ps file to examine the quality of fits.   One can input their
+	own set of linelists or restrict the code to use only CuAr lines
+	(/CUAR).
+         \quad Example: IDL$> \;$ {\bf esi\_echfitarc}, esi, slit, /PINTER \\
+         \quad Time   : 2min per order
+
+	\item {\bf esi\_echtrcarc} :: This routine traces arc lines in each
+	order.  It first straightens the curved orders,  but does not rectify
+	the arc lines.  It simply traces them and then maps back to the 
+	original data frame in the following step.  I recommend interactively
+	choosing the lines the program uses to trace but on can also let
+	the program choose (/AUTO).  Output is a series of files in the
+	'Arcs/TRC' directory (1 per order) including ps files for rough 
+	inspection.  \\
+         \quad Example: IDL$> \;$ {\bf esi\_echtrcarc}, esi, slit, /AUTO \\
+         \quad Time   : 2min  ($>$10 min interactively)
+
+	\item {\bf esi\_echmkaimg} :: This routine takes the arc traces and
+	uses them to create a full Arc Image in the data frame.
+	The final wavelength image has vacuum wavelengths.
+	Output is : 'Arcs/ArcECH\_{\it slit}IMG.fits'\\  
+         \quad Example: IDL$> \;$ {\bf esi\_echmkaimg}, esi, slit, /CHK \\
+         \quad Time   : 5min  \\
+         \quad Check output with: {\bf xatv}, 'Arcs/ArcECH\_{\it slit}IMG.fits'
+  \end{enumerate}
+
+{\Large  \item Process the Standard}
+  \begin{itemize}
+	\item This step is not necessary but will help with
+	tracing the data and fluxing.  Alternatively, one can grab the standard
+	trace from the CALIBS directory.
+	\item {\bf esi\_echtrcstd} :: Process the standard star (bias, flatten),
+	centroid it using a small region in order 11 (this can be modified), 
+	skysubtract, and then trace it through the 10 orders.
+	The output are a processed image in 'Final/', an Obj structure in 
+	'Extract' (see below), and the file 
+	'Extract/STD\_ECH{\it slit}\_TRC.fits' which is the trace for the 
+	standard star. \\
+         \quad Example: IDL$> \;$ {\bf esi\_echtrstd}, esi, slit  \\
+         \quad Example: IDL$> \;$ {\bf proc\_ech}, esi, slit, /PROCSTD \\
+         \quad Time   : 10min (mainly sky sub)
+  \end{itemize}
+
+\end{enumerate}
+
+\clearpage
+
+\begin{center}
+{\Huge {\bf \quad 0. Extraction}}
+\end{center}
+
+  \begin{itemize}
+	\item The following routines all apply to a single object, i.e.\
+	multiple exposures of that object will be reduced together.
+	\item I suggest you use a .pro file like {\it extrct\_ech.pro} 
+	to guide the process.  It provides a convenient way 
+	of stepping through the reduction.
+	\item Most of the following routines take the {\it esi} structure
+	and {\it obj\_id}.
+  \end{itemize}
+
+\begin{enumerate}
+
+{\Large  \item Process the Image}
+
+  \begin{itemize}
+	\item {\bf esi\_echproc} :: Bias subtract and flat field the Raw image.
+	This routine takes the index number of the esi structure as input.
+	This is the integer in the first column of the file 'esi.list'.
+	One can subtract scattered light with the flag (/SUBSCAT), but I
+	currently don't recommend it.  The contribution is small for almost all
+	objects.
+	Output is in 'Final/' and is a flattened flux and variance fits file
+	(one gzipped fits file with two exentsions per image). \\
+         \quad Example: IDL$> \;$ {\bf esi\_echproc}, esi, indx, [/SUBSCAT]  \\
+         \quad Example: IDL$> \;$ {\bf extrct\_ech}, esi, obj\_id, [/SUBSCAT] \\
+         \quad Time   : 1min per image
+         \quad Check  : {\bf xatv}, 'Final/f\_esi\#.fits'
+
+
+  \end{itemize}
+
+{\Large  \item Identify the Object}
+
+  \begin{enumerate}
+	\item {\bf esi\_echfndobj} :: Allows the user to interactively identify
+	the science objects (default is auto selection).   It smashes a
+	region of the spectrum and finds all peaks containing 4
+	continuous pixels with 3 sigma significance.  The region is taken
+	to be from 5600-5610A in order 4L (physical 11) by default.  These
+	can be changed via the keyword REFWV=fltarr(2) and REFORDR=\#L.
+	If not interactive, the program chooses the brightest object within
+	20 pixels of the center of the slit.  Set the keyword /INTER to 
+	interactively identify the object and a an aperture to mask for
+	sky subtraction (recommended).
+	It then creates an object structure which
+	stores the spectra of all objects identified in the slit.
+	The IDL structure created is described below.
+
+\clearpage
+
+	\begin{center}
+	  {\Large {\bf specobjstrct} }
+	\end{center}
+	{\small
+	\begin{tabular}{lcl}
+	  \hline
+	  Tag & Type & Comment \\
+	  \hline
+         field &  ' ' &  Name of field \\
+         slit\_id &  0L & Used to store the order number (0-9) corresponding to
+				physical order (15-6)\\  
+         obj\_id &  ' ' & ID value (a=primary, b-z=serendip, x=NG) \\
+         flg\_anly &  0 &  0=No analysis\\ 
+         exp &  0. & \\
+         xcen &  0L &  Column where obj was id\\
+         ycen &  0. & \\
+         flg\_aper &  0 &  0=boxcar\\
+         aper &  fltarr(2) &  Widths of aperture, 0/1 = bottom/top (pixels)\\
+         skyrms &  0. &  RMS of sky fit\\
+         trace &  fltarr(5000) &\\
+         npix &  0L & \\
+         wave &  fltarr(5000) & \\
+         fx &  fltarr(5000) & \\
+         var &  fltarr(5000) &    $<=0$  rejected pix\\
+         flg\_flux & 0 &    0=f$_\lambda$, 1=f$_\nu$\\
+         flux &  fltarr(5000) &    Fluxed data\\
+         sig &  fltarr(5000) &    Err in fluxed data\\
+         date &  0.0d \\
+         UT &  ' ' \\
+         img\_fil &  ' ' \\
+         slit\_fil &  ' ' \\
+         instr\_strct &  ' ' & e.g. wfccdstr fits file\\
+	  \hline
+	\end{tabular}
+	}
+
+	\item The routine also does a pseudo-trace to the object based on the
+	paths of the pin-hole traces.  This trace is used to mask out the
+	object for sky subtraction.  At present the code assumes that there
+	are no serendipitous objects in the slit to mask.
+	\item Output is 'Extract/Obj\_esi{\it \#\#}.fits' \\
+         \quad Example: IDL$> \;$ {\bf esi\_echfndobj}, esi, obj\_id, [exp], 
+		[REFORDR=, REFWV= /NOCLOB, /INTER, /CHK, /STD] \\
+         \quad Example: IDL$> \;$ {\bf extrct\_ech}, esi, obj\_id, /FNDOBJ \\
+         \quad Time   : fast 
+
+	\item {\bf esi\_echcopyfnd} :: If desired, the user can copy the
+	trace from another object using this routine.   The program takes
+	the trace from the alternate object and allows the user to choose
+	a different aperture for masking. The keyword CPYIDX is required
+	and refers to the index number of the template object.  An offset
+	can also be applied to this trace using OFFSET=.  \\
+         \quad Example: IDL$> \;$ {\bf esi\_echcopyfnd}, esi, obj\_id, [exp], 
+		CPYIDX=, [APER=, OFFSET=]
+         \quad Time   : fast 
+  \end{enumerate}
+
+{\Large  \item Sky Subtraction}
+  \begin{itemize}
+	\item {\bf esi\_echskysub} ::
+	This procedure subtracts the sky from each order, one by one for
+	each exposure with a given {\it obj\_id}.  The main recipe adopts either
+	(a) a series of low order POLYNOMIALS row by row for orders 0 to 5
+	(physical orders 15 to 11) or (b) a 1D 
+	Bspline fit to the wavelength, flux pairs for orders 6-9. 
+	I have found that the polynomials work best in the low sky regions and
+	the BSPLINE offers a mild improvement in the sky heavy orders.
+	There are some fancy features added in to deal with
+	bright sky lines which get switched off or reduced for short exposures.
+	\item Current issues::  One current failing of the code is sky subtraction
+	in order 11 where the amplifiers meet.  The ratio of the gain is calculated
+	from the Flat image and this ratio is not constant in time.  This leads
+	to some over subtraction of sky in some regions on occasion.	
+	\item Options ::
+	\begin{itemize}
+	  \item BORDR= 5L ::  Sets the order (non-physical) where the Bspline 
+		routine takes over.
+	  \item ORDR= [0L, 9L] ::  Sets the first and last order for sky subtraction.
+		This is useful for repeating sky subtraction in an order or two
+		with improved parameters.
+	  \item SKLFIL= ' ' ::  Input file for fine tuning skyline subtraction with
+		the Bspline routine.  Entires have this format: \\
+		\quad ordr \# wvmin wvmax flag \\
+		where the flag = 1 places breakpoints at the center of each row
+		and 2 places one at each end.  One usually turns on /NOVAC with this
+		keyword
+	  \item /NOVAC :: Does not apply a vacuum correction to the skyline info.
+	  	This probably would only be used with SKLFIL 
+	\end{itemize}
+	\item Output is the sky subtracted 2D image appended to the unsubtracted
+	flux and the variance 2D images (e.g.\ 'Final/f\_esi{\#}.fits') \\
+         \quad Example: IDL$> \;$ {\bf esi\_echskysub}, esi, obj\_id \\
+         \quad Example: IDL$> \;$ {\bf extrct\_ech}, esi, obj\_id, /SKYSUB \\
+         \quad Time   : 10min per exposure \\
+	\item Examine the final product (and get wavelength info) by:\\
+         \quad IDL$> \;$ {\bf xatv}, 'Final/f\_esi{\#}.fits', getsky=2, 
+		WVIMG='Arcs/ArcECH\_{slit}IMG.fits'
+  \end{itemize}
+
+{\Large  \item Trace OBJ}
+  \begin{itemize}
+	\item {\bf esi\_echtrcobj} ::
+	This procedure carefully traces the science objects.  
+	By default, it will combine multiple exposures to improve tracing.  
+	It uses the Standard star as a guide and a crutch.  
+	This new trace overwrites the one in the Obj structure. 
+	Turn the keyword /FAINT on for faint objects.  This step can (should)
+	be skipped if you have used {\bf esi\_echcopyfnd} for 
+	the trace above. \\
+         \quad Example: IDL$> \;$ {\bf esi\_echtrcobj}, esi, obj\_id, 
+		[exp], /FAINT \\
+         \quad Example: IDL$> \;$ {\bf extrct\_ech}, esi, obj\_id, 
+		[exp], /TRCOBJ, /FAINT\\
+         \quad Time   : fast \\
+  \end{itemize}
+
+
+{\Large  \item Extraction}
+  \begin{enumerate}
+	\item {\bf esi\_echextobj} ::
+	This procedure performs a boxcar extraction of the object in each
+	order.  It then rebins to a 1D spectrum using linear interpolation
+	of the wavelength solution.  This is the only binning of the data
+	during the entire reduction scheme.  All spectra are also shifted to
+	zero heliocentric velocity and placed on a wavelength array with 
+	33000 pixels, w0 = 3900. and constant velocity pixels at 10km/s.
+
+	\item  All of the output is written to the Obj structure \\
+         \quad Example: IDL$> \;$ {\bf esi\_echextobj}, esi, obj\_id \\
+         \quad Example: IDL$> \;$ {\bf extrct\_ech}, esi, obj\_id, /EXTOBJ \\
+         \quad Time   : 3min 
+	\item Examine the final product: \\
+         \quad IDL$> \;$ {\bf esi\_echspecplt}
+  \end{enumerate}
+
+{\Large  \item Combine Multiple Exposures (REQUIRED)}
+  \begin{itemize}
+	\item {\bf esi\_echcombspec} ::
+	This procedure adds up multiple exposures of the same object, order
+	by order, weighting by S/N after scaling each exposure to have the
+	same flux as the first.  It appropriately deals with CR's.  For objects
+	with more than 2 exposures, it clips 5 sigma outliers as well.  Even
+	if you have only a single exposure, you need to run this routine prior
+	to fluxing and collapsing to a 1D spectrum as it creates the final
+	spectrum structure that is necessary for fluxing and coadding to 1D.
+	\item Output is a fits file in 'FSpec' named 'Obja\_ech.fits' where
+	Obj is the name in the Obj tag and 
+	the letter 'a' signifies the primary science object.  In the future,
+	I might allow multiple objects to be extracted and would label 
+	them 'b', 'c'..
+         \quad Example: IDL$> \;$ {\bf esi\_echcombspec}, esi, obj\_id \\
+         \quad Time   : fast \\
+  \end{itemize}
+
+{\Large  \item Flux the Spectra}
+  \begin{itemize}
+	\item {\bf esi\_echflux} ::
+	This procedure fluxes each order of the combined frame.  Generally,
+	I'd suggest using the flux calibration that is defaulted 
+	(i.e. ECH\_FLUX\#.fits in CALIBS).
+	\item This program overwrites the fx array in the file created by
+	{\bf esi\_echcombspec}.
+         \quad Example: IDL$> \;$ {\bf esi\_echfluxfin}, esi, obj\_id \\
+         \quad Time   : fast \\
+	\item Examine the final product: \\
+         \quad IDL$> \;$ {\bf esi\_echspecplt}, /fspec
+  \end{itemize}
+
+
+{\Large  \item Collapse to 1D}
+  \begin{itemize}
+	\item {\bf esi\_echcoaddfin} ::
+	This procedure coadds the various orders into a 1D spectrum.  It does
+	weight by S/N but is otherwise rather simple minded.  This includes the
+	fact that various regions of the spectra are ignored, especially data
+	in the lower left hand of the CCD. 
+	\item Output is two fits files in 'FSpec' with names 'Obja\_F.fits' and
+	'Obja\_E.fits'.
+         \quad Example: IDL$> \;$ {\bf esi\_echcoaddfin}, esi, obj\_id \\
+         \quad Time   : fast \\
+	\item Examine the final product: \\
+         \quad IDL$> \;$ {\bf x\_specplot}, 'FSpec/Name\_F.fits', 
+		'FSpec/Name\_E.fits'
+  \end{itemize}
+
+\end{enumerate}
+
+\clearpage
+
+\noindent {\Large {\bf \quad 0. LWD Reduction}}
+
+  \begin{itemize}
+	\item The following routines setup and then proceed through the
+	reduction of data taken in the LWD mode with ESI.
+	\item I suggest you use a .pro files like 
+	{\it proc\_lwd.pro,extrct\_lwd.pro} 
+	to guide the process.  
+	\item Most of the following routines take the {\it esi} structure,
+	and the slit size or the {\it obj\_id}.
+  \end{itemize}
+
+\begin{enumerate}
+
+{\Large    \item Create Bias (Zero) frame}
+	\begin{itemize}
+	  \item We have found that creating a Zero frame is preferred
+	over an overscan subtraction.  If you have taken Bias (0s) frames,
+	the process is straightforward.  If you haven't, you can copy the image
+	'BiasS.fits' from $\$$XIDL/ESI/CALIBS into the 'Bias/' directory.\\
+         \quad Example: IDL$> \;$ {\bf esi\_mkzero}, esi \\
+         \quad Example: IDL$> \;$ {\bf proc\_lwd}, esi, /MKBIAS \\
+         \quad Time   : 3-5min 
+	  \item To check the Bias frame : {\bf xatv}, 'Bias/BiasS.fits'
+	\end{itemize}
+
+{\Large  \item {\bf esi\_lwdsetup} :: LWD Setup}
+	\begin{itemize}
+	  \item This routine examines the esi structure and looks for calibration
+	files associated with the various slit widths of your LWD files.  
+	It groups together exposures with identical Obj name and ESI mode and
+	sets the obj\_id tags accordingly.
+	A summary of the LWD exposures is put in 'esiLWD\_summ.txt'. \\
+         \quad Example: IDL$> \;$ {\bf esi\_lwdsetup}, esi \\
+         \quad Example: IDL$> \;$ {\bf proc\_lwd}, esi, /SETUP \\
+         \quad Time   : Fast
+	\end{itemize}
+
+{\Large  \item Arc Image }
+  \begin{enumerate}
+	\item This is the most crucial step.  The sky subtraction
+	algorithm will only succeed with a good Arc Image.  It should be 
+	emphasized that we only create one Arc Image per slit size and apply
+	this to all of the exposures taken with that slit size.  The following
+	routines are well automated but should be checked carefully if you are
+	doing a 'final' reduction.  I think it is possible that one could use
+	an Arc image from a previous run but wouldn't recommend it just
+	yet.  All of the following routines require a specific slit size.
+	\item For LWD mode, only the HgNe and Xe lamps are useful.  Therefore
+	we focus on these images (i.e.\ arclamp = 6).  
+	\item {\bf esi\_lwdmkarc} :: Process the Arcs.  This step bias subtracts,
+	trims and combines all of the Arc images.
+        Note that we find it is best not to flat field the Arc, at least not
+	with an unnormalized arc. Output is: 'Arcs/ArcLWD\_{\it slit}.fits' \\
+         \quad Example: IDL$> \;$ {\bf esi\_lwdmkarc}, esi, slit \\
+         \quad Time   : 2min
+
+	\item {\bf esi\_lwdfitarc} :: This routine extracts a 1D spectrum along
+	row 820 (default) of Arc image and determines the wavelength solution.  
+	One can perform
+	the solution interactively (/INTER), but I recommend letting the code
+	run automatically.  As long as your arc lines are within 3 pixels of my 
+	solution, things ought to run smoothly.
+	The output is an IDL file containing the polynomial fits for each
+	order: 'Arcs/AFIT\_LWD{\it slit}.fits'.  The program also creates
+	a ps file to examine the quality of fits.\\
+         \quad Example: IDL$> \;$ {\bf esi\_lwdfitarc}, esi, slit \\
+         \quad Time   : 2min 
+
+	\item {\bf esi\_lwdtrcarc} :: This routine traces arc lines throughout
+	the image.  It will parse out the ends of traces where the algorithm
+	tends to have trouble.
+	Output is an anonymous structure written to the binary fits 
+        file 'Arcs/ATRC\_LWD{\it slit}.fits'. \\
+         \quad Example: IDL$> \;$ {\bf esi\_lwdtrcarc}, esi, slit \\
+         \quad Time   : 2min  
+
+	\item {\bf esi\_lwdmkaimg} :: This routine takes the arc traces and
+	uses them to create a full Arc Image in the data frame.  The main
+	routine performs a 2D polynomial surface fit to the traces from
+	the previous step.  This is very expensive but needs to be only
+	run once per night per slit width.
+	Output is : 'Arcs/ArcECH\_{\it slit}IMG.fits'\\  
+         \quad Example: IDL$> \;$ {\bf esi\_lwdmkaimg}, esi, slit /AUTO \\
+         \quad Time   : 20min  \\
+         \quad Check output with: {\bf xatv}, 'Arcs/ArcECH\_{\it slit}IMG.fits'
+	\item To run all three steps at once, use:\\
+         \quad IDL$> \;$ {\bf proc\_lwd}, esi, slit, /MKAIMG, [/INTER] \\
+  \end{enumerate}
+
+{\Large  \item Process Flats }
+  \begin{itemize}
+	\item This routine processes the QTZ calibration frames, producing
+	a normalized flat useful to correcting pixel-to-pixel variations. 
+	The routine bias subtracts and combines individual exposures.
+	It then fits a high order bspline to a strip of the flat in order
+	to normalize to unity.
+	\item Output is 'Flats/FlatLWD\_{\it slit}.fits'
+         \quad Example: IDL$> \;$ {\bf esi\_lwdmkflat}, esi, slit \\
+         \quad Example: IDL$> \;$ {\bf proc\_lwd}, esi, slit, /MKFLAT \\
+         \quad Time   : 5-10min
+	\item Check the Flat: {\bf xatv}, 'Flats/FlatLWD\_{\it slit}.fits'
+  \end{itemize}
+\end{enumerate}
+
+\end{document}
+	
+

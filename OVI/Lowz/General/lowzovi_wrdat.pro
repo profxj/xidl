@@ -1,0 +1,126 @@
+;+ 
+; NAME:
+; lowzovi_wrdat
+;  V1.1
+;
+; PURPOSE:
+;    Given a list of DLA base files, fill up the structure ;
+; CALLING SEQUENCE:
+;   
+;   lowzovi_wrdat, stucture, filename
+;
+; INPUTS:
+;
+; RETURNS:
+;   structure      - IDL structure
+;
+; OUTPUTS:
+;
+; OPTIONAL KEYWORDS:
+;  LIST - File
+;  ION - Input ionic column densities
+;  NOELM - Supress inputting Elemental values
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;
+; EXAMPLES:
+;   lowzovi_wrdat, struct, '/u/xavier/DLA/Lists/tot_dla.lst'
+;
+;
+; PROCEDURES CALLED:
+;
+; REVISION HISTORY:
+;   31-May-2001 Written by JXP
+;   02-Jan-2003 Added metallicity sturcture
+;-
+;------------------------------------------------------------------------------
+pro lowzovi_wrdat, supstrc, LIST=list, NAMES=names
+
+; lowzovi_wrdat -- Writes OVI data to files from a structure
+
+  if (N_params() LT 1) then begin 
+    print,'Syntax - ' + $
+             'lowzovi_wrdat, struct, LIST= (v1.0)' 
+    return
+  endif 
+
+;
+
+  fil=''
+  dumc = ''
+  dumr = 0.0
+  dumd = double(0.0)
+  dumr2 = 0.0
+  dumi = 0
+
+; Parse the Base File
+  if keyword_set( LIST ) then begin
+      readcol, list, listnms, format='A'
+      nfield = n_elements(listnms)
+  endif else stop
+;
+  close, 1
+  for i=0,nfield-1 do begin
+      fil = listnms[i]
+      openw, 1, fil
+      printf, 1,  format='(a15,45x,a10)', supstrc[i].qso, '! QSO name'
+      printf, 1,  format='(a15,45x,a11)', supstrc[i].qso_ra, '! RA (2000)'
+      printf, 1,  format='(a15,45x,a12)', supstrc[i].qso_dec, '! DEC (2000)'
+      printf, 1,  format='(f9.6,51x,a9)', supstrc[i].qso_zem, '! QSO zem'
+      printf, 1,  format='(f9.5,51x,a7)', supstrc[i].qso_vmag, '! QSO V'
+      printf, 1,  format='(f10.5,50x,a15)', supstrc[i].qso_uv, '! QSO UV (e-15)'
+      ;; Galaxy
+      printf, 1,  format='(i3,57x,a12)', supstrc[i].flg_gal, '! Galaxy flg'
+      printf, 1,  format='(a60,a13)', supstrc[i].gal_fil, '! Galaxy file'
+      ;; R limit + galaxies
+      printf, 1,  format='(f9.3,51x,a9)', supstrc[i].R_limit, '! R Limit'
+      printf, 1,  format='(i3,57x,a13)', supstrc[i].N_gal[0], '! N (z>0.005)'
+      printf, 1,  format='(i3,57x,a18)', supstrc[i].N_gal[1], '! N (0.11>z>0.005)'
+      printf, 1,  format='(i3,57x,a17)', supstrc[i].N_gal[2], '! N (qso>z>0.005)'
+      printf, 1,  format='(i3,57x,a11)', supstrc[i].N_gal[3], '! N (z~qso)'
+      ;; Completeness
+      printf, 1,  format='(i3,57x,a18)', supstrc[i].complete[0,0], $
+        '! N (R<19.5; p<5'')'
+      printf, 1,  format='(i3,57x,a18)', supstrc[i].complete[0,1], $
+        '! % (R<19.5; p<5'')'
+      printf, 1,  format='(i3,57x,a19)', supstrc[i].complete[1,0], $
+        '! N (R<19.5; p<10'')'
+      printf, 1,  format='(i3,57x,a19)', supstrc[i].complete[1,1], $
+        '! % (R<19.5; p<10'')'
+      printf, 1,  format='(i3,57x,a18)', supstrc[i].complete[2,0], $
+        '! N (R<20.0; p<5'')'
+      printf, 1,  format='(i3,57x,a18)', supstrc[i].complete[2,1], $
+        '! % (R<20.0; p<5'')'
+      printf, 1,  format='(i3,57x,a19)', supstrc[i].complete[3,0], $
+        '! N (R<20.0; p<10'')'
+      printf, 1,  format='(i3,57x,a19)', supstrc[i].complete[3,1], $
+        '! % (R<20.0; p<10'')'
+      ;; FUSE
+      printf, 1,  format='(i3,57x,a10)', supstrc[i].flg_fuse, '! FUSE flg'
+      printf, 1,  format='(f11.2,49x,a10)', supstrc[i].fuse_exp, '! FUSE exp'
+      printf, 1,  format='(f6.2,54x,a10)', supstrc[i].fuse_snr, '! FUSE S/N'
+
+      ;; STIS
+      printf, 1,  format='(i3,57x,a10)', supstrc[i].flg_stis, '! STIS flg'
+      printf, 1,  format='(a60,a13)', supstrc[i].stis_comm[0], '! STIS Line 1'
+      printf, 1,  format='(a60,a13)', supstrc[i].stis_comm[1], '! STIS Line 2'
+      printf, 1,  format='(a60,a13)', supstrc[i].stis_comm[2], '! STIS Line 3'
+      printf, 1,  format='(a60,a13)', supstrc[i].stis_comm[3], '! STIS Line 4'
+
+      ;; GHRS
+      printf, 1,  format='(i3,57x,a10)', supstrc[i].flg_ghrs, '! GHRS flg'
+      printf, 1,  format='(a60,a13)', supstrc[i].ghrs_comm[0], '! GHRS Line 1'
+      printf, 1,  format='(a60,a13)', supstrc[i].ghrs_comm[1], '! GHRS Line 2'
+      printf, 1,  format='(a60,a13)', supstrc[i].ghrs_comm[2], '! GHRS Line 3'
+      printf, 1,  format='(a60,a13)', supstrc[i].ghrs_comm[3], '! GHRS Line 4'
+
+      ;; CLOSE
+      close, 1
+
+
+  endfor
+
+  return
+end

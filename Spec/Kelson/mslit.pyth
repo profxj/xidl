@@ -1,0 +1,563 @@
+
+From kelson@ociw.edu Sat Nov 17 13:03:23 2001
+Date: Fri, 16 Nov 2001 16:58:09 -0800
+From: "Daniel D. Kelson" <kelson@ociw.edu>
+To: xavier@ociw.edu
+Subject: getrec/copyrect/unrect/waverect
+
+
+#!/usr/bin/env python
+
+#
+# TO DO:  LOGARITHMIC WAVELENGTH BINNING
+#
+#
+
+from glob import glob
+from sys import argv,exit
+from Expector import *
+from basics import *
+from FITS import *
+from FFT import *
+from Multipack import *
+from LinearAlgebra import *
+
+if __name__ == "__main__":
+
+        argv,nbg=rdarg(argv,"-nbg",int,10)
+        argv,pct=rdarg(argv,"-pct",int,10)
+        argv,rev=rdarg(argv,"-rev",None,0,single=1)
+        argv,verb=rdarg(argv,"-v",None,0,single=1)
+        argv,logb=rdarg(argv,"-logb",None,0,single=1)
+        argv,word=rdarg(argv,"-o",lambda x: int(x)+1,3)
+        argv,xord=rdarg(argv,"-x",int,5)
+        argv,yord=rdarg(argv,"-y",int,5)
+        argv,wscale=rdarg(argv,"-w",int,1)
+        argv,usefort=rdarg(argv,"-usefort",None,0,single=1)
+        argv,dumpdist=rdarg(argv,"-dump",None,0,single=1)
+        argv,xdist=rdarg(argv,"-xdist",None,0,single=1)
+        argv,ydist=rdarg(argv,"-ydist",None,0,single=1)
+        argv,wdist=rdarg(argv,"-wdist",None,0,single=1)
+        argv,niter=rdarg(argv,"-niter",int,1)
+        argv,normwt=rdarg(argv,"-normwt",float,None)
+        argv,superit=rdarg(argv,"-super",int,1)
+        if ydist: argv,peakwin=rdarg(argv,"-peakwin",int,2)
+        else: argv,peakwin=rdarg(argv,"-peakwin",int,10)
+        argv,justdo=rdarg(argv,"-slit",lambda x: int(x)-1,-1)
+        argv,sig=rdarg(argv,"-sig",float,1.0)
+        argv,refrow=rdarg(argv,"-ref",float,0.5)
+        argv,fwhm=rdarg(argv,"-fwhm",float,5.0)
+        argv,bord=rdarg(argv,"-b",int,0)
+        argv,w1=rdarg(argv,"-w1",float,0.0)
+        argv,w2=rdarg(argv,"-w2",float,0.0)
+        argv,arc=rdarg(argv,"-arc",None,0,single=1)
+        argv,d0=rdarg(argv,"-d0",float,1.0)
+        argv,dw=rdarg(argv,"-dw",float,0.0)
+        argv,wfft=rdarg(argv,"-wfft",int,3)
+        argv,wzero=rdarg(argv,"-zero",int,0)
+        argv,bth=rdarg(argv,"-bth",float,8.0)
+        argv,nsub=rdarg(argv,"-nsub",int,16)
+        argv,ny=rdarg(argv,"-ny",int,16)
+        argv,linelist=rdarg(argv,"-ll",None,"skylines.dat")
+        argv,tele=rdarg(argv,"-tele",None,None)
+        argv,gran=rdarg(argv,"-gran",None,None)
+        npos = 2*nsub-1
+        if logb: w1,w2=log10(w1),log10(w2)
+
+        if rev: print "DOES NOT WORK YET!";exit()
+
+def wcalib(spectrum,disco,order=3,fwhm=5.0,w1=0.0,w2=0.0,arc=0,nim=1,\
+        tele="N/A",lamps="0,0,0,0",gran="600gmm",dich=1,redsid=1,\
+        ll="skylines.dat",d0=1.13,wfft=3,bth=8.0,wzero=0,wtol=1.0,red=0):
+    n=len(spectrum); slic=0; nsn=0
+    db=zeros((10,),Int32)
+    disco=disco.astype(Float32)
+    err,scat=cgrowl4(n,spectrum,disco,tele,gran,order,ll,arc,nim,wzero,\
+    wtol,fwhm,red,lamps,dich,redsid,slic,db,nsn,w1,w2,d0,wfft,bth)
+    return err,disco[:order],scat
+
+def fdump(fitsfile,data):
+   na=list(data.shape)
+   na.reverse()
+   nx=len(na)
+   print "creating",fitsfile,nx,na
+   GGG=FITS(fitsfile,create=1,readonly=0)
+   GGG.newhead("T",-32,nx,na)
+   GGG.putdata(data)
+   GGG.close()
+
+def rmsol(image,keyroot):
+   f=FITS(image,readonly=0)
+   if f[keyroot+"n"] != "N/A":
+     npy,nupy,nt,xord,yord=eval(f[keyroot+"n"])
+     f.delkey(keyroot+"n")
+     f.delkey(keyroot+"r")
+     for j in range(nt): f.delkey(keyroot+str(j))
+   f.close()
+
+def getslitinfo(image):
+   f=FITS(image,readonly=1)
+   nslits=int(f["nslits"])
+   ca=[]; cb=[]
+   for j in range(nslits):
+    ca.append( int(f["csect"+str(j+1)+"a"])-1)
+    cb.append( int(f["csect"+str(j+1)+"b"]))
+   f.close()
+   return ca, cb
+
+def readsol(image,keyroot):
+     f=FITS(image)
+     npy,nupy,nt,xord,yord=eval(f[keyroot+"n"])
+     if f[keyroot+"r"] != "N/A": rms=eval(f[keyroot+"r"])
+     else: rms=0.0
+     sol=[]
+     for j in range(nt): sol+=eval(f[keyroot+str(j)])
+     f.close()
+     return npy,nupy,[asarray(sol),rms],xord,yord
+
+def writesol(npy,nupy,sol,f,keyroot,xord=xord,yord=yord):
+   sol,rms = sol
+   nr = len(sol) % 2; ns = len(sol) / 2
+   hs=[]
+   for j in range(ns): hs.append(str(sol[j*2:(j+1)*2].tolist()))
+   if nr: hs.append(str(sol[ns*2:].tolist()))
+   f.modkey(keyroot+"n",str([npy,nupy,nr+ns,xord,yord]))
+   f.modkey(keyroot+"r",rms)
+   for j in range(ns+nr): f.modkey(keyroot+str(j),hs[j])
+
+def filter(s,bgwin,pct):
+   if bgwin > 0:
+      r = funcfilt(getpct,s,bgwin,0,arg=pct)
+      r[:bgwin+1] = s[:bgwin+1].astype(r.typecode())
+      r[-bgwin-1:] = s[-bgwin-1:].astype(r.typecode())
+      return s-r
+   else: return s
+
+def crosscor(xin,yin,shift=0):
+   n=len(xin)
+   n2 = 2**(int(log2(n-1))+2)
+   n2f = n2/2+1
+   xin = xin-mean(xin)
+   yin = yin-mean(yin)
+   x=zeros((n2),xin.typecode()); y=zeros((n2),yin.typecode())
+   x[:n] = xin; y[:n] = yin
+   i = arange(n2)
+   v = zeros((n2,),Float64)
+   v[:n] = (exp(-0.5*(i[:n]-n/2.0)**2/(n/2.0)**2)-exp(-0.5))/(1-exp(-0.5))
+   fc=real_fft(v*x)*real_fft(v*y)
+   w = 2*pi*arange(n2f)/n2
+   if sig > 0:
+      expon=-(0.5*sig**2)*power(w,2)
+      fc = fc * exp(2*expon*less(abs(expon),100))
+   c = inverse_real_fft(fc)
+   if shift: c=take(c,range(-n2/2,n2/2))
+   return c
+
+def peak(e,g=None,pkwin=10):
+   e = e-2*max(e)
+   n2=len(e)
+   if g == None: gnew=argmax(e)
+   else: gnew=int(g)
+   el=pkwin
+   eh=el+1
+   g0 = max((gnew-el,0))
+   g1 = min((gnew+eh,len(e)))
+   y = e[g0:g1]
+   x = arange(len(y))
+   tck = splrep(x,y,s=0)
+   p=leastsq(lsplev,argmax(y),args=(tck),xtol=0.005,ftol=0.001,factor=0.01)[0] + g0
+   return p
+
+def lsplev(x,tck):
+   y=splev(x,tck,0)
+   return [y]
+
+def getshift(s,u,g=None,pw=peakwin):
+    cc = crosscor(s,u)
+    pe = peak( cc, g, pw)
+    if g:
+       if abs(pe-g) > 2*pw: pk=0.0
+       else: pk=cc[int(pe)]
+    else:
+       pk=cc[int(pe)]
+    return pe,max((0,pk))
+
+def preprow(j,d,h=4):
+  jmin = 0; jmax = d.shape[0]
+  j0 = max((j-h,jmin)); j1 = min((j+h,jmax))
+  s=median(d[j0:j1])
+  s=d[j]
+  s=filter(s,nbg,pct)
+  s=divz(s,rms(s))
+  return s
+
+def getpwr(r,u): return max( power(crosscor(r,u),2))
+
+def getcof(s):
+    r=s-median(s); n=len(r); i=range(n)
+    p=power(r[1:n-1],2)
+    x=i[1:n-1]
+    com = add.reduce(x*p)/add.reduce(p)
+    return com
+
+def prepbasis(x,y,ox,oy):
+    legx = legendre(x,ox)
+    legy = legendre(y,oy)
+    b=[]
+    for i in range(ox+1):
+      for j in range(oy+1): b.append( legx[i]*legy[j])
+    b=asarray(b)
+    return b
+
+def fort_gettran(d,pkwin=peakwin,ofits=None,refrow=refrow,bord=0,ny=0,verb=0):
+    if ydist:
+       td=transpose(d)
+       if verb: print "Using Fourier Rectification for Y-distortion",td.shape
+    else:
+       td=d
+       if verb: print "Using Fourier Rectification for X-distortion",td.shape
+    nr,nc=td.shape
+    n2 = pow(2,int(log2(nc-1))+1)
+    nh = n2/2+1
+    coef=zeros((100,),Float64)
+    wrk=[zeros(td.shape,Float32), zeros(td.shape,Float32), \
+         zeros(td.shape,Float32), zeros(td.shape,Float32), \
+         zeros((nh,nr),Complex32), zeros((nh,nr),Complex32)]
+    schi,serr=cssnort(td.shape[0],td.shape[1],td,\
+                refrow,bord,fwhm,xord,yord,verb,coef,\
+                wrk[0],wrk[1],wrk[2],wrk[3],nh,wrk[4],wrk[5])
+    del wrk
+    print "RMS =",schi
+    solution = coef[:(xord+1)*(yord+1)]
+    solution = transpose(reshape(solution,(yord+1,xord+1)))
+    return [ravel(solution),schi]
+
+def py_gettran(d,pkwin=peakwin,ofits=None,refrow=refrow,bord=0,ny=0,verb=0):
+    if ydist: d=transpose(d)
+    n=[d.shape[0], d.shape[1]]
+    i1 = arange(npos)*n[1]/(2*nsub)
+    i2 = i1 + n[1]/nsub
+    if ny == 0: ny=n[0]
+    dy = n[0]/ny
+    jw = dy
+    j = arange(ny)*dy + dy/2
+    yref = ny/2
+    jup = j[yref:].tolist(); jdown = j[:yref].tolist(); jdown.reverse()
+    super = 0
+    if verb: print "Doing X sections around"
+    if verb: print i1
+    if verb: print i2
+    if verb: print "Doing Y sections around"
+    if verb: print j
+    u=preprow(j[int(refrow*ny)],d,h=4)
+    u2=preprow(j[yref],d,h=dy)
+    m = asarray( map(lambda ii1,ii2,u: getcof(u[ii1:ii2]) ,i1,i2,npos*[u])) + i1
+    if verb: print "Centers="
+    if verb: print m
+    pq = asarray( map(lambda ii1,ii2,s,u: getshift(s[ii1:ii2],u[ii1:ii2]) ,i1,i2,npos*[u2],npos*[u]))
+    p,q = transpose(pq)
+    predict = p
+    for super in range(superit):
+       if verb: print "Using peakwin=",pkwin
+
+       jp2 = []; jq2 = []
+       pred=p
+       for jj in jdown:
+         s=preprow(jj,d,h=dy)
+         jpp2,jqq2=transpose(map(lambda s,u,p,pw,i1,i2: getshift(s[i1:i2],u[i1:i2],p,pw),\
+                                       npos*[s], npos*[u], pred, npos*[pkwin], i1, i2))
+         jp2.append(jpp2); jq2.append(jqq2)
+         pred=jpp2
+       jp2.reverse(); jq2.reverse()
+
+       jp1 = []; jq1 = []
+       pred=p
+       for jj in jup:
+         s=preprow(jj,d,h=dy)
+         jpp1,jqq1=transpose(map(lambda s,u,p,pw,i1,i2: getshift(s[i1:i2],u[i1:i2],p,pw),\
+                                       npos*[s], npos*[u], pred, npos*[pkwin], i1, i2))
+         jp1.append(jpp1); jq1.append(jqq1)
+         pred=jpp1
+
+       wp = concatenate([jq2,jq1])
+       pp = concatenate([jp2,jp1])-p
+       if ofits: fdump(ofits[0],pp)
+       if super == 0: ww = ones(pp.shape)
+       if normwt: wp = clip(wp,0.0,normwt)
+       zz=ravel(pp)
+       x=array(ny*[m])
+       y=array(map(lambda y: npos*[y],j))
+       ww=ravel(ww)
+       rwp=ravel(wp)
+       xx = 2.0*(x.flat-n[1]/2.0)/n[1]
+       yy = 2.0*(y.flat-n[0]/2.0)/n[0]
+
+       uxord=xord; uyord=yord
+       basis=prepbasis(xx,yy,uxord,uyord)
+       pkwin = max(2,int(pkwin/1.5+0.5))
+
+       for iter in range(niter):
+         solution = linear_least_squares( transpose(rwp*basis/ww), rwp*zz/n[1]/ww)[0]
+         if verb: print "Coefficients="
+         if verb: print solution
+         shiftmap = add.reduce( solution*transpose(basis), -1)*n[1]
+         shiftmap2 = reshape( shiftmap,pp.shape)
+         predict = reshape( shiftmap,pp.shape) + p
+         resid = (shiftmap-zz)
+         rms = bwt(resid)[1]
+         print "BWT residual=",rms
+         rms = sqrt(sum(power(resid*rwp/ww,2))/sum(power(rwp/ww,2)))
+         print "RMS residual=",rms
+         ww = 1+(wscale**2)*(shiftmap-zz)**2/(rms)**2
+         basis=prepbasis(xx,yy,max((1,xord)),max((1,yord)))
+       if ofits: fdump(ofits[1],shiftmap2),fdump(ofits[2],wp)
+    return [solution,rms]
+
+
+def getmap(solution,xx,yy,n):
+    xx = 2.0*(xx-n[1]/2.0)/n[1]
+    yy = 2.0*(yy-n[0]/2.0)/n[0]
+    basis=prepbasis(xx,yy,xord,yord)
+    shiftmap=add.reduce( solution*transpose(basis), -1)
+    return shiftmap*n[1]
+
+def rebin( solution, d, ydist=0, wdist=0, wxfm=None):
+    if ydist: d=transpose(d)
+    if wxfm:
+       wsol,w1,w2,dw=wxfm
+       nw = int((w2-w1)/dw+0.5); w2=w1+nw*dw
+       dw=(1.*w2-w1)/nw
+       d2 = zeros((d.shape[0],nw),Float32)
+       xu = arange(d.shape[1])
+       xx = (1+xu-(d.shape[1]/2.0+0.5))/(d.shape[1]/2.0)
+       xleg = legendre(xx,len(wsol)-1)
+       wx = add.reduce(wsol*transpose(xleg),1)
+       wa = dw*arange(nw) + w1
+       try: wtck = splrep(wx,xu,s=0)
+       except: return d2
+       xi = splev(wa,wtck)
+    else:
+       if wdist: d2=zeros((11,d.shape[1]),Float32)
+       else: d2=zeros(d.shape,Float32)
+       nw = d2.shape[1]
+       xi = arange(d.shape[1])
+    n=[d.shape[0], d.shape[1]]
+    lastwrite=0
+    dn0 = 1
+    if wdist: jrange = n[0]/2 + arange(-5,5,1,Int32)
+    else: jrange = range(n[0])
+    for j in jrange:
+       yi = j*ones(xi.shape)
+       shm = transpose(getmap(solution,xi,yi,n))
+       xn = xi+shm
+       l1 = nonzero(greater(xn,xn[0]))[0]
+       l2 = nonzero(less(xn,xn[-1]))[-1]
+       mask = zeros(xn.shape,Float64); mask[l1:l2] = 1.0
+       xlo = xn.astype(Int32)
+       xlo = clip(xlo,0,n[1]-2); xhi = (xlo+1).astype(Int32)
+       dlo = take(d[j],xlo); dhi = take(d[j],xhi)
+       pixel_area = (take(xn,range(1-nw,1))-take(xn,range(-1,nw-1)))/2.0
+       pixel_area[-1] = 0.0
+       dj = ((dhi-dlo)*(xn-xlo)+dlo)*pixel_area
+       d2[j-jrange[0]] = dj.astype(d2.typecode())
+       if not j % int(0.1*n[0]): print "Pct=%4.1f" % (100.*j/n[0])
+    if ydist: d2=transpose(d2)
+    print
+    return d2
+
+if __name__ == "__main__":
+
+        choice = split(argv[0],"/")[-1]
+
+        if ydist: tl="y"
+        elif xdist: tl="x"
+        elif wdist: tl="w"
+        if ydist+xdist+wdist == 0: print "xdist,ydist,wdist?";exit()
+
+        if choice == "getrect" and (xdist or ydist):
+          image=argv[1]
+          oldkey=tl+"0xfm"
+          f=FITS(image); d=f.data(); oldsol=f[oldkey+"n"]; nslits=f["nslits"]; f.close()
+          if oldsol != "N/A":
+             dnpy,dnupy,dsol,dxord,dyord,=readsol(image,oldkey)
+             for dnupy in range(dnpy):
+               keyroot=tl+str(dnupy)+"xfm"
+               if justdo < 0 or dnupy==justdo and f[keyroot+"n"] != "N/A":
+                        rmsol(image,keyroot=keyroot)
+          naxis1=d.shape[1]; naxis2=d.shape[0]
+          if ydist: upy =  [0,naxis1]; npy=1; ndo=[0]
+          else:
+            if nslits == "N/A": upy =  [0,naxis2]; ndo=range(npy)
+            else:
+              ca,cb=getslitinfo(image); npy=int(nslits); upy = None
+              ndo=range(npy)
+              if justdo >= 0: ndo=[justdo]
+          for nupy in ndo:
+             if ydist and upy: ud = d[::,upy[nupy]:upy[nupy+1]]
+             else: ud = d[ca[nupy]:cb[nupy]]
+             if dumpdist: ofits=[tl+"dist"+str(nupy)+".fits", tl+"fit"+str(nupy)+".fits", tl+"weight"+str(nupy)+".fits"]
+             else: ofits=None
+             if not ydist: print "Doing slit",nupy+1,ud.shape
+             else: print "Doing y-distortion"
+             if usefort: gettran=fort_gettran
+             else: gettran=py_gettran
+             sol=gettran(ud,ofits=ofits,refrow=refrow,bord=bord,ny=ny,verb=verb)
+             f=FITS(image,readonly=0)
+             writesol(npy,nupy,sol,f,keyroot=tl+str(nupy)+"xfm")
+             f.close()
+
+        if choice == "copyrect":
+          image=argv[1]
+          npy,nupy,sol,xord,yord,=readsol(image,tl+"0xfm")
+          nimages=argv[2:]
+          for ims in nimages:
+             print "Copying solution to",ims
+             f0=FITS(image,readonly=1)
+             f=FITS(ims,readonly=0)
+             for nupy in range(npy):
+                 keyroot=tl+str(nupy)+"xfm"
+                 usesol=f0[keyroot+"n"]
+                 if usesol != "N/A":
+                   oldsol=f[keyroot+"n"]
+                   if oldsol != "N/A" and justdo < 0: rmsol(ims,keyroot=keyroot)
+                   dum1,dum2,sol,xord,yord,=readsol(image,tl+str(nupy)+"xfm")
+                   if wdist and dw != 0.0: sol[0] += dw 
+                   writesol(npy,nupy,sol,f,keyroot=keyroot,xord=xord,yord=yord)
+             f.close()
+             f0.close()
+
+        if choice == "waverect" and wdist:
+          images=argv[1:]
+          woffset=[]
+          for image in images:
+            f=FITS(image); nslits=f["nslits"]
+#            npy,nupy,nt,xord,yord=eval(f["x"+"0xfmn"])
+            if not tele: tele=f["telescop"]
+            if not gran: gran=f["graname"]
+            dich=0; redsid=0
+            tele=tele.upper()
+            if tele[:4].lower() == "keck":
+               gran=f["graname"]; lamps=f["lamps"]
+               if gran == "N/A": gran=f["grisname"]
+               if gran[:3] == "300": gran="300gmm"
+               if gran[:3] == "400": gran="400gmm"
+               if gran[:3] == "600": gran="600gmm"
+               if gran[:3] == "831": gran="831gmm"
+               if gran[:3] == "900": gran="900gmm"
+               if gran[:4] == "1200": gran="1200gmm"
+               if f["dichtran"].lower() == "deployed": dich=1
+               else: dich=0
+               if f["instrume"].lower() == "lrisblue": redsid=0
+               else: redsid=1
+            else: gran="none";lamps="0,0,0,0"
+            d=f.data()
+            f.close()
+            if dw == 0.0: dw=d0
+            naxis1=d.shape[1]; naxis2=d.shape[0]
+            ca,cb=getslitinfo(image); npy=int(nslits); upy = None; suf="r"
+            ndo=range(npy)
+            if justdo >= 0: ndo=[justdo]
+            imin = image; imout= replace(image,".fit",suf+".fit")
+            print "Using solution:",npy,xord,yord
+            for nupy in ndo:
+               print "Starting wavelength calibration for",nupy+1
+               if ydist and upy: ud = d[::,upy[nupy]:upy[nupy+1]]
+               else: ud = d[ca[nupy]:cb[nupy]]
+               wsol=zeros((100,),Float32)
+               dum1,dum2,sol,xord,yord=readsol(image,"x"+str(nupy)+"xfm")
+               sol=sol[0]
+               if wzero > 0:
+                  dum1,dum2,wsol1,dum3,dum4,=readsol(image,"w"+str(nupy)+"xfm")
+                  wsol1 = wsol1[0]
+                  wsol[:len(wsol1)] = wsol1.astype(wsol.typecode())
+                  word = len(wsol1)
+                  nim = 2; arc=1
+               else:
+                 nim=images.index(image)+1
+                 if nim == 1: wsol=zeros((100,),Float32)
+                 else:
+                     dum1,dum2,wsol1,dum3,dum4,=readsol(image,"w"+str(nupy)+"xfm")
+                     wsol1 = wsol1[0]
+                     wsol[:len(wsol1)] = wsol1.astype(wsol.typecode())
+               ud = filter(median(rebin(sol,ud,wdist=wdist)),nbg,pct)
+               if (nim == 1) or (nim > 1 and wzero > 0):
+                 print "Going into wavelength calibration"
+                 werr, wsol2, wrms = wcalib(ud,wsol,order=word,fwhm=fwhm,\
+                   w1=w1,w2=w2,arc=arc,\
+                   nim=nim,tele=tele,lamps=lamps,gran=gran,\
+                   dich=dich,redsid=redsid,ll=linelist,d0=d0,wfft=wfft,\
+                   bth=bth,wzero=wzero,wtol=1.0)
+                 print "Done with Wavelength Calibration for slit",nupy+1
+                 print "Wavelength Calibration RMS=",wrms
+                 print "Wavelength Calibration Error?",werr
+                 if werr == 0:
+                   if wzero == 1: woffset.append( wsol2[0]-wsol[0])
+                   f=FITS(image,readonly=0)
+                   writesol(npy,nupy,[wsol2,wrms],f,"w"+str(nupy)+"xfm",xord=word,yord=0)
+                   f.close()
+            if wzero == 1 and justdo < 0:
+               woffset = asarray(woffset)
+               print "Wavelength offsets:"
+               print woffset
+               print "Median, biweight offsets:"
+               print median(woffset), bwt(woffset)
+
+        if choice == "unrect":
+          images=argv[1:]
+          for image in images:
+            f=FITS(image); nslits=f["nslits"]
+            npy,nupy,nt,xord,yord=eval(f[tl+"0xfmn"])
+            naxes=f.naxes()
+            f.close()
+            naxis1,naxis2=naxes
+            if wdist: nw = int((w2-w1)/dw+0.5); w2=w1+nw*dw; dw=(1.*w2-w1)/nw
+            if ydist: upy =  [0,naxis1]; suf="t"; ndo=range(npy)
+            else:
+              if nslits == "N/A": upy =  [0,naxis2]; suf="t"; ndo=range(npy)
+              else:
+                ca,cb=getslitinfo(image); npy=int(nslits); upy = None; suf="r"
+                ndo=range(npy)
+                if justdo >= 0: ndo=[justdo]
+            print "Using solution:",npy,nupy,nt,xord,yord
+            imin = image; imout= replace(image,".fit",suf+".fit")
+            if justdo >= 0:
+              print "Editing",imout
+              g=FITS(imout,readonly=0)
+              if g["crval1"] != "N/A":
+                 w1=float(g["crval1"])
+                 dw=float(g["cdelt1"])
+                 w2=w1+dw*(g.naxes()[0]+1-float(g["crpix1"]))
+            else:
+              print "Creating",imout,"from",imin
+              g=FITS(imout,create=1,template=imin)
+              if wdist:
+                 g.modkey("naxis1",nw)
+                 g.modkey("crval1",w1);
+                 g.modkey("cdelt1",dw);
+                 g.modkey("crpix1",1.0)
+                 if logb: g.modkey("dc-flag",1)
+                 else: g.modkey("dc-flag",0)
+              g.close()
+            for nupy in ndo:
+               f=FITS(image)
+               if ydist and upy: ud = f.readsec((0,0),(naxis1-1,naxis2-1))
+               else:
+                  ud = f.readsec((0,ca[nupy]),(naxis1-1,cb[nupy]-1))
+                  print "N=",nupy,ca[nupy],cb[nupy]-1,ud.shape
+               f.close()
+               dum1,dum2,sol,xord,yord=readsol(image,tl+str(nupy)+"xfm")
+               sol=sol[0]
+               if wdist:
+                  dum1,dum2,wsol,dum3,dum4=readsol(image,"w"+str(nupy)+"xfm")
+                  wsol=wsol[0]
+                  wxfm=[wsol,w1,w2,dw]
+               else: wxfm=None
+
+               ud = rebin(sol,ud,ydist=ydist,wxfm=wxfm)
+
+               g=FITS(imout,readonly=0)
+               if ydist: g.writesec(ud, (0,0), (ud.shape[1]-1,ud.shape[0]-1))
+               else:
+                  if nslits == "N/A": g.writesec(ud, (0,upy[nupy]), (d.shape[1]-1,upy[nupy+1]-1))
+                  else: g.writesec(ud, (0,ca[nupy]), (ud.shape[1]-1,cb[nupy]-1))
+               g.close()

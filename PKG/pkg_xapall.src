@@ -1,0 +1,23 @@
+#!/bin/csh -f
+cp /home/xavier/idl/idlutils/xavier/Spec/General/x_apall.pro .
+cp /home/xavier/idl/idlutils/xavier/Spec/General/x_setaper.pro .
+cp /home/xavier/idl/idlutils/xavier/FIT/x_fit.pro .
+cp /home/xavier/idl/idlutils/xavier/FIT/x_fitrej.pro .
+cp /home/xavier/idl/idlutils/xavier/FIT/x1dfit.pro .
+cp /home/xavier/idl/idlutils/xavier/FIT/x_calcfit.pro .
+cp /home/xavier/idl/idlutils/xavier/General/xgetx_plt.pro .
+cp /home/xavier/idl/idlutils/xavier/General/x_fndreg.pro .
+cp /home/xavier/idl/idlutils/xavier/General/x_splot.pro .
+cp /home/xavier/idl/idlutils/astron/pro/fits/mrdfits.pro .
+cp /home/xavier/idl/idlutils/astron/pro/fits/fxposit.pro .
+cp /home/xavier/idl/idlutils/astron/pro/fits/mrd_hread.pro .
+cp /home/xavier/idl/idlutils/astron/pro/fits_bintable/fxpar.pro .
+cp /home/xavier/idl/idlutils/astron/pro/fits_bintable/fxaddpar.pro .
+cp /home/xavier/idl/idlutils/astron/pro/misc/gettok.pro .
+cp /home/xavier/idl/idlutils/astron/pro/misc/valid_num.pro .
+cp /home/xavier/idl/idlutils/astron/pro/misc/mrd_skip.pro .
+cp /home/xavier/idl/idlutils/astron/pro/misc/delvarx.pro .
+cp /home/xavier/idl/idlutils/coyote/fsc_color.pro .
+cp /home/xavier/idl/idlutils/coyote/getcolor.pro .
+tar -zcvf x_apall.tar.gz *.pro
+\rm *.pro

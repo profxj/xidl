@@ -1,0 +1,659 @@
+\documentclass[11pt,letterpaper,dvips]{article}
+ 
+ 
+\usepackage{latexsym}
+\usepackage{fancybox}
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{color}
+%\usepackage{amstex}
+\usepackage{ulem}
+\usepackage{float}
+ 
+\pretolerance=10000
+\textwidth=7.0in
+\textheight=10.0in
+\voffset = -0.3in
+\topmargin=0.0in
+\headheight=0.00in
+\hoffset = -0.3in
+\headsep=0.00in
+\oddsidemargin=0in
+\evensidemargin=0in
+\parindent=2em
+\parskip=1.5ex
+ 
+\input{/home/xavier/bin/defs}
+\input{/home/xavier/bin/latex}
+
+\newcommand{\nnn}{ccd\#\#\#}
+ 
+\special{papersize=8.5in,11in}
+
+\renewcommand{\theenumi}{\Roman{enumi}}
+
+\begin{document}
+%\pagestyle{empty}
+ 
+
+\begin{center}
+{{\Huge \bf WFCCD Multi-Slit Reduction [v1.0]}}
+\end{center}
+
+\begin{enumerate}
+
+{\Large   \item Requirements }
+   \begin{itemize}
+	\item IDL v5.4 or later
+	\item $>$500M RAM
+	\item $>$2G hard drive space
+	\item The full software package, including the {\bf djs} and 
+		{\bf idlspec2d} codes
+	\item Hopefully a 300MHz processor or better
+	\item Slit mask information (ideally from Andy's maskgen program)
+	\item Log sheets [somewhat optional]
+   \end{itemize}
+
+{\Large   \item Suggested Calibrations}
+   \begin{itemize}
+	\item 2 QTZ Lamps at position of science frames
+	\item 1 Arc on each side of the science frames
+	\item (Optional) Bias frames to check CCD performance
+   \end{itemize}
+
+{\Large  \item Initial Setup (Repeat for each night) }
+
+  \begin{enumerate}
+
+    \item Create a new directory for the night and enter it
+    \item Create a Raw/ directory and put all the raw data in it.  
+    \item Create a pro/ directory and copy the files from 
+	$\$$XIDL/Spec/WFCCD/pro into it 
+	(e.g.\ {\it setcrds.pro, proc\_night.pro, extract\_night.pro}).
+	{\bf These files can be used to run most of the steps that follow.}
+    \item Launch idl in the directory above Raw/
+    \item {\bf wfccd\_strct} :: Create the wfccd structure.  
+	Again, I use the {\it proc\_night.pro} file to do this.
+	This structure organizes
+	the entire night of data and is the most important file created.  The 
+	structure is listed on the next page [v1.1].  \\
+	The routine creates a few things: (1) an IDL structure in memory with
+	whatever name you choose (e.g.\ night1); 
+	(2) the file 'struct.fits' which is a fits
+	version of the structure; (3) the file 'wfccd.list' which is an ASCII
+	version of the fits file which lists the values of some but not all tags.
+	To view the structure outside of IDL (or even in general), I highly 
+	recommend the program 'fv' which I think stands for fitsview.  It allows
+	you to examine binary fits tables. \\
+         \quad Example: IDL$> \;$ {\bf wfccd\_strct}, night1, /MKDIR \\  
+         \quad Time   : $<1$s per image
+
+    \item Modify the WFCCD structure :: 
+	The previous step creates the structure and takes a guess at the 
+	initial values of many of the tags based on the header card info.  It
+	is impossible, however, to automate all of the values for the tags and
+	therefore the user must do a fair amount of this by hand.  The file
+	{\it setcrds.pro} 
+	is an extensive example.  Note the IDL routine {\bf x\_fmidx} converts
+	the frameno of an image to the index in the structure. \\	
+	The obvious tags to modify are: 
+	 \begin{enumerate}
+	  \item Obj :: Object name 
+	  \item flg\_anly :: Include in analysis (defaulted to 1 for yes)
+	  \item type :: ARC, FLT, etc.  (see the struct definition)
+	  \item masknm :: Generally a two character string giving the unique def
+	  \item mask\_id :: Long integer identifying a given mask.  This is the
+			most important
+	  \item msk\_fil :: Mask file describing the slits.  You will
+		always need to set this tag.  Ideally, the 
+		output from Andy's {\it maskgen} program. I tend to put these
+		files in the Masks/ directory.
+	 \end{enumerate}
+
+    \item Updating the WFCCD structure :: In IDL you can modify the values
+	of any of the tags.  You can then save the structure in fits form and 
+	rewrite the ASCII file  with the routine {\bf write\_wfccdstr}. \\
+         \quad Example: IDL$> \;$ {\bf write\_wfccdstr}, night1, FITS='name' \\
+         \quad Time   : fast
+
+    \item OV region :: By default, the package will assume 32 columns of
+	overscan.  If you use less, the program will behave fine.  If
+	you use more, they will be ignored.
+  \end{enumerate}
+
+
+\clearpage
+	\begin{center}
+	{\Large {\bf wfccdstr}}
+	\end{center}
+
+	{\small
+	\begin{tabular}{lcl}
+	  \hline
+	  Tag & Type & Comment \\
+	  \hline
+         frame & 0     & FRAME Number \\
+         flg\_anly & 0   &  Analysis flag 0=Don't Analyse \\
+         Obj & ' '       & Object Name \\
+         type & ' '    & ObjTyp : OBJ, STD, DRK, ZRO, FLT, ARC, MSK, ALG \\
+         mask\_id & 0L    & Mask ID \\
+         masknm & ' '    & Mask Name \\
+         exp & 0.d        & Exposure time \\
+         filter & ' '     & Filter : U,B,V,R,I, C \\
+         filtpos & 0     & Filter Position \\
+         grism & ' '     & Grism : BG, RG, NO \\
+         aperpos & 0     & Aperture position \\
+         casspos & 0.    & CASS pos angle \\
+         AM &   0.     & Airmass \\
+         CCD & ' '     & CCD \\
+         TEL & ' '    & Telescope \\
+         gain & 0.     & Gain \\
+         readno & 0.     & Read Noise \\
+         date & 0.0d    & Date of Obs \\
+         UT & ' '    & UT \\
+         RA & ' '    & RA \\
+         DEC & ' '    & DEC \\
+         Equinox & 0.     & EQUINOX \\
+         rootpth & ' '    & Path of the Root \\
+         img\_root & ' '   & Root name (usually in Raw directory) \\
+         flg\_ov &  0     & OV FILE?  0=No, 1=Yes   \\
+         img\_ov &  ' '   & Name of OV file (with directory) \\
+         flg\_msk &  0     & Mask FILE?  0=No, 1=Yes   \\
+         img\_msk &  ' '   & Name of Mask file \\
+         flg\_final & 0   & Final File? 0=No \\
+         img\_final & ' '  & Name of Final img \\
+         nslits & 0     & Num of slits \\
+         ystrt & 0L      & Column for initiating the trace \\
+         msk\_fil & ' '  & Name of the Mask info file (fits) \\
+         slit\_fil & ' '  & Name of the Slit info file (fits) \\
+         arc\_fil & ' '   & Name of the Arc image file (fits) \\
+         map\_fil & ' '   & Name of the Map image file (fits) \\
+         flat\_fil & ' '   & Name of the Flat image file (fits) \\
+         obj\_fil & ' '  &  Name of object structure (fits) \\
+	  \hline
+	\end{tabular}
+	}
+	
+\vskip 0.2in
+
+{\Large    \item Create bias frame (optional)}
+	\begin{enumerate}
+	  \item As a check you might create a bias frame.  At the moment
+	the reduction process does not include the bias frame.
+	  \item Run {\bf wfccd\_bias}. This routine outputs an image
+	'Bias.fits' in the Bias/ directory. The routine creates and then
+	deletes overscan frames for each image.\\
+         \quad Example: IDL$> \;$ {\bf wfccd\_bias}, night1 \\
+         \quad Example: IDL$> \;$ {\bf proc\_night}, night1, /MKBIAS \\
+         \quad Time   : 3-5min \\
+	  \item To check the Bias frame : {\bf xatv}, 'Bias/Bias.fits'
+	\end{enumerate}
+
+\end{enumerate}
+
+\clearpage
+
+
+\noindent {\bf {\Large \quad 0. Mask Reduction}}
+
+  \begin{itemize}
+	\item The following routines all apply to a single mask.  In general,
+	this means multiple science exposures of one designed mask.  One
+	could break these up too, however.
+	\item I suggest you create a .pro file like {\it proc\_night.pro} 
+	to guide the process.  
+	It provides a convenient way of stepping through the reduction.
+	\item Most of the following routines take only the WFCCD structure
+	and the {\it maskid} as inputs.
+  \end{itemize}
+
+\begin{enumerate}
+
+{\Large  \item Combine Flats }
+  \begin{itemize}
+	\item Generally, one has at least 2 flats per mask.  To remove CR,
+	if nothing else, I combine the images.
+	\item Run {\bf wfccd\_mkflat} :: This routine uses {\bf x\_addtwoflats} to
+	combine 2 flats if there are only two or {\bf x\_combine} for more than
+	2 flats. 
+	\item Output is 'Flats/Flat\_{\it maskid}.fits' \\
+         \quad Example: IDL$> \;$ {\bf wfccd\_mkflat}, night1, maskid \\
+         \quad Example: IDL$> \;$ {\bf proc\_night}, night1, maskid, /MKFLAT \\
+         \quad Time   : $<1$min \\
+
+	\item Check the Flat: {\bf xatv}, 'Flats/Flat\_{\it maskid}.fits'
+  \end{itemize}
+
+{\Large  \item Create the Map}
+  \begin{itemize}
+	\item {\bf wfccd\_mkmap} ::
+	This step produces a fits file which contains information
+	relating the original data frame to one where the slits run straight
+	accross the image.  The 'straightened' image has the same number of
+	total rows as the original.
+	\item The main routine {\bf x\_traceflat} takes the following steps: 
+	  \begin{enumerate}
+	    \item transposes the flat image
+	    \item creates a sawtooth image (shifts and subtracts) to highlight
+		slit edges
+	    \item Keys on column (row) 400 to find all significant peaks in the
+		sawtooth image
+	    \item Uses {\bf trace\_crude} to trace the slit edges
+	    \item Outputs a trace structure {\bf tracestrct}
+	  \end{enumerate}
+	\item The user then interactively checks the various traces with the
+	routine {\bf x\_ydtortgui}. 
+	\begin{itemize}
+	  \item You can resize this gui
+	  \item LMB : Stretches the contrast and brightness.  
+	  \item RMB : Edit the ends of each trace.  The program assumes
+		you have chosen the nearest edge and changes good to bad
+		or vice-versa.
+	  \item DELTRC : Delete a given trace altogether.  
+	\end{itemize}
+	I advise you extend the RHS of traces where it is sensible as there
+	is generally little signal out at these edges.
+	This program is one of the most user intensive of the 
+	entire reduction package.  I intend to automize it entirely
+	\item Finally, I run {\bf x\_fit2dtrace} to fit a 2D polynomial to 
+	the traces and create a map of the transformation.  I also create the
+	inverse map.
+	\item Output is 'Maps/Map\_{\it maskid}.fits' and 
+	'Maps/Trc\_{\it maskid}.fits.  The map files are saved as double images
+	and take 67M memory. \\
+         \quad Example: IDL$> \;$ {\bf wfccd\_mkmap}, night1, maskid \\
+         \quad Time   : 5min to check the trace + 5min for the Map creation \\
+	\item Check the Map
+	 \begin{enumerate}
+		\item Read in the flat: \quad 
+		flat = mrdfits('Flats/Flat\_{\it maskid}.fits')
+		\item Read in the map: \quad 
+		map = mrdfits('Maps/Map\_{\it maskid}.fits')
+		\item Rectify: \quad rflat = x\_rectify(flat, map)
+		\item Examine: \quad {\bf xatv}, rflat 
+	 \end{enumerate}
+  \end{itemize}
+
+{\Large  \item Create the Slit Structure}
+  \begin{enumerate}
+	\item {\bf wfccd\_setslits} ::
+	This step creates a slit structure which describes the slits in a mask
+	in greater detail than the WFCCD structure.  The user can interactively
+	set the slit edges.  This is important for dealing with slit overlap.
+	Here is the structure: 
+
+	\begin{center}
+	  {\Large {\bf mslitstrct} }
+	\end{center}
+	{\small
+	\begin{tabular}{lcl}
+	  \hline
+	  Tag & Type & Comment \\
+	  \hline
+         flg\_anly &  0  & Analyse? (1=yes, 0=no) \\
+         id &  0L &  ID number \\
+         field &  ' ' &  Field name \\
+         length &  0. & (arcsec) \\
+         width &  0.  & (arcsec) \\
+         pa &  0. \\
+         arcpix &  0.   & Arcsec per pix \\
+         xyqso &  fltarr(2) &  x offset from the QSO (arcsec) \\
+         xpos &  0. &  x position of silt \\
+         nobj &  0 &  Number of objects in slit \\
+         ypos &  fltarr(10) &  y pos of obj relative to slit edges ($\%$) \\
+         yedg &  fltarr(2) &  Slit edges relative to slit mask cen (pix) \\
+         yedg\_flt &  fltarr(2) &  y-Edges  of slit on CCD (Undistorted FLAT) \\
+         yedg\_orig &  fltarr(5000,2)   &  Array of slit edges in orig \\
+         yedg\_sky &  fltarr(5000,2)   &  Edges of slit for sky subtraction\\
+	  \hline
+	\end{tabular}
+	}
+
+\vskip 0.2in
+	\item Parse the slit file listed in the WFCCD
+	structure under the 'msk\_fil' tag.  
+	You will need to have put your mask file in the appropriate place
+	beforehand (e.g.\ 'Masks/').
+	The routine is {\bf wfccd\_prsslits}.
+	The slit structure is created in memory.
+	\item Straighten the Flat with the Map file (uses {\bf x\_rectify}).
+	\item {\bf x\_setslits} ::
+	Guess at the slit positions using the info in 'msk\_fil'
+	\item {\bf x\_stsltgui} :: Unless NOVERIFY is set, 
+	launch a gui to interactively check
+	the slits.  It is important to set the silt edges
+	about right.  In particular, overlapping slits leads to a real
+	problem with sky subtraction and they are best dealt with by 
+	identifying the slit edges properly.
+	  \begin{itemize}
+	    \item You can resize the display screen
+	    \item I would examine the LHS of the image where there is more flux
+	    \item The slit width is always preserved
+	    \item Red (blue) lines indicate the top (bottom) of a slit
+	    \item z (Z) zooms in (out)
+	    \item LMB sets contrast/brightness
+	    \item s (S) shifts all slits below the selected one
+		(inclusive) and keys on top (bottom) of slit
+	    \item b (t) shifts one slit and keys on bottom (top) of slit
+	  \end{itemize}
+	\item Map the slits into the original frame using {\bf x\_origslit}.
+	The slit edge traces are written into 'yedg\_orig' in the slit structure.
+	\item Output the Slit structure to 'Slits/Slits\_{\it mask\_id}.fits' \\
+         \quad Example: IDL$> \;$ {\bf wfccd\_setslits}, night1, maskid \\
+         \quad Time   : $<5$min to check the slits \\
+  \end{enumerate}
+
+{\Large  \item Normalize the Flat}
+  \begin{itemize}
+	\item {\bf wfccd\_normflat} :: Collapses (median) the slits in the flat
+	using the slit edges from the previous step.  Fits a high order
+	bspline to the final result (with 5sig rejection).
+	\item The main driver is {\bf x\_normflat}.
+	\item The output is 'Flats/FlatN\_{\it mask\_id}.fits'. The 
+	WFCCD structure is updated to reflect the new flat.  At this point
+	the file 'Flats/Flat\_{\it mask\_id}.fits' is unnecessary (33M). 
+	I'd check the normalized flat before ever deleting it, however.\\
+         \quad Example: IDL$> \;$ {\bf wfccd\_normflat}, night1, maskid \\
+         \quad Time   : $<3$min \\
+  \end{itemize}
+
+
+{\Large  \item Create the Wavelength Image}
+  \begin{enumerate}
+	\item This sequence of steps (i) processes the arc images, (ii) creates
+	a wavelength solution for the central row of each slit in the
+	straightened frame; and (iii) finds the wavelength solution for each
+	pixel and maps back to the original frame.
+	\item {\bf wfccd\_procarc} :: Process each Arc image. OV subtract, 
+	flatten, straighten the slits.  Output is 
+	'Arcs/ArcR\_\nnn.fits' where \nnn\ corresponds
+	to the orginal ccd frame number.  \\
+         \quad Example: IDL$> \;$ {\bf wfccd\_procarc}, night1, maskid \\
+         \quad Time   : $<1$min \\
+	\item {\bf wfccd\_allarcsol} :: Find the wavelength solution for the
+	center of each slit to be analysed (alignment star boxes are skipped).
+	This routine drives the program {\bf wfccd\_arcsol} which: 
+	\begin{itemize}
+	  \item Medians the 5 central rows of each slit
+	  \item Guesses the initial wavelength solution based on the
+		slit position
+	  \item Calls {\bf x\_autoid} which is a 
+	$\chi^2$ minimization routine that automatically finds 
+	a wavelength solution
+	given an initial guess, an arc spectrum, and a line list.  By
+	default we use the linelist 'wfccdB\_HeNe.lst' given in 
+	$\$$XIDL/Spec/Arcs/Lists
+	  \item Output is an Arc structure {\bf wfccdarcstr} which is output
+	as a fits file 'Arcs/ArcS\_\nnn.fits'.  It has
+	the wavlength solution, arc spectrum, and a wavelength array 
+	for the center of each slit in the straightened frame.
+         \quad Example: IDL$> \;$ {\bf wfccd\_allarcsol}, night1, maskid\\
+         \quad Time   : $\approx 10$s/slit \\
+	\end{itemize}
+
+	\item {\bf wfccd\_arcimg} :: Translate the wavelength solution from
+	the center rows to the entire slit.  
+	This is the only procedure which is exposure sensitive.
+	The main driver is {\bf x\_arcimage}:
+	\begin{itemize} 
+	  \item Identifies all 3$\sigma$ arc lines and traces
+	them across the slit.  
+	  \item It then calculates a unique wavelength solution
+	for each row.  
+	\end{itemize}
+	Finally, the program maps the wavelength solution
+	back into the original frame. The routine is called once per exposure
+	for a given mask.  It matches each exposure with the nearest Arc
+	frame by considering the UT of the images.  The output is an Arc
+	image 'Arcs/ArcI\_\nnn.fits'. \\
+         \quad Example: IDL$> \;$ {\bf wfccd\_arcimg}, night1, maskid, expsr \\
+         \quad Time   : $\approx 1$min/exposure \\
+
+	\item {\bf wfccd\_chkarc} :: Plots the arc line solutions from each
+	slit in a simple gui.  Shows the RMS solution (\AA) and the red lines
+	identify key arc lines.  If something isn't right, you are in trouble!\\
+         \quad Example: IDL$> \;$ {\bf wfccd\_chkarc}, night1, maskid, expsr \\
+         \quad Time   : fast \\
+
+	\item {\bf wfccd\_cleanarc} :: Zeros out bad wavelength values.  These
+	should only occur when two slits are too close or overlapping.  This
+	procedure helps with the sky subtraction and extraction.\\
+         \quad Example: IDL$> \;$ {\bf wfccd\_cleanarc}, night1, maskid, expsr \\
+         \quad Time   : $<1$min \\
+
+  \end{enumerate}
+
+{\Large  \item Process the Science Images}
+  \begin{itemize}
+	\item {\bf wfccd\_procobj} :: OV subtract, flatten and staple in 
+	the wavelength image.
+	\item Produces one final fits image: 'Final/f\_\nnn.fits'.
+	This file has Flux, Var, Wave in the first 3 data units (50Mb). \\
+    	\quad Example: IDL$> \;$ {\bf wfccd\_procobj}, night1, maskid \\
+  	\quad Time   : fast \\
+  \end{itemize}
+
+{\Large  \item CR Flagging}
+  \begin{itemize}
+	\item {\bf wfccd\_objcr} :: Identifies CR in the object frames by
+	comparing two exposures.  Currently can only take two images at a time
+	but this is easily updated.  A CR must have a flux $>3 \times$ the
+	pixel in the other frame and a flux $> 200$.\\
+    	\quad Example: IDL$> \;$ {\bf wfccd\_objcr}, night1, maskid \\
+  	\quad Time   : $< 2$min \\
+  \end{itemize}
+
+{\Large  \item Clean Up}
+  \begin{itemize}
+	\item {\bf wfccd\_cleanup} :: Removes many of the unnecessary files that
+	the package creates (e.g.\ the unnormalized flat).  Don't run this
+	unless you are quite confident your processing is complete.\\
+    	\quad Example: IDL$> \;$ {\bf wfccd\_cleanup}, night1, maskid \\
+  	\quad Time   : fast \\
+  \end{itemize}
+
+
+\end{enumerate}
+
+\clearpage
+
+
+\noindent {\Large \quad 0. Mask Extraction}
+
+  \begin{itemize}
+	\item The following routines all apply to a single exposure  
+	\item I suggest you create a .pro file like {\it extrct\_msk.pro} 
+	to guide the process.  It provides a convenient way 
+	of stepping through the reduction.
+	\item Most of the following routines take the WFCCD structure, 
+	the {\it maskid}, and the exposure number as inputs.
+  \end{itemize}
+
+\begin{enumerate}
+
+{\Large  \item Create Object Structure}
+
+  \begin{enumerate}
+	\item {\bf wfccd\_mkobjstr} :: Creates the object structure which
+	stores the spectra of all objects idenitified in the mask. 
+	\item Options: 
+	  \begin{itemize}
+		\item /NOSKY :: Will not modify the region for sky subtraction
+		\item /NOCHK :: Will not run {\bf x\_setobjgui}
+		\item /NOSLIT :: Will not modify the Slit structure
+		\item /NOOBJ :: Will not modify the Obj structure
+		\item SKYOFF :: Offset of sky edge from slit edge (default=2pix)
+	  \end{itemize}
+
+	\begin{center}
+	  {\Large {\bf specobjstrct} }
+	\end{center}
+	{\small
+	\begin{tabular}{lcl}
+	  \hline
+	  Tag & Type & Comment \\
+	  \hline
+         field &  ' ' &  Name of field \\
+         slit\_id &  0L \\
+         obj\_id &  ' ' & ID value (a=primary, b-z=serendip, x=NG) \\
+         flg\_anly &  0 &  0=No analysis\\ 
+         exp &  0. & \\
+         xcen &  0L &  Column where obj was id\\
+         ycen &  0. & \\
+         flg\_aper &  0 &  0=boxcar\\
+         aper &  fltarr(2) &  Widths of aperture, 0/1 = bottom/top (pixels)\\
+         skyrms &  0. &  RMS of sky fit\\
+         trace &  fltarr(5000) &\\
+         npix &  0L & \\
+         wave &  fltarr(5000) & \\
+         fx &  fltarr(5000) & \\
+         var &  fltarr(5000) &    $<=0$  rejected pix\\
+         flg\_flux & 0 &    0=f$_\lambda$, 1=f$_\nu$\\
+         flux &  fltarr(5000) &    Fluxed data\\
+         sig &  fltarr(5000) &    Err in fluxed data\\
+         date &  0.0d \\
+         UT &  ' ' \\
+         img\_fil &  ' ' \\
+         slit\_fil &  ' ' \\
+         instr\_strct &  ' ' & e.g. wfccdstr fits file\\
+	  \hline
+	\end{tabular}
+	}
+
+	\item The program first runs {\bf x\_fndslitobj} which automatically
+	looks for the main science object (as defined in the Mask output
+	file) and any serendipitous objects.
+	\item The user should then run {\bf x\_setobjgui} to confirm the 
+	object locations and set the slit edges to their 'final' locations
+	for sky subtraction. Rough centroid for the objects is good enough.
+	{\it In general, sky subtraction works best on regions $\approx 25$ pix
+	wide.}  Beware of objects near the slit edge.  Try to extend the sky
+	regions beyond them.
+	\begin{itemize}
+	  \item xatv-like display (use the Help window)
+	  \item Green (blue) lines trace science (serendipitous) objects
+	  \item Red crosses identifies the guess from the slit info
+	  \item 'm' moves the closest object to the cursor position
+	  \item 'd' deletes closest obj
+	  \item '{}[]' = pan up,down,left,right
+	  \item b (t) shifts the slit edge at the bottom (top) of slit
+	\end{itemize}
+	\item Output is 'Extract/Obj\_{\it maskid}.fits' and the Slit
+	structure is updated.\\
+         \quad Example: IDL$> \;$ {\bf wfccd\_mkobjstr}, night1, maskid, expsr \\
+         \quad Time   : 3min/exposure for slit+obj checking \\
+	\item {\bf wfccd\_editobjstr} :: Edit the Obj structure. Options: 
+	/NOOBJ, /NOSLIT.  \\
+         \quad Example: IDL$> \;$ {\bf wfccd\_editobjstr}, night1, maskid, expsr \\
+         \quad Time   : fast\\
+  \end{enumerate}
+
+{\Large  \item Sky Subtraction}
+  \begin{itemize}
+	\item {\bf wfccd\_skysub} ::
+	This procedure subtracts the sky from each slit, one by one.
+	The main driver is {\bf x\_subskyslit} which does a LEGENDRE fit
+	(the better of 2nd or 3rd order provided enough pixels) 
+	to each column after masking out the objects
+	in the slit. It works on individual exposures.  Currently, my routines
+	do not handle objects right at the slit edge very well.
+	\item Output is the sky subtracted 2D frame 
+	'Extract/F\_\nnn.fits' with the appended Sky image and
+	the rms of the fit along each column for each slit (35M).\\
+         \quad Example: IDL$> \;$ {\bf wfccd\_skysub}, night1, maskid, exposure \\
+         \quad Time   : 20-30s/slit (roughly 10-15min) \\
+  \end{itemize}
+
+{\Large  \item Extraction}
+  \begin{enumerate}
+	\item {\bf wfccd\_extobjbox} ::
+	This procedure extracts the objects from the slits one by one.
+	It works on individual exposures seperately.
+	The main driver is {\bf x\_extobjbox} which 
+	\begin{enumerate}
+	  \item	Traces the object with {\bf trace\_crude}
+	  \item Smashes the object to determine its profile
+	  \item Determines an aperture which includes 95$\%$ of the flux
+	  \item Identify pixels included in the aperture and what fraction
+	  \item Flags CR's by comparing the flux in a given column against
+		the object profile.  CR events have variance set to $-1$.
+	  \item Calls {\bf x\_rebin2dspec} which sums the flux into a 
+		1D array with starting wavelength
+		3200\AA\ and $\delv = 100$km/s pixels
+	\end{enumerate}
+	\item  All of the output is written to the object structure \\
+         \quad Example: IDL$> \;$ {\bf wfccd\_extobjbox}, night1, maskid, expsr \\
+         \quad Time   : $<5$min \\
+	\item Run {\bf wfccd\_objsumm} to get a summary of the Fspec file.
+  \end{enumerate}
+
+{\Large  \item Check/Edit the Individual Spectra}
+  \begin{itemize}
+	\item {\bf wfccd\_chkspec} :: This routine plots up all of the
+	objects in the object structure for a quick glance.
+	It is a very simple gui.  Bad extractions are easily identified
+	and can be removed by adjusting the object structure 'by hand'.\\
+         \quad Example: IDL$> \;$ {\bf wfccd\_chkspec}, night1, maskid, expsr \\
+         \quad Time   : fast \\
+	\item {\bf wfccd\_pltobj} :: This routine plots the spectrum and the
+	2D image together (very nice).  You can examine the 'reality' of 
+	various emission and absorption lines. \\
+         \quad Example: IDL$> \;$ {\bf wfccd\_pltobj}, night1, maskid, 
+		expsr, [objnm] \\
+         \quad Time   : 5s \\
+	\item {\bf wfccd\_editspec} :: This routine allows the user to set the
+	variance of regions of spectra to 0 to eliminate them from further
+	analysis. \\
+         \quad Example: IDL$> \;$ {\bf wfccd\_editspec}, night1, maskid, expsr \\
+         \quad Time   : fast \\
+  \end{itemize}
+
+{\Large  \item Flux the Spectra}
+  \begin{itemize}
+	\item {\bf wfccd\_fluxspec} :: This routine plots up all of the
+	objects in the object structure for a quick glance.
+	It is a very simple gui.  Bad extractions are easily identified
+	and can be removed by adjusting the object structure 'by hand'.\\
+         \quad Example: IDL$> \;$ {\bf wfccd\_fluxspec}, night1, maskid, [expsr] \\
+         \quad Time   : fast \\
+  \end{itemize}
+
+{\Large  \item Combine the Spectra}
+  \begin{itemize}
+	\item {\bf wfccd\_combspec} :: This routine combines multiple object
+	structures (primarily their spectra) into one Final structure. 
+	For objects with multiple
+	spectra, the spectra are matched to the same flux and summed.  At
+	the moment this routine only handles two spectra at a time.  \\
+	\item Output :: A structure containg all of the fluxed, coadded spectra
+	with name : {\it 'Extract/Fspec\_maskid.fits'}.  
+         \quad Example: IDL$> \;$ {\bf wfccd\_combspec}, night1, maskid \\
+         \quad Time   : fast \\
+	\item Run {\bf wfccd\_fspecsumm} to get a summary of the Fspec file.
+	\item Run {\bf wfccd\_chkfspec} to view the Final spectra \\
+         \quad Example: IDL$> \;$ {\bf wfccd\_chkfspec}, 'Extract/Fspec\_maskid.fits'\\
+         \quad Time   : fast \\
+  \end{itemize}
+
+{\Large  \item Solve for Redshifts}
+  \begin{itemize}
+	\item {\bf wfccd\_zfind} :: This routine drives the SDSS {\bf zfind} routines
+	and uses the SDSS eigenspectra (rebinned to WFCCD pixel scale) to
+	automate redshift identification.  It is a $\chi^2$ minimization routine
+	and it works rather well.  Like all $\chi^2$ routines, however, it tends
+	to fail when there are particularly bad regions of data.  The ZANS
+	structure in the Fspec structure is updated. \\
+         \quad Example: IDL$> \;$ {\bf wfccd\_zfind}, night1, maskid \\
+         \quad Time   : Long, $\approx 30$s per obj \\
+	\item Run {\bf wfccd\_chkfspec} with the /ZFIND switch to 
+		view the Final spectra + \\
+         \quad Example: IDL$> \;$ {\bf wfccd\_chkfspec}, 
+		'Extract/Fspec\_maskid.fits', /zfind \\
+         \quad Time   : fast \\
+  \end{itemize}
+
+\end{enumerate}
+
+\end{document}
+	
+

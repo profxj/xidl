@@ -1,0 +1,355 @@
+\documentclass[11pt,letterpaper,dvips]{article}
+ 
+ 
+\usepackage{latexsym}
+\usepackage{fancybox}
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{color}
+%\usepackage{amstex}
+\usepackage{ulem}
+\usepackage{float}
+ 
+\pretolerance=10000
+\textwidth=7.0in
+\textheight=9.7in
+\voffset = -0.3in
+\topmargin=0.0in
+\headheight=0.00in
+\hoffset = -0.3in
+\headsep=0.00in
+\oddsidemargin=0in
+\evensidemargin=0in
+\parindent=2em
+\parskip=1.5ex
+ 
+\input{/home/xavier/bin/defs}
+\input{/home/xavier/bin/latex}
+ 
+\special{papersize=8.5in,11in}
+
+\renewcommand{\theenumi}{\Roman{enumi}}
+
+\begin{document}
+\pagestyle{empty}
+ 
+
+\center{{\Huge \bf IDL Image Reduction}}
+
+\begin{enumerate}
+
+{\Large  \item Requirements:  }
+	\begin{itemize}
+		\item $>$300M RAM (this can be modified)
+		\item the IDL coyote package 
+		\item the Goddard IDL package
+		\item the Schlegel IDL package (compiled)
+	\end{itemize}
+
+{\Large  \item Setup }
+
+  \begin{Aenumerate}
+
+    \item Create a Raw/ directory and put all the raw data in it.  Move
+	to the directory above Raw
+
+    \item {\bf xdimg\_strct} :: This creates the IDL structure which 
+	drives all of the subsequent programs.  It also creates a fits file
+	of the structure and an executive summary in the ASCII file 
+	``image.dat''.  After running the program, one should 
+	modify the resulting structure accordingly.  A brief summary of
+	the structure is given below.  An example of this step
+	is xdimg\_setup.pro \\
+         \quad Example: {\bf xdimg\_strct}, n1\_strct, 'LRISR', 'Keck', /MKDIR\\
+         \quad Time   : $<5$s per image
+
+    \item {\bf distruct}
+
+	{\small
+	\begin{tabular}{lcl}
+	  \hline
+	  Tag & Type & Comment \\
+	  \hline
+          flg\_anly & 0 &       Analysis flag 0=Don't Analyse \\
+          frame & 0L &         FRAME Number \\
+          exp & 0.d &          Exposure time \\
+          filter & ' ' &       Filter : U,B,V,R,I \\
+          type & ' ' &         ObjTyp : OBJ, STD, TWI, DRK, ZRO, DFT, SPS \\
+          Obj & ' ' &          Object Name \\
+          Equinox & 0. &       EQUINOX \\
+          Date & 0.0d &        Date of Obs \\
+          UT & ' ' &           UT \\
+          RA & ' ' &           RA \\
+          DEC & ' ' &          DEC \\
+          TEL & ' ' &          Telescope \\
+          AM &   0. &          Airmass \\
+          RMS &   0. &         RMS \\
+          extinct &   0. &     Extinction (e.g. cirrus) \\
+          CCD & ' ' &          CCD \\
+          namp & 0 &           Namps \\
+          statsec & lonarr(4) &    Stat section \\
+          gain & 0. &          Gain \\
+          readno & 0. &        Read Noise \\
+          satur  & 0. &        Saturation \\
+          rootpth & ' ' &      Path of the Root \\
+          img\_root & ' ' &    Root name (usually in Raw directory) \\
+          med\_raw & 0L &      Median of the Raw image \\
+          min\_raw & 0L &      Min of the Raw image \\
+          max\_raw & 0L &      Max of the Raw image \\
+          flg\_ov &  0 &       OV FILE?  0=No, 1=Yes   \\
+          img\_ov &  ' ' &     Name of OV file (with directory) \\
+          med\_ov &  0. &      Median of OV file \\
+          flg\_msk &  0 &      Mask FILE?  0=No, 1=Yes   \\
+          img\_msk &  ' ' &    Name of Mask file \\
+          flg\_skymsk &   0 &  Sky Mask FILE?  0=No, 1=Yes   \\
+          img\_skymsk &  ' ' & Name of Sky Mask file \\
+          flg\_final & 0 &     Final File? 0=No \\
+          img\_final & ' ' &  Name of Final img \\
+	  \hline
+	\end{tabular}
+	}
+
+  \end{Aenumerate}
+
+  \clearpage
+{\Large  \item CALIBRATIONS :: } \\
+	Create Bias and flats including Super-sky flat.
+	An example of these steps is given in xdimg\_calibs.pro.  You will
+	need one set of flats but otherwise these steps are optional.
+	For the flats, a non-linear correction is applied where applicable
+	(e.g.\ SITe3)
+
+  \begin{Aenumerate}
+
+    \item {\bf xdimg\_bias} :: Create the Bias frame.  This routine ov
+	subtracts the bias images and median combines.  It then deletes
+	the ov images unless instructed otherwise.  Currently, the 
+	'Tek5', 'Site\#1', 'LRISR' chips are supported.  Investigate the
+	bias as you like (e.g.\ xatv, 'Bias/Bias.fits') \\
+         	\quad Example: xdimg\_bias, n1\_strct \\
+	        \quad Time   : 5 min
+
+    \item {\bf xdimg\_dflat} :: Create the Dome Flats.  This routine ov
+	subtracts the dome flat images and median combines.  It then deletes
+	the ov images unless instructed otherwise.  It creates one normalized
+	flat per filter.  Investigate the
+	flats as you like (e.g.\ xatv, 'Flats/DFlatNR.fits'). \\
+         	\quad Example: xdimg\_dflat, n1\_strct \\
+	        \quad Time   : 10 min
+
+    \item {\bf xdimg\_twiflt} :: Create the Twilight Flats.  This routine ov
+	subtracts the twilight flat images and median combines.  It then deletes
+	the ov images unless instructed otherwise.  It creates one normalized
+	flat per filter.  Investigate the
+	flats as you like (e.g.\ xatv, 'Flats/TFlatNR.fits'). \\
+         	\quad Example: xdimg\_twiflt, n1\_strct \\
+	        \quad Time   : 10 min
+ \end{Aenumerate}
+
+{\Large  \item Sky Flat :: } \\
+	This is the preferred flat for analysis.  
+	Although strictly a calibration file, this step is more interactivec
+	than the previous and deals with the data images.  
+	Ideally one has $>5$ well dithered images per filter.  The routine:
+
+  \begin{Aenumerate}
+    \item OV subtracts the object images (usually interactively with the /INTER 
+	keyword) 
+    \item Runs a gui ({\bf xmkmask}) designed to make sky masks (suppressed
+	with the /NOMSK keyword). 
+    \item It then median combines with clipping. 
+  \end{Aenumerate}
+    	The ov images are generally kept. The routine creates one normalized 
+	flat per filter.  Investigate the flats as you like 
+	(e.g.\ xatv, 'Flats/SkyFltNR.fits'). \\
+        \quad Example: xdimg\_skyflt, n1\_strct, /INTER \\
+	\quad Time   : 45min (masks), 10min combining
+
+	\begin{itemize}
+	   \item {\bf xmkmask} :: IDL gui for creating masks of a set of
+	images.  Use the keyword /SKYMSK to create a skymask.  User
+	can create rectangular, circular, and line masks.
+		\begin{itemize}
+		  \item Rectangle: LMB, LMB on corners of rectangle
+		  \item Circular: LMB, LMB on center then outer radius of circle
+		  \item Line: LMB, LMB, LMB on center of line, then one edge
+			of the line and then the other center
+		\end{itemize}
+	After saving the first Mask, one can dither the same Mask on the next
+	image using the dx, dy values [Note: minus signs require you type a 
+	non-zero number first; this is confusing].  
+	Set them one by one and hit return
+	to update the image+mask.  Iterate.  Click on SVDITH when done or on
+	NODITH to delete the current Mask.  You can then add new sub-masks 
+	to the
+	current image as desired.  The Masks are written to the Masks/
+	directory by default and gzipped to save memory.
+	\end{itemize}
+	
+
+{\Large  \item PHOTOMETRIC CALIBRATION} :: \\
+
+	\begin{enumerate}
+
+	  \item See xdimg\_stds.pro for an example.
+	  \item {\bf xdimg\_proc } :: Process the standard field images 
+		Identify all STD images with the {\bf where} command, then
+		run {\bf xdimg\_proc}.   You will need to choose which image to
+		flatten with and input the root name (e.g.\ 'Flats/TSkyFltN').
+		The resulting
+		images are in the Final/ directory with an 'f\_' prefix.  
+		Note that this procedure
+		also multiplies by the gain by default.  Make sure the 
+		date is properly set for each image or is set globally! \\
+  		\quad Example: STDS = where(struct.type EQ 'STD' AND 
+			struct.flg\_anly NE 0 ) \\
+	    	\quad\quad\quad xdimg\_proc, n1\_struct, STDS, 'flatroot', /DELOV \\
+	        \quad Time   : Approx 15 sec / image 
+
+	  \item {\bf xdimg\_starid} :: Identify the stars in each standard field. 
+		This routine displays the image, allows one to flip it, 
+		directs the reader to read in a star list relevant to the
+		field, and then facilitates the identification of all stars
+		in that field.  It is necessary, to 
+		have the standard fields in the list 
+		directory before starting this procedure.  Once you have
+		identified and centered the stars, you can save the list
+		which is convenient given the poor quality of the 
+		Landolt coordinates and proper motions.  This program drives
+		the program {\bf x\_starid} which is an IDL gui.  See its help
+		page for more details. \\
+		\quad Example: {\bf xdimg\_starid}, n1\_struct \\
+	        \quad Time   : Mostly human labor ($<$1 min / image)
+
+	  \item {\bf xdimg\_stdmag} :: Calculate magnitudes for the stars.  This 
+		routine takes the star positions from the previous step, 
+		reads in each image and calculates $7''$ aperture magnitudes.
+		The output is written to Photo/ by default (mag\_*).\\
+         	\quad Example: {\bf xdimg\_stdmag}, n1\_struct \\
+	        \quad Time   : Fast, 5s/image
+
+	  \item {\bf xdimg\_photcal} :: Derive the final solution.  This routine
+		takes the magnitudes from the previous step, reads in the
+		Landolt info, and then creates and plots up the solution.  
+		One can set an AM
+		term instead of fitting for it with the SETAM keyword.  Also
+		the default is to only include Landolt stars with at least
+		4 measurements.  This can be changed with the MIN\_NOBS and
+		MIN\_MOBS keywords.  The output is written as 'soln\_*' in
+		the Photo directory.  \\
+         	\quad Example: {\bf xdimg\_photcal}, n1\_struct \\
+	        \quad Time   : Fast
+
+	  \item Checkout 'soln\_*' in the Photo directory for the final 
+		photometric solutions.  The output given is the filter
+		for the solution, the color, and then the ZP, AM, CLR fitted
+		parameters
+		with $1\sigma$ errors.  The final magnitudes are given by:\\
+	
+	 	\begin{center}
+		Mag = 25.0 + ZP - AM*obs\_AM - CLR*obs\_clr \\
+		\end{center}
+
+	\end{enumerate}
+
+{\Large  \item Coadd the Images} \\
+
+	\begin{enumerate}
+
+	  \item {\bf xdimg\_proc} :: Process the data images.  Make sure to set
+		the correct flat root.
+         	\quad Example: {\bf xdimg\_proc}, n1, 'flatroot', /delov
+	        \quad Time   : Approx 20 sec / image  
+
+	  \item {\bf x\_offset} :: This routine takes a series of images (in a list)
+		and calculates the integer offset between number 2-n and number 1.
+		It uses sExtractor to identify objects and then cross-correlates
+		the images in a very simple way.
+		Copy the default.* files from $\$$XIDL/IMG/Notes/files to a 
+		new directory (e.g. '[obj]/offsets') and create a file lists the
+		final images. The default output is a file 'offsets' with
+		integer offsets.
+         	\quad Example: {\bf x\_offset} 'obj.list' INSTR='SITe3'\\
+	        \quad Time   : 1min/image \\
+
+	  \item Combine! :: Use IRAF's {\it combine} to register the processed
+		images.  Be sure to weight by exposure and scale by the median.
+		This has the same effect as just summing each image straight-up
+		(i.e.\ preserving total counts).
+	\end{enumerate}
+
+  \item Measuring Magnitudes
+
+	We will use sextractor and in order for it to work properly
+	the images must be in counts per second,
+	have the same dimensions and be registered [these last requirements
+	may no longer be true, I can edit the in-house code to handle
+	different sizes and registrations].
+	We will use the R band to select our images
+	and set the aperture sizes.  We then will use an in-house 
+	program to do the photometry
+	
+	\begin{enumerate}
+
+	  \item Normalizing :: Divide each image by the value in TTIME in
+		the header. \\
+         	\quad Example: imarith Q0951B / 600.0  Q0951NB \\
+	        \quad Time   : Quick 
+
+	  \item Registering :: Either use the Gawiser method where you give the
+		offset program the final B and R images and calculate the
+		offset and repeat for I or just use your eyeball and ximtool.  
+		Then use imcopy to copy subsections of each image into a 
+		final 3 images which have the same dimension and are 
+		registered. \\
+         	\quad Example: imcopy Q0951NB[71:1839,86:2269] Q0951XB \\
+         	\quad Example: imcopy Q0951NR[1:1769,1:2184] Q0951XR \\
+         	\quad Example: imcopy Q0951NI[2:1770,3:2186] Q0951XI 
+
+
+	  \item Run Sextractor :: Copy all of the default.* files 
+	  	as well as the example .sex files from
+		/home/xavier/Keck/LRIS/DLAImg/Sex/ into a subdirectory (Sex).
+		Copy the *.sex files to the appropriate name.  Edit the *.sex
+		files changing CATALOG\_NAME, MAG\_ZEROPOINT (this is the
+		photometric zero point taking airmass into account), 
+		SATUR\_LEVEL (55000 / TTIME), 
+		SEEING\_FWHM, and CHECKIMAGE\_NAME. Finally, run sextractor
+		on the frame for which you wish to identify objects and
+		apertures.  We have been using R.\\
+         	\quad Example: sex ../Q0132XR.fits -c Q0132+13R\_ap.sex \\
+
+	  \item Run SBlimit :: Check the Surface brightness limit.  Create
+		a file SBlimit.inp in Input/
+		with (1) Npix in aperture e.g.\ $1''$,
+		(2) Nfilt, (3-?) $b1, b2, XB$; $\sigma^{DN}$ repeat \\
+         	\quad Ex: SBlimit
+
+	  \item Run lris\_clrphot :: This program will parse the sextractor
+		output and calculate mangitudes for BRI based on the output
+		from sextractor.  The key is that the apertures are of a fixed
+		size for all of the images.  Copy the input file 
+		lris\_clrphot.inp from DLAImg/Input into your Input directory
+		and edit everything.  The first 9 lines are the fits file,
+		total exposure time (s), and Airmass for each filter.
+		The next two are the aperture and catalog files from 
+		sextractor.
+		The last 3 lines are: (1) the number of dummy comments in the
+		sextractor output, don't touch this; (2) the photometric
+		calibration ($b1, \sigma(b1), b2, \sigma(b2), b3, \sigma(b3)$)
+		and (3) the $1\sigma$ limiting magnitude which we will
+		use in the case when nothing is detected.  The output is
+		fort.11 which has: (i) running number, (ii) x\_pix, 
+		(iii) y\_pix; (iv) Bmag, (v) Rmag, (vi) Imag, (vii) sex mag. \\
+         	\quad Example: lris\_clrphot \\
+
+	   \item Run lris\_3comp ::  In theory you are ready to rock.  Just
+		copy over the lris\_3comp.inp file and get to it. \\
+		\quad Example: lris\_3comp \\
+
+	\end{enumerate}
+	
+
+\end{enumerate}
+
+\end{document}

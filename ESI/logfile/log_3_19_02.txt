@@ -1,0 +1,553 @@
+;**************************************************************************
+;first thing is to create the distortion coefficent array.
+;this needs to be done once, correctly. Current coefficients were calculated 
+;using 5 stellar spectra that were coadded. Each spectrum was taken at a differant slit height, and thus includes pointing errors.
+;Since then we have made a mask with a set of 8 pinholes. there are some flats taken with this mask, but the routine (findcoeff2.pro)will need to be changed to include the extra spectra.
+
+;For now, ignore this step and just use the coefficients I have supplied.
+
+
+comb=readfits('comb1.fits',comb_hd)
+comb=comb(25:2072,*)
+dark=readfits('dark201x1.fits',dark_hd)
+dark= dark(25:2072,*)
+comb=rotate(comb,4)
+
+dark=rotate(dark,4)
+mask=(dark gt 770) * dark - median(dark(*,0:1024))
+comb=comb-mask
+
+
+
+.run findcoeff2
+
+findcoeff,comb,coeff
+
+
+;**************************************************************************
+;START HERE
+datafile='/dsk/b/andy1/data2/esi_23mar01/esi0164_0166.fit
+flatfile='/dsk/b/andy1/data2/esi_23mar01/flat.fits
+darkfile='/dsk/b/andy1/data2/esi_23mar01/dark201x1.fits
+arcfile='/dsk/b/andy1/data2/esi_23mar01/esi0053.fits
+arc2file='/dsk/b/andy1/data2/esi_23mar01/esi0058.fits
+reffile='/dsk/b/andy1/data2/esi_23mar01/esi0087.fits'
+ref2file='/dsk/b/andy1/data2/ESI_07mar00/rawdata/esi0062.fits';bd+22 2642
+ref3file='/dsk/b/andy1/data2/ESI_07mar00/rawdata/esi0025.fits';Feige25
+qsofile='/dsk/b/andy1/data2/esi_23mar01/esi0171.fits
+
+standardfile='/b/andy1/standard_stars/bd33a.oke'
+standardfile2='/b/andy1/standard_stars/bd33a.sto'
+
+;read in data ***********************************************************
+
+data=readfits(datafile,datahd)
+
+flat=readfits(flatfile,flat_hd)
+
+dark=readfits(darkfile,dark_hd)
+
+arc=readfits(arcfile,arc_hd)
+arc2=readfits(arc2file,arc2_hd)
+ref=readfits(reffile,ref_hd)
+ref2=readfits(ref2file,ref2_hd)
+ref3=readfits(ref3file,ref3_hd)
+
+qso=readfits(qsofile,qso_hd)
+
+;trim overscan**********************************************************
+
+
+;data=data(25:2072,*)
+;flat=flat(25:2072,*)
+dark= dark(25:2072,*)
+arc=arc(25:2072,*)
+arc2=arc2(25:2072,*)
+ref=ref(25:2072,*)
+ref2=ref2(25:2072,*)
+ref3=ref3(25:2072,*)
+qso=qso(25:2072,*)
+
+:or fix the size************************************************************
+data=congrid(data,2048,4096)
+;dark=congrid(dark,2048,4096)
+flat=congrid(flat,2048,4096)
+
+;rotate***********************************************************
+
+
+
+data=rotate(data,4)
+flat=rotate(flat,4)
+dark=rotate(dark,4)
+arc=rotate(arc,4)
+arc2=rotate(arc2,4)
+ref=rotate(ref,4)
+ref2=rotate(ref2,4)
+ref3=rotate(ref3,4)
+qso=rotate(qso,4)
+
+;subtract bias***********************************************************
+
+
+;data=data-dark
+;flat=flat-dark
+arc=arc-dark
+arc2=arc2-dark
+qso=qso-dark
+ref=ref-dark
+ref2=ref2-dark
+ref3=ref3-dark
+
+
+;create hot pixel mask and multiply*************************************
+
+;mask=dark*0+(dark lt 800)
+;mask = (mask gt 0.9)
+
+mask=data*0+1
+;mask(2646:4095,421:441)=0	;hot column
+mask(2646:4095,410:441)=0
+;mask(3875:3914,58:110)=0	;hot pixel
+mask(3782:4003,0:217)=0
+
+
+data=data*mask
+flat=flat*mask
+arc=arc*mask
+arc2=arc2*mask
+ref=ref*mask
+
+;zap if neccesary *****************************************
+
+qzap,data,data
+qzap,ref,ref
+qzap,arc,arc
+qzap,arc2,arc2
+
+;write files*****************************************
+writefits,"esi0164_0166_zb.fit",data,datahd
+writefits,"esi0087_zb.fits",ref,ref_hd
+writefits,"esi0053_zb.fits",arc,arc_hd
+writefits,"esi0058_zb.fits",arc2,arc2_hd
+
+;and if things break*****************************************
+
+data=readfits
+
+
+
+
+; model and remove intra-order scattered light*************************
+
+.run scatter_model2
+
+scatter_model2,flat,scattermodF
+scatter_model2,data,scattermodD
+scatter_model2,ref,scattermodR
+
+flat=flat-scattermodF
+data=data-scattermodD
+ref=ref-scattermodR
+
+
+data=data*mask
+flat=flat*mask
+ref=ref*mask
+; flatten the flat and divide out ***********************************************
+
+.run flat_new
+
+flat_new,flat,flatout
+flatout=flatout+ 1e10 * (flatout lt 0.1)
+data=data/flatout*mask
+data=data *( data le 60000 and data ge -1000)
+ref=ref/flatout*mask
+ref=ref* (ref le 60000 and ref ge -1000)
+
+
+;write files*****************************************
+
+writefits,"esi0164_0166_zbf.fit",data,datahd
+writefits,"esi0087_zbf.fits",ref,ref_hd
+writefits,"esi0053_zbf.fits",arc,arc_hd
+
+
+data=readfits("esi0164_0166_zbf.fit",datahd)
+ref=readfits("esi0087_zbf.fits",ref_hd)
+arc=readfits("esi0053_zbf.fits",arc,arc_hd)
+arc2=readfits("esi0058_zb.fits",arc2_hd)
+
+
+
+;rectify***********************************************************
+
+;this is where you would include a better coefficient fit......
+
+coeff=fltarr(4, 10, 5)
+
+openr,1,'rectify_coeff.txt'
+readf,1,coeff
+close,1
+
+.run a_maporders_try2
+
+maporders,data,temp,coeff
+data=temp
+;maporders,flat,temp,coeff
+;flat=temp
+maporders,arc,temp,coeff
+arc=temp
+maporders,arc2,temp,coeff
+arc2=temp
+
+maporders,ref,temp,coeff
+ref=temp
+
+maporders,mask,temp,coeff
+mask=temp
+
+;write files*****************************************
+
+writefits,"esi0164_0166_zbfr_B.fit",data,datahd
+writefits,"esi0087_zbfrr_B.fits",ref,ref_hd
+writefits,"esi0053_zbfrr_B.fits",arc,arc_hd
+writefits,"esi0058_zbfrr_B.fits",arc2,arc2_hd
+
+
+;and if things crash, read files*****************************************
+
+data=readfits("esi0164_0166_zbfr.fit",datahd)
+ref=readfits("esi0087_zbfr.fits",ref_hd)
+arc=readfits("esi0053_zbfr.fits",arc,arc_hd)
+arc2=readfits("esi0058_zbfr.fits",arc2_hd)
+
+;get wavelength scale*******************************************
+
+
+;in order to use the b-spline based sky subtraction routines we will need an accurate sky model that give a wavelength for the center of  *every* pixel.
+
+.run lamp_esi
+.run lambdawpeak_esi
+.run lambda_2dB
+;.run /b/andy1/old_cvs/cvs/utils/pro/tset/traceset2pix
+
+
+
+;read in old model :
+lambda_model=readfits('/b/andy1/data2/rectify/lambda_model_9_20_01.fits',lambda_modelhd)
+
+;creat rough model called wave:
+
+wave=fltarr(4096,10)
+
+for i = 0,9 do wave(*,i)=rebin(lambda_model(*,(i*180+70):(i*180+90)),4096,1)
+
+;.run bandaid
+;bandaid,data,data
+;bandaid,ref,ref
+;bandaid,arc,arc
+;bandaid,arc2,arc2
+
+;reference linelists that I have edited for "good" lines.
+
+filename10='/b/andy1/linelists/order10_mike.dat'
+filename9='/b/andy1/linelists/order9_mike.dat'
+filename8='/b/andy1/linelists/order8_mike.dat'
+filename7='/b/andy1/linelists/order7_mike.dat'
+filename6='/b/andy1/linelists/order6_mike.dat'
+
+
+;filename6='/b/andy1/linelists/HeNe_CuAr_Xe_esi6_3_21_02.dat'
+;filename6='/b/andy1/linelists/HeNe_CuAr__Xe_.dat'
+;filename7='/b/andy1/linelists/HeNe_CuAr_esi7.dat'
+;filename8='/b/andy1/linelists/HeNe_CuAr_esi8.dat'
+;filename9='/b/andy1/linelists/HeNe_CuAr_esi9.dat'
+;filename10='/b/andy1/linelists/HeNe_CuAr_esi10.dat'
+filename11='/b/andy1/linelists/CuAr_esi11.dat'
+filename12='/b/andy1/linelists/CuAr_esi12.dat'
+filename13='/b/andy1/linelists/CuAr_esi13.dat'
+filename14='/b/andy1/linelists/CuAr_esi14.dat'
+filename15='/b/andy1/linelists/CuAr_esi15.dat'
+
+
+
+arcim=arc2+arc
+
+lambda_2dB,arcim,model6,wave,coeffarr6,residuals=1,peaks=0,filename=filename6,stop=0,order=6,nfit=5,fit=1,ncfit=1,navg=31,print=0,bin=3
+
+lambda_2dB,arcim,model6b,model6(*,70:79),coeffarr6b,residuals=1,peaks=0,filename=filename6,stop=0,order=6,nfit=5,fit=1,ncfit=1,navg=31,print=0,bin=3
+
+lambda_2dB,arcim,model6b,wave,coeffarr6b,residuals=1,peaks=0,filename=filename6,stop=0,order=6,nfit=5,fit=1,ncfit=1,navg=1,print=0,bin=10
+
+
+lambda_2dB,arcim,model7,wave,coeffarr7,residuals=1,peaks=0,filename=filename7,stop=0,order=7,nfit=5,fit=1,ncfit=1,navg=1,print=0,bin=7
+
+arcim=arc2
+lambda_2dB,arcim,model7b,model7(*,70:79),coeffarr7b,residuals=1,peaks=0,filename=filename7,stop=0,order=7,nfit=5,fit=1,ncfit=1,navg=1,print=0,bin=3
+
+
+arcim=arc
+
+lambda_2dB,arcim,model8,wave,coeffarr8,residuals=1,peaks=0,filename=filename8,stop=0,order=8,nfit=5,fit=1,ncfit=1,navg=1,print=0
+
+lambda_2dB,arcim,model8t,wave,coeffarr8t,residuals=0,peaks=0,filename=filename8,stop=0,order=8,nfit=5,fit=1,ncfit=1,navg=1,print=0,bin=3,reject=1
+
+lambda_2dB,arcim,model8tt,wave,coeffarr8tt,residuals=0,peaks=0,filename=filename8,stop=0,order=8,nfit=5,fit=0,ncfit=1,navg=1,print=0,bin=3,reject=0
+
+lambda_2dB,arcim,model9b,wave,coeffarr9b,residuals=1,peaks=0,filename=filename9,stop=0,order=9,nfit=5,fit=0,ncfit=1,navg=1,print=0,bin=7
+
+
+lambda_2dB,arcim,model10,wave,coeffarr10,residuals=1,peaks=0,filename=filename10,stop=0,order=10,nfit=5,fit=1,ncfit=1,navg=1,print=0,bin=3
+
+lambda_2dB,arcim,model11,wave,coeffar11,residuals=1,peaks=0,filename=filename11,stop=0,order=11,nfit=5,fit=1,ncfit=1,navg=1,print=0,bin=3
+
+
+lambda_2dB,arcim,model11bttt,model11(*,70:79),coeffar11bttt,residuals=0,peaks=0,filename=filename11,stop=0,order=11,nfit=5,fit=1,ncfit=1,navg=1,print=0,bin=1,reject=1
+
+
+lambda_2dB,arcim,model12,model11(*,70:79),coeffarr12,residuals=1,peaks=0,filename=filename12,stop=0,order=12,nfit=5,fit=1,ncfit=1,navg=1,print=0,bin=7
+
+lambda_2dB,arcim,model12b,wave,coeffarr12b,residuals=1,peaks=0,filename=filename12,stop=0,order=12,nfit=5,fit=1,ncfit=1,navg=1,print=0,bin=1
+
+lambda_2dB,arcim,model13,wave,coeffarr13,residuals=1,peaks=0,filename=filename13,stop=0,order=13,nfit=5,fit=1,ncfit=1,navg=1,print=0,bin=7
+
+lambda_2dB,arcim,model14,wave,coeffarr14,residuals=1,peaks=0,filename=filename14,stop=0,order=14,nfit=5,fit=1,ncfit=1,navg=1,print=0,bin=7
+
+
+;compare
+i=4
+splot,coeffar11bt(i,*),ps=4
+soplot,coeffar11btt(i,*),color=200
+soplot,coeffar11b(i,*) 
+
+i=4
+
+splot,coeffarr8tt(i,*),ps=4
+soplot,coeffarr8t(i,*),color=200
+soplot,coeffarr8(i,*) 
+
+
+
+plot,model8(2048,*)-median(model8(2048,*))
+for i =0,20 do oplot,model8(200*i,*)-median(model8(200*i,*)),color=256/(i+1)
+
+plot,model10b(2048,*)-median(model10b(2048,*))
+for i =0,20 do oplot,model10b(200*i,*)-median(model10b(200*i,*));,color=256/(i+1)
+
+
+
+;save the model!****************************************************************************************
+
+new_lambda_model=fltarr(4096,2048)
+
+i=1
+new_lambda_model(*,i*180:i*180+169)=model14
+i=2
+new_lambda_model(*,i*180:i*180+169)=model13
+i=3
+new_lambda_model(*,i*180:i*180+169)=model12
+i=4
+new_lambda_model(*,i*180:i*180+169)=model11
+i=5
+new_lambda_model(*,i*180:i*180+169)=model10
+i=6
+new_lambda_model(*,i*180:i*180+169)=model9
+i=7
+new_lambda_model(*,i*180:i*180+169)=model8
+i=8
+new_lambda_model(*,i*180:i*180+169)=model7b
+i=9
+;new_lambda_model(*,i*180:i*180+169)=model6
+
+writefits,'lambda_model_3_28_02.fits',new_lambda_model
+
+old_lambda_model=readfits('lambda_model_3_20_02.fits')
+;calculate inverse variance************************************************************************************
+print,'calculate inverse variance'
+
+invvar=1/data *(data ne 0)
+
+;subtract the sky****************************************************************************************
+
+.run skysub_esi.pro
+
+skyrows1=findgen(20)+10
+skyrows2=findgen(20)+130
+;skyrows=findgen(12)+3
+
+
+data1=data
+data=ref
+data=data1
+
+i=9
+galspec=data(*,i*180:i*180+169)
+model=lambda_model(*,i*180:i*180+169)
+;model=model6
+skysub,galspec,galspec, model, model, skyrows=[skyrows1,skyrows2], objnosky=objnosky6
+atv,objnosky6
+
+
+i=8
+galspec=data(*,i*180:i*180+169)
+model=lambda_model(*,i*180:i*180+169)
+;model=model7b
+skysub,galspec,galspec, model, model, skyrows=[skyrows1,skyrows2], objnosky=objnosky7
+atv,objnosky7
+
+i=7
+galspec=data(*,i*180:i*180+169)
+;model=lambda_model(*,i*180:i*180+169)
+model=model8
+skysub,galspec,galspec, model, model, skyrows=[skyrows1,skyrows2], objnosky=objnosky8
+;atv,objnosky8
+
+i=6
+galspec=data(*,i*180:i*180+169)
+;model=lambda_model(*,i*180:i*180+169)
+model=model9
+skysub,galspec,galspec, model, model, skyrows=[skyrows1,skyrows2], objnosky=objnosky9
+atv,objnosky9
+
+i=5
+galspec=data(*,i*180:i*180+169)
+;model=lambda_model(*,i*180:i*180+169)
+model=model10
+skysub,galspec,galspec, model, model, skyrows=[skyrows1,skyrows2], objnosky=objnosky10
+atv,objnosky10
+
+i=4
+galspec=data(*,i*180:i*180+169)
+;model=old_lambda_model(*,i*180:i*180+169)
+model=model11
+skysub,galspec,galspec, model, model, skyrows=[skyrows1,skyrows2], objnosky=objnosky11
+atv,objnosky11
+
+i=3
+galspec=data(*,i*180:i*180+169)
+;model=lambda_model(*,i*180:i*180+169)
+model=model12
+skysub,galspec,galspec, model, model, skyrows=[skyrows1,skyrows2], objnosky=objnosky12
+atv,objnosky12
+;objnosky12=galspec
+
+i=2
+galspec=data(*,i*180:i*180+169)
+;model=lambda_model(*,i*180:i*180+169)
+model=model13
+skysub,galspec,galspec, model, model, skyrows=[skyrows1,skyrows2], objnosky=objnosky13
+atv,objnosky13
+
+i=1
+galspec=data(*,i*180:i*180+169)
+;model=lambda_model(*,i*180:i*180+169)
+model=model14
+skysub,galspec,galspec, model, model, skyrows=[skyrows1,skyrows2], objnosky=objnosky14
+;atv,objnosky14
+
+
+;save sky subtracted data********************************************************************************
+
+data_nosky=fltarr(4096,2048)
+
+i=1
+data_nosky(*,i*180:i*180+169)=objnosky14
+i=2
+data_nosky(*,i*180:i*180+169)=objnosky13
+i=3
+data_nosky(*,i*180:i*180+169)=objnosky12
+i=4
+data_nosky(*,i*180:i*180+169)=objnosky11
+i=5
+data_nosky(*,i*180:i*180+169)=objnosky10
+i=6
+data_nosky(*,i*180:i*180+169)=objnosky9
+i=7
+data_nosky(*,i*180:i*180+169)=objnosky8
+i=8
+data_nosky(*,i*180:i*180+169)=objnosky7bb
+i=9
+;data_nosky(*,i*180:i*180+169)=objnosky6
+
+data_sky=data-data_nosky
+;ref_nosky=data_nosky
+;writefits,'3C323.1_data_nosky_3_29_02.fits',data_nosky
+;writefits,'refstar_data_nosky_3_29_02.fits',ref_nosky
+
+
+
+data_nosky2=readfits('3C323.1_data_nosky_3_28_02.fits')
+data_nosky3=readfits('3C323.1_data_nosky_3_29_02.fits')
+
+atv,data_nosky3
+
+;extract****************************************************************************************
+
+refspec7=total(objnosky7bb(*,63:96),2)
+refspec8=total(objnosky8(*,63:96),2)
+refspec9=total(objnosky9(*,63:96),2)
+refspec10=total(objnosky10(*,63:96),2)
+refspec11=total(objnosky11(*,63:96),2)
+refspec12=total(objnosky12(*,63:96),2)
+refspec13=total(objnosky13(*,63:96),2)
+refspec14=total(objnosky14(*,63:96),2)
+
+
+refspec7=smooth(refspec7,711,/edge_truncate)
+refspec8=smooth(refspec8,711,/edge_truncate)
+refspec9=smooth(refspec9,711,/edge_truncate)
+refspec10=smooth(refspec10,711,/edge_truncate)
+refspec11=smooth(refspec11,711,/edge_truncate)
+refspec12=smooth(refspec12,711,/edge_truncate)
+refspec13=smooth(refspec13,711,/edge_truncate)
+refspec14=smooth(refspec14,711,/edge_truncate)
+
+fspec7=rspec7/refspec7
+fspec8=rspec8/refspec8
+fspec9=rspec9/refspec9
+fspec10=rspec10/refspec10
+fspec11=rspec11/refspec11
+fspec12=rspec12/refspec12
+fspec13=rspec13/refspec13
+fspec14=spec14/refspec14
+
+fwave=fltarr(4096,10)
+for i=1,8 do fwave(*,i)=lambda_model(*,i*180+85)
+
+z=0.264
+
+fwave=fwave/(1+z)
+
+splot,fwave(*,8),smooth(fspec7,9)
+soplot,fwave(*,7),smooth(fspec8,9)
+soplot,fwave(*,6),smooth(fspec9,9)
+soplot,fwave(*,5),smooth(fspec10,9)
+soplot,fwave(*,4),smooth(fspec11,9)
+soplot,fwave(*,9),smooth(fspec12,9)
+soplot,fwave(*,2),smooth(fspec13,9)
+
+fspec7=fspec7* (fspec7 gt 0 and fspec7 lt .025)
+fspec8=fspec8* (fspec8 gt 0 and fspec8 lt .025)
+fspec9=fspec9* (fspec9 gt 0 and fspec9 lt .025)
+fspec10=fspec10* (fspec10 gt 0 and fspec10 lt .025)
+fspec11=fspec11* (fspec11 gt 0 and fspec11 lt .025)
+fspec12=fspec12* (fspec12 gt 0 and fspec12 lt .025)
+fspec13=fspec13* (fspec13 gt 0 and fspec13 lt .025)
+
+
+;****************************************************************************************
+
+
+temp=fltarr(4096,510)
+temp(*,0:169)=objnosky7
+temp(*,170:339)=objnosky7c
+temp(*,340:509)=galspec
+atv,temp
+
+temp=fltarr(4096,340)
+temp(*,0:169)=objnosky13
+temp(*,170:339)=wave
+;temp(*,340:509)=galspec
+atv,temp
+

@@ -1,0 +1,38 @@
+
+Hmmm....  
+Trying to remember the quick bc extractions:
+
+; First try to make flat and bias files:
+
+filenames = findfile('ccd*fits')
+bcbias, filenames
+
+; Now look in the current directory, should be some bias and
+flat files.  If not just don't pass the bias and flat keywords
+to bcproc.
+
+bias = mrdfits('bcbias-14Jun01-211.fits',0)
+flat = mrdfits('bcflat-ccd209.fits',0)
+science = 'ccd048.fits'
+arcfile = 'ccd044.fits'
+
+First use bcproc:
+
+bcproc, science, image, invvar,hdr, bias=bias, flat=flat
+bcproc, arcfile, arc, arcivar, archdr, bias=bias, flat=flat
+
+Now try to fit arcimage:
+
+waveimg = bcarc(arc, arcivar, archdr)
+
+And try to extract (this is just boxcar extraction, with simple
+sky subtraction), I need to be more careful to do optimal extraction.
+
+result = bcextract(image, invvar, waveimg=waveimg)
+
+plot, result.wave, result.flux
+
+I think you could stack up spectra with struct_append
+
+
+
