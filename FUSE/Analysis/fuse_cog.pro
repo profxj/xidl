@@ -26,8 +26,9 @@
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   fuse_calccolm, struct, fil_instr
-;
+;  fuse_cog, '/u/xavier/FUSE/data/PKS0405-12/Analysis/pks0405_abslin.fits', $
+;    '/u/xavier/FUSE/data/PKS0405-12/Analysis/COG/Input/pks0405_z0918.cog', $
+;    PSFIL='Figures/z0918_cog.ps', PLTONLY=[14.52, 38.2, 0.04, 1.8]
 ;
 ; PROCEDURES CALLED:
 ;
@@ -36,7 +37,8 @@
 ;-
 ;------------------------------------------------------------------------------
 pro fuse_cog, strct_fil, cog_fil, Nlmt, blmt, CHICHK=chichk, PLTONLY=pltonly, $
-              NSTP=nstp, BSTP=bstp, PSFILE=psfile, OUTFIL=outfil, EXACT=exact
+              NSTP=nstp, BSTP=bstp, PSFILE=psfile, OUTFIL=outfil, EXACT=exact, $
+              ZLBL=zlbl
 
   common x_calccog_cmm, cog_bval, cog_tau, cog_strct
 
@@ -86,8 +88,10 @@ pro fuse_cog, strct_fil, cog_fil, Nlmt, blmt, CHICHK=chichk, PLTONLY=pltonly, $
   strct = strct[gd]
   
   ;; Reduce the EW (and put in Ang not mA)
-  redew = strct.EW[0] / (strct.zabs+1.) / strct.wrest / 1000.
-  redsigew = strct.sigEW[0] / (strct.zabs+1.) / strct.wrest / 1000.
+  redew = strct.EW[0] / strct.wrest / 1000.
+  redsigew = strct.sigEW[0] / strct.wrest / 1000.
+;  redew = strct.EW[0] / (strct.zabs+1.) / strct.wrest / 1000.
+;  redsigew = strct.sigEW[0] / (strct.zabs+1.) / strct.wrest / 1000.
   
   ;; Grab fvalues
   getfnam, strct.wrest, fval
@@ -175,9 +179,11 @@ pro fuse_cog, strct_fil, cog_fil, Nlmt, blmt, CHICHK=chichk, PLTONLY=pltonly, $
 
   if keyword_set( PSFILE ) then begin
       device, decompose=0
-      ps_open, filename=PSFILE, /color, bpp=8
+      ps_open, filename=PSFILE, /color, bpp=8, /maxs
       !p.thick = 5
       !p.charthick = 3
+      !x.thick = 5
+      !y.thick = 5
   endif
 
   xmn = min(xplt, MAX=xmx) - 0.1
@@ -187,9 +193,9 @@ pro fuse_cog, strct_fil, cog_fil, Nlmt, blmt, CHICHK=chichk, PLTONLY=pltonly, $
 
   clr = getcolor(/load)
   plot, [xmn,xmx], ymnx, /nodata, background=clr.white, $ 
-    color=clr.black, xthick=3.0, ythick=3.0, xtitle='!17 log!d10!n(f!7k!X)', $
+    color=clr.black, xtitle='!17 log!d10!n(f!7k!X)', $
     ytitle='log!d10!n(W/!7k!X)', xstyle=1, ystyle=1, charsize=2.2, $
-    xticks=5, xmargin=[2,1], ymargin=[2,0]
+    xticks=5, xmargin=[10,3], ymargin=[4,1]
   oploterror, xplt, yplt, ysig, psym=1, color=clr.blue, ERRCOLOR=clr.blue
   
   nplt = 100L
@@ -200,6 +206,9 @@ pro fuse_cog, strct_fil, cog_fil, Nlmt, blmt, CHICHK=chichk, PLTONLY=pltonly, $
   tau = 1.497e-2*(10^xplt2)*(10^Ngd)/(bgd*1e5)
   for q=0L,nplt-1 do cog[q] = x_calccog_cog(tau[q])
   oplot, xplt2, alog10(cog), color=clr.red
+
+  Nsv = Ngd
+  bsv = bgd
 
   ;; Error edges (high N, high b)
   Ngd = Ngd + sigN
@@ -217,11 +226,21 @@ pro fuse_cog, strct_fil, cog_fil, Nlmt, blmt, CHICHK=chichk, PLTONLY=pltonly, $
   for q=0L,nplt-1 do cog[q] = x_calccog_cog(tau[q])
   oplot, xplt2, alog10(cog), color=clr.green, linestyle=2
 
+
+  ;; Label
+  if keyword_set(ZLBL) then xyouts, 0.55, 0.3, zlbl, /normal, charsize=2.3
+  xyouts, 0.55, 0.23, '!17logN(HI) = '+string(Nsv,FORMAT='(f5.2)')+' +/-'+ $
+    string(sigN,FORMAT='(f4.2)'), charsize=2.3, /normal
+  xyouts, 0.55, 0.16, '!17b = '+string(bsv,FORMAT='(f4.1)')+' +/-'+ $
+    string(sigb,FORMAT='(f3.1)'), charsize=2.3, /normal
+
   if keyword_set( PSFILE ) then begin
       ps_close, /noprint, /noid
       device, decompose=1
       !p.thick = 1
       !p.charthick = 1
+      !x.thick = 1
+      !y.thick = 1
   endif
 
   return

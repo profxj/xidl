@@ -52,7 +52,7 @@ pro prs_cldygrid, supstrc, infil, ROOT=root
 
 ; Read in the Binary Fits file
 
-  tmp1 = mrdfits(file,1)
+  tmp1 = xmrdfits(file,1,/silent)
 
 ; Create the Structure
 

@@ -121,8 +121,10 @@ pro fuse_twocog, strct_fil, cog_fil, N1lmt, b1lmt, N2lmt, b2lmt, delv, $
   strct = strct[gd]
   
   ;; Reduce the EW (and deal with mA)
-  redew = strct.EW[0] / (strct.zabs+1.) / strct.wrest / 1000.
-  redsigew = strct.sigEW[0] / (strct.zabs+1.) / strct.wrest / 1000.
+  redew = strct.EW[0] / strct.wrest / 1000.
+  redsigew = strct.sigEW[0] / strct.wrest / 1000.
+;  redew = strct.EW[0] / (strct.zabs+1.) / strct.wrest / 1000.
+;  redsigew = strct.sigEW[0] / (strct.zabs+1.) / strct.wrest / 1000.
   
   ;; Grab fvalues
   getfnam, strct.wrest, fval
@@ -232,11 +234,12 @@ pro fuse_twocog, strct_fil, cog_fil, N1lmt, b1lmt, N2lmt, b2lmt, delv, $
 ;          close, 22
 ;      endif
   endif else begin
-      stop
-      Ngd = pltonly[0]
-      bgd = pltonly[1]
-      sigN = pltonly[2]
-      sigb = pltonly[3]
+      N1gd = pltonly[0]
+      N2gd = pltonly[1]
+      b1gd = pltonly[2]
+      b2gd = pltonly[3]
+;      sigN = pltonly[2]
+;      sigb = pltonly[3]
   endelse
 
 ;  cos_bval=bgd
@@ -249,9 +252,11 @@ pro fuse_twocog, strct_fil, cog_fil, N1lmt, b1lmt, N2lmt, b2lmt, delv, $
 
   if keyword_set( PSFILE ) then begin
       device, decompose=0
-      ps_open, filename=PSFILE, /color, bpp=8
+      ps_open, filename=PSFILE, /color, bpp=8, /maxs
       !p.thick = 5
       !p.charthick = 3
+      !x.thick = 5
+      !y.thick = 5
   endif
 
   xmn = min(xplt, MAX=xmx) - 0.1
@@ -261,8 +266,9 @@ pro fuse_twocog, strct_fil, cog_fil, N1lmt, b1lmt, N2lmt, b2lmt, delv, $
 
   clr = getcolor(/load)
   plot, [xmn,xmx], ymnx, /nodata, background=clr.white, $ 
-    color=clr.black, xthick=3.0, ythick=3.0, xtitle='!17 log!d10!n(f!7k!X)', $
-    ytitle='log!d10!n(W/!7k!X)', xstyle=1, ystyle=1, charsize=1.9
+    color=clr.black, xtitle='!17 log!d10!n(f!7k!X)', $
+    ytitle='log!d10!n(W/!7k!X)', xstyle=1, ystyle=1, charsize=2.2, $
+    xticks=5, xmargin=[10,3], ymargin=[4,1]
   oploterror, xplt, yplt, ysig, psym=1, color=clr.blue, ERRCOLOR=clr.blue
   
   nplt = 100L
@@ -303,6 +309,8 @@ pro fuse_twocog, strct_fil, cog_fil, N1lmt, b1lmt, N2lmt, b2lmt, delv, $
       device, decompose=1
       !p.thick = 1
       !p.charthick = 1
+      !x.thick = 1
+      !y.thick = 1
   endif
 
   return

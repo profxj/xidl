@@ -89,8 +89,6 @@ pro fuse_calcewn, strct_fil, instr_list
           ;; Calculate EW
           ew = total( (1. - fx[pmin:pmax])*dwv[pmin:pmax] )
           sigew = sqrt(total( (sig[pmin:pmax] * dwv[pmin:pmax])^2 ))
-          strct[lin[ii]].EW[qq+1] = ew
-          strct[lin[ii]].sigEW[qq+1] = sigew
 
           ;; Redshift
           if inst_dw[qq] EQ 0. then begin
@@ -99,6 +97,9 @@ pro fuse_calcewn, strct_fil, instr_list
               strct[lin[ii]].zabs = wgtwv / strct[lin[ii]].wrest - 1.
           endif
 
+          ;; Convert to rest EW
+          strct[lin[ii]].EW[qq+1] = ew / (1.+(strct[lin[ii]].zabs > 0.))
+          strct[lin[ii]].sigEW[qq+1] = sigew / (1.+(strct[lin[ii]].zabs > 0.))
       endfor
   endfor
 

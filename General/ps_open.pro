@@ -1,7 +1,7 @@
 PRO ps_open, portrait = orient, filename = fn, font = font,  $
              square=square_plot,  encapsulated = eps, $
              color = cps, xsize = xs, ysize = ys, $
-             bpp = nbpp, ledger = ldgr
+             bpp = nbpp, ledger = ldgr, MAXS=maxs
 ;
 ;+
 ; Name:
@@ -69,6 +69,10 @@ PRO ps_open, portrait = orient, filename = fn, font = font,  $
 ;
   COMMON ps_common, old_dname, old_pfont, file_name, opened, color, ledger
 ;
+  if keyword_set( MAXS ) then begin
+      xs= 10.8
+      ys= 8.2
+  endif
   IF n_elements(opened) EQ 0 THEN opened = 0
 ;
   IF NOT keyword_set(orient) THEN orient = 0

@@ -66,11 +66,11 @@ function x_setclrs, nclr, WHITE=white
           4: allclr[q] = clr.orange
           5: allclr[q] = clr.purple
           6: allclr[q] = clr.cyan
-          7: allclr[q] = clr.gray
-          8: allclr[q] = clr.brown
+          7: allclr[q] = clr.darkgray
+          8: allclr[q] = clr.darkgreen
           9: allclr[q] = clr.yellow
           10: allclr[q] = clr.skyblue
-          11: allclr[q] = clr.darkgreen
+          11: allclr[q] = clr.brown
           else : stop
       endcase
   endfor
