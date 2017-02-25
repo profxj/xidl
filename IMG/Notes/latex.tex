@@ -1,0 +1,25 @@
+\renewcommand{\descriptionlabel}[1]%
+    {\hspace{\labelsep}\textsf{#1}}
+
+\newenvironment{Aitemize}{%
+ \renewcommand{\labelitemi}{$\bullet \;$}%
+	\begin{itemize}}{\end{itemize}}
+
+\newenvironment{Renumerate}{%
+ \renewcommand{\theenumi}{\Roman{enumi}}
+ \renewcommand{\labelenumi}{\theenumi)}
+	\begin{enumerate}}{\end{enumerate}}
+
+\newenvironment{Aenumerate}{%
+ \renewcommand{\theenumi}{\Alph{enumi}}
+ \renewcommand{\labelenumi}{\theenumi.}
+	\begin{enumerate}}{\end{enumerate}}
+
+\newenvironment{dmnd}{%
+ \renewcommand{\labelitemi}{$\diamond \quad$}%
+	\begin{itemize}}{\end{itemize}}
+
+\newenvironment{Penumerate}{%
+ \renewcommand{\labelenumi}{(\theenumi)}
+	\begin{enumerate}}{\end{enumerate}}
+

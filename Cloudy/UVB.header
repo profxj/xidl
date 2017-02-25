@@ -1,0 +1,20 @@
+ # The UVB spectrum (quasars+galaxies model) 
+ #
+ # The following 11 lines are model identification flags 
+ # CUBA V6.3 Nov 2011
+ # 0.1000E+01
+ # 0.4000E+00 0.1300E+01 0.2000E+00 0.4400E+00 0.1570E+01 0.9000E+00
+ # 0.1200E+06 0.1000E+05 0.5000E+04 0.1300E+04
+ # 0.3000E+00 0.7000E+00 0.8900E-01 0.7000E+00
+ # 0.1000E+01
+ # Inputs/salp_SFRD1parfit.hiz.dat
+ # Inputs/column_dist.dat
+ # 0.1000E+01
+ # 0.1800E-03 0.3400E+01
+ # 0.1000E+02
+ #
+ # The following 3 lines are column identification labels 
+ # Line 1: contains 60 fields identifying the sampling redshifts, from 0 to 15.93.
+ # Lines 2 through 576: the first field is the rest-frame wavelength in Angstroms, fields 2 through 61 give the background intensity
+ # J (in units of ergs/s/cm^2/Hz/sr) at the 60 sampling redshifts.  
+

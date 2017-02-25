@@ -1,7 +1,7 @@
 ;+ 
 ; NAME:
 ; x_photsol2   
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
 ;    Performs the linear algebra on a set of obs with 2 free

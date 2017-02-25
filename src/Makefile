@@ -12,6 +12,7 @@ SHELL = /bin/sh
 #
 CFLAGS  = -I$(IDL_DIR)/external $(SDSS_CFLAGS) -DCHECK_LEAKS
 
+#XIDL_DIR = $(XIDL_DIR)
 LIB = $(XIDL_DIR)/lib
 
 RECIPES = nrecipes.o nrutil.o

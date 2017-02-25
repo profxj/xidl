@@ -1,3 +1,27 @@
+;+ 
+; NAME:
+; stdstruct__define
+;   Version 1.1
+;
+; PURPOSE:
+;   Structure to handle observations of Standard stars
+;
+; CALLING SEQUENCE:
+;  tmp = {stdstruct}
+;
+; INPUTS:
+;
+; RETURNS:
+;
+; EXAMPLES:
+;
+; PROCEDURES/FUNCTIONS CALLED:
+;
+; REVISION HISTORY:
+;   07-Aug-2001 Written by JXP
+;-
+;------------------------------------------------------------------------------
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 pro stdstruct__define
 
 ;  This routine defines the structure for standard stars

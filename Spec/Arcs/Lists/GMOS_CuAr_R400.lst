@@ -1,0 +1,300 @@
+# This line list is derived from data drawn from the NIST atomic
+# spectra database on 3 February 2005.  It includes all lines of
+# all ionization stages of Cu and Ar between 3000 and 11000
+# angstroms.
+#
+# NIST database  http://physics.nist.gov/PhysRefData/ASD/
+#
+# Michael Richer
+# richer@astrosen.unam.mx
+#
+4003.476    2  CuAr 
+4013.857    1  CuAr #     identified/used
+4022.63     2  CuAr 
+4023.6      2  CuAr 
+4032.647    2  CuAr 
+4033.809    1  CuAr #     identified/used
+4035.46     2  CuAr 
+4042.894    2  CuAr 
+4043.484    2  CuAr 
+4043.751    2  CuAr 
+4044.418    2  CuAr 
+4052.921    1  CuAr #     identified/used
+4062.64     2  CuAr 
+4068.106    2  CuAr 
+4072.005    2  CuAr 
+4072.385    1  CuAr #     identified/used
+4076.628    2  CuAr 
+4079.574    2  CuAr 
+4082.387    2  CuAr 
+4090.49     2  CuAr 
+4103.912    1  CuAr #     identified/used
+4131.363    1  CuAr #     identified/used
+4131.724    2  CuAr 
+4143.017    2  CuAr 
+4146.7      2  CuAr 
+4153.623    2  CuAr 
+4156.086    2  CuAr 
+4158.59     1  CuAr #      identified/used
+4161.14     2  CuAr 
+4164.18     1  CuAr #     identified/used
+4164.284    2  CuAr 
+4171.851    2  CuAr 
+4179.297    2  CuAr 
+4179.512    2  CuAr 
+4181.884    1  CuAr #      identified/used
+#4183.4      3  CuAr # Blended
+4190.713    1  CuAr #      identified/used
+4191.029    2  CuAr 
+4198.317    2  CuAr 
+4200.674    2  CuAr 
+4211.866    2  CuAr 
+4218.665    1  CuAr #     identified/used
+4222.637    2  CuAr 
+4226.988    2  CuAr 
+4228.158    1  CuAr #     identified/used
+4230.449    2  CuAr 
+#4237.22     3  CuAr #  Blend
+4249        2  CuAr 
+4251.185    1  CuAr #      identified/used
+4255.635    2  CuAr 
+4259.362    1  CuAr #      identified/used
+#4266.286    3  CuAr # The next several are all blended
+#4266.527    3  CuAr 
+#4272.169    3  CuAr #      identified/used
+#4275.11     3  CuAr 
+#4277.528    3  CuAr #     identified/used
+#4279.962    3  CuAr 
+#4282.898    3  CuAr 
+#4283.4      3  CuAr 
+4292.47     2  CuAr 
+4300.101    1  CuAr #      identified/used
+4300.65     2  CuAr 
+4309.239    1  CuAr #     identified/used
+4331.2      2  CuAr 
+4332.03     2  CuAr 
+4333.561    2  CuAr 
+4335.338    2  CuAr 
+4345.168    2  CuAr 
+4348.064    1  CuAr #     identified/used
+4351.97     1  CuAr #    identified/used
+#4352.205    3  CuAr # Blended
+#4352.8      3  CuAr 
+4355.24     2  CuAr 
+4362.066    1  CuAr #     identified/used
+4365.37     2  CuAr 
+4367.832    2  CuAr 
+4370.753    2  CuAr 
+4370.84     2  CuAr 
+4371.329    1  CuAr #     identified/used
+4371.4      2  CuAr 
+4373.43     2  CuAr 
+#4375.954    3  CuAr 
+#4377.11     3  CuAr # Blended
+4379.667    1  CuAr #     identified/used
+4385.057    1  CuAr #     identified/used
+4386.42     2  CuAr 
+4400.097    2  CuAr 
+4400.986    1  CuAr #     identified/used
+4426.001    1  CuAr #     identified/used
+4430.189    2  CuAr 
+4430.996    1  CuAr #     identified/used
+4433.838    1  CuAr #
+4439.461    1  CuAr #     identified/used
+4444.831    2  CuAr 
+4448.879    1  CuAr # identified/used
+4474.759    1  CuAr # identified/used
+4480.4      2  CuAr 
+#4481.811    3  CuAr # Blended
+4506.002    2  CuAr 
+4509.4      2  CuAr 
+4510.733    1  CuAr # identified/used
+4516.049    2  CuAr 
+4522.323    2  CuAr 
+#4530.552    3  CuAr # Too weak
+#4530.8      3  CuAr # Too weak 
+4539.7      2  CuAr 
+4541.032    2  CuAr 
+4545.052    1  CuAr      # identified/used
+4555.92     2  CuAr 
+4564.405    2  CuAr 
+4579.35     1  CuAr      # identified/used
+4587        2  CuAr 
+4589.898    1  CuAr      # identified/used
+#4596.097    3  CuAr      # Blended
+#4596.906    3  CuAr      # Blended
+## Started modifying list here [JFH]
+4609.567    1  CuAr      # identified/used
+#4628.441    2  CuAr 
+#4637.233    1  CuAr      # identified/used
+#4649.271    2  CuAr 
+#4651.12     1  CuAr       # identified/used
+4657.901    1  CuAr      # identified/used
+#4661.363    2  CuAr 
+#4671.702    2  CuAr 
+#4673.577    2  CuAr 
+#4681.994    2  CuAr 
+#4702.316    1  CuAr       # identified/used
+#4704.6      2  CuAr 
+#4721.591    2  CuAr 
+#4726.868    1  CuAr      # identified/used
+#4732.053    1  CuAr      # identified/used
+#4735.906    1  CuAr      # identified/used
+#4758.433    2  CuAr 
+4764.865    1  CuAr      # identified/used
+4806.02     1  CuAr      # identified/used
+#4812.948    2  CuAr 
+4847.81     1  CuAr      # identified/used
+#4851.262    2  CuAr 
+#4854.988    2  CuAr 
+#4865.91     1  CuAr      # identified/used
+#4873.304    2  CuAr 
+4879.864    1  CuAr      # identified/used
+#4889.042    1  CuAr      # identified/used
+#4901.427    2  CuAr 
+#4904.752    1  CuAr      # identified/used
+#4909.734    2  CuAr 
+#4918.376    2  CuAr 
+#4926.424    2  CuAr 
+#4927.41     2  CuAr 
+#4931.698    2  CuAr 
+#4933.209    1  CuAr      # identified/used
+#4943.026    2  CuAr 
+#4953.724    2  CuAr 
+4965.08     1  CuAr      # identified/used
+#4985.506    2  CuAr 
+#5006.801    2  CuAr 
+#5009.334    1  CuAr      # identified/used
+#5009.851    2  CuAr 
+#5012.62     2  CuAr 
+5017.163    2  CuAr 
+#5021.279    2  CuAr 
+#5039.016    2  CuAr 
+#5047.348    2  CuAr 
+#5051.793    2  CuAr 
+#5058.91     2  CuAr 
+#5062.037    1  CuAr      # identified/used
+#5065.459    2  CuAr 
+#5067.094    2  CuAr 
+#5072.302    2  CuAr 
+#5088.277    2  CuAr 
+#5090.495    1  CuAr      # identified/used
+#5093.816    2  CuAr 
+#5094.28     2  CuAr 
+#5100.067    2  CuAr 
+5105.54     1  CuAr       # identified/used
+#5124.476    2  CuAr 
+#5141.783    1  CuAr      # identified/used
+#5145.308    1  CuAr      # identified/used
+#5151.391    2  CuAr 
+#5153.24     1  CuAr       # identified/used
+#5158.093    2  CuAr 
+#5162.285    1  CuAr       # identified/used
+#5165.773    1  CuAr      # identified/used
+#5168.97     2  CuAr 
+#5183.367    2  CuAr 
+5187.746    1  CuAr       # identified/used
+#5208.34     2  CuAr 
+#5216.814    2  CuAr 
+5218.2      1  CuAr       # identified/used
+#5219.21     2  CuAr 
+#5220.1      2  CuAr 
+#5221.271    2  CuAr 
+#5268.59     2  CuAr 
+#5269.991    2  CuAr 
+#5276.525    2  CuAr 
+#5292.52     1  CuAr       # identified/used
+#5317.78     2  CuAr 
+#5368.383    2  CuAr 
+#5369.79     2  CuAr 
+#5375.8      2  CuAr 
+#5418.48     2  CuAr 
+#5421.352    1  CuAr       # identified/used
+5451.652    1  CuAr       # identified/used
+#5494.94     2  CuAr 
+5495.874    1  CuAr       # identified/used
+5558.702    1  CuAr       # identified/used
+5606.733    1  CuAr       # identified/used
+5650.704    1  CuAr       # identified/used
+5739.52     1  CuAr       # identified/used
+5834.263    1  CuAr       # identified/used
+5860.31     1  CuAr       # identified/used
+5912.085    1  CuAr       # identified/used
+5928.813    1  CuAr       # identified/used
+6032.127    1  CuAr       # identified/used
+6114.923    1  CuAr      # identified/used
+6172.278    1  CuAr      # identified/used
+6212.503    1  CuAr       # identified/used
+6243.12     1  CuAr      # identified/used
+6307.657    1  CuAr       # identified/used
+6384.717    1  CuAr       # identified/used
+6416.307    1  CuAr       # identified/used
+6466.246    1  CuAr 
+6483.082    1  CuAr 
+6538.112    1  CuAr 
+6604.853    1  CuAr 
+6677.282    1  CuAr       # identified/used
+6752.834    1  CuAr       # identified/used
+#6766.612    3  CuAr      # Too weak
+6871.289    1  CuAr       # identified/used
+#6937.553    1  CuAr      # identified/used
+6937.664    1  CuAr 
+6965.431    1  CuAr       # identified/used
+7030.251    1  CuAr       # identified/used
+7067.218    1  CuAr       # identified/used
+7147.042    1  CuAr       # identified/used
+7272.936    1  CuAr       # identified/used
+7383.98     1  CuAr       # identified/used
+7503.869    1  CuAr       # identified/used
+7514.652    1  CuAr       # identified/used
+7635.106    1  CuAr       # identified/used
+7723.761    1  CuAr       # identified/used
+#7891.075    3  CuAr       # Too weak
+7948.176    1  CuAr       # identified/used
+8006.157    1  CuAr       # identified/used
+#8014.786    3  CuAr      # Blended
+8103.693    1  CuAr       # identified/used
+8115.311    1  CuAr       # identified/used
+8264.522    1  CuAr       # identified/used
+8408.21     1  CuAr       # identified/used
+8424.648    1  CuAr       # identified/used
+8521.442    1  CuAr       # identified/used
+#8605.776    3  CuAr       # Too weak
+8667.944    1  CuAr       # identified/used
+8849.91     1  CuAr       # identified/used
+9122.967    1  CuAr       # identified/used
+9194.638    1  CuAr       # identified/used
+9224.499    1  CuAr       # identified/used
+9291.531    1  CuAr       # identified/used
+9354.22     1  CuAr       # identified/used
+9657.786    1  CuAr       # identified/used
+## Left off here modifying list
+9784.503    1  CuAr       # identified/used
+9813.213    2  CuAr 
+9827.978    2  CuAr 
+9830.798    2  CuAr 
+9861.28     2  CuAr 
+9864.137    2  CuAr 
+9883.969    2  CuAr 
+9916.419    1  CuAr      # identified/used
+9917.954    2  CuAr 
+9925.594    2  CuAr 
+9938.998    2  CuAr 
+9960.354    2  CuAr 
+10006.588   2  CuAr 
+10022.969   2  CuAr 
+10038.093   2  CuAr 
+10052.06    1  CuAr       # identified/used
+10054.938   2  CuAr 
+10080.354   2  CuAr 
+10332.72    1  CuAr       # identified/used
+10467.177   2  CuAr 
+10470.054   2  CuAr 
+10478.034   2  CuAr 
+10506.5     2  CuAr 
+10673.565   2  CuAr 
+10681.773   2  CuAr 
+10683.034   2  CuAr 
+10733.87    2  CuAr 
+10759.16    2  CuAr 
+10812.896   2  CuAr 

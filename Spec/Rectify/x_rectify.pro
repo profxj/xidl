@@ -8,7 +8,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   
-;   rect = x_rectify(img, map)
+;   rect = x_rectify(img, map, /TRANSP, /SILENT, /DBL, /FIDL)
 ;
 ; INPUTS:
 ;   img       - Input image
@@ -20,6 +20,9 @@
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
+;  /FIDL  -- Do this using IDL as opposed to a fast C program
+;  /TRANSP -- Transpose the image first
+;  /DBL   -- Return the rectified image in double precision
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -107,7 +110,8 @@ function x_rectify, in_img, in_map, TRANSP=transp, SILENT=silent, DBL=dbl, FIDL=
       endfor
   endif else begin ; C PROGRAM
       ndim = 2L
-      soname = filepath('libxmath.so', $
+      soname = filepath('libxmath.' + idlutils_so_ext(), $
+;      soname = filepath('libxmath.dylib', $
                         root_dir=getenv('XIDL_DIR'), $
                         subdirectory='/lib')
       retval = call_external(soname, 'rectify', $

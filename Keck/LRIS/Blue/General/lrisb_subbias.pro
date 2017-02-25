@@ -4,34 +4,31 @@
 ;     Version 1.1
 ;
 ; PURPOSE:
-;    Median combine all ZRO frames (darks)
-;      WARNING!  Assumes images are all of 1 mode (e.g. IMG, ECH, LWD)!!
+;    Subtract the overscan region from an LRIS image (blue side)
 ;
 ; CALLING SEQUENCE:
-;   
-;  lrisb_subbias, lris, indx
+;  lrisb_subbias, img, ovimg, /LONG, FITS=, /FULL
 ;
 ; INPUTS:
-;   lrisb   -  ESI structure
-;   indx  -  Index numbers of frame to subtract (default output is OV)
+;   img   -- Name of image to ov subtract
+;   ovimg -- OV subtracted image
 ;
 ; RETURNS:
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
-;  BIASFIL= - Name of bias file (default: Bias/BiasS[I].fits)
-;  OVROOT=  - Root name of OV file (default: OV/ov_ )
-;  /FORCE   - Overwrite existing OV files 
+;  /LONG  -- Long slit mode
+;  /FULL  -- Full readout
 ;
 ; OPTIONAL OUTPUTS:
+;  FITS  -- Name of fits file to write finimg to
 ;
 ; COMMENTS:
 ;  Currently only good for 1x1 binning
 ;
 ; EXAMPLES:
-;   lrisb_subbias, lris, [47L,48L,49L]
-;
+;   lrisb_subbias, 'lblue1010.fits', ovimg
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
 ;
@@ -39,16 +36,13 @@
 ;   30-Apr-2003 Written by JXP
 ;-
 ;------------------------------------------------------------------------------
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-pro lrisb_subbias, img, ovimg, LONG=long, FITS=fits
-
+pro lrisb_subbias, img, ovimg, LONG=long, FITS=fits, FULL=full
 ;
   if  N_params() LT 2  then begin 
       print,'Syntax - ' + $
-        'lrisb_subbias, img, ovimg '
+        'lrisb_subbias, img, ovimg, /LONG, /FULL, FITS=, [v1.1]'
       return
   endif 
   
@@ -88,13 +82,26 @@ pro lrisb_subbias, img, ovimg, LONG=long, FITS=fits
 ;        lrisb[indx[q]].rootpth+lris[indx[q]].img_root
 
       ;; Allow for mode
-  if keyword_set( LONG ) then begin
-      ovimg = fltarr(297,4096L)
+  sz = size(img,/dimens)
+  if keyword_set( LONG ) and not keyword_set( FULL ) then begin
+      ovimg = fltarr(297,sz[1])
       ;; Amp3
       fitstr = x_setfitstrct()
       ov3 = djs_median(img[1081:1110,*],1)
-      f3 = x_fitrej(findgen(4096L), ov3, fitstr=fitstr)
+      f3 = x_fitrej(findgen(sz[1]), ov3, fitstr=fitstr)
       ovimg = img[52:348,*] -  replicate(1.,297L)#f3
+      ;; FITS
+      if keyword_set( FITS ) then $
+        mwrfits, ovimg, fits, /create, /silent
+  endif
+
+  if keyword_set( LONG ) and keyword_set( FULL ) then begin
+      ovimg = fltarr(421,4096L)
+      ;; Amp3
+      fitstr = x_setfitstrct()
+      ov3 = djs_median(img[4470L:4533L,*],1)
+      f3 = x_fitrej(findgen(4096L), ov3, fitstr=fitstr)
+      ovimg = img[2310L:2730L,*] -  replicate(1.,421)#f3
       ;; FITS
       if keyword_set( FITS ) then $
         mwrfits, ovimg, fits, /create, /silent

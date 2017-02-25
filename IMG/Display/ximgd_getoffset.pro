@@ -1,7 +1,7 @@
 ;+ 
 ; NAME:
 ; ximgd_getoffset
-;    Version 1.0
+;    Version 1.1
 ;
 ; PURPOSE:
 ; Routine to calculate the display offset for the current value of
@@ -34,7 +34,6 @@
 ;   08-Feb-2002 Written by JXP
 ;-
 ;------------------------------------------------------------------------------
-
 
 pro ximgd_getoffset, state
 

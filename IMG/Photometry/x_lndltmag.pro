@@ -1,6 +1,7 @@
 ;+ 
 ; NAME:
-; x_lndltmag   Version 1.0
+; x_lndltmag   
+;    Version 1.1
 ;
 ; PURPOSE:
 ;    Returns the Landolt magnitude for a given filter
@@ -35,8 +36,6 @@
 ;   08-Aug-2001 Written by JXP
 ;-
 ;------------------------------------------------------------------------------
-
-
 function x_lndltmag, filter, landolt, SIGMAG=sigmag
 
 ;

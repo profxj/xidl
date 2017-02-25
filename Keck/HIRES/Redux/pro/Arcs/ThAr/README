@@ -1,0 +1,13 @@
+# Comments on HIRES ThAr calibration from JFH 2-23-2017
+
+The hires_thar.lst linelist has been updated to use Michael Murphy's improved
+linelist for UVES. Information about this procedure is here: 
+
+http://astronomy.swin.edu.au/~mmurphy/thar/
+
+JFH added the red wavelengths to this list (previously only the blue wavelengths
+were present.
+
+The file thar_spec_MM201006.fits is also in this directory. It can be read in
+and plotted by the routine XXX which is used for the wavelength calibration
+in routine YYY. 

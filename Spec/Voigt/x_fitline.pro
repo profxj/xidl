@@ -4,33 +4,26 @@
 ;   Version 1.1
 ;
 ; PURPOSE:
-;    Plots any array interactively
+;    Routine used with absorption line fit GUIs
 ;
 ; CALLING SEQUENCE:
-;   
-;   x_fitline, ydat, [head], XSIZE=, YSIZE=, TITLE=, WAVE=
+;   x_fitline, state, eventch, /FLG_PLT
 ;
 ; INPUTS:
-;   ydat       - Values 
-;   [head]     - Header
+;  state - Structure describing the GUI and program
+;  eventch -- Character input by the user
 ;
 ; RETURNS:
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
-;   xsize      - Draw window xsize (pixels)
-;   ysize      - Draw window ysize (pixels)
-;   wave       - wavelength array
-;   ERR        - Error array (fits or image)
 ;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   x_fitline, 'spec.fits'
-;
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
 ;  XGETX_PLT
@@ -76,7 +69,7 @@ pro xfitline_UpdatePlot, state
 
   ;; FIT
   if state.nlin NE 0 then begin
-      oplot, state.wave, state.fit, color=clr.green
+      oplot, state.wave, state.fit*state.conti, color=clr.green
       ;; Mark current line
       oplot, replicate( (state.lines[state.curlin].zabs+1.)*$
                         state.lines[state.curlin].wrest, 2), $
@@ -128,21 +121,25 @@ end
 ;  New Lya line
 ;;;;;;;;;;;;;;;;;;;;
 
-pro x_fitline_newlin, state
+pro x_fitline_newlin, state, BETA=beta, SPECIAL=special
 
   ;; Grab x,y pos
   xpt = state.xpos
 
   ;; Setup HI
-  tmp = x_setline(1215.670d)
+  if keyword_set(BETA) then wrest = 1025.7223d else wrest = 1215.670d
+  if keyword_set(SPECIAL) then wrest = 930.7483d
+;  if keyword_set(SPECIAL) then wrest = 926.2257d
+  tmp = x_setline(wrest)
 
   ;; SET
   state.nset = state.nset + 1
+  state.wrest = wrest
 
   ;; Get z
   state.lines[state.nlin] = tmp
-  state.lines[state.nlin].zabs = (xpt / 1215.6701) - 1.
-  state.lines[state.nlin].N = 20.3
+  state.lines[state.nlin].zabs = (xpt / wrest) - 1.
+  state.lines[state.nlin].N = 20.2
   state.lines[state.nlin].b = 30.0
   state.lines[state.nlin].set = state.nset
 
@@ -156,7 +153,7 @@ pro x_fitline_newlin, state
   state.nlin = state.nlin + 1
 
   ;; Update fit
-  x_fitline_updfit, state
+  x_fitline_updfit, state, EXACT=state.exact
   return
 end
 
@@ -179,6 +176,7 @@ pro x_fitline_newlls, state
 
   ;; Add to state
   state.lines[state.nlin:state.nlin+nlin-1] = tmplin
+  state.lines[state.nlin:state.nlin+nlin-1].set = state.nset
 
   ;; Update window
   widget_control, state.zabs_id, set_value=state.lines[state.nlin].zabs
@@ -190,7 +188,7 @@ pro x_fitline_newlls, state
   state.nlin = state.nlin + nlin
 
   ;; Update fit
-  x_fitline_updfit, state
+  x_fitline_updfit, state, EXACT=state.exact
   return
 end
 
@@ -225,7 +223,7 @@ pro x_fitline_dellin, state
   state.curlin = state.curlin < state.nset
 
   ;; Update fit
-  x_fitline_updfit, state
+  x_fitline_updfit, state, EXACT=state.exact
   return
 end
 
@@ -233,10 +231,14 @@ end
 ;  Update fit
 ;;;;;;;;;;;;;;;;;;;;
 
-pro x_fitline_updfit, state, FLG_PLT=flg_plt
+pro x_fitline_updfit, state, FLG_PLT=flg_plt, EXACT=exact, WVOFF=wvoff
 
   ;; flg_plt
   flg_plt = 1
+
+  ;; Leave this as 150Ang!
+  if not keyword_set( wvoff ) then wvoff = 150.
+;  if not keyword_set( wvoff ) then wvoff = 20.
 
 ;  xpt = state.xpos
   ;; Calculate
@@ -249,11 +251,21 @@ pro x_fitline_updfit, state, FLG_PLT=flg_plt
 
   ;; Voigt
   state.fit = 1.
-  state.fit = x_allvoigt(state.wave, state.lines[0:state.nlin-1], $
-                                  SIGMA=state.FWHM) 
+  if keyword_set( EXACT ) then begin
+      mnwv = min(state.lines[0:state.nlin-1].wrest $
+                 *(1.+state.lines[0:state.nlin-1].zabs), max=mxwv)
+      mn = min(abs(state.wave - mnwv + wvoff), mnpx)
+      mx = min(abs(state.wave - mxwv - wvoff), mxpx)
+      state.fit[mnpx:mxpx] = x_voigt(state.wave[mnpx:mxpx], $
+                                       state.lines[0:state.nlin-1], $
+                                       FWHM=state.FWHM)  
+  endif else begin
+      state.fit = x_allvoigt(state.wave, state.lines[0:state.nlin-1], $
+                             SIGMA=state.FWHM) 
+  endelse
 
   ;; Continuum
-  if state.conti[0] NE 1. then state.fit = state.fit * state.conti
+;  if state.conti[0] NE 1. then state.fit = state.fit * state.conti
 
   return
 end
@@ -280,14 +292,16 @@ end
 ;  IDL Output
 ;;;;;;;;;;;;;;;;;;;;
 
-pro x_fitline_idlout, state
+pro x_fitline_idlout, state, ERR=err
 
+  if not keyword_set( ERR ) then sig = 0. else sig = state.crude_val
   lines = state.lines[0:state.nlin-1]
-  conti = state.conti
+  conti = (state.conti)[0:state.npix-1]
+  fit   = state.fit 
   if tag_exist(state, 'cstr') EQ 1 then cstr = state.cstr else cstr = 0.
-  save, cstr, conti, lines, filename='fort.idl'
-  delvarx, lines
-
+  if tag_exist(state, 'zro_lvl') EQ 1 then zro_lvl = state.zro_lvl else zro_lvl = 0.
+  save, cstr, conti, lines, sig, fit, zro_lvl, filename=state.outfilename ;'fort.idl'
+  delvarx, lines, fit
   return
 end
 
@@ -311,49 +325,57 @@ end
 
 pro x_fitline_continuum, state, flg
 
+  if not keyword_set( flg ) then return
 
 ; CASE
 
   case flg of 
-      0: begin ; Set point
+      0: stop ;  RESET to 1/2
+      1: begin ; Set point
           i = state.cstr.npts 
           state.cstr.xval[i] = state.xpos
           state.cstr.yval[i] = state.ypos
           state.cstr.msk[i] = 1L
           state.cstr.npts =  state.cstr.npts  + 1
       end
-      1: begin ; Move point
+      2: begin ; Move point
           if state.cstr.npts EQ 0 then return
           gd = where(state.cstr.msk EQ 1)
           mn = min(abs(state.cstr.xval[gd]-state.xpos), imn)
           state.cstr.yval[gd[imn]] = state.ypos
+          state.cstr.xval[gd[imn]] = state.xpos
       end
+      3: ; Do nothing just respline
       else: stop
   endcase
 
-  gdmsk = where(state.cstr.msk EQ 1, nmsk)
-  if nmsk LT 3 then state.conti = mean(state.cstr.yval[gdmsk]) $
-  else begin ;; SPLINE
-      mn = min(state.cstr.xval[gdmsk], imn)
-      ;; Low
-      low = where(state.wave LE mn, nlow)
-      if nlow NE 0 then state.conti[low] = state.cstr.yval[gdmsk[imn]]
-      ;; High
-      mx = max(state.cstr.xval[gdmsk], imx)
-      high = where(state.wave GE mx, nhigh)
-      if nhigh NE 0 then state.conti[high] = state.cstr.yval[gdmsk[imx]]
-      ;; Interp
-      gd = where(state.wave GT mn AND state.wave LT mx, ngd)
-      if ngd NE 0 then begin
-          ;; SORT
-          srt = sort(state.cstr.xval[gdmsk])
-          state.conti[gd] = spline(state.cstr.xval[gdmsk[srt]], $
-                                   state.cstr.yval[gdmsk[srt]], $
-                                   state.wave[gd])
-          ;; Update Fit
-          if state.nlin NE 0 then x_fitline_updfit, state
-      endif
-  endelse   
+  if state.cstr.npts NE 0 then begin
+      gdmsk = where(state.cstr.msk EQ 1, nmsk)
+      if nmsk LT 3 then state.conti = mean(state.cstr.yval[gdmsk]) $
+      else begin ;; SPLINE
+          mn = min(state.cstr.xval[gdmsk], imn)
+          ;; Low
+          low = where(state.wave LE mn, nlow)
+          if nlow NE 0 then state.conti[low] = state.cstr.yval[gdmsk[imn]]
+          ;; High
+          mx = max(state.cstr.xval[gdmsk], imx)
+          high = where(state.wave GE mx, nhigh)
+          if nhigh NE 0 then state.conti[high] = state.cstr.yval[gdmsk[imx]]
+          ;; Interp
+          gd = where(state.wave GT mn AND state.wave LT mx, ngd)
+          if ngd NE 0 then begin
+              ;; SORT
+              srt = sort(state.cstr.xval[gdmsk])
+              swv = sort(state.wave[gd])
+              twv = state.wave[gd[swv]]
+              state.conti[gd[swv]] = xspline(state.cstr.xval[gdmsk[srt]], $
+                                             state.cstr.yval[gdmsk[srt]], $
+                                             twv)
+              ;; Update Fit
+;         if state.nlin NE 0 then x_fitline_updfit, state, EXACT=state.exact
+          endif
+      endelse   
+  endif
 end
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -377,6 +399,7 @@ pro x_fitline, state, eventch, FLG_PLT=flg_plt
       'r': state.xymnx[2] = state.xpos
       't': state.xymnx[3] = state.ypos
       'T': state.xymnx[3] = 1.1 ; Set ymax to 1.1
+      'Y': state.xymnx[3] *= 2
       ;; ZOOMING
       'i': x_speczoom, state, 0 ; Zoom in
       'o': x_speczoom, state, 1 ; Zoom out
@@ -387,6 +410,9 @@ pro x_fitline, state, eventch, FLG_PLT=flg_plt
               return
           endif
       end
+      ;; Smoothing
+      'S': state.smooth = state.smooth + 1
+      'R': state.smooth = 1
       ;; Reset
       'w': state.xymnx = state.svxymnx ; Reset the screen
       ;; PANNING
@@ -400,8 +426,22 @@ pro x_fitline, state, eventch, FLG_PLT=flg_plt
           flg_plt = 0
       end
       ;; Add new line
-      'L': x_fitline_newLLS, state
-      'c': x_fitline_newlin, state
+      'L': begin
+          x_fitline_newLLS, state
+          if (flg_plt MOD 4) LT 2 then flg_plt = flg_plt + 2
+      end
+      'B': begin
+          x_fitline_newlin, state, /BETA
+          if (flg_plt MOD 4) LT 2 then flg_plt = flg_plt + 2
+      end
+      's': begin
+          x_fitline_newlin, state, /SPECIAL
+          if (flg_plt MOD 4) LT 2 then flg_plt = flg_plt + 2
+      end
+      'c': begin
+          x_fitline_newlin, state
+          if (flg_plt MOD 4) LT 2 then flg_plt = flg_plt + 2
+      end
       'd': x_fitline_dellin, state
       ;; Continuum
       'C': begin ;; Set all to a constant
@@ -414,57 +454,74 @@ pro x_fitline, state, eventch, FLG_PLT=flg_plt
               state.cstr.msk[*] = 0L
               state.cstr.npts = 0L
           endif
+          ;; Plot
+          if (flg_plt MOD 4) LT 2 then flg_plt = flg_plt + 2
       end
       '3': begin ;; Add point
           if n_elements(state.conti) NE 1 then $
-            x_fitline_continuum, state, 0L
+            x_fitline_continuum, state, 1L
       end
       '4': begin ;; Move a point
           if n_elements(state.conti) NE 1 then $
-            x_fitline_continuum, state, 1L
+            x_fitline_continuum, state, 2L
+      end
+      ;; Exact
+      'X': begin
+          x_fitline_updfit, state, /EXACT
+          if (flg_plt MOD 4) LT 2 then flg_plt = flg_plt + 2
       end
       ;; Colm
       'n': begin
-          gdset = where(state.lines[0:state.nlin-1].set EQ state.curlin,ngd)
-          state.lines[gdset].N = state.lines[gdset[0]].N - 0.05
-          x_fitline_updfit, state
-          widget_control, state.Ncolm_id, $
-            set_value=state.lines[gdset[0]].N
+          if state.nlin NE 0 then begin
+              gdset = where(state.lines[0:state.nlin-1].set EQ state.curlin,ngd)
+              state.lines[gdset].N = state.lines[gdset[0]].N - 0.05
+              x_fitline_updfit, state, EXACT=state.exact
+              widget_control, state.Ncolm_id, $
+                set_value=state.lines[gdset[0]].N
+              if (flg_plt MOD 4) LT 2 then flg_plt = flg_plt + 2
+          endif
       end
       'N': begin
-          gdset = where(state.lines[0:state.nlin-1].set EQ state.curlin,ngd)
-          state.lines[gdset].N = state.lines[gdset[0]].N + 0.05
-          widget_control, state.Ncolm_id, $
-            set_value=state.lines[gdset[0]].N
-          x_fitline_updfit, state
+          if state.nlin NE 0 then begin
+              gdset = where(state.lines[0:state.nlin-1].set EQ state.curlin,ngd)
+              state.lines[gdset].N = state.lines[gdset[0]].N + 0.05
+              widget_control, state.Ncolm_id, $
+                set_value=state.lines[gdset[0]].N
+              x_fitline_updfit, state, EXACT=state.exact
+              if (flg_plt MOD 4) LT 2 then flg_plt = flg_plt + 2
+          endif
       end
       ;; b-value
       'v': begin
           gdset = where(state.lines[0:state.nlin-1].set EQ state.curlin,ngd)
           state.lines[gdset].b = state.lines[gdset[0]].b - 1.0
-          x_fitline_updfit, state
+          x_fitline_updfit, state, EXACT=state.exact
           widget_control, state.bval_id, $
             set_value=state.lines[state.curlin].b
+          if (flg_plt MOD 4) LT 2 then flg_plt = flg_plt + 2
       end
       'V': begin
           gdset = where(state.lines[0:state.nlin-1].set EQ state.curlin,ngd)
           state.lines[gdset].b = state.lines[gdset[0]].b + 1.0
           widget_control, state.bval_id, $
             set_value=state.lines[state.curlin].b
-          x_fitline_updfit, state
+          x_fitline_updfit, state, EXACT=state.exact
+          if (flg_plt MOD 4) LT 2 then flg_plt = flg_plt + 2
       end
       ;; Switch lines
       '=': begin
           state.curlin = (state.curlin+1) < state.nset 
           x_fitline_updwin, state
+          if (flg_plt MOD 4) LT 2 then flg_plt = flg_plt + 2
       end
       '-': begin
           state.curlin = (state.curlin-1) > 0
           x_fitline_updwin, state
+          if (flg_plt MOD 4) LT 2 then flg_plt = flg_plt + 2
       end
       ;; Output
       'O': x_fitline_output, state
-      'I': x_fitline_idlout, state
+      'I': x_fitline_idlout, state, /ERR
                                 ; Postscript
       'P': x_fitline_psfile, state  
                                 ; QUIT

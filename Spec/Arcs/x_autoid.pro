@@ -4,10 +4,10 @@
 ;    Version 1.0
 ;
 ; PURPOSE:
-;    Traces a series of arc lines
+;    Given a 1D arc-line spectrum from the WFCCD or ESI-LowD, this
+;    code will automatically determine the wavelength solution.
 ;
 ; CALLING SEQUENCE:
-;   
 ;   x_autoid, img, [extrct], instr=, IDLIST=, GUESS=, LINELIST=,
 ;                       TOLER=
 ;
@@ -43,20 +43,28 @@
 pro x_autoid, img, extrct, INSTR=instr, GUESS=guess, NSIG=nsig, $
               LINELIST=linelist, LINES=lines, DEBUG=debug, $
               FINFIT=finfit, CPROG=cprog, SILENT=silent, NGUESS=nguess, $
-              FLG_AID=flg_aid, ZEROPT=zeropt
+              FLG_AID=flg_aid, ZEROPT=zeropt, LBUFFER=lbuffer, $
+              RBUFFER=rbuffer, STATUS=status
 
+status=0
 
 ;  Error catching
   if  N_params() LT 1  then begin 
     print,'Syntax - ' + $
              'x_autoid, img, [extrct],  INSTR=, GUESS=, TOLER=, IDLIST='
     print,   '           LINELIST=, /SILENT, ZEROPT= [v1.0]'
+    status=1
     return
   endif 
 
+if(n_elements(lbuffer) eq 0) then lbuffer=50L
+if(n_elements(rbuffer) eq 0) then rbuffer=500L
+
 ;; Optional Keywords
   flg_aid = 1
-  if not keyword_set( NSIG ) then nsig = 50.
+;; pushed from 50 sigma to 30 sigma --- necessary to catch some very
+;;                                      blue slits
+  if not keyword_set( NSIG ) then nsig = 30.
 
 ;  Read in image if necessary
   dat = x_readimg(img, /fscale)
@@ -68,6 +76,7 @@ pro x_autoid, img, extrct, INSTR=instr, GUESS=guess, NSIG=nsig, $
       if not keyword_set( extrct ) then begin
           print, 'x_autoid: Must provide extraction structure'
           flg_aid = 0
+          status=2
           return
       endif
       ;; EXTRACT (Assume already ov subtracted)
@@ -131,6 +140,7 @@ pro x_autoid, img, extrct, INSTR=instr, GUESS=guess, NSIG=nsig, $
   if ngd EQ 0 then begin
       print, 'x_autoid: No lines for template!'
       flg_aid = 0
+      status=3
       return
   endif
 
@@ -175,9 +185,17 @@ pro x_autoid, img, extrct, INSTR=instr, GUESS=guess, NSIG=nsig, $
                   if szguess GT 4 then lambda = lambda + cent4*guess[0,4]
                       
                   ;; Get the subset of model lines
-                  t1 = Zro
-                  t2 = Zro + npix*dlmb + (npix^2)*nonl + (npix^3)*guess[0,3] 
-                  if szguess GT 4 then t2 = t2 + (npix^4)*guess[0,4]
+; ??? hack: add buffer at edge of chip for vignetting probs? (mg&mb 022104)
+;     ( this appears to work, but we have only tested the C version )
+;t1 = Zro
+;t2 = Zro + npix*dlmb + (npix^2)*nonl + (npix^3)*guess[0,3] 
+                  buffer=50.
+                  t1 = Zro + buffer*dlmb + (buffer^2)*nonl + $
+                    (buffer^3)*guess[0,3] 
+                  t2 = Zro + (npix-buffer)*dlmb + ((npix-buffer)^2)*nonl + $
+                    ((npix-buffer)^3)*guess[0,3] 
+                  if szguess GT 4 then t1 = t1 + (buffer^4)*guess[0,4]
+                  if szguess GT 4 then t2 = t2 + ((npix-buffer)^4)*guess[0,4]
                   mxwv = t1 > t2
                   mnwv = t1 < t2
                   
@@ -191,7 +209,11 @@ pro x_autoid, img, extrct, INSTR=instr, GUESS=guess, NSIG=nsig, $
                       chisq = chisq + min_sep^2/(dlmb/4.)^2
                   endfor
                   ;; Save chisq
-                  if nsubgd LE 1 then stop
+                  if nsubgd LE 1 then begin
+                      splog, 'BOMBING on x_autoid (0)'
+                      status=4
+                      return
+                  endif
                   all_chi[q1,q2,q3] = chisq/float(nsubgd-1.)
                   ;; Save nsub
                   all_nsub[q1,q2,q3] = nsubgd
@@ -200,12 +222,12 @@ pro x_autoid, img, extrct, INSTR=instr, GUESS=guess, NSIG=nsig, $
       endfor
   endif else begin
       ndim = 3L
-      soname = filepath('libxmath.so', $
+      soname = filepath('libxmath.' + idlutils_so_ext(), $
                         root_dir=getenv('XIDL_DIR'), subdirectory='lib')
       retval = call_external(soname, 'arclincorr', $
                              ndim, all_chi, all_nsub, nguess, szguess, guess, $
                              long(npk), center, long(ngd), gdwv, weight, $
-                             long(npix))
+                             long(npix), long(lbuffer), long(rbuffer))
 ;                             long(npix), /UNLOAD)
   endelse
 
@@ -245,8 +267,10 @@ pro x_autoid, img, extrct, INSTR=instr, GUESS=guess, NSIG=nsig, $
 
   fingd = where(gdflg EQ 1)
   if n_elements(fingd) LT 3 then begin
-      stop
+      print, 'not enough good lines'
+      print, '(prochaska should document his own damn stops)'
       flg_aid = 0
+      status=5
       return
   endif
 ;  x_splot, spec, XTWO=gdpx[fingd], YTWO=fltarr(n_elements(fingd)), PSYM_Y2=1, /block
@@ -256,7 +280,8 @@ pro x_autoid, img, extrct, INSTR=instr, GUESS=guess, NSIG=nsig, $
 
   fitref = { fitstrct }
   fitref.func = 'POLY'
-  fitref.nord = (szguess-1) < n_elements(fingd)
+; order of the fit can't be greater than number of wavelengths MINUS ONE
+  fitref.nord = (szguess-1) < (n_elements(fingd)-1L)
   fitref.lsig = 3.
   fitref.hsig = 3.
   fitref.niter = 3
@@ -275,7 +300,7 @@ pro x_autoid, img, extrct, INSTR=instr, GUESS=guess, NSIG=nsig, $
   if fit[0] EQ -1 then begin
       print, 'x_autoid: Problem with fit to ref wave! x_autoid has failed!'
       flg_aid = 0
-      stop
+      status=7
       return
   endif
   
@@ -325,7 +350,8 @@ pro x_autoid, img, extrct, INSTR=instr, GUESS=guess, NSIG=nsig, $
       finfit.maxrej = 5
   endif else begin ; Check it is a fit structure
       if tag_names(finfit, /structure_name) NE 'FITSTRCT' then begin 
-          print, 'x_autoid: finfit needs to be a fit structure!'
+          splog, 'finfit needs to be a fit structure!'
+          status=4
           return
       endif
   endelse
@@ -343,5 +369,6 @@ pro x_autoid, img, extrct, INSTR=instr, GUESS=guess, NSIG=nsig, $
   ; FIT
   fit = x_fitrej(pixfit, wvfit, FITSTR=finfit)
 
+  status=0
   return
 end

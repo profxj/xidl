@@ -1,0 +1,66 @@
+Greetings all,
+
+This note announces the release of HIRedux v2.0, a rather
+significant upgrade to the IDL package I have developed 
+for HIRES based on the MIKE pipeline that 
+Scott Burles (MIT) and I have built in coordination with R. Bernstein 
+(U Michigan).
+
+It is fair to say that IDL novices will have a steep learning 
+curve to ride.  Get ready for that..  I highly recommend the 
+IDL Introduction Guide.  It is about 100 pages of quick reading.
+
+If you want to skip straight to the chase, go here:
+
+http://www.ucolick.org/~xavier/HIRedux/index.html
+
+-----
+
+What's new in V2.0:
+
+  a. Non-parametric optimal extraction.  The downside is that
+   extraction is now quite slow.
+  b. Significantly improved wavelength solutions.  Especially for the red side.
+  c. The code has been tested on many setups taken
+	over the past year.
+  d. Many v1.0 bugs have been identified and fixed.
+  e. B-decker data is now reduced rather well
+  f. Flux and coadding routines now exist (the former are suspect at best)
+  g. New pixel flat files 
+  h. Improved cookbook with examples of the QA files.
+
+---------
+Current serious concerns with HIRES reduction:
+
+ A.  I have noticed in at least one set of my data that the 
+frames show a stretch in the cross-disperser direction between the
+flat and the science.  That is, the flat is NOT an exact trace of the
+science frame (offset is more than 2 native pixels).
+The exposures were taken back to back and nothing
+changed in the setup.  This is worrisome for any pipeline..
+
+ B.  Images with significant scattered light (i.e. very bright stars) should
+be monitored a bit more closely.  
+
+ C.  A few bad columns are present on the chips.  I have not chosen to mask
+them yet and they lead to what appears to be 200km/s absorption features.
+The data is good otherwise.  Will attack this before too long.
+
+---------
+Here is the work that is currently in progress
+
+i. Extend the blue wavelength solutions to at least Order 118.  Does
+anyone have a ThAr line list for wavelengths below 3100Ang??
+
+ii. Improve the solutions for the red cross-disperser.  This will
+probably develop as you use the code and tell me when it breaks.
+So pay attention on the red side and contact me with concerns.
+
+iii.  Placing the output to the screen into a Log file.  Or at least
+important WARNING messages.  This was started but is not far along yet.
+
+Email hiredux@ucolick.org  for questions/comments.
+
+Cheers,
+
+X

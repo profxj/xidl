@@ -4,7 +4,9 @@
 ;   Version 1.3
 ;
 ; PURPOSE:
-;    Fits a function to a set of x,y data
+;    GUI for fitting a function to a set of x,y data.  This
+;    program does far too much!  Warning:  This was one of my first
+;    GUIs.  It works pretty well, but is a bit old.
 ;
 ; CALLING SEQUENCE:
 ;   
@@ -23,14 +25,14 @@
 ;   func       - String for Fitting function (POLY, LEGEND, BSPLINE,
 ;                GAUSS, CHEBY)
 ;   nord       - Order of the fit
-;   inter      - Interactive fitting
+;   /inter      - Interactive fitting
 ;   xsize      - Draw window xsize (pixels)
 ;   ysize      - Draw window ysize (pixels)
 ;   sig        - Errors in the points
 ;   reg        - Regions of data to fit
 ;   LSIG       - Lower SIGMA
 ;   HSIG       - High SIGMA
-;   REJ        - Turn rejection on
+;   /REJ        - Turn rejection on
 ;   DELPTS     - Array of user-deleted points
 ;   MSK        - Array of 0,1 values [0=do not include]
 ;
@@ -57,11 +59,11 @@
 ;  XGETYPIX_PLT
 ;  GETCOLOR (coyote package)
 ;
-	; REVISION HISTORY:
-;   31-Jan-2002 Added CHEBYSHEV
-;   23-Nov-2001 Added BSPLIN (SB), GAUSS, REJECTION (JXP)
-;   28-June-2001 Added LEGENDRE fits (JXP)
+; REVISION HISTORY:
 ;   22-June-2001 Written by JXP
+;   28-June-2001 Added LEGENDRE fits (JXP)
+;   23-Nov-2001 Added BSPLIN (SB), GAUSS, REJECTION (JXP)
+;   31-Jan-2002 Added CHEBYSHEV
 ;-
 ;------------------------------------------------------------------------------
 
@@ -418,15 +420,25 @@ common x1dfit_fit
               return
           endif
       endif else begin ; FIT with REJECTION!
-          rejpt = -1
-          fit = x_fitrej(state.xtot[0:state.ntot-1], $
-                         state.ytot[0:state.ntot-1], $
-                         SIG=state.wtot[0:state.ntot-1], $
-                         IVAR=state.ivtot[0:state.ntot-1], $ 
-                         MSK=mask,$
-                         FITSTR=fitprm, $
-                         REJPT=rejpt )
-          if rejpt[0] NE -1 then state.gdpix[rejpt] = state.gdpix[rejpt]+4
+          ;rejpt = -1
+          if state.flg_var EQ 0 then begin
+             fit = x_fitrej(state.xtot[0:state.ntot-1], $
+                            state.ytot[0:state.ntot-1], $
+                            MSK=mask,$
+                            FITSTR=fitprm, $
+                            REJPT=rejpt )
+          endif else begin
+             fit = x_fitrej(state.xtot[0:state.ntot-1], $
+                            state.ytot[0:state.ntot-1], $
+                            SIG=state.wtot[0:state.ntot-1], $
+                            IVAR=state.ivtot[0:state.ntot-1], $ 
+                            MSK=mask,$
+                            FITSTR=fitprm, $
+                            REJPT=rejpt )
+          endelse
+          if keyword_set(REJPT) then begin
+             if rejpt[0] NE -1 then state.gdpix[rejpt] = state.gdpix[rejpt]+4
+          endif
       endelse
   endelse
 
@@ -660,8 +672,9 @@ pro x1dfit_DelReg, state, ALL=all
       endif
 ; Reset gdpix
       fndpix = where(state.xdat LE state.reg[fndreg,1] AND $
-                     state.xdat GE state.reg[fndreg,0])
-      state.gdpix[fndpix] = state.gdpix[fndpix] - 2
+                     state.xdat GE state.reg[fndreg,0], nfnd)
+      if nfnd NE 0 then $
+        state.gdpix[fndpix] = state.gdpix[fndpix] - 2
 ; Reset regions
       for i=0,nnew-1 do begin  
           state.reg[i,0] = state.reg[newreg[i],0]
@@ -684,7 +697,9 @@ common x1dfit_fit
 
   *state.pnt_nreg = state.nreg
   *state.pnt_reg = state.reg
-  svdelpts = where(state.gdpix[0:state.norg-1] MOD 2 EQ 0)
+  svdelpts = where((state.gdpix[0:state.norg-1] MOD 2 EQ 0) OR $
+                   (state.gdpix[0:state.norg-1] MOD 8 GE 4))
+                   
 
 return
 end
@@ -826,7 +841,7 @@ common x1dfit_fit
              'fit = x1dfit([xdat], ydat, FUNC=, NORD=, /INTER, '
     print, '        XSIZE=,YSIZE=, SIG=, REG=, FFIT='
     print, '        REJ=, LSIG=, HSIG=, MINPT=, RMS=, DELPTS=, NRM=, '
-    print, '        FITSTR=, MSK= ) [V1.3]'
+    print, '        FITSTR=, MSK=, IVAR= ) [V1.3]'
     return, -1
   endif 
 
@@ -909,12 +924,18 @@ common x1dfit_fit
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; INTERACTIVE
 
-  if not keyword_set( XSIZE ) then    xsize = 1100
-  if not keyword_set( YSIZE ) then    ysize = 700
-
-; Device
-
-;  device, decompose=1
+  device, get_screen_size=ssz
+;  if not keyword_set( XSIZE ) then    xsize = ssz[0]-200
+  if not keyword_set( XSIZE ) then begin
+      if ssz[0] gt 2*ssz[1] then begin    ;in case of dual monitors
+          ssz[0]=ssz[0]/2      
+          ; force aspect ratio in case of different screen resolution,
+          ; assumes widest resolution used is a 1.6 aspect ratio.
+          if ssz[0]/ssz[1] lt 1.6 then ssz[1]=ssz[0]/1.6 
+      endif
+      xsize = ssz[0]-200
+  endif
+  if not keyword_set( YSIZE ) then    ysize = ssz[1]-200
 
 ;    Pointer for Final fit
   tmpreg = fltarr(100,2)

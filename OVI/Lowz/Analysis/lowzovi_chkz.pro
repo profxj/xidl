@@ -4,21 +4,24 @@
 ;    Version 1.0
 ;
 ; PURPOSE:
-;   Plots a series of spectra to allow a quick check
+;   GUI used to check the redshift for a galaxy in the LCOOVI survey.
 ;
 ; CALLING SEQUENCE:
-;   
-;   lowzovi_chkz, lowzovi, maskid, expsr, XSIZE=, YSIZE=
+;   lowzovi_chkz, lowzovi, XSIZE=, YSIZE=, /PRINTONLY, NPLT=, SOBJ=
+;     BADFIL=
 ;
 ; INPUTS:
+;  lowzovi -- LCO galaxy survey structure
 ;
 ; RETURNS:
 ;
 ; OUTPUTS:
+;  BADFIL= -- ASCII file containing the list of bad redshifts
 ;
 ; OPTIONAL KEYWORDS:
-;   XSIZE      - Size of gui in screen x-pixels (default = 1000)
-;   YSIZE      - Size of gui in screen y-pixels (default = 600)
+; SOBJ=  -- Starting object [default: the first]
+; NPLT=  -- Number of galaxies to plot at a time (with and without
+;           fit shown)  [default: 1L]
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -78,6 +81,14 @@ pro lowzovi_chkz_event, ev
       end
       'PRINT' : 
 ;      'PRINT' : lowzovi_chkz_print, state
+      'EXP_Y' : begin ;; Expand the y-axis scale
+          state.scl_y = state.scl_y * 2
+          lowzovi_chkz_Plot, state
+      end
+      'LOW_Y' : begin ;; Expand the y-axis scale
+          state.scl_y = state.scl_y / 2
+          lowzovi_chkz_Plot, state
+      end
       'GOOD' : begin
           state.curobj =  state.curobj + 1
           if state.curobj EQ state.nobj then state.curobj = 0L
@@ -97,7 +108,7 @@ pro lowzovi_chkz_event, ev
       end
       'PLOT2D' : begin
           widget_control, /hourglass   
-          wfccd_pltobj, state.sv_fil, state.obj, 0L, /fspec
+          wfccd_pltobj, state.sv_fil, state.mod_obj, 0L, /fspec
       end
       'SMOOTH' : begin
           widget_control, state.smooth_id, get_value=smth
@@ -105,7 +116,7 @@ pro lowzovi_chkz_event, ev
           lowzovi_chkz_Plot, state
       end
       'PREV' : begin
-          state.curobj =  state.curobj + 1
+          state.curobj =  state.curobj - 1
           if state.curobj EQ -1 then state.curobj = state.nobj-1
           lowzovi_chkz_Setup, state
           lowzovi_chkz_Plot, state
@@ -165,6 +176,7 @@ pro lowzovi_chkz_Plot, state
                state.wave[0:npix-1] LT state.mdrng[1] AND $
                state.fx[0:npix-1] GT 0., nwv)
   if nwv NE 0 then mdfx = median(state.fx[mdwv]) else mdfx = 1.
+  mdfx = mdfx * state.scl_y
 
   ;; Plot smooth
   spaces = replicate('!17 ',30)
@@ -255,9 +267,12 @@ pro lowzovi_chkz_Setup, state
   endif
 
   ;; Find obj
+  state.mod_obj = strtrim(state.galstr[state.curobj].id MOD 10000L,2)+ $
+    strtrim(state.galstr[state.curobj].obj_id,2)
   state.obj = strtrim(state.galstr[state.curobj].id,2)+ $
     strtrim(state.galstr[state.curobj].obj_id,2)
-  indx = x_getobjnm(lzovi_wff, state.obj)
+  indx = x_getobjnm(lzovi_wff, state.mod_obj)
+  if indx LT 0 then stop
   widget_control, state.obj_id, set_value=state.obj
 
   ;; Load it up
@@ -278,6 +293,8 @@ pro lowzovi_chkz_Setup, state
   ;; Redshift
   widget_control, state.z_id, set_value=lzovi_zans.z
 
+  ;; Redshift
+  widget_control, state.indx_id, set_value=state.curobj
 
 end
 
@@ -346,16 +363,18 @@ common lowzovi_chkz_common
 ;
   if  N_params() LT 1  then begin 
     print,'Syntax - ' + $
-      'lowzovi_chkz, lowzovi_fil, /zfind, XSIZE=, YSIZE=, /PRINTONLY '+$
-	'BADFIL= (v1.0)'
+      'lowzovi_chkz, lowzovi_fil, XSIZE=, YSIZE=, /PRINTONLY '+$
+	'BADFIL=, NPLT=, SOBJ= [v1.1]'
     return
   endif 
 
 ;  Optional Keywords
 
   if not keyword_set( BADFIL ) then badfil='badz.lst'
-  if not keyword_set( XSIZE ) then xsize = 1200
-  if not keyword_set( YSIZE ) then ysize = 900
+
+  device, get_screen_size=ssz
+  if not keyword_set( XSIZE ) then xsize = ssz[0]-200 ;1200
+  if not keyword_set( YSIZE ) then ysize = ssz[1]-200 ; 900
   if not keyword_set( XYMNX ) then xymnx = [3800., 0.0, 8700., 1.0]
   if not keyword_set( NPLT ) then nplt = 1L
 
@@ -391,6 +410,7 @@ common lowzovi_chkz_common
             smooth: 7L, $
             npix: 0L, $
             obj: ' ', $
+            mod_obj: ' ', $
             curobj: 0L, $
             mdrng: [5000., 8000.], $
             pos: [0.04,0.0,1.00,1.0], $ ; Plotting
@@ -399,6 +419,7 @@ common lowzovi_chkz_common
             bad_fil: badfil, $
             keylines: fltarr(100), $
             nkey: 0L, $
+          scl_y: 1., $
             xymnx: xymnx, $
             tmpxy: fltarr(4), $
             xcurs: 0., $
@@ -411,6 +432,8 @@ common lowzovi_chkz_common
             obj_id: 0L, $
             nspec_id: 0L, $
             xpos_id: 0L, $
+            indx_id: 0L, $
+            ntot_id: 0L, $
             z_id: 0L, $
             smooth_id: 0L, $
             help_text_id: 0L $
@@ -448,9 +471,12 @@ common lowzovi_chkz_common
 
 ;;;;;;;;;;;;;;;;;;
 ; Pages
-  state.obj_id = cw_field(toolbar, value='', /return_events, xsize=8,$
+  objbase = widget_base(toolbar, /column, /base_align_center, /align_center)
+  state.obj_id = cw_field(objbase, value='', /return_events, xsize=8,$
                           title='Obj', UVALUE='OBJ', $
                           /string, font='Courier*Bold')
+  state.indx_id = cw_field(objbase, title='Index', value=state.curobj, xsize=7)
+  state.ntot_id = cw_field(objbase, title='Ntot', value=state.nobj, xsize=7)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;      DRAW
@@ -481,6 +507,9 @@ common lowzovi_chkz_common
   templt = WIDGET_BUTTON(butbase2, value='TEMPL',uvalue='TEMPL')
   print = WIDGET_BUTTON(butbase2, value='PRINT',uvalue='PRINT')
   done = WIDGET_BUTTON(butbase2, value='DONE',uvalue='DONE')
+  butbase3 = widget_base(toolbar, /column, /align_center)
+  expandy = WIDGET_BUTTON(butbase3, value='EXP_Y',uvalue='EXP_Y')
+  lowandy = WIDGET_BUTTON(butbase3, value='LOW_Y',uvalue='LOW_Y')
 
   
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

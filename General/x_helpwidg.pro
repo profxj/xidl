@@ -1,13 +1,13 @@
 ;+ 
 ; NAME:
 ; x_helpwidg   
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
-;    Creates a widget to display a help list
+;    Creates a widget to display a help list which is simply an 
+;   array of strings that describe a GUI [or anything].
 ;
 ; CALLING SEQUENCE:
-;   
 ;   x_helpwidg, help
 ;
 ; INPUTS:
@@ -65,14 +65,14 @@ pro x_helpwidg, help, XSIZE=xsize, YSIZE=ysize
 ;
   if  N_params() LT 1  then begin 
     print,'Syntax - ' + $
-             'x_helpwidg, help, XSIZE=, YSIZE= [V1.2]'
+             'x_helpwidg, help, XSIZE=, YSIZE= [V1.1]'
     return
   endif 
 
 
 ;  Optional Keywords
 
-  if not keyword_set( XSIZE ) then    xsize = 30
+  if not keyword_set( XSIZE ) then    xsize = 50
   if not keyword_set( YSIZE ) then    ysize = 10
 
 ;    STATE

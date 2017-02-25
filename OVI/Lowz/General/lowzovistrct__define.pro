@@ -1,6 +1,35 @@
+;+ 
+; NAME:
+; lowzovidat__define
+;  V1.1
+;
+; PURPOSE:
+;    Structure summarizing something (not sure what)
+;
+; CALLING SEQUENCE:
+;   tmp = {lowzovistrct}
+;
+; INPUTS:
+;
+; RETURNS:
+;
+; OUTPUTS:
+;
+; OPTIONAL KEYWORDS:
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;
+; EXAMPLES:
+;
+; PROCEDURES CALLED:
+;
+; REVISION HISTORY:
+;   Oct-2003 Written by JXP
+;-
+;------------------------------------------------------------------------------
 pro lowzovistrct__define
-
-;  This routine defines the structure for individual object spectra
 
   tmp = {lowzovistrct, $
          galstrct: ' ', $    ; Structure for galaxy info

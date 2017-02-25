@@ -1,9 +1,10 @@
 ;+ 
 ; NAME:
 ; xregtovec
+;   Version 1.1
 ;
 ; PURPOSE:
-;    Converts a string into a vector for an image
+;    Converts a string region into a vector for an image
 ;
 ; CALLING SEQUENCE:
 ;   
@@ -37,17 +38,19 @@
 function xregtovec, sreg, size
 
 ;
-  if  N_params() LT 2  then begin 
+  if  N_params() LT 1  then begin 
     print,'Syntax - ' + $
-             'xregtovec, sreg, size'
+             'xregtovec, sreg, [size] [v1.1]'
     return, -1
   endif 
+
+  if strpos(sreg, '*') NE -1 and not keyword_set(SIZE) then return, -1
 
 ;  Optional Keywords
 
 ;  if keyword_set( OVSEC ) then    flgovsec    = 1 else flgovsec = 0
 
-  area = indgen(4)
+  area = lindgen(4)
 
 ;  Parsing x 
 
@@ -78,7 +81,7 @@ function xregtovec, sreg, size
       area[3] = size[2]-1
   endif else begin
       nchr = strpos(yreg,':')
-      area[2] = fix(strmid(yreg,0,nchr-1))
+      area[2] = fix(strmid(yreg,0,nchr))
       cchr = strpos(yreg,']')
       area[3] = fix(strmid(yreg,nchr+1,cchr-nchr-1))
   endelse

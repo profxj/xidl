@@ -77,7 +77,7 @@ IDL_LONG arrmedsigclip
          mval = vector_median(nmid, tempvec);
 
          /* Compute the first sigma value*/
-	 sigma = sqrt(mval/gain + rn*rn/gain/gain);
+	 sigma = sqrt(abs(mval/gain + rn*rn/gain/gain));
 
 	 /* Iterate with rejection */
 	 niter = 0;
@@ -99,7 +99,7 @@ IDL_LONG arrmedsigclip
 	       /* Compute the median value */
 	       mval = vector_median(ngood, goodvec);
 	       /* Compute the sigma value*/
-	       sigma = sqrt( mval/gain + rn*rn/gain/gain);
+	       sigma = sqrt(abs(mval/gain + rn*rn/gain/gain));
 	       /* Increment niter */
 	       niter++;
 	       /* Save ngood */

@@ -9,14 +9,14 @@
 ; CALLING SEQUENCE:
 ;   
 ;   fit =
-;   x_fitrej(xdat,ydat,func=,nord=,sig=,reg=,
+;   x_fitrej(xdat,ydat,func,nord,sig=,reg=,
 ;            lsigma=,hsigma=,maxrej=,niter=,minpt=)
 ;
 ; INPUTS:
 ;   xdat       - Values along one dimension
 ;   ydat       - Values along the other
-;   [func]     - String for Fitting function (POLY, LEGEND, BSPLIN)
-;   [nord]     - Order of the fit
+;   func     - String for Fitting function (POLY, LEGEND, BSPLIN)
+;   nord     - Order of the fit
 ;
 ; RETURNS:
 ;   fit        - Values at each xdat
@@ -24,8 +24,8 @@
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
-;   inter      - Interactive fitting
 ;   sig        - Errors in the points
+;   IVAR=      - Inverse variance in the points
 ;   reg        - Regions of data to fit
 ;   lsigma     - Lower sigma threshold
 ;   hsigma     - Upper sigma threshold
@@ -33,9 +33,11 @@
 ;   niter      - Number of iterations for rejection
 ;   minpt      - Minimum # of points
 ;   FITSTR     - Fit structure :: OVERIDES ALL OTHER INPUT VALUES!
+;   MSK        - Mask for input data (1 = good)
+;   FLG_BSP=   - Flag controlling BSPLINE options (1: nord = everyn)
+;   /NONRM     - Do not normalize the xdat from -1 to 1
 ;
 ; OPTIONAL OUTPUTS:
-;   bsplin     - Bspline structure
 ;   rms        - RMS of the fit
 ;   REJPT      - Rejected points
 ;   GDPT       - Good (unrejected) points
@@ -44,7 +46,7 @@
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   fit = x_fitrej(x, y, 'POLY', nord=5)
+;   fit = x_fitrej(x, y, FITSTR=fitstr)
 ;
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
@@ -64,16 +66,16 @@
 
 function x_fitrej, xdat, ydat, func, nord, SIG=sig, REG=reg, $
                    LSIGMA=lsigma, HSIGMA=hsigma, MAXREJ=maxrej, $
-                   NITER=niter, MINPT=minpt, FFIT=ffit, REJPT=rejpt, $
+                   NITER=niter, MINPT=minpt, REJPT=rejpt, $
                    MSK=msk, RMS=rms, GDPT=gdpt, NRM=nrm, FITSTR=fitstr, $
-                   NONRM=nonrm, IVAR=ivar
+                   NONRM=nonrm, IVAR=ivar, FLG_BSP=flg_bsp, SILENT=silent
 
 ;
   if  N_params() LT 2  then begin 
     print,'Syntax - ' + $
              'fit = x_fitrej(xdat, ydat, [func, nord], '
     print, '        [SIG=, REG=, LSIGMA=, HSIGMA=, MAXREJ=, NITER=, MINPT=,'
-    print, '        REJPT=, FFIT=, MSK=, NRM=, FITSTR=, /NONRM, IVAR=)  [v1.2]'
+    print, '        REJPT=, MSK=, NRM=, FITSTR=, /NONRM, IVAR=)  [v1.2]'
     return, -1
   endif 
 
@@ -131,14 +133,23 @@ function x_fitrej, xdat, ydat, func, nord, SIG=sig, REG=reg, $
 
   xfit = xnrm[igood]
   yfit = ydat[igood]
-  if keyword_set( SIG ) then sigfit = sig[igood]
-  if keyword_set( IVAR ) then ivarfit = ivar[igood]
+  flg_sig = 0
+  if keyword_set( SIG ) then begin
+     flg_sig = 1
+     sigfit = sig[igood] 
+  endif
+  if keyword_set( IVAR ) then begin
+     ivarfit = ivar[igood]
+     invvarfit = 1./ivarfit
+  endif
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; MAIN LOOP
   
 ;  First Fit
-  fit = x_fit(xfit, yfit, SIG=sigfit, IVAR=ivarfit, FITSTR=fitstr, /NONRM)
+  fit = x_fit(xfit, yfit, SIG=sigfit, IVAR=ivarfit, FITSTR=fitstr, /NONRM,$
+             FLG_BSP=flg_bsp, SILENT=silent)
   if fit[0] EQ -1 then return, -1
 
   iter = 0L
@@ -152,21 +163,31 @@ function x_fitrej, xdat, ydat, func, nord, SIG=sig, REG=reg, $
           break
       endif
 
-      qmod = djs_reject(yfit, fit, outmask=outmask, upper=fitstr.hsig, $
-                        lower=fitstr.lsig, maxrej=tmpmax, /sticky) ;, $
-;                       SIGMA=sigfit)
-      ;; Consider the above line more carefully!  JXP  (9/23/03)
+;      if keyword_set(OUTMASK) then inmask = outmask
+      if keyword_set(SIGFIT) and keyword_set(INVVARFIT) then delvarx, sigfit ;; JXP -- Jan 11, 2013
+      qmod = djs_reject(yfit, fit, outmask=outmask, $
+                        upper=fitstr.hsig, $
+                        lower=fitstr.lsig, maxrej=tmpmax, /sticky, $
+                        SIGMA=sigfit, INVVAR=invvarfit)
+                                ;invvar=fit/fit,  ;; JXP -- Removed
+                                ;                           this
+                                ;                           rather
+                                ;                           silly
+                                ;                           entry
+                                ;                           (10/3/2011)
 
-;   Check number of good points
+      if keyword_set(SIGFIT) and (flg_sig EQ 0) then delvarx, sigfit
+      ;;   Check number of good points
       tmp = where(outmask EQ 1, ntmp)
-      if (qmod EQ 1 OR ntmp LE fitstr.minpt) then break $
-        else iter = iter + 1
+      if (qmod EQ 1 OR ntmp LE fitstr.minpt) then begin
+          break 
+      endif else iter = iter + 1
+;      printcol, lindgen(n_elements(xfit)), outmask
 
 ;   FIT
       fit = x_fit(xfit, yfit, SIG=sigfit, FITSTR=fitstr, MSK=outmask, /NONRM, $
-                 IVAR=ivarfit)
+                 IVAR=ivarfit, FLG_BSP=flg_bsp)
       if fit[0] EQ -1 or n_elements(fit) EQ 1 then return, -1
-
   endwhile
 
 ;  Calculate fit everywhere
@@ -191,9 +212,9 @@ function x_fitrej, xdat, ydat, func, nord, SIG=sig, REG=reg, $
 ; RMS
 
   gd = where(outmask NE 0, ngd)
-  rms = sqrt(total( (fit[gd]-yfit[gd])^2 )/(ngd-1.))
+  IF ngd GT 1 THEN rms = sqrt(total( (fit[gd]-yfit[gd])^2 )/(ngd-1.)) $
+  ELSE rms = 0.0
   fitstr.rms = rms
-
   delvarx, xfit, yfit, fit, sigfit
 
   ; Return fit as double if xdat or ydat is double

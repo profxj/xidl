@@ -1,0 +1,78 @@
+General notes:
+--------------
+
+The XIDL directory /b/xavier/xidl/IMG/automated contains 
+codes that can run an automated pipeline to monitor an object. 
+Although tailored to our blazar monitoring program with 
+superLOTIS, most of these codes are general and can be used 
+for other purposes. 
+
+
+This codes should be run in a folder that contains these subfolders
+
+archive          --> archive files used in the reduction and analysis
+lightcurve       --> output files of the lightcurves
+nights           --> data for individual nights 
+plots            --> summary plots of the reduction
+queue            --> files for the telescope queue
+log              --> log file of the pipeline
+targets          --> list of targets that are being monitored
+trigger_webpage  --> files used to update the website
+data             --> misc file with info on reduction etc.
+
+Written by Michele Fumagalli, Kyle Kaplan et el.
+
+
+Install:
+--------
+
+You need to have properly installed
+
+XIDL
+astrometry.net   (for wcs only)
+
+Also, you need to set a variable AUTOM_DIR to where you run the code.
+There is a default value in the .csh files, so you might
+want to comment that line out.
+
+
+Descriptions of codes:
+----------------------
+
+Scheduling/
+
+ mk_slotis_file.pro             generate a slotis file for the queue
+       
+Reduction/cron	
+
+ automated.cron                 the cron job that runs the pipeline
+ automated_runcron.csh          the script that starts the pipeline
+ automated_updateweb.csh	the script that updates the webpage
+
+Reduction/pro
+
+ automated_cron_wrapper.pro     top level main function
+ automated_canconnect.pro       check device connection
+ automated_work.pro 		the main work function that spawn commands  
+ automated_replot.pro           update the webpage			
+ automated_getdata.pro          grab the data form remote site
+ automated_checklognames.pro	allows multiple name for a signle object
+ automated_cleanlog.pro         remove unwanted files
+ automated_makeplan.pro         store reduction info in a structure
+ automated_ccdproc.pro          core procedure that does the reduction job
+ automated_makebias.pro         produce the bias
+ automated_oscan.pro            subtract the overscan bias
+ automated_makedark.pro         compute the dark
+ automated_makeflats.pro        create the flats for all the filters 
+ automated_loopflats.pro 	core procedure that does the flat job
+ automated_makescience.pro      produce the final frames
+ automated_stackimages.pro      stack and fit wcs to images	
+ automated_offset.pro           compute the xy offsets to align images
+ automated_fitwcs.pro 		fit the wcs in the image 
+ automated_phot.pro  		perform automated photometry (now on R band)
+ automated_grabphot.pro         the core procedure for photometry
+ automated_imagezp.pro          compute the zp of an image	
+ automated_makethumbnail.pro    make the makethumbnail of the field
+ automated_replot.pro           updates the Blazar Monitoring Program's webpage 
+ automated_mklcpage.pro         make the lightcurve page
+ automated_updateweb.pro        called by the cron job, runs the machinary to update the website

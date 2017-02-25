@@ -1,19 +1,20 @@
 ;+ 
 ; NAME:
 ; ximgd_stretchct
-;    Version 1.0
+;    Version 1.1
 ;
 ; PURPOSE:
 ; routine to change color stretch for given values of 
 ; brightness and contrast.
 ; This routine is now shorter and easier to understand.  
+; It is based on Baarth and Finkbeinder code.
 ;
 ; CALLING SEQUENCE:
 ;   
-;   ximgd_stretchct, state, flg
+;   ximgd_stretchct, state
 ;
 ; INPUTS:
-;   state       - Structure with tv dependent info
+;   state       - Structure with image info (e.g. brightness, contrast)
 ;
 ; RETURNS:
 ;
@@ -26,7 +27,7 @@
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   ximgd_stretchct, state, flg
+;   ximgd_stretchct, state
 ;
 ;
 ; PROCEDURES/FUNCTIONS CALLED:

@@ -1,0 +1,187 @@
+I. PRELIMINARIES
+------------------------------------------------------------------------------------
+I.1. Update XIDL
+-- cd ~/idl
+-- svn update xidl
+
+I.2. Setup IRAF
+-- If IRAF installation is needed, this method has been verified to work on Mac OS 10.6:
+   - Install IRAF 2.14 from STScI, available here:
+   http://www.stsci.edu/institute/software_hardware/pyraf/stsci_python/Installation/#installing-binaries
+   Note that there is a more recent IRAF release (2.15), but that the
+   most recent Gemini package (v1.11) does not work with the 64-bit
+   version of IRAF 2.15. 
+
+   - This STScI IRAF installation comes with an old version of the
+   Gemini IRAF package (v1.9).  To upgrade to the latest Gemini
+   package (v1.11), download the file gemini_v1111_for_iraf_2.14.tar.gz from 
+   http://www.gemini.edu/sciops/data-and-results/processing-software/releases/downloads.
+   Follow the instructions in gemini_readme.txt (contained in the tar file) for
+   installation, replacing the old gemini/ directory in your
+   /usr/stsci with the new one in the tar file.  Most of the necessary
+   paths should already be set.  In case you don't want to log in as
+   the user 'iraf' to do the installation, you can ignore that
+   instruction, but make sure to set the ownership of the new gemini
+   directory and its contents correctly (i.e., make sure the owner and
+   group is the same as for your old gemini directory).  For this, as
+   the root user you can use something like:
+   
+	chown -R iraf gemini
+	chgrp -R kmem gemini
+
+-- Then make a new 'iraf' directory in your home directory, and type
+   'lmkiraf' to make a login.cl
+-- source .cshrc
+-- rehash
+
+I.3. Edit loginuser.cl to point to x_gmos in XIDL
+-- set     x_gmos           = "/u/gworseck/idl/xidl/Spec/Longslit/pro/Gemini/GMOS/IRAF/"
+-- task    $x_gmos       = "x_gmos$x_gmos.cl"
+
+I.4. Download the data from the Gemini Archive
+-- Archive: http://www4.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/gsa/
+-- Retrieve your PI packages via the Proprietary Data Access link
+-- Obtain bias frames separately (never distributed with PI packs for unknown reasons)
+   - Go to http://www4.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/cadcbin/gsa/wdbi.cgi/gsa/dssc_GMOS/form
+   - Verify the CCD setup of your longslit data (here: full-frame readout, spatial binning 2, spectral binning 4)
+   - Set "Data Label" to "Contains" CAL201004 (for April 2010)
+   - Set "Observation Type" to "Bias"
+   - Set "CCDSUM" to 4 2
+   - Set "CCDSEC" to [1:2048,1:4608], no space between the braces!
+   - The bias level does not vary much over one semester, but better get >10 bias frames matching your
+     science readout parameters taken close to your science data
+   - Repeat this procedure for spectrophotometric standard stars which are taken in windowed readout by default
+     (set "CCDSEC" to [1:2048,1792:2815])
+
+I.5. Organize the data
+-- Uncompress FITS files
+-- Store anything related to standard stars (exposures with associated biases, flatfields and arcs) into separate directory "/fluxcal/Raw". Anything related to science goes in "/science/Raw".
+
+
+II. GMOS LONGSLIT SCIENCE DATA REDUCTION
+----------------------------------------
+II.1. Get a list of all science data from within IDL
+IDL> cd, '/science/Raw'
+IDL> gmos_plan, '*.fits', ''
+  - Creates a file "plan.par" in local directory
+  - Change "filtarc" type -> "arc"
+  - Comment unwanted files with "#"
+  - Be sure that the list contains bias frames. Also domeflats & arcs for every used grating and
+    central wavelength setting must be listed. We need one arc spectrum and several domeflats per setup.
+  - Twilight flats are non-standard calibrations for Gemini folks. We won't deal with those here.
+  - Rerun gmos_plan (as needed)
+
+II.2. Create IRAF scripts from within IDL
+IDL>  xgmos_mkclscripts, 'plan.par'
+  - Creates 4 IRAF scripts (*.cl) and IRAF lists (*.lst) for used gratings and setups
+  - xgmos_bias.cl for generating the master bias frame
+  - xgmos_flats.cl for generating the master flatfield(s)
+  - xgmos_proc.cl for bias and flatfield correction of the science frames
+  - xgmos_master.cl as a wrapper of the other three scripts
+
+II.3. Launch XGMOS in IRAF
+csh
+cd ~/iraf
+xgterm &
+ecl
+gemini
+gmos
+x_gmos
+x_gmos> cd /science/Raw
+
+II.4. Run IRAF scripts
+-- WARNING: The IRAF scripts have bugs, running them on different systems with different IRAF versions
+   causes all sorts of warnings, maybe the Gemini stuff is not backwards compatible (what a horror for archival data)
+--> This requires some cleanup and inspection of output!!!
+-- IRAF on X's Mac ("profx"): no errors
+-- IRAF 2.14.1 with Gemini IRAF Package 1.10 on CentOS: crash during master bias generation
+-- IRAF 2.14 with Gemini IRAF Package 1.9 on MacOS 10.6: crash after flatfield computation,
+   loop for flatfields requires restarts of xgmos_flats.cl script,
+   some warnings "121 Input error" when running xgmos_proc.cl
+Here are the steps (follow these and do not blindly run the wrapper xgmos_master.cl!!!):
+x_gmos> cl < xgmos_bias.cl
+  - creates master bias XGMOS_BIAS.fits
+x_gmos> epar gsflat
+  - set reject parameter to "none" for perfect master flatfield
+x_gmos> cl < xgmos_flats.cl
+  - creates master flatfield for every spectral setup
+  - it is safe to combine flatfields from different dates, the one attached flatfield is way too noisy
+  - watch out for any errors (files not found, uninitialized parameters), these indicate bugs in the IRAF pipeline
+  - WARNING: The IRAF scripts generate an artificial offset on the 3rd "slitlet" for GMOS-N, the focal plane correction
+    is incorrect (at least with the Gemini IRAF Package 1.9), noticeable as 'broken' sky lines, this causes major
+    trouble in the wavelength solution
+x_gmos> cl < xgmos_proc.cl
+  - initializes science headers, subtracts bias, divides by master flatfield
+  - watch out for any errors (files not found, uninitialized parameters), these indicate bugs in the IRAF pipeline
+
+II.5. Clean-up after IRAF in a terminal
+-- for GMOS-N: rm gN*
+-- for GMOS-S: rm gS*
+-- rm tmp*
+-- gzip gs*.fits
+-- mkdir ../IRaw
+-- mv gs*.fits.gz ../IRaw
+
+II.6. Conversion to XIDL format
+IDL> cd, '/science/Raw'
+IDL> gmos_iraftoidl, '../IRaw/gs*.fits.gz', '', DAT_EXTEN=1
+  -- historic, needed for 2010/11 GMOS survey reductions
+IDL> gmos_iraftoidl, '../IRaw/gs*.fits.gz', ''
+  -- new to me but works (03/15/12), code change????
+
+II.7. XIDL longslit reduction
+IDL> cd, '/science'
+IDL> long_plan, 'idl*.fits.gz', 'IRaw/'
+  -- creates file plan.par
+  -- edits to plan.par: set minslit to 500 (for spatial binning 2,
+     forcing the area between GMOS slit bridges to be treated as a whole)
+     and change "filtarc" type -> "arc"
+     (Or alternatively, leave minslit at 20, and set slitthresh to
+     0.1, allowing the code to treat the longslit as 3 separate slits.)
+  -- create a separate plan file for each setup (grating and central wavelength),
+     each plan file needs one flatfield and one arc exposure
+  -- if a homogeneous reduction of all science data is desired then assign one flatfield and one arc as "masters"
+     and copy them over before running long_plan, delete all unwanted flats and arcs
+IDL> long_reduce, 'plan_XXX.par'
+  -- apply wavelength solution, sky-subtract data, extract 1D spectrum, apply flexure correction and heliocentric
+     correction, see long_reduce for parameters
+  -- output in directory "Science"
+  -- always check the wavelength solution (wave*.ps)
+  -- wavelength calibration of GMOS data can be tricky due to coarse sampling of arc lines at spectral binning 4
+     and the slit bridges
+  -- correlation to archived arcs can fail, use manual solution as a master
+  -- always check flexure correction (*flex.ps) that is prone to failure if a strong skyline used for flexure correction
+     falls near a GMOS slit bridge
+Better: Specify archive arc file
+IDL> long_reduce, 'plan_XXX.par', REID_FILE='GMOS_CuAr_XXX.sav', BIN_RATIO=1.
+  -- use archived wavelength solution from XIDL directory Longslit/calib/linelists/
+IDL> cd, 'Science'
+IDL> .run long_look
+  -- GUI to inspect the reduced science spectrum 2D and 1D
+
+II.8. Coadd the exposures
+IDL> cd, 'Science'
+IDL> long_coadd, ['sci-1.fits.gz','sci-2.fits.gz'], [1,2], OUTFIL='outspec.fits'
+  -- coadd two spectra weighting by the square of the median S/N or exposure time, [1,2] specifies the spectra to coadd
+     in the 1st and the 2nd frame respectively
+  -- Do this also if you have just one spectrum to create an output FITS file with
+     3 extensions: 0=flux, 1=sigma, 2=wavelength
+IDL> x_specplot, 'outspec.fits', inflg=2
+  -- inspect 1D coadded spectrum
+
+II.9. Spectrophotometric standard star and flux calibration curve
+-- Reduce the standard star spectrum following steps II.4.-II.7. (separate directory, separate calibration files!)
+-- In each plan file check that the observation type of the standard star is "std" and not "science"
+IDL> sens = long_sensfunc('std-XXX.fits.gz','sens.fits',std_name='archivestandard',/CHK,nresln=15,wave=wave,sensfit=sensfit)
+  -- generates sensitivity curve senscurve.fits (cubic spline fit)
+  -- Do NOT run long_coadd before this
+  -- Assumes that standard star spectrum is the 1st detected on the slit
+  -- Assumes calibrated standard star spectrum archivestandard.fits is in XIDL directory
+     Longslit/calib/standards/calspec/
+  -- Always check the calibration curve with the /CHK option and adjust the nresln parameter
+IDL> mwrfits, wave, 'wave.fits', /create
+IDL> mwrfits, sensfit, 'sensfit.fits', /create
+  -- save the calibration curve as separate FITS file, the sens.fits file only has the spline parameters!!!
+
+II.10. Flux calibration
+IDL> long_fluxcal, 'outspec.fits', 'sens.fits', OUTFIL='outflux.fits'

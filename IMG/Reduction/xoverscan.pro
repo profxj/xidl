@@ -8,7 +8,8 @@
 ;
 ; CALLING SEQUENCE:
 ;   
-;   xoverscan, img, ccd, [medov], OVSEC=ovsec, OVROOT=ovroot
+;   xoverscan, img, ccd, [medov], OVSEC=, OVROOT=, /INTER, /ERASE
+;    OVIMG=, /NOFITS, /SILENT, /MEDONLY, /COMPRESS, TRIMSEC=
 ;
 ; INPUTS:
 ;   img        - Raw fits file
@@ -30,6 +31,8 @@
 ;   erase      - Erase pre-existing ov files
 ;   NOFITS     - Suppress output to fits file
 ;   MEDONLY    - Useful in updating distruct
+;   /COMPRESS  - Spawn gzip on the output image
+;   TRIMSEC    - Image region to trim to
 ;   
 ;
 ; OPTIONAL OUTPUTS:
@@ -151,7 +154,6 @@ pro xoverscan, img, ccd, medov, FUNC=func, ORDR=ordr, OVSEC=ovsec, $
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; CCD specific stuff
 
-
       flg_twoamp = 0
       offset = 0
       flg_bias = 0
@@ -211,21 +213,45 @@ pro xoverscan, img, ccd, medov, FUNC=func, ORDR=ordr, OVSEC=ovsec, $
               bias_ord = 17
           end
           'LRISR' : begin
-              final = fltarr(1630,2048) ; Trim
-              ;;;;;  LHS ;;;;
-              ova = [2104, 2154, 0, 2047] ;   Overscan for LHS of LRIS
-              ncolm = 846
-              ;;;;;  RHS ;;;;
-              ovb = [2179, 2229, 0, 2047] ;   Overscan for RHS of LRIS
-              ncolm2 = 1630
+             ; determine whether we accidentally did a partial chip readout.
+             window=sxpar(header, 'WINDOW')
 
-              ;
-              ovsec  = '[2104:2154,0:2047] [2179:2229,0:2047]'
-              ovhead = '[2104:2154,0:2047] [2179:2229,0:2047]'
-              offset = 220
-              ;
-              flg_twoamp = 1
-              
+             if window ne '0,0,0,2048,2048' $
+                and window ne '0,0,550,2048,1000' then $
+                   print, 'ERROR: not sure what portion of chip was read out.'
+
+             CASE window OF
+                '0,0,0,2048,2048' : begin
+                   final = fltarr(1630,2048) ; Trim
+                   ;;;;;  LHS ;;;;
+                   ova = [2104, 2154, 0, 2047] ;   Overscan for LHS of LRIS
+                   ncolm = 846
+                   ;;;;;  RHS ;;;;
+                   ovb = [2179, 2229, 0, 2047] ;   Overscan for RHS of LRIS
+                   ncolm2 = 1630
+
+                   ovsec  = '[2104:2154,0:2047] [2179:2229,0:2047]'
+                   ovhead = '[2104:2154,0:2047] [2179:2229,0:2047]'
+                   
+                   offset = 220
+                   flg_twoamp = 1
+                end
+                '0,0,550,2048,1000' : begin
+                   final = fltarr(1630,1000) ; Trim
+                   ;;;;;  LHS ;;;;
+                   ova = [2104, 2154, 0, 999] ;   Overscan for LHS of LRIS
+                   ncolm = 846
+                   ;;;;;  RHS ;;;;
+                   ovb = [2179, 2229, 0, 999] ;   Overscan for RHS of LRIS
+                   ncolm2 = 1630
+
+                   ovsec  = '[2104:2154,0:999] [2179:2229,0:999]'
+                   ovhead = '[2104:2154,0:999] [2179:2229,0:999]'
+                   
+                   offset = 220
+                   flg_twoamp = 1
+                end
+                ENDCASE
           end
           'LRISb' : begin 
               if(flgovsec EQ 1) then ova = xregtovec(ovsec,sz) $
@@ -250,7 +276,7 @@ pro xoverscan, img, ccd, medov, FUNC=func, ORDR=ordr, OVSEC=ovsec, $
           ;;; FIT ;;;
           ovspl = x1dfit(ovmed, func=func, $
                          nord=ordr, INTER=inter, LSIG=3., HSIG=3.)
-      
+
           ;;; BIAS ;;;
           if flg_bias NE 0 then begin
               if not keyword_set( SILENT ) then $
@@ -274,6 +300,7 @@ pro xoverscan, img, ccd, medov, FUNC=func, ORDR=ordr, OVSEC=ovsec, $
 
           ;;; SUBTRACT ;;;
           tmp = replicate(1, ncolm)
+
           if flg_bias EQ 0 then final = data[offset:offset+ncolm-1,$
                                              trimsec[0]:trimsec[1]] - tmp#ovspl $
           else final = temporary(final) - tmp#ovspl

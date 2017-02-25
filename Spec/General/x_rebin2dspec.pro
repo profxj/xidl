@@ -8,25 +8,27 @@
 ;      Simple adding (no weighting by S/N)
 ;
 ; CALLING SEQUENCE:
-;   
-;   x_rebin2dspec, gdpix, orig_wv, orig_fx, newwv, newfx
+;  x_rebin2dspec, wv, fx, nwwv, nwfx, VAR=, NWVAR=, GDPIX=,
+;                  /SILENT, /REDBLUE, /CR, /REBINC
 ;
 ; INPUTS:
-;   orig_wv
-;   orig_fx
-;   newwv
+;   wv   -- Wavelength array
+;   fx   -- Flux array
+;   newwv -- New wavelength array to rebin to
 ;
 ; RETURNS:
 ;
 ; OUTPUTS:
-;   newfx
+;   newfx -- New flux array
 ;
 ; OPTIONAL KEYWORDS:
-;  VAR         - Data is float
+;  VAR=     -- Data is float
+;  /REBINC  -- Rebin using a C program
+;  /REDBLUE -- Data runs from red to blue
 ;
 ; OPTIONAL OUTPUTS:
-;  NEWVAR      - Data is float
-;  CR          - VAR = -1 flag CR and eliminate the pix
+;  NEWVAR=  - New variance array
+;  /CR      - VAR = -1 flag CR and eliminate the pix
 ;
 ; COMMENTS:
 ;
@@ -153,11 +155,11 @@ pro x_rebin2dspec, wv, fx, nwwv, nwfx, VAR=var, NWVAR=nwvar, GDPIX=gdpix,$
       dim[1] = nwpix
       if keyword_set( CR ) then dim[2] = 1L
       
-      soname = filepath('libxmath.so', $
+      soname = filepath('libxmath.' + idlutils_so_ext(), $
                         root_dir=getenv('XIDL_DIR'), subdirectory='/lib')
       retval = call_external(soname, 'rebin2dspec', $
                              ndim, dim, gdpix, double(wvl), double(wvh),$
-                             bwv, fx, double(var), nwfx, nwvar)
+                             bwv, float(fx), double(var), nwfx, nwvar)
   endelse
 
   return

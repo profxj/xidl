@@ -1,3 +1,22 @@
+;+ 
+; NAME:
+;  tvstruct
+;   Version 1.1
+;
+; PURPOSE:
+;  Creates (defines) a structure for use in image GUIs
+;
+; CALLING SEQUENCE:
+;   
+;   tmp = {tvstruct}
+;
+; EXAMPLES:
+; 
+; REVISION HISTORY:
+;
+;------------------------------------------------------------------------------
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 pro tvstruct__define
 
 ;  This routine defines the structure for direct images

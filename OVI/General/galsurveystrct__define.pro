@@ -1,3 +1,35 @@
+;+ 
+; NAME:
+; galsurveystrct__define
+;    Version 1.1
+;
+; PURPOSE:
+;  This routine defines the structure for galaxies in the OVI survey
+;
+; CALLING SEQUENCE:
+;   tmp = {galsurveystrct}
+;
+; INPUTS:
+;
+; RETURNS:
+;
+; OUTPUTS:
+;
+; OPTIONAL KEYWORDS:
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;
+; EXAMPLES:
+;
+; PROCEDURES/FUNCTIONS CALLED:
+;
+; REVISION HISTORY:
+;   19-Sep-2002 Written by JXP
+;-
+;------------------------------------------------------------------------------
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 pro galsurveystrct__define
 
 ;  This routine defines the structure for individual object spectra
@@ -19,6 +51,7 @@ pro galsurveystrct__define
          area: 0., $               ; sqr''
          stargal: 0., $            ; Star/galaxy classifier
          gal_type: ' ', $
+         gal_coeff: fltarr(10), $  ; 0-3 are the eigen coeff; 4 = Late value
          z: 0.d, $
          vcirc: 0., $
          fspec_fil: strarr(10) $   ; Spectrocscopy files

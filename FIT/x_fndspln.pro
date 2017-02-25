@@ -12,9 +12,9 @@
 ;
 ; INPUTS:
 ;   sx         - Values where spline was pre-evaluated
-;   sy         - 
+;   sy         - Values of the spline at sx
 ;   val        - Value to match
-;   [splin]      - Spline
+;   [splin]    - Spline (calculated if necessary)
 ;
 ; RETURNS:
 ;   xsolv      - x position where the fit = val
@@ -24,7 +24,9 @@
 ; OPTIONAL KEYWORDS:
 ;   TOLER      - Tolerance for match (default: 10^-4)
 ;   IPIX       - Starting pixel in sx
-;   NEG        - Proceed in the negative direction
+;   /NEG       - Proceed in the negative direction from IPIX
+;   /SILENT    - Turn off warning messages
+;   NITER      - Max number of iterations [default: 50L]
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -59,8 +61,8 @@ function x_fndspln, sx, sy, val, splin, IPX=ipx, TOLER=toler, NEG=neg, $
 
   if not keyword_set( IPX ) then ipx = 0
   if not keyword_set( NITER ) then niter = 50L
-  if not keyword_set( TOLER ) then toler = 10.0^(-4) else begin
-      if TOLER LT 1.E-8 then message, 'TOLER too small! Try rescaling.'
+  if not keyword_set( TOLER ) then toler = 1d-4 else begin
+      if TOLER LT 1.d-8 then message, 'TOLER too small! Try rescaling.'
   endelse
 
   ; SPLINT
@@ -73,41 +75,44 @@ function x_fndspln, sx, sy, val, splin, IPX=ipx, TOLER=toler, NEG=neg, $
         print, 'x_fndsplin: IPX > n_elem(sx): Returning n_elem'
       return, double(n_elements(sx))
   endif
-  if (IPX EQ 0 AND keyword_set(NEG)) then begin
-      if not keyword_set( SILENT ) then $
-        print, 'x_fndsplin: IPX=0 and /NEG!: Returning 0.d'
-      return, 0.d
-  endif
-
 ;;;;
-  if not keyword_set( NEG ) then begin
-      step = 1
-      qfin = n_elements(sx) - 1
-  endif else begin
-      step = -1
-      qfin = 0
-  endelse
 
 ; First bracket the root
 
-  for q = ipx, qfin, step do begin
-      if(q EQ qfin) then begin
-          if not keyword_set( SILENT ) then $
-            print, 'x_fndsplin: Warning -- val not bracketed'
-          return, -1
-      endif
-      if ((sy[q]-val)*(sy[q+step]-val)) LE 0 then begin
-          x1 = sx[q] 
-          val1 = sy[q]
-          x2 = sx[q+step]
-          val2 = sy[q+step]
-          break
-      endif
-  endfor
+  prod = (sy-val)*(shift(sy,-1)-val)
+  a = where(prod LE 0, na)
+  if na EQ 0 then begin
+      if not keyword_set( SILENT ) then $
+        print, 'x_fndsplin: Warning -- val not bracketed'
+      return, -1
+  endif
+  if not keyword_set( NEG ) then begin
+      gda = where(a GE ipx, na)
+  endif else begin
+      gda = where(a LE ipx, na)
+  endelse
+
+  if na EQ 0 then begin
+      if not keyword_set( SILENT ) then $
+        print, 'x_fndsplin: Warning -- val not bracketed'
+      return, -1
+  endif
+  q = a[gda[0]]
+  if q EQ n_elements(sx)-1 then begin
+      x1 = sx[q-1] 
+      val1 = sy[q-1]
+      x2 = sx[q]
+      val2 = sy[q]
+  endif else begin
+      x1 = sx[q] 
+      val1 = sy[q]
+      x2 = sx[q+1]
+      val2 = sy[q+1]
+  endelse
 
 ; Now Refine to TOLER
 
-  diff = 10.^5
+  diff = 1e5
   iter = 1L
   while(abs(diff) GT TOLER AND ITER LT NITER) do begin
       xcen = double(x1+x2)/2.

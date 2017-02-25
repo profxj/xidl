@@ -1,7 +1,7 @@
 ;+ 
 ; NAME:
 ; ximgd_resize
-;    Version 1.0
+;    Version 1.1
 ;
 ; PURPOSE:
 ; Routine to resize the draw window when a top-level resize event

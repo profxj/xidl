@@ -1,13 +1,13 @@
 ;+ 
 ; NAME:
-; x_setgridxy.pro
-;    Version 1.0
+; x_setgridxy
+;    Version 1.1
 ;
 ; PURPOSE:
-;    Sets up the tv stuff for displaying images
+;    Sets up the tv structure for displaying images.  Mainly
+;   fills up the grid and image endpoints.
 ;
 ; CALLING SEQUENCE:
-;   
 ;   x_setgridxy, struct, imgreg, /FILL
 ;
 ; INPUTS:
@@ -27,7 +27,6 @@
 ;
 ; EXAMPLES:
 ;   x_setgridxy, struct, imgreg
-;
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
 ;
@@ -61,11 +60,9 @@ pro x_setgridxy, struct, imgreg, FILL=fill
   imgsz[1] = imgreg[3]-imgreg[1]+1
 
 ;  Set win
-  
   if flg_tv EQ 1 then win = struct.winsize else win = struct.tv.winsize
 
 ;
-
   ; NO FILL
   if not keyword_set( FILL ) then begin
       if float(win[0])/float(imgsz[0]) LT $

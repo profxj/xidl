@@ -4,7 +4,10 @@
 ;   Version 1.0
 ;
 ; PURPOSE:
-;    Reports the ratios and chisq given a grid and constraints
+;   Calculates a quick 2-phase model given a set of ions
+;   and the ratio of these ions (and the error in the ratio)
+;   and finally the two elements in the Cloudy grid which
+;   are to give the input ratios.
 ;
 ; CALLING SEQUENCE:
 ;   
@@ -12,13 +15,13 @@
 ;
 ; INPUTS:
 ;   grid  - CLOUDY grid
-;   ratio -  Observed ionic ratios
+;   ratio -  Observed ionic ratios (array)
 ;   sig  -  Error on the ratios
 ;   ion1 - Z, i for ion1
 ;   ion2 - Z, i for ion2 
+;   model - Two element array of the Cloudy grid
 ;
 ; RETURNS:
-;   retstrct - Returns a structure of the output
 ;   
 ;
 ; OUTPUTS:
@@ -48,9 +51,9 @@
 pro cldy_qck2, grid, ratio, sig, ion1, ion2, model
 
 ;
-  if  N_params() LT 5  then begin 
+  if  N_params() LT 6  then begin 
       print, 'Syntax - ' +$
-        'cldy_qck2, grid, ratio, sig, ion1, ion2, i, j'
+        'cldy_qck2, grid, ratio, sig, ion1, ion2, model'
       return
   endif 
 

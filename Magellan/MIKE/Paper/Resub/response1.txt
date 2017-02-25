@@ -1,0 +1,45 @@
+To the Editor,
+
+We thank the referee for his/her timely and careful reading of
+our manuscript.  We have made a number of changes in response
+to his/her comments and are now resubmitting the manuscript to PASP.
+We detail the changes below.
+
+==============================================
+REVIEWER COMMENTS
+
+The paper is set out in a logical flow which and written in a clear and generally concise style. I do find though that the level of detail provided is inconsistent through the paper, in the descriptions of certain algorithms it includes information about the IRAF keywords used to control certain features, while in others it does not go so deep. I think it is not necessary to go so deep as the IRAF keywords, for me these are details that belong in the user manual or cookbook (available on the web) so I would recommend (but not require) that those references to IRAF keywords should be removed.
+==============================================
+RESPONSE
+
+This is a good point.  We have reduced our discussion of specific IDL keywords (the pipeline
+uses IDL, not IRAF), specifically in Sections 3.2, 5.3, 6.1, and 7.3.
+
+==============================================
+REVIEWER COMMENTS
+
+There are two minor issues I suggest be addressed (both advisory rather than mandatory for publication):
+
+1) It is mentioned in the abstract and introduction that the software has since been adapted to several other instruments and they provide references to most of these. However they also mention UVES as one of the instruments the software has been adapted to, but provide no further information on this aspect and I can find nothing about this on the internet. I suggest the reference to UVES either be developed a bit more to provide further (substantiated) information (e.g. a web page or something), or else removed.
+==============================================
+RESPONSE
+
+There is no web page aside from that for XIDL (which is referenced
+at the end of this sentence).  We have now, however, referenced one paper
+that has used the algorithms (Ellison et al. 2007).
+
+
+==============================================
+REVIEWER COMMENTS
+
+2) In section 3.3 the authors write:
+
+ Third, we have not introduced algorithms to calibrate the iodine cell nor the two-slit observations. Regarding the latter, we note that there is no obvious scientific advantage to this observing mode.
+
+This is the first mention of "two-slit observations", in particular there is no mention of it in the substantial and fairly detailed introduction to the instrument provided in section 2 (where as the iodine cell is mentioned there). The mention of this observing mode here thus seems somewhat out of place, as does the closing comment. I would suggest then that either two-slit observations are properly described in section 2, or that the above references are simply removed.
+==============================================
+RESPONSE
+
+We have struck that text.
+
+

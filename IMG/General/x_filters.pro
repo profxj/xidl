@@ -1,10 +1,11 @@
 ;+ 
 ; NAME:
 ; x_filters   
-;    Version 1.0
+;    Version 1.1
 ;
 ; PURPOSE:
-;    Grabs out a list of filters from a list of images
+;    Grabs out a list of unique filters from a full string
+;  array list of filters.
 ;
 ; CALLING SEQUENCE:
 ;   
@@ -19,6 +20,7 @@
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
+;  /NOSORT -- Dont bother sorting the unique filter list
 ;
 ; OPTIONAL OUTPUTS:
 ;  nfilt - Number of unique filters
@@ -44,11 +46,12 @@ pro x_filters, allfilt, filter, nfilt, NOSORT=nosort
   ; 
   if  N_params() LT 2  then begin 
       print,'Syntax - ' + $
-        'x_filters, allfilt, filter, [nfilt], NOSORT= (v1.0)'
+        'x_filters, allfilt, filter, [nfilt], NOSORT= (v1.1)'
       return
   endif 
 
 
+  ;; I should replace the following with one uniq command!
   nimg = n_elements(allfilt)
   tmp = strarr(100)
   tmp[1] = allfilt[0]
@@ -81,6 +84,9 @@ pro x_filters, allfilt, filter, nfilt, NOSORT=nosort
               'Rs' : isort[i] = 35
               'R' : isort[i] = 40
               'I' : isort[i] = 50
+              'J' : isort[i] = 60
+              'H' : isort[i] = 70 ;Added for Nirc2 images
+              'Kp' : isort[i] = 80 ;Added for Nirc2 images
               else : begin
                   print, 'x_filters: Cant handle filter ', filter[i], $
                     ' for sorting!'

@@ -1,19 +1,19 @@
 ;+ 
 ; NAME:
 ; x_setllst
-;  (V1.0)
+;  Version 1.1
 ;
 ; PURPOSE:
-;    Sets up a line list given a file
+;    Returns a line list sturcture gven a file and a flag
 ;
 ; CALLING SEQUENCE:
 ;   
-;   llist = getfnam(file, fmt)
+;   llist = x_setllst(file, fmt)
 ;
 ; INPUTS:
-;   file       - Line list name
+;   file       - Line list filename
 ;   fmt        - Format of line file  
-;                    0='lin.dat'
+;                    0='lin.dat', 1=Gal or QSO line list
 ;
 ; RETURNS:
 ;   llist - Structure of linelists
@@ -27,8 +27,7 @@
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   llist = x_setllst('/home/xavier/bin/junk/lin.dat', 0)
-;
+;   llist = x_setllst('/u/xavier/bin/junk/lin.dat', 0)
 ;
 ; PROCEDURES CALLED:
 ;
@@ -41,7 +40,7 @@ function x_setllst, file, fmt
 
   if (N_params() LT 2) then begin 
     print,'Syntax - ' + $
-             'llist = x_setllst(file, fmt) [v1.0]'
+             'llist = x_setllst(file, fmt) [v1.1]'
     return, -1
   endif 
 
@@ -69,7 +68,7 @@ function x_setllst, file, fmt
           readf, 9, nlin
           tmplst = replicate(tmp, nlin)
           for i=0L,nlin-1 do begin
-              readf, 9, format='(f9.4,1x,a11,1x,f10.5,2x,i2)', $
+              readf, 9, format='(f9.4,a12,1x,f10.5,2x,i2)', $
                 dumd1, dumc, dumd2, dumi1
               tmplst[i].wave = dumd1
               tmplst[i].name = strtrim(dumc,2)
@@ -92,6 +91,21 @@ function x_setllst, file, fmt
                 strmid(strtrim(tmplst[i].wave,2), 0, 6)
           endfor
           close, 9
+       end
+      2: begin    ;molecular line
+         readcol, file, dumf1, dumi1, dumc, dumc2, format='D,I,A,A'
+         nlin=n_elements(dumi1)
+         tmplst = replicate(tmp,nlin)
+         for i=0L,nlin-1 do begin
+            tmplst[i].wave = dumf1[i]
+            tmplst[i].elm = dumc[i]
+            tmplst[i].ion = dumc2[i]
+            tmplst[i].flg = dumi1[i]
+            tmplst[i].name = tmplst[i].elm+tmplst[i].ion+' '
+            ;+$
+            ;                 strmid(strtrim(tmplst[i].wave,2), 0, 6)
+         endfor
+         close, 9
       end
       else: return, -1
   endcase

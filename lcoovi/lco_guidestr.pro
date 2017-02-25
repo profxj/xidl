@@ -1,8 +1,45 @@
+;+ 
+; NAME:
+; lco_guidestr
+;   Version 1.1
+;
+; PURPOSE:
+;    Inputting a photometry structure, parse out a set of stars
+;  useful for guide stars for WFCCD masks.
+;
+; CALLING SEQUENCE:
+;   lco_guidestr, phot, mmin, mmax
+;
+; INPUTS:
+;   phot -- Photometry structure
+;   mmin -- Min mag for guide star
+;   mmax -- Max mag for guide star
+;
+; RETURNS:
+;
+; OUTPUTS:
+;   'Masks/guidestr.dat' -- Guide star output file
+;
+; OPTIONAL KEYWORDS:
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;
+; EXAMPLES:
+;
+; PROCEDURES/FUNCTIONS CALLED:
+;
+; REVISION HISTORY:
+;   ?? Written by JXP
+;-
+;------------------------------------------------------------------------------
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 pro lco_guidestr, phot, mmin, mmax
 
   if  N_params() LT 3  then begin 
     print,'Syntax - ' + $
-             'lco_guidestr, phot, magmin, magmax' 
+             'lco_guidestr, phot, magmin, magmax [v1.1]' 
     return
   endif 
 

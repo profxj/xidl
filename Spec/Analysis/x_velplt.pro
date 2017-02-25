@@ -1,24 +1,43 @@
 ;+ 
 ; NAME:
 ; x_velplt
-;    Version 1.0
+;    Version 1.1
 ;
 ; PURPOSE:
-;   Plots a series of spectra to allow a quick check
+;  GUI used to display velocity profiles for absorption line system.
+;  The user can control a number of options for the plot, output ps
+;  files and PG plot input files, etc.
 ;
 ; CALLING SEQUENCE:
-;   
-;   x_velplt, wfccd, maskid, expsr, XSIZE=, YSIZE=
+; x_velplt, flux_fil, zin, VMNX=vmnx, INFLG=inflg, $
+;             TITLE=title, NPLT=nplt, NRM=nrm, XSIZE=xsize, YSIZE=ysize, $
+;             SIG_FIL=, /ESIDLA, SVSTATE=, /LLS
 ;
 ; INPUTS:
+;  flux_fil -- Input FITS file for the flux (header includes
+;              wavelength info)
+;  zin -- Redshift of absorption lines
 ;
 ; RETURNS:
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
-;   XSIZE      - Size of gui in screen x-pixels (default = 1000)
-;   YSIZE      - Size of gui in screen y-pixels (default = 600)
+;  VMNX= -- Velocity range to plot [default [-300, 300]]
+;  NPLT= -- Number of plots to show [default: 15L]
+; TITLE= -- Title to give GUI
+;  XSIZE      - Size of gui in screen x-pixels [default = 700]
+;  YSIZE      - Size of gui in screen y-pixels [default = ssz -200]
+;  /LLS -- Use LLS line list
+;  /SUBLLS -- Use smaller LLS line list
+;  /ESIDLA -- Use ESI DLA line list
+;  /CII - subset of the ESIDLA line list for measuring CII
+;  /SHRT - subset of ESIDLA line list for a shorter list (and hiz)
+;  SIG_FIL= -- Sigma file
+;  INFLG=  -- Flag for flux_fil data (see x_readspec)
+;  SVSTATE= -- Input IDL file that saved the state of the GUI
+;              previously
+;  WAVE -- wavelength array (flux_fil should be array)
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -32,6 +51,7 @@
 ;
 ; REVISION HISTORY:
 ;   29-Oct-2002 Written by JXP
+;   13-Jan-2006 Add wave keyword and enable passing of arrays, KLC
 ;-
 ;------------------------------------------------------------------------------
 
@@ -46,6 +66,8 @@ pro x_velplt_event, ev
   flg_allplt = 0
 
   case uval of
+      'SPPLOT': x_specplot, state.fx, state.sig, wave=state.wave, inflg=4, $
+        /block, zin=state.zabs, /lls
       'VELDROP': begin
           gd = where(state.velplt.flg EQ 1)
           state.curlin = gd[ev.index]
@@ -281,7 +303,7 @@ pro x_velplt_llist, state
 
   case state.llist of
       0: begin                  ; All DLA
-          llist = getenv('XIDL_DIR')+'/Spec/Lines/Lists/all_dla.lst'
+          llist = getenv('XIDL_DIR')+'/Spec/Lines/Lists/qal.lst'
           lines = x_setllst(llist, 0)
           state.ntrans = n_elements(lines)
           state.velplt[0:state.ntrans-1].wrest = lines.wave
@@ -296,8 +318,44 @@ pro x_velplt_llist, state
           state.velplt[0:state.ntrans-1].name = lines.name
           delvarx, lines
       end
-      4: begin                  ; LLS
+      3: begin                  ; LLS
           llist = getenv('XIDL_DIR')+'/Spec/Lines/Lists/lls.lst'
+          lines = x_setllst(llist, 0)
+          state.ntrans = n_elements(lines)
+          state.velplt[0:state.ntrans-1].wrest = lines.wave
+          state.velplt[0:state.ntrans-1].name = lines.name
+          delvarx, lines
+      end
+      4: begin                  ; H2
+          h2list = fuse_h2lin()
+          tmp = { lliststrct }
+          lines = replicate(tmp, n_elements(h2list))
+          lines.wave = h2list.wrest
+          lines.name = h2list.label
+          state.ntrans = n_elements(lines)
+          state.velplt[0:state.ntrans-1].wrest = lines.wave
+          state.velplt[0:state.ntrans-1].name = $
+            lines.name+' '+strtrim(round(lines.wave),2)
+          delvarx, lines, h2list
+      end
+      5: begin                  ; Subset of LLS.LST
+          llist = getenv('XIDL_DIR')+'/Spec/Lines/Lists/lls_sub.lst'
+          lines = x_setllst(llist, 0)
+          state.ntrans = n_elements(lines)
+          state.velplt[0:state.ntrans-1].wrest = lines.wave
+          state.velplt[0:state.ntrans-1].name = lines.name
+          delvarx, lines
+      end 
+      6: begin                  ; Subset of esi_dla_sub for CII
+          llist = getenv('XIDL_DIR')+'/Spec/Lines/Lists/esi_dla_sub.lst'
+          lines = x_setllst(llist, 0)
+          state.ntrans = n_elements(lines)
+          state.velplt[0:state.ntrans-1].wrest = lines.wave
+          state.velplt[0:state.ntrans-1].name = lines.name
+          delvarx, lines
+      end 
+      7: begin                  ; Subset of esi_dla_sub for HIZ (short)
+          llist = getenv('XIDL_DIR')+'/Spec/Lines/Lists/dla_shrt.lst'
           lines = x_setllst(llist, 0)
           state.ntrans = n_elements(lines)
           state.velplt[0:state.ntrans-1].wrest = lines.wave
@@ -306,17 +364,36 @@ pro x_velplt_llist, state
       end
       else: stop
   endcase
+
+  ;; Default is Normalized data
   state.velplt[0:state.ntrans-1].ymnx = [-0.11, 1.09]
+
   
   ;; Set flg
-  a = where(state.velplt.wrest*(state.zabs+1) GT min(state.wave) AND $
-            state.velplt.wrest*(state.zabs+1) LT max(state.wave[0:state.npix-1]), $
+  a = where(state.velplt.wrest*(state.zabs+1.) GT min(state.wave) AND $
+            state.velplt.wrest*(state.zabs+1.) LT max(state.wave[0:state.npix-1]), $
             na )
   if na EQ 0 then stop
   state.nplt = na
   state.curlin = a[0]
   
   state.velplt[a].flg = 1
+
+  ;; Un-normalized
+  if state.flg_norm EQ 2 then begin
+     tmp_velo = x_allvelo(state.wave, state.zabs, $
+                          state.velplt[0:state.ntrans-1].wrest,$
+                          [-400, 400], all_pmnx=tmp_pmnx, NPIX=5000L)
+     for jj=0L,na-1 do begin
+        ii = a[jj]
+        all_fx = state.fx[tmp_pmnx[0,ii]:tmp_pmnx[1,ii]]
+        npix = n_elements(all_fx)
+        srt = sort(all_fx)
+        ymx = 1.1 * all_fx[srt[round(0.9*npix)]]
+        ymn = -0.1 * all_fx[srt[round(0.9*npix)]]
+        state.velplt[ii].ymnx = [ymn, ymx]
+     endfor
+  endif
 
 end
 
@@ -391,23 +468,26 @@ end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-pro x_velplt, yin, zin, VMNX=vmnx, INFLG=inflg, $
-              TITLE=title, NPLT=nplt, NRM=nrm, XSIZE=xsize, YSIZE=ysize, $
-              YSIN=ysin, ESIDLA=esidla, SVSTATE=svstate, LLS=lls
+pro x_velplt, flux_fil, zin, VMNX=vmnx, INFLG=inflg, $
+              TITLE=title, NPLT=nplt, XSIZE=xsize, YSIZE=ysize, $
+              SIG_FIL=ysin, ESIDLA=esidla, SVSTATE=svstate, LLS=lls, $
+              WAVE=wave, AIR=air, H2=h2, SUBLLS=sublls, CII=CII, SHRT=SHRT, $
+              UN_NORM=un_norm
 
 ;
   if  N_params() LT 2  and not keyword_set(SVSTATE) then begin 
     print,'Syntax - ' + $
       'x_velplt, spec, zin,  VMNX=, INFLG=, TITLE=, SVSTATE='
-    print, '      /ESIDLA (v1.0)'
+    print, '      /ESIDLA, /LLS, /SUBLLS, NPLT=, /AIR, /H2, /CII, /SHRT, /UN_NORM [v1.2]'
     return
   endif 
 
 ;  Optional Keywords
 
   if not keyword_set( ZIN ) then zin = 3.0
-  if not keyword_set( XSIZE ) then xsize = 700
-  if not keyword_set( YSIZE ) then ysize = 1000
+  if not keyword_set( XSIZE ) then xsize = 700L
+  device, get_screen_size=ssz
+  if not keyword_set( YSIZE ) then    ysize = ssz[1]-200
   if not keyword_set( VMNX ) then vmnx = [-300., 300.]
   if not keyword_set( NPLT ) then nplt = 15L
   if not keyword_set( FWHM ) then fwhm = 4.
@@ -416,15 +496,24 @@ pro x_velplt, yin, zin, VMNX=vmnx, INFLG=inflg, $
 
 ; Read in the Data
   if not keyword_set( INFLG ) then inflg = 0
-  ydat = x_readspec(yin, INFLG=inflg, /fscale, head=head, NPIX=npix, $
-                    WAV=xdat, FIL_SIG=ysin, SIG=ysig)
+  if size(flux_fil,/type) eq 7 then $
+    ydat = x_readspec(flux_fil, INFLG=inflg, head=head, NPIX=npix, $
+                    WAV=xdat, FIL_SIG=ysin, SIG=ysig) $
+  else begin 
+      ydat = flux_fil
+      flux_fil = 'array'
+      npix = n_elements(ydat)
+  endelse 
   
   tmp = { velpltstrct }
+
+  ;; WAVE
+  if keyword_set(WAVE) then xdat = wave
       
 ; STATE
       
   nstate = {  $
-            fil: yin, $
+            fil: flux_fil, $
             hplt: 8L, $
             nx: 2L, $
             npg: 0L, $
@@ -436,6 +525,7 @@ pro x_velplt, yin, zin, VMNX=vmnx, INFLG=inflg, $
             sig: fltarr(npix), $
             flg_sig: 0, $
             flg_zoom: 0, $
+           flg_norm: 1, $
             pos: [0.1,0.1,0.95,0.95], $ ; Plotting
             xpmnx: lonarr(2), $
             svxymnx: fltarr(4), $
@@ -447,9 +537,9 @@ pro x_velplt, yin, zin, VMNX=vmnx, INFLG=inflg, $
             vmnx: vmnx, $
             llist: 0L, 	$
             ntrans: 0L, $       ; PLOTTING LINES
-            all_velo: dblarr(5000, 300), $  
-            all_pmnx: lonarr(3, 300), $  
-            velplt: replicate(tmp, 300), $
+            all_velo: dblarr(5000, 1000), $  
+            all_pmnx: lonarr(3, 1000), $  
+            velplt: replicate(tmp, 1000), $
             psfile: 0, $
             size: lonarr(2), $
             xpos: 0., $
@@ -493,10 +583,16 @@ pro x_velplt, yin, zin, VMNX=vmnx, INFLG=inflg, $
       nstate.fx = nstate.fx[srt]
       nstate.sig = nstate.sig[srt]
 
+      if keyword_set(AIR) then begin
+          tmp = nstate.wave
+          airtovac, tmp
+          nstate.wave = tmp
+      endif
+
       ;;
       state = temporary(nstate)
+      if keyword_set(UN_NORM) then state.flg_norm = 2
 ; NORM
-      if keyword_set( NRM ) then state.flg_nrm = 1
       if keyword_set( YSIG ) then state.sig = temporary(ysig)
 
 ; LINELIST for VELPLT
@@ -505,7 +601,11 @@ pro x_velplt, yin, zin, VMNX=vmnx, INFLG=inflg, $
       ;; Line list
       state.llist = 0L
       if keyword_set(ESIDLA) then state.llist = 1
-      if keyword_set(LLS) then state.llist = 4
+      if keyword_set(LLS) then state.llist = 3
+      if keyword_set(H2) then state.llist = 4
+      if keyword_set(SUBLLS) then state.llist = 5
+      if keyword_set(CII) then state.llist = 6
+      if keyword_set(SHRT) then state.llist = 7
       x_velplt_llist, state
   endelse
   
@@ -522,8 +622,8 @@ pro x_velplt, yin, zin, VMNX=vmnx, INFLG=inflg, $
                                      uvalue='ALLDRAW_BASE', frame=2, $
                                      /tracking_events)
   
-  state.alldraw_id = widget_draw(state.alldrawbase_id, xsize=800, ysize=1000L,$
-                                 /frame, retain=2, $
+  state.alldraw_id = widget_draw(state.alldrawbase_id, xsize=xsize, $
+                                 ysize=ysize, /frame, retain=2, $
                                  uvalue='ALLDRAW')
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -577,7 +677,7 @@ pro x_velplt, yin, zin, VMNX=vmnx, INFLG=inflg, $
                            /column, xsize=10, uvalue='ZABS')
   
   ;; LINE LIST
-  linelist = ['All DLA', 'ESI DLA', 'Low Z DLA', 'ALL LLS']
+  linelist = ['All DLA', 'ESI DLA', 'Low Z DLA', 'ALL LLS', 'H2', 'CII']
   state.droplist_id = widget_droplist(alltool, $
                                       frame = 1, $
                                       title = 'Linelist:', $
@@ -624,6 +724,7 @@ pro x_velplt, yin, zin, VMNX=vmnx, INFLG=inflg, $
   next = WIDGET_BUTTON(butbase, value='NEXT',uvalue='NEXT')
   butbase2 = widget_base(alltool, /row, /align_center)
   print = WIDGET_BUTTON(butbase2, value='PRINT',uvalue='PRINT')
+  plot = WIDGET_BUTTON(butbase2, value='SPPLOT',uvalue='SPPLOT')
   dum_svstate = WIDGET_BUTTON(butbase2, value='SVSTATE',uvalue='SVSTATE')
   dum_svpgplot = WIDGET_BUTTON(butbase2, value='SVPGPLOT',uvalue='SVPGPLOT')
   done = WIDGET_BUTTON(alltool, value='DONE',uvalue='DONE')
@@ -652,6 +753,9 @@ pro x_velplt, yin, zin, VMNX=vmnx, INFLG=inflg, $
   xmanager, 'x_velplt', base
 
   !P.MULTI= [0,1,1]
+
+; Reset
+  if flux_fil eq 'array' then flux_fil = ydat 
   return
 end
 

@@ -1,29 +1,33 @@
 ;+ 
 ; NAME:
 ; x_editspec   
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
 ;    Allows user to reset values of a spectrum to reject bad regions
+;    using a simple GUI
 ;
 ; CALLING SEQUENCE:
 ;   
-;   x_editspec ydat, [head], XSIZE=, YSIZE=, TITLE=, WAVE=, LLIST=,
-;           QAL=, ERR=, /GAL
+;   x_editspec, wv, fx, var, [title], XSIZE=, YSIZE=, ISPEC=, 
+;               /BLOCK, NEWVAR=, FLG=, NEWFLG=
 ;
-; INPUTS:
-;   ydat       - Values 
-;   [head]     - Header
+; INPUTS
+;   wv  -- Wavelength array  (expected to be a 2D array [npix, nspec])
+;   fx  -- Flux array (expected to be a 2D array [npix, nspec])
+;  var  -- Variance array (expected to be a 2D array [npix, nspec])
+;  [title] -- List of object ID numbers
 ;
 ; RETURNS:
 ;
 ; OUTPUTS:
+;  NEWVAR=  -- Updated variance array which has bad pixels (regions) masked
+;  NEWFLG=  -- Flag used to specify whether to analyse the spectrum
 ;
 ; OPTIONAL KEYWORDS:
-;   xsize      - Draw window xsize (pixels)
-;   ysize      - Draw window ysize (pixels)
-;   wave       - wavelength array
-;   ERR        - Error array (fits or image)
+;   xsize   - Draw window xsize (pixels)
+;   ysize   - Draw window ysize (pixels)
+;  /BLOCK   - Block the window
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -319,14 +323,26 @@ common x_editspec_cmm
 ;
   if  N_params() LT 3  then begin 
     print,'Syntax - ' + $
-             'x_editspec, wv, fx, var, [title] (v1.0)'
+             'x_editspec, wv, fx, var, [title], XSIZE=, YSIZE=, ISPEC= [v1.1]'
     return
   endif 
 
 ;  Optional Keywords
 
-  if not keyword_set( XSIZE ) then    xsize = 1200
-  if not keyword_set( YSIZE ) then    ysize = 800
+  device, get_screen_size=ssz
+;  if not keyword_set( XSIZE ) then    xsize = ssz[0]-200
+  if not keyword_set( XSIZE ) then begin
+      if ssz[0] gt 2*ssz[1] then begin    ;in case of dual monitors
+          ssz[0]=ssz[0]/2      
+          ; force aspect ratio in case of different screen resolution,
+          ; assumes widest resolution used is a 1.6 aspect ratio.
+          if ssz[0]/ssz[1] lt 1.6 then ssz[1]=ssz[0]/1.6 
+      endif
+      xsize = ssz[0]-200
+  endif
+  if not keyword_set( YSIZE ) then    ysize = ssz[1]-200
+;  if not keyword_set( XSIZE ) then    xsize = 1200
+;  if not keyword_set( YSIZE ) then    ysize = 800
 
 
 ; Init common

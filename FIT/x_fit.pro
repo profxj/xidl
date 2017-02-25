@@ -13,24 +13,30 @@
 ; INPUTS:
 ;   xdat       - Values along one dimension
 ;   ydat       - Values along the other
-;   func       - String for Fitting function (POLY, LEGEND, BSPLIN,
-;                GAUSS)
-;   nord       - Order of the fit
 ;
 ; RETURNS:
-;   fit        - Values at each xdat
+;   fit        - Values of the fit at each xdat value
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
-;   sig        - Errors in the points
-;   reg        - Regions of data to fit
-;   msk        - Mask  (0 = Do NOT include)
-;   guess      - First guess for GAUSS routine
+;   sig=       - Errors in the yval points
+;   IVAR=      - Inverse variance of the ydat values
+;   func=      - String for Fitting function (POLY, LEGEND, BSPLIN,
+;                GAUSS)
+;   nord=      - Order of the fit
+;   reg=       - Regions of data to fit
+;   msk=       - Mask  (0 = Do NOT include)
+;   guess=     - First guess for GAUSS routine
+;   FITSTR=    - 1D Fit structure used to set many of the above
+;                parameters (recommended)
+;   FLG_BSP=   - Flag controlling BSPLINE options (1: nord = everyn)
+;   /NONRM     - Do not normalize the xdat from -1 to 1
 ;
 ; OPTIONAL OUTPUTS:
 ;   ffit     - Functional form
 ;   NRM      - Normalization numbers for xdat :: dblarr(2)
+;   RMS      - RMS of the fit
 ;
 ; COMMENTS:
 ;
@@ -56,7 +62,7 @@
 
 function x_fit, xdat, ydat, FUNC=func, NORD=nord, SIG=sig, REG=reg, FFIT=ffit, $
                 MSK=msk, GUESS=guess, NRM=nrm, FITSTR=fitstr, NONRM=nonrm, $
-                RMS=rms, IVAR=ivar
+                RMS=rms, IVAR=ivar, FLG_BSP=flg_bsp, SILENT=silent
 
 ;
   if  N_params() LT 2  then begin 
@@ -74,8 +80,17 @@ function x_fit, xdat, ydat, FUNC=func, NORD=nord, SIG=sig, REG=reg, FFIT=ffit, $
   ; Fit structure
   if keyword_set(FITSTR) then begin
       func = fitstr.func
-      nord = fitstr.nord
+      if keyword_set( FLG_BSP ) then begin
+          case flg_bsp of
+              0: nord = fitstr.nord
+              else: begin
+                  nord = flg_bsp
+                  everyn = fitstr.nord
+              end
+          endcase
+      endif else nord = fitstr.nord
   endif
+
   ; func, nord
   if not keyword_set( FUNC ) then func = 'POLY'
   if not keyword_set( nord ) then nord = 0
@@ -120,12 +135,13 @@ function x_fit, xdat, ydat, FUNC=func, NORD=nord, SIG=sig, REG=reg, FFIT=ffit, $
                   a = where( IVAR GT 0.)
                   sig = fltarr(n_elements(ydat))
                   sig[a] = 1./ sqrt(ivar[a])
-              endif else sig = fltarr(n_elements(ydat))+1.
+               endif            ; else sig = fltarr(n_elements(ydat))+1.  ;; JXP
           endif
-          sfit = sig(igood)
+          if keyword_set(SIG) then sfit = sig[igood]
           ; Fit
-          ffit = poly_fit(xfit,yfit,nord, measure_errors=sfit,$
+         ffit = poly_fit(xfit,yfit,nord, measure_errors=sfit,$
                           /double, status=status)
+;         if status EQ 0 OR status EQ 2 then begin
           if status EQ 0 then begin
               if nord EQ 0 then fit = replicate(ffit, n_elements(xnrm)) $
               else fit = poly(xnrm,ffit) 
@@ -138,8 +154,8 @@ function x_fit, xdat, ydat, FUNC=func, NORD=nord, SIG=sig, REG=reg, FFIT=ffit, $
           if keyword_set(IVAR) then ivfit = ivar[igood]
           if not keyword_set( IVAR ) AND keyword_set(SIG) then begin
               gdsig = where( sig[igood] GT 0. )
-              ivfit = fltarr( n_elements(igood) )
-              ivfit[gdsig] = 1. / (sig[igood])^2
+              ivfit = dblarr( n_elements(igood) )
+              ivfit[gdsig] = 1. / (sig[igood[gdsig]])^2
           endif
           ffit = func_fit( xfit, yfit, nord, func='flegendre', invvar=ivfit)
           fit = flegendre(xnrm, nord) # ffit
@@ -162,7 +178,8 @@ function x_fit, xdat, ydat, FUNC=func, NORD=nord, SIG=sig, REG=reg, FFIT=ffit, $
       end
       'BSPLIN': begin
           ffit= bspline_iterfit(xfit, yfit, $
-                                  nbkpts=nord, yfit = bsplinefit)
+                                nbkpts=nord, yfit = bsplinefit, $
+                                everyn=everyn, /SILENT)
           if (size(ffit,/tname) EQ "INT") then begin
               print, 'Problem with bspline_fit: Order is probably too high'
               return, -1 
@@ -191,6 +208,7 @@ function x_fit, xdat, ydat, FUNC=func, NORD=nord, SIG=sig, REG=reg, FFIT=ffit, $
 ; Write to fit structure
   if arg_present(fitstr) then begin
       if not keyword_set( NONRM ) then fitstr.nrm = nrm
+      if ptr_valid(fitstr.ffit) EQ 1 then ptr_free, fitstr.ffit
       fitstr.ffit = ptr_new(ffit)
   endif
 

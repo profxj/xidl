@@ -1,7 +1,7 @@
 ;+ 
 ; NAME:
 ; cldy_allfn
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
 ;    Plots [X/Fe+], [X/H0] vs. Elem for a range of the grid
@@ -11,10 +11,11 @@
 ; cldy_allfn, grid, obsi, val, ions
 ;
 ; INPUTS:
-;   grid  - CLOUDY grid
-;   obsi   -  Observed pair of ions
-;   val   - Ratio of observed ions
-;   ions  - Array of [Z,ion] vectors to plot
+;   grid  -- CLOUDY grid
+;   obsi  -- Observed pair of ions
+;   val   -- Ratio of observed ions
+;   ions  -- Array of [Z,ion] vectors to plot
+;   fN_in -- Fraction of the ratio contributed by entirely ionzed gas
 ;
 ; RETURNS:
 ;   
@@ -43,12 +44,13 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-pro cldy_allfn, grid, obsi, val, ions, fN_in, YMNX=ymnx, NHI=NHI, FeH=FeH, nH=nH
+pro cldy_allfn, grid, obsi, val, ions, fN_in, $
+		YMNX=ymnx, NHI=NHI, FeH=FeH, nH=nH
 
 ;
   if  N_params() LT 5  then begin 
       print, 'Syntax - ' +$
-        'cldy_allfn, grid, obsi, val, ions, fN_in, NHI=, FeH=, nH= (v1.0)'
+        'cldy_allfn, grid, obsi, val, ions, fN_in, NHI=, FeH=, nH= (v1.1)'
       print, 'Assumes obsi has [high,low] order'
       return
   endif 

@@ -1,3 +1,42 @@
+;+ 
+; NAME:
+; xpix_circ
+;   Version 1.1
+;
+; PURPOSE:
+;  Finds all pixels within a circle on an image.
+;
+; CALLING SEQUENCE:
+;   pval = xpix_circ(x0, y0, radius, /NOZERO, MAXX=, MAXY=, COUNT=)
+;
+; INPUTS:
+;   x0 -- Circle x position
+;   y0 -- Circle y position
+;   radius -- Radius of the circle
+;
+; RETURNS:
+;  pval -- pixels in the circle:  array[2,npt]
+;
+; OUTPUTS:
+;
+; OPTIONAL KEYWORDS:
+;  /NOZERO -- Disallow value of 0 (minimum is 1 instead)
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;
+; EXAMPLES:
+;   
+;
+; PROCEDURES/FUNCTIONS CALLED:
+;
+; REVISION HISTORY:
+;   17-Sep-2002 Written by JXP
+;-
+;------------------------------------------------------------------------------
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 function xpix_circ, x0, y0, radius, NOZERO=nozero, MAXX=maxx, MAXY=maxy, $
                     COUNT=count
 

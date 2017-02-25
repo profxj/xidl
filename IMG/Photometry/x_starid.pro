@@ -5,38 +5,37 @@
 ;
 ; PURPOSE:
 ;    Allows the user to interactively identify standard stars in a
-;    field using lists and the like
+;    field using lists and the like.  This is a rather quick way of
+;    doing the calibrations.
 ;
 ; CALLING SEQUENCE:
-;   
 ;   x_starid, img, date, ccd, tel, LST_PATH=, OBJ=, XSIZE=, YSIZE=
 ;
 ; INPUTS:
 ;   img        - Image(s) for Masking
 ;   date       - EPOCH of the obs (decimal years)
 ;   ccd        - Name of the CCD  (Tek5, SITe1, LRISR, SITe3)
+;   tel        - Name of telescope
 ;
 ; RETURNS:
 ;
 ; OUTPUTS:
-;   mask       -  Creates a fits table of pixel values to mask
 ;
 ; OPTIONAL KEYWORDS:
-;   OBJ        - Object names
-;   outdir     - Output directory: Default = './Masks/'
-;   XSIZE      - Size of gui in screen x-pixels (default = 800)
-;   YSIZE      - Size of gui in screen y-pixels (default = 800)
-;   OUT_PATH   - Output name for id files (default: 'Photo/')
-;   LST_PATH   - Path name for Lists (default:
-;    '/home/xavier/idl/idlutils/xidl/IMG/Photometry/Lists/')
-;
+;   OBJ       - Object names
+;   XSIZE     - Size of gui in screen x-pixels (default = 800)
+;   YSIZE     - Size of gui in screen y-pixels (default = 800)
+;   OUT_PATH  - Output name for id files (default: 'Photo/')
+;   LST_PATH  - Path name for Lists [default: $XIDL_DIR/IMG/Photometry/Lists/]
+;   INORIENT  - Number in range [-4,4] to change orientation of 
+;                  standards plotted on image.
 ;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   x_starid, img, 'SITe1', 'LCO-40'
+;   x_starid, img, 2004.2, 'SITe1', 'LCO-40'
 ;
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
@@ -436,6 +435,7 @@ common x_starid_images
               dyp = dya/state.arcpix
               ; Orient
 
+
               case state.orient of 
                   1 : begin  ; standard orientation (N up, E left)
                       state.x_str[i] = state.x_str[0] - dxp
@@ -456,7 +456,17 @@ common x_starid_images
                   3 : begin  ; e.g. Tek5 w/ flip, LRISR
                       state.x_str[i] = state.x_str[0] + dxp
                       state.y_str[i] = state.y_str[0] - dyp
+                   end
+                  4 : begin  
+                      state.x_str[i] = state.x_str[0] - dyp
+                      state.y_str[i] = state.y_str[0] - dxp
                   end
+                  -4 : begin  ; e.g. SITe1 w/o flip
+                      state.x_str[i] = state.x_str[0] + dyp
+                      state.y_str[i] = state.y_str[0] - dxp
+                  end
+
+
                   else : print, 'Oops!'
               endcase
           endfor
@@ -524,8 +534,8 @@ common x_starid_images
   else nopth = state.img[state.curimg]
 
 ; Take off the xx_
-  undpos = strpos(nopth,'_') 
-  if undpos NE -1 then nopth = strmid(nopth,undpos+1)
+;  undpos = strpos(nopth,'_') 
+;  if undpos NE -1 then nopth = strmid(nopth,undpos+1)
 
 ; Take off the fits
   lenno = strlen(nopth) 
@@ -655,7 +665,7 @@ end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 pro x_starid, img, date, ccd, tel, LST_PATH=lst_path, XSIZE=xsize, YSIZE=ysize,$
-              OUT_PATH=out_path, OBJ=obj
+              OUT_PATH=out_path, OBJ=obj, INORIENT=inorient
 
 common xcommon_color
 common x_starid_images
@@ -864,6 +874,8 @@ common x_starid_images
   x_ccdinf, ccd, tel, arc, orient
   state.arcpix = arc
   state.orient = orient
+
+if keyword_set(INORIENT) then state.orient = inorient
 
 ; Update
   x_starid_ReadImg, state

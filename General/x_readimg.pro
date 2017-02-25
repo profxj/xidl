@@ -1,10 +1,10 @@
 ;+ 
 ; NAME:
 ; x_readimg   
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
-;    Convert input to data whether it is a fits file or not
+;    Convert input to data whether it is a fits file or an image array
 ;
 ; CALLING SEQUENCE:
 ;   
@@ -19,10 +19,11 @@
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
-;  FSCALE      - Data is float
+;  /FSCALE      - Data is float
+;  /DSCALE      - Data is double
 ;
 ; OPTIONAL OUTPUTS:
-;  HEAD        - Header
+;  HEAD=       - Header
 ;
 ; COMMENTS:
 ;
@@ -44,7 +45,7 @@ function x_readimg, img, FSCALE=fscale, HEAD=head, DSCALE=dscale
 ;
   if  N_params() LT 1  then begin 
     print,'Syntax - ' + $
-             'dat = x_readimg(img, /fscale, /dscale, HEAD=) [V1.0]'
+             'dat = x_readimg(img, /fscale, /dscale, HEAD=) [V1.1]'
     return, -1
   endif 
 

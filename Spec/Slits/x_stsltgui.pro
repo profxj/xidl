@@ -4,7 +4,7 @@
 ;    Version 1.0
 ;
 ; PURPOSE:
-;    Allows the user to interactively identify edges of 
+;    Allows the user to interactively (GUI) identify edges of 
 ;     inidividual slits in the undistorted image
 ;
 ; CALLING SEQUENCE:
@@ -18,7 +18,6 @@
 ; RETURNS:
 ;
 ; OUTPUTS:
-;   newflgs    - Updated trace flags
 ;
 ; OPTIONAL KEYWORDS:
 ;   XSIZE      - Size of gui in screen x-pixels (default = 700)
@@ -30,7 +29,6 @@
 ;
 ; EXAMPLES:
 ;   x_stsltgui, img, slitstr
-;
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
 ;

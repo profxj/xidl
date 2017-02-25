@@ -1,0 +1,42 @@
+Dear Dr. Prochaska:
+
+The referee's report on your paper which you submitted to PASP entitled "Data Reduction with the MIKE Spectrometer" (MS# 351299) has been received and is enclosed below. I urge you to carefully consider the referee's comments. When you submit your revised paper to the web site in Chicago, please outline in detail in your cover letter (written in ascii text only), the specific changes that you have made in response to each of the comments. It is best to copy each comment and then describe the change immediately following it.
+
+If you have any questions, feel free to contact me.
+
+Regards,
+
+Jeff Mangum, Editor
+Publications of the Astronomical Society of the Pacific
+Phone: 434-296-0347
+Fax: 434-296-0278
+jmangum@nrao.edu
+
+
+==============================================
+REVIEWER COMMENTS
+
+Reviewer #1: The submitted paper "Data Reduction with the MIKE Spectrometer" makes a detailed presentation of a data reduction pipeline software written for the MIKE spectrometer. It's aim is to inform users about the strengths and limitations of the software and the impact these may have on the scientific interpretation of the spectra produced by the software, and to a certain extent about considerations that ought to be taken into account when using and/or designing other software of a similar nature. As such in my opinion it contains a significant new analysis of the data reduction issues, procedures and algorithms as applied to high resolution échelle spectroscopy in general and the MIKE spectrometer in particular of a sufficiently high scientific standard to warrant publication in the PASP.
+
+The paper is set out in a logical flow which and written in a clear and generally concise style. I do find though that the level of detail provided is inconsistent through the paper, in the descriptions of certain algorithms it includes information about the IRAF keywords used to control certain features, while in others it does not go so deep. I think it is not necessary to go so deep as the IRAF keywords, for me these are details that belong in the user manual or cookbook (available on the web) so I would recommend (but not require) that those references to IRAF keywords should be removed.
+
+There are a certain number of typographical errors (mostly problems with plurals where there should not be, and some non-plurals where the should be), but I trust the Journal copyediting staff will take care of these. Apart from that the presentation and English is perfectly satisfactory.
+
+There are two minor issues I suggest be addressed (both advisory rather than mandatory for publication):
+
+1) It is mentioned in the abstract and introduction that the software has since been adapted to several other instruments and they provide references to most of these. However they also mention UVES as one of the instruments the software has been adapted to, but provide no further information on this aspect and I can find nothing about this on the internet. I suggest the reference to UVES either be developed a bit more to provide further (substantiated) information (e.g. a web page or something), or else removed.
+
+2) In section 3.3 the authors write:
+
+ Third, we have not introduced algorithms to calibrate the iodine cell nor the two-slit observations. Regarding the latter, we note that there is no obvious scientific advantage to this observing mode.
+
+This is the first mention of "two-slit observations", in particular there is no mention of it in the substantial and fairly detailed introduction to the instrument provided in section 2 (where as the iodine cell is mentioned there). The mention of this observing mode here thus seems somewhat out of place, as does the closing comment. I would suggest then that either two-slit observations are properly described in section 2, or that the above references are simply removed.
+
+
+Apart from the relatively minor issues mentioned above I find that this is a well written paper which makes important information available to users and potential users of the software which should enable them to make informed choices about the suitability of the software for their scientific projects.
+
+
+
+==============================================
+
+!DSPAM:826,55818a0528759286808869!

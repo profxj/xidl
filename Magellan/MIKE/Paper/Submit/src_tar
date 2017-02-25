@@ -1,0 +1,1 @@
+tar -zcvf mredux_submit.tar.gz *.ps ms.tex table_basics.tex

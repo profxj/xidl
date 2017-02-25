@@ -1,0 +1,7 @@
+cp ~/Talks/WLake/Atoms/wlake_atoms.key Lectures/grade5_atoms.key
+gzip -f Lectures/grade5_atoms.key
+cp ~/Talks/WLake/Atoms/wlake_atoms.pdf Lectures/grade5_atoms.pdf
+#
+cp ~/Talks/WLake/Stars/wlake_stars.key Lectures/grade5_stars.key
+gzip -f Lectures/grade5_stars.key
+cp ~/Talks/WLake/Stars/wlake_stars.pdf Lectures/grade5_stars.pdf

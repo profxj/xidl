@@ -1,0 +1,4 @@
+cp index.html /usr/local/www/xavier/HIRedux/
+cp hires*.html /usr/local/www/xavier/HIRedux/
+cp hires*.log /usr/local/www/xavier/HIRedux/
+cp ../notes*txt /usr/local/www/xavier/HIRedux/Notes/

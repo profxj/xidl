@@ -1,15 +1,12 @@
 ;+ 
 ; NAME:
 ; ximgd_zoom
-;    Version 1.0
+;    Version 1.1
 ;
 ; PURPOSE:
-; routine to change color stretch for given values of 
-; brightness and contrast.
-; This routine is now shorter and easier to understand.  
+;  Change the zoom level and recenter as desired
 ;
 ; CALLING SEQUENCE:
-;   
 ;   ximgd_zoom, state, inout, /recenter
 ;
 ; INPUTS:
@@ -23,12 +20,12 @@
 ; OPTIONAL KEYWORDS:
 ;
 ; OPTIONAL OUTPUTS:
+;  /RECENTER  -- Recenter on cursor position.
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   ximgd_zoom, state, inout
-;
+;   ximgd_zoom, state, 'in', /recenter
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
 ;

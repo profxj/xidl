@@ -1,10 +1,11 @@
 ;+ 
 ; NAME:
 ; x_addtwoflats
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
-;    Combines two flats, rejecting Cosmic Rays
+;    Combines two flats, rejecting Cosmic Rays.  This routine is
+;   used extensively in the WFCCD routines.
 ;
 ; CALLING SEQUENCE:
 ;   
@@ -24,7 +25,7 @@
 ;  RN         - Read noise (for the VAR output only)
 ;
 ; OPTIONAL OUTPUTS:
-;   VAR       - Variance
+;   VAR       - Variance image
 ;
 ; COMMENTS:
 ;

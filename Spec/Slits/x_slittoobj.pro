@@ -4,17 +4,17 @@
 ;    Version 1.0
 ;
 ; PURPOSE:
-;    Given the slitstr and the map, find slit positions in the
-;    original image
+;    Simple program to move some tags from the slit structure into the
+;    object structure
 ;
 ; CALLING SEQUENCE:
-;   
-;   x_slittoobj, slitstr, map
+;   x_slittoobj, objstr, nobj, slitstr, clm
 ;
 ; INPUTS:
-;   img         - Flux image
+;   objstr      - Object sturcture
+;   nobj        - Index of the object
 ;   slitstr     - Slit structure
-;   map         - y-distortion map (fits is ok)
+;   clm         - Column where the object was identified
 ;
 ; RETURNS:
 ;
@@ -46,7 +46,7 @@ pro x_slittoobj, objstr, nobj, slitstr, clm
 ;  Error catching
   if  N_params() LT 4  then begin 
     print,'Syntax - ' + $
-             'x_slittoobj, objstr, nobj, slitstr, clm [v1.0]'
+             'x_slittoobj, objstr, nobj, slitstr, clm [v1.1]'
     return
   endif 
 

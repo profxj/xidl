@@ -1,3 +1,35 @@
+;+ 
+; NAME:
+; lndltstr__define
+;   Version 1.1
+;
+; PURPOSE:
+;   Structure to handle Landolt star data
+;
+; CALLING SEQUENCE:
+;  tmp = {lndltstr}
+;
+; INPUTS:
+;
+; RETURNS:
+;
+; OUTPUTS:
+;
+; OPTIONAL KEYWORDS:
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;
+; EXAMPLES:
+;
+; PROCEDURES/FUNCTIONS CALLED:
+;
+; REVISION HISTORY:
+;   07-Aug-2001 Written by JXP
+;-
+;------------------------------------------------------------------------------
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 pro lndltstr__define
 
 ;  This routine defines the structure for Landolt data

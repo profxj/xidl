@@ -1,29 +1,38 @@
 ;+ 
 ; NAME:
 ; dla_si2star   
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
-;    Fits a continuum to spectroscopic data interactively
+;    Given a normalized QSO spectrum (fits file) and the redshift of
+;    the DLA, overplots a SiII* feature at the expected spot based on
+;    the observed CII* profile.  THe program also plots the 
+;    CII* profile
 ;
 ; CALLING SEQUENCE:
-;   
-;   dla_fndtran, fil, NHI, Z, NPIX=, SNR=, OUTFIL=, NSIG=
+;  dla_si2star, fits_fil, zabs, VMNX=, PSFIL=, YMNX=, RTIO=
 ;
 ; INPUTS:
+;  fits_fil -- FITS file containing the QSO data [Assumes HIRES
+;              format]
+;  zabs  -- Absorption redshift
 ;
 ; RETURNS:
 ;
 ; OUTPUTS:
+;   PSFIL=  -- Writes PS file 
 ;
 ; OPTIONAL KEYWORDS:
+;  RTIO= -- Ratio of optical depth of SiII* to CII* [deafult: 0.05]
+;  VMNX= -- Velcoity region to plot [default: -100 to 100 km/s]
+;  YMNX= -- Ymin, ymax of plot [deafult: 0., 1.]
 ;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   dla_fndtran, fil, NHI, Z
+;   dla_si2star, 'Q1331_f.fits', 1.770
 ;
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
@@ -37,16 +46,16 @@
 pro dla_si2star, fits_fil, zabs, VMNX=vmnx, PSFIL=psfil, YMNX=ymnx, RTIO=rtio
 
 ;
-  if  N_params() LT 1  then begin 
+  if  N_params() LT 2  then begin 
     print,'Syntax - ' + $
-             'dla_si2star, fits_fil, zabs, VMNX=  [v1.0]'
+             'dla_si2star, fits_fil, zabs, VMNX=, PSFIL=, YMNX=, RTIO=  [v1.1]'
     return
   endif 
 
 ; Optional Keywords
   if not keyword_set( VMNX ) then vmnx = [-100.d, 100.]
   if not keyword_set( YMNX ) then ymnx = [[0.0, 1.1], [0.0,1.1]]
-  if not keyword_set( RTIO ) then rtio = 0.1
+  if not keyword_set( RTIO ) then rtio = 0.05
 
   error_fil = strmid(fits_fil, 0L, strlen(fits_fil)-6)+'e.fits'
 ; Read in data

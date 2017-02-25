@@ -1,7 +1,7 @@
 ;+ 
 ; NAME:
 ; xdimg_skymsk   
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
 ;    Builds a sky mask for each input image using xmkmask, an 
@@ -9,7 +9,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   
-;   xdimg_skymask, struct, objimg, /ERASE, /DOOV
+;   xdimg_skymask, struct, objimg, /ERASE, /DOOV, XSIZE=, YSIZE=
 ;
 ; INPUTS:
 ;   struct -- dimg_strct defining the images of interest
@@ -21,7 +21,7 @@
 ;   skymasks --  Builds sky masks and puts them into 'Masks/Sky/'
 ;
 ; OPTIONAL KEYWORDS:
-;   erase - Erase pre-existing sky masks
+;   erase - Erase pre-existing sky masks first
 ;   doov - Make OV files as necessary
 ;
 ; OPTIONAL OUTPUTS:
@@ -47,7 +47,7 @@ pro xdimg_skymsk, struct, objimg, ERASE=erase, DOOV=doov, XSIZE=xsize, YSIZE=ysi
 ;
   if  N_params() LT 2  then begin 
       print,'Syntax - ' + $
-        'xdimg_skymsk, struct, objimg, /ERASE, /DOOV (v1.0)'
+        'xdimg_skymsk, struct, objimg, /ERASE, /DOOV, XSIZE=, YSIZE= (v1.1)'
       return
   endif 
   

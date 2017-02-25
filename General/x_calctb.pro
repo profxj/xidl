@@ -1,31 +1,32 @@
 ;+ 
 ; NAME:
 ; x_calctb   
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
-;    Launches a cw_field and grabs input from the user
+;    Calculate the temperature of a gas given its Doppler parameter
 ;
 ; CALLING SEQUENCE:
-;   
-;   num = x_guinum(flg)
+;   x_calctb, b, T, /LOGT, MA=
 ;
 ; INPUTS:
-;   flg = 0: float, 1: double, 2: Long
+;  b -- Doppler parameter (km/s)
 ;
 ; RETURNS:
-;   num - Number
 ;
 ; OUTPUTS:
+;  T -- Temperature (K)
 ;
 ; OPTIONAL KEYWORDS:
+;  /LOGT -- Return logarithmic temperature
+;  MA -- Mass of nucleus [1 for Hydrogen]
 ;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   num = x_guinum( 0 )
+;  x_calctb, 25., T, /LOGT
 ;
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
@@ -39,20 +40,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 pro x_calctb, b, T, MA=MA, LOGT=logt
-
-;common x_slctline_ans
 
 ;
   if  N_params() LT 1  then begin 
     print,'Syntax - ' + $
-             'x_calctb, b, t, MA='
+             'x_calctb, b, t, MA=, /LOGT, [v1.1]'
     return
   endif 
 
@@ -60,9 +54,10 @@ pro x_calctb, b, T, MA=MA, LOGT=logt
   if not keyword_set( MA ) then MA = 1.
 
 ;; Constants
-  c = x_constants(/cgs)
+;  c = x_constants(/cgs)
+  c = x_constants()
 
-  T = (b*1e5)^2 * MA * c.mp / c.k
+  T = (b*1e5)^2 * MA * c.mp / c.k / 2.
   if keyword_set( LOGT ) then T = alog10(T)
 
   return

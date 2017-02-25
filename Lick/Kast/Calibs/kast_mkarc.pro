@@ -4,22 +4,21 @@
 ;     Version 1.0
 ;
 ; PURPOSE:
-;    Process arc file
+;    Process arc files (flatten, combine)
 ;
 ; CALLING SEQUENCE:
-;   
-;  kast_mkarc, kast, slit
+;  kast_mkarc, kast, setup, /CLOBBER
 ;
 ; INPUTS:
-;   kast     -  ESI structure
+;   kast  --  Kast IDL structure
+;  setup  --  Setup value
 ;
 ; RETURNS:
 ;
 ; OUTPUTS:
-;  One normalized flat per slit width
 ;
 ; OPTIONAL KEYWORDS:
-;   DFLAT      - Use Dome flats where possible
+; /CLOBBER -- Clobber any previous processed image
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -38,24 +37,23 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-pro kast_mkarc, kast, setup, SIDE=side, CLOBBER=clobber
+pro kast_mkarc, kast, setup, CLOBBER=clobber
 
 ;
   if  N_params() LT 2  then begin 
       print,'Syntax - ' + $
-        'kast_mkarc, kast, setup, SIDE=side, /CLOBBER [v1.0]'
+        'kast_mkarc, kast, setup, /CLOBBER [v1.1]'
       return
   endif 
   
 ;  Optional Keywords
   
-  if not keyword_set( SIDE ) then side = 3L
+;  if not keyword_set( SIDE ) then side = 3L
   if not keyword_set( OVLBL ) then ovlbl = 'Raw/'
 
   c_set = strtrim(setup,2)
 
-; BLUE
+; Loop on side
   for qq=1,2 do begin
       ;; LBL
       if qq EQ 1 then lbl = 'B' else lbl = 'R'

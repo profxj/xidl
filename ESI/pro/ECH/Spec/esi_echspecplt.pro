@@ -37,6 +37,7 @@
 ;
 ; REVISION HISTORY:
 ;   23-Aug-2002 Written by JXP
+;   17-Mar-2012 Quick fix to get 'D' option working by MR
 ;-
 ;------------------------------------------------------------------------------
 
@@ -47,12 +48,17 @@
 pro esi_echspecplt_initcommon
 ;
 common x_specplot_lines, $
-  flg_lines, $
-  lines, $
-  zabs
+   flg_lines, $
+   flg_lines2, $
+   lines, $
+   lines2, $
+   zabs, $
+   zabs2
 
   flg_lines = 0
+  flg_lines2 = 0
   zabs = 0.
+  zabs2 = 0.
 
 common esi_echspecplt_cmmn, esiobj
 
@@ -74,6 +80,11 @@ common x_specplot_lines
           widget_control, state.zabs_id, get_value=tmp
           zabs = tmp
           flg_lines = 1
+      end
+      'ZABS2' : begin
+          widget_control, state.zabs2_id, get_value=tmp
+          zabs2 = tmp
+          flg_lines2 = 1
       end
       'LNLIST' : begin  ; LINE LIST
           state.flg_lines = ev.index + 1
@@ -190,6 +201,8 @@ common x_specplot_lines
                   WIDGET_CONTROL, state.base_id, set_uvalue = state, /no_copy
                   return
               end
+              ;; Damped Lya overplot
+              'D': m_specplot_initdla, state
               ;; ORDERS
               '0': esi_echspecplt_Chgordr, state, 0
               '1': esi_echspecplt_Chgordr, state, 1
@@ -277,11 +290,12 @@ common x_specplot_lines
   
   ; EW
   if state.flg_EW NE 0 then esi_echspecplt_PltEW, state
-;  if state.flg_EW EQ 1 then oplot, [state.EW_lmt[0,0]], [state.EW_lmt[0,1]], $
-;    psym=2, color=getcolor('red')
 
   ; Colm
   if state.flg_Colm NE 0 then esi_echspecplt_PltClm, state
+
+  ;; DLA
+  if state.flg_DLA NE 0 then m_specplot_PltDLA, state
 
 end
 
@@ -289,7 +303,7 @@ end
 ;  Reset
 ;;;;;;;;;;;;;;;;;;;;
 
-pro esi_echspecplt_Reset, state
+pro esi_echspecplt_Reset, state, FLUX=flux
 
 common esi_echspecplt_cmmn
 
@@ -310,7 +324,9 @@ common esi_echspecplt_cmmn
       endif else begin
           state.fx[0:npix-1] = esiobj[state.ordr].fx[amin:bmax] 
           state.sig[0:npix-1] = sqrt(esiobj[state.ordr].var[amin:bmax] > 0.)
-      endelse
+       endelse
+      ;; Sky?
+      if state.flag_sky EQ 1 then state.fx[0:npix-1] = esiobj[state.ordr].sky[amin:bmax] 
   endif else begin
       ;; Set wave, fx
       a = where(esiobj.fx[*,state.ordr] NE 0., na, $
@@ -323,13 +339,16 @@ common esi_echspecplt_cmmn
       state.npix = npix
 
       state.wave[0:npix-1] = esiobj.wave[amin:bmax,state.ordr]
-      state.fx[0:npix-1] = esiobj.fx[amin:bmax,state.ordr] 
+      if state.flag_sky EQ 1 then state.fx[0:npix-1] = esiobj.sky[amin:bmax,state.ordr] $
+         else state.fx[0:npix-1] = esiobj.fx[amin:bmax,state.ordr] 
       state.sig[0:npix-1] = $
         sqrt(esiobj.var[amin:bmax,state.ordr] > 0.)
-  endelse
+   endelse
+
   ;; Plotting
-  state.svxymnx = [state.wave[0], min(state.fx[0:npix-1],max=mx), $
-                   state.wave[npix-1], mx]
+  srt = sort(state.fx[0:npix-1])
+  ymx = state.fx[srt[0.9*npix]] * 1.2
+  state.svxymnx = [state.wave[0], 0., state.wave[npix-1], ymx]
   state.xymnx = state.svxymnx
 
 end
@@ -345,7 +364,8 @@ common x_specplot_lines
   case state.flg_lines of 
       1: setwave = x_slctline(lines, /ISM)
       2: setwave = x_slctline(lines, /GAL)
-      else: setwave = x_slctline(lines)
+      3: setwave = x_slctline(lines)
+      4: setwave = x_slctline(lines,/ISM)
   endcase
 
   ; Set redshift
@@ -372,6 +392,7 @@ common x_specplot_lines
   if not keyword_set( IMG ) then begin
       clr = getcolor(/load)
       pclr = clr.blue
+      rclr = clr.red
   endif else pclr = 3
 
   ; Find Min and Max in region
@@ -395,16 +416,58 @@ common x_specplot_lines
           2: xyouts, xplt, ymax2, $ ; GAL
             strtrim(lines[allwv[q]].name,2), color=pclr, $
             orientation=90., charsize=1.5 
-          else: xyouts, xplt, ymax, $
+          3: xyouts, xplt, ymax, $
             strtrim(lines[allwv[q]].name,2)+$
             string(lines[allwv[q]].wave,format='(f7.1)'),$
             color=pclr, orientation=90., $
             charsize=1.5
+          4: xyouts, xplt, ymax, $ ; LLS
+            strtrim(lines[allwv[q]].name,2), color=pclr, $
+            orientation=90., charsize=1.5
+	else: stop
       endcase
       ; Dotted line
       oplot, [xplt, xplt], [state.xymnx[1], state.xymnx[3]], $
         color=pclr, linestyle=1
-  endfor
+   endfor
+
+  if flg_lines2 then begin
+     ;; Find Min and Max in region
+     wvmin = state.xymnx[0]/(zabs2+1.)
+     wvmax = state.xymnx[2]/(zabs2+1.)
+     
+     ;; Parse list
+     allwv = where(lines.wave GE wvmin AND lines.wave LE wvmax, cntwv)
+     
+     ;; Plot
+     ymax = state.xymnx[1] + 0.02*(state.xymnx[3]-state.xymnx[1])
+     ymax2 = state.xymnx[1] + 0.8*(state.xymnx[3]-state.xymnx[1])
+     
+     for q=0L,cntwv-1 do begin
+        xplt = lines[allwv[q]].wave*(1.+zabs2)
+                                ; Name
+        case state.flg_lines of
+           1: xyouts, xplt, ymax, $ ; QAL
+                      strtrim(lines[allwv[q]].name,2), color=rclr, $
+                      orientation=90., charsize=1.5
+           2: xyouts, xplt, ymax2, $ ; GAL
+                      strtrim(lines[allwv[q]].name,2), color=rclr, $
+                      orientation=90., charsize=1.5 
+           3: xyouts, xplt, ymax, $
+                      strtrim(lines[allwv[q]].name,2)+$
+                      string(lines[allwv[q]].wave,format='(f7.1)'),$
+                      color=rclr, orientation=90., $
+                      charsize=1.5
+           4: xyouts, xplt, ymax, $ ; LLS
+                      strtrim(lines[allwv[q]].name,2), color=rclr, $
+                      orientation=90., charsize=1.5
+           else: stop
+        endcase
+                                ; Dotted line
+        oplot, [xplt, xplt], [state.xymnx[1], state.xymnx[3]], $
+               color=rclr, linestyle=1
+     endfor
+  end
 
   ; Mark
 
@@ -445,12 +508,12 @@ common x_specplot_lines
                      state.wave LE state.EW_lmt[1,0], npix)
       cntm = (state.EW_lmt[0,1]+state.EW_lmt[1,1])/2.
       if npix NE 0 then begin
-          state.EW = int_tabulated(state.wave[sumpix], cntm-state.fx[sumpix],$
+          state.EW = int_tabulated(state.wave[sumpix], 1.-state.fx[sumpix]/cntm,$
                                    /double)/(1.+zabs)
 ;          state.EW = total(cntm - state.fx[sumpix], /double)/(1.+zabs)
           ; Multiply by delta lambda
 ;          state.EW = state.EW * state.xd
-          print, 'Rest EW = ', state.EW, ' Ang'
+          print, 'Rest EW = ', state.EW*1e3, ' mA'
       endif
       
       ; Reset the flag
@@ -476,8 +539,10 @@ pro esi_echspecplt_PltEW, state
           oplot, [state.EW_lmt[0,0],state.EW_lmt[1,0]], $
             [state.EW_lmt[0,1],state.EW_lmt[1,1]], $
             psym=-2, color=clr.red, linestyle=2
-          xyouts, 0.5, 0.97, 'EW = '+string(state.EW)+' Ang', $
-            /normal, charsize=1.5, alignment=0.5
+;          xyouts, 0.5, 0.97, 'EW = '+string(state.EW)+' Ang', $
+;            /normal, charsize=1.5, alignment=0.5
+          xyouts, 0.5, 0.97, 'Rest EW = '+string(state.EW*1.e3)+' mA', $
+            /normal, charsize=1.5, alignment=0.5, color=clr.red
       end
       else :
   endcase
@@ -502,22 +567,27 @@ common x_specplot_lines
   if state.flg_Colm EQ 0 then begin
       ; Set one limit
       state.flg_Colm = 1 
-      state.Colm_lmt[0]= xgetx_plt(state.xcurs,state.pos,state.xymnx,$
-                           state.size) 
+      state.Colm_lmt[0]= xgetx_plt(state, /strct)
+      state.EW_lmt[0,1]= xgety_plt(state, /strct)
   endif else begin
       ; Set other limit
-      tmp = xgetx_plt(state.xcurs,state.pos,state.xymnx,$
-                           state.size) 
+      tmp = xgetx_plt(state, /strct)
       if tmp GT state.Colm_lmt[0] then begin
           state.Colm_lmt[1] = tmp 
+          state.EW_lmt[1,1] = xgety_plt(state, /strct)
       endif else begin
           state.Colm_lmt[1] = state.Colm_lmt[0]
           state.Colm_lmt[0] = tmp
+          state.EW_lmt[1,1] = state.EW_lmt[0,1]
+          state.EW_lmt[0,1] = xgety_plt(state, /strct)
       endelse
 
+      ;; continuum
+      cntm = (state.EW_lmt[0,1]+state.EW_lmt[1,1])/2.
+
       ; Set pixels
-      pxmin = x_fndmin(state.Colm_lmt[0], state.wave)
-      pxmax = x_fndmin(state.Colm_lmt[1], state.wave)
+      mn = min(abs(state.Colm_lmt[0]-state.wave),pxmin)
+      mn = min(abs(state.Colm_lmt[1]-state.wave),pxmax)
 
       ; Choose atomic line
       if zabs NE 0. then begin
@@ -530,6 +600,8 @@ common x_specplot_lines
                   case state.flg_lines of
                       1: gdwave = x_slctline(lines, /ISM) 
                       2: gdwave = x_slctline(lines, /GAL) 
+                      3: gdwave = x_slctline(lines, /GAL) 
+                      4: gdwave = x_slctline(lines, /ISM) 
                       else: gdwave = x_slctline(lines)
                   endcase
               end
@@ -548,17 +620,24 @@ common x_specplot_lines
           case state.flg_lines of
               1: gdwave = x_slctline(lines, /ISM) 
               2: gdwave = x_slctline(lines, /GAL) 
+              3: gdwave = x_slctline(lines, /GAL) 
+              4: gdwave = x_slctline(lines, /ISM) 
               else: gdwave = x_slctline(lines)
           endcase
       endelse
                   
       ; Calc AODM Colm
       x_aodm, state.wave[pxmin:pxmax], $
-        state.fx[pxmin:pxmax], $
-        state.sig[pxmin:pxmax], $
+        (state.fx[pxmin:pxmax]/cntm), $
+        (state.sig[pxmin:pxmax]/cntm), $
         gdwave, clm, sig_clm, /LOG
-      state.colm = clm
-      state.sig_colm = sig_clm
+      if clm GT 0. then begin
+          state.colm = clm
+          state.sig_colm = sig_clm
+      endif else begin
+          state.colm = alog10(sig_clm*3.)
+          state.sig_colm = -9.99
+      endelse
       state.flg_Colm = 2
   endelse
 
@@ -711,6 +790,102 @@ pro esi_echspecplt_smooth, state, RESET=reset
 end
 
 ;;;;;;;;;;;;;;;;;;;;
+;  Init Lines
+;;;;;;;;;;;;;;;;;;;;
+
+pro m_specplot_initLines, state
+
+  common x_specplot_lines
+
+  ;; Grab the lines
+  case state.flg_lines of
+      1: begin ; DLA
+          llist = getenv('XIDL_DIR')+'/Spec/Lines/Lists/dla.lst'
+          x_specplot_initQAL, llist
+      end
+      2: begin ; GAL
+          llist = getenv('XIDL_DIR')+'/Spec/Lines/Lists/gal.lst'
+          x_specplot_initGAL, llist
+      end
+      3: begin ; QSO
+          llist = getenv('XIDL_DIR')+'/Spec/Lines/Lists/qso.lst'
+          X_specplot_initGAL, llist
+      end
+      4: begin ; LLS
+          llist = getenv('XIDL_DIR')+'/Spec/Lines/Lists/lls.lst'
+          X_specplot_initQAL, llist
+      end
+      5: begin ; H2
+          x_specplot_initH2, llist
+      end
+      6: begin ; GRB
+          llist = getenv('XIDL_DIR')+'/Spec/Lines/Lists/grb.lst'
+          x_specplot_initQAL, llist
+       end
+      7: begin ; LBG
+          llist = getenv('XIDL_DIR')+'/Spec/Lines/Lists/lbg.lst'
+          x_specplot_initGAL, llist
+       end         
+      8: begin ;MOLECULES in MM (MF)
+         llist = getenv('XIDL_DIR')+'/Spec/Lines/Lists/mol.lst'
+         x_specplot_initMOL, llist
+      end         
+      else:
+  endcase
+
+  ;; Reset z
+  zabs = 0.
+  flg_lines = 0
+end
+
+;;;;;;;;;;;;;;;;;;;;
+;  Init DLA
+;;;;;;;;;;;;;;;;;;;;
+
+pro m_specplot_initdla, state, BETA=beta
+
+  common x_specplot_lines
+
+  ;; Grab x,y pos
+  xpt = xgetx_plt(state, /strct)
+  ypt = xgety_plt(state, /strct)
+
+  ;; Setup HI
+  if not keyword_set(BETA) then wrest = 1215.6701d else wrest=1025.7223d
+  tmp = x_setline(wrest)
+
+  ;; Get z
+  state.dla_line = tmp
+  state.dla_line.zabs = (xpt / wrest) - 1.
+  state.dla_line.N = 20.3
+  state.dla_line.b = 30.0
+
+  ;; Calculate
+  xmin = state.wave[0] > (xpt - 40.*(1+state.dla_line.zabs))
+  xmax = state.wave[state.npix-1] < (xpt + 40.*(1+state.dla_line.zabs))
+
+  mn = min(abs(state.wave-xmin), imn)
+  mx = min(abs(state.wave-xmax), imx)
+
+  state.dla_fx = 1.
+  state.dla_fx[imn:imx] = x_voigt(state.wave[imn:imx], state.dla_line, $
+                                  FWHM=state.FWHM) 
+  state.dla_fx = state.dla_fx * ypt
+  state.flg_DLA = 1
+
+  ;; Overplot
+  state.flg_lines = 4
+  m_specplot_initLines, state
+  flg_lines = 1
+  zabs = state.dla_line.zabs
+  widget_control, state.zabs_id, set_value=zabs
+  widget_control, state.lines_id, set_list_select=state.flg_lines-1
+
+  return
+end
+
+
+;;;;;;;;;;;;;;;;;;;;
 ;  Change ORDR
 ;;;;;;;;;;;;;;;;;;;;
 
@@ -732,9 +907,24 @@ pro esi_echspecplt_Chgordr, state, newordr, ADD=add, SUB=sub
   
   ;; RESET
   widget_control, state.ordr_id, set_value=newordr
-  esi_echspecplt_Reset, state
+  esi_echspecplt_Reset, state, FLUX=state.flux
 
 end
+
+;;;;;;;;;;;;;;;;;;;;
+;  Plot DLA
+;;;;;;;;;;;;;;;;;;;;
+
+pro m_specplot_PltDLA, state
+
+  clr = getcolor(/load)
+
+  oplot, state.wave, state.dla_fx, color=clr.green
+
+  return
+end
+
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -749,7 +939,7 @@ end
 
 pro esi_echspecplt, spec_fil, obj_id, XSIZE=xsize, YSIZE=ysize, $
                 WAVE=wave, LLIST=llist, QAL=QAL, ERR=err, GAL=gal, INFLG=inflg,$
-                BLOCK=block, ZIN=zin, NRM=nrm, FSPEC=fspec
+                BLOCK=block, ZIN=zin, NRM=nrm, FSPEC=fspec, FLUX=flux, SKY=sky
 
 common x_specplot_lines
 common esi_echspecplt_cmmn
@@ -761,19 +951,31 @@ common esi_echspecplt_cmmn
 
 ;  Optional Keywords
 
-  if not keyword_set( XSIZE ) then    xsize = 1200
-  if not keyword_set( YSIZE ) then    ysize = 800
+  device, get_screen_size=ssz
+  if not keyword_set( XSIZE ) then begin
+      if ssz[0] gt 2*ssz[1] then begin    ;in case of dual monitors
+          ssz[0]=ssz[0]/2      
+          ; force aspect ratio in case of different screen resolution,
+          ; assumes widest resolution used is a 1.6 aspect ratio.
+          if ssz[0]/ssz[1] lt 1.6 then ssz[1]=ssz[0]/1.6 
+      endif
+      xsize = ssz[0]-200
+  endif
+  if not keyword_set( YSIZE ) then    ysize = ssz[1]-200
   if not keyword_set( OBJ_ID ) then    obj_id = 'a'
 
 ; Input the Obj structure
+  if keyword_set( SKY ) then flag_sky = 1 else flag_sky = 0
   if not keyword_set( FSPEC ) then begin
       if keyword_set( spec_fil ) then begin
-          objstr = xmrdfits(spec_fil, 1, structyp='dblsobjstrct', /silent)
+         objstr = xmrdfits(spec_fil, 1, structyp='dblsobjstrct', /silent)
+         ydat = objstr.fx
       endif else begin
           fils = findfile('Extract/Obj*fits*', count=nfil)
           if nfil EQ 0 then return 
           obj_fil = x_guilist(fils)
           objstr = xmrdfits(obj_fil, 1, structyp='dblsobjstrct', /silent)
+         ydat = objstr.fx
       endelse 
       gdobj = where(objstr.obj_id EQ obj_id) 
   endif else begin
@@ -784,8 +986,10 @@ common esi_echspecplt_cmmn
       endif
       x_wrechfspec, objstr, spec_fil, /read
       gdobj = [0L]
-  endelse
+      ydat = objstr[*,0]
+   endelse
 
+  tmp1 = { newabslinstrct }
 
 ; Init common
   esi_echspecplt_initcommon
@@ -810,10 +1014,15 @@ common esi_echspecplt_cmmn
             flg_zoom: 0, $
             flg_flux: 0, $
             flg_fspec: 0, $
+            flux: 0L, $
             pos: [0.1,0.1,0.95,0.95], $ ; Plotting
             flg_EW: 0, $ ; EW flag
             EW_lmt: dblarr(2,2), $
             EW: 0.d, $    
+            FWHM: 4., $   ; FWHM of instrument (pix)
+            flg_DLA: 0, $ ; DLA flag
+            dla_line: tmp1, $ ; DLA flag
+            dla_fx: fltarr(n_elements(ydat)) + 1., $
             flg_Colm: 0, $ ; Colm flag
             Colm_lmt: dblarr(2), $
             Colm: 0., $
@@ -821,6 +1030,7 @@ common esi_echspecplt_cmmn
             xpos: 0.d, $
             ypos: 0.d, $
             psfile: 0, $ ; Postscript
+            flag_sky: flag_sky, $  
             flg_lines: 0, $  ; QAL=1, GAL=2
             svxymnx: fltarr(4), $
             xymnx: fltarr(4), $
@@ -839,6 +1049,7 @@ common esi_echspecplt_cmmn
             xpos_id: 0L, $
             ypos_id: 0L, $
             zabs_id: 0L, $
+            zabs2_id: 0L, $
             ordr_id: 0L, $
             lines_id: 0L, $
             funclist_id: 0L, $
@@ -847,6 +1058,7 @@ common esi_echspecplt_cmmn
 
 ; FSPEC
   if keyword_set( FSPEC ) then state.flg_fspec = 1
+  if keyword_set( FLUX ) then state.flux = 1
 
 ; LINELIST
 
@@ -854,7 +1066,8 @@ common esi_echspecplt_cmmn
   if keyword_set( QAL ) then state.flg_lines = 1
   if keyword_set( GAL ) then state.flg_lines = 2
   if keyword_set( QSO ) then state.flg_lines = 3
-  if state.flg_lines NE 0 then x_specplot_initLines, state
+  if keyword_set( LLS ) then state.flg_lines = 4
+  if state.flg_lines NE 0 then m_specplot_initLines, state
   
 ;    WIDGET
   base = WIDGET_BASE( title = 'esi_echspecplt', /column, $
@@ -869,7 +1082,7 @@ common esi_echspecplt_cmmn
 ;        Help
   state.help[0] = '  :::Help Menu::: '
   state.help[1] = 'LMB/LMB -- Set region'
-  state.help[2] = 's/s -- Set region'
+  state.help[2] = '-/= -- Change order number'
   state.help[3] = 'l -- Set Left '
   state.help[4] = 'r -- Set Right '
   state.help[5] = 'b -- Set Bottom '
@@ -898,6 +1111,9 @@ common esi_echspecplt_cmmn
 
   state.zabs_id = cw_field(toolbar, title='zabs', value=zabs, /floating, $
                            /column, xsize=10, /return_events, uvalue='ZABS')
+  state.zabs2_id = cw_field(toolbar, title='zabs2', value=zabs, /floating, $
+                           /column, xsize=10, /return_events, uvalue='ZABS2')
+
 
 
 ; xy position
@@ -936,7 +1152,7 @@ common esi_echspecplt_cmmn
                               value = '')
 ;      Lines
   state.lines_id = WIDGET_LIST(toolbar, $
-                             VALUE=['QAL','GAL','QSO'], $
+                             VALUE=['QAL','GAL','QSO','LLS'], $
                              uvalue='LNLIST', ysize = 3)
   widget_control, state.lines_id, set_list_select=state.flg_lines-1
 ;      Done
@@ -946,7 +1162,7 @@ common esi_echspecplt_cmmn
   WIDGET_CONTROL, base, /realize
   
 ; Update
-  esi_echspecplt_Reset, state
+  esi_echspecplt_Reset, state, FLUX=state.flux
   esi_echspecplt_UpdatePlot, state
   WIDGET_CONTROL, base, set_uvalue = state, /no_copy
 

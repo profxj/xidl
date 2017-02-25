@@ -1,3 +1,22 @@
+;+ 
+; NAME:
+;  zoomstrct__define
+;   Version 1.1
+;
+; PURPOSE:
+;  Creates (defines) a structure for use in image GUIs, especially
+;  zooming
+;
+; CALLING SEQUENCE:
+;   tmp = {zoomstrct}
+;
+; EXAMPLES:
+; 
+; REVISION HISTORY:
+;
+;------------------------------------------------------------------------------
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 pro zoomstrct__define
 
 ;  This routine defines the structure for direct images

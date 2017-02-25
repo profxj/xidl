@@ -12,12 +12,10 @@
 ;      TOLER=, NEG=, FITSTR=)
 ;
 ; INPUTS:
-;   xval       - Values where fit was pre-evaluated
-;   fit        - Values of the fit at xval
-;   func       - String for Fitting function (POLY, LEGEND, BSPLIN,
-;                GAUSS)
-;   ffit       - Output from the fitting stuff
 ;   val        - Value to match
+;   fitstr     - FIT structure
+;   xval       - Values where fit was pre-evaluated
+;   [fit]      - Values of the fit at xval (calculated if not input)
 ;
 ; RETURNS:
 ;   xsolv      - x position where the fit = val
@@ -26,18 +24,17 @@
 ;
 ; OPTIONAL KEYWORDS:
 ;   NORD       - Required for LEGEND
-;   TOLER      - Tolerance for match (default: 10^-4)
+;   TOLER      - Tolerance for match [default: 10^-4]
 ;   IPIX       - Starting pixel in xval
 ;   NEG        - Proceed in the negative direction
-;   NITER      - Max number of iterations
-;   NRM        - Normalization numbers for x_calcfit
+;   NITER      - Max number of iterations [default: 50]
 ;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   xsolv = x_fndfitval()
+;   xsolv = x_fndfitval(0.2, fitstr, xval)
 ;
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
@@ -72,7 +69,7 @@ function x_fndfitval, val, fitstr, xval, fit, $
 
   if not keyword_set( IPX ) then ipx = 0
   if not keyword_set( NITER ) then niter = 50
-  if not keyword_set( TOLER ) then toler = 10.0^(-4) else begin
+  if not keyword_set( TOLER ) then toler = 1e-4 else begin
       if TOLER LT 1.E-8 then message, 'TOLER too small! Try rescaling.'
   endelse
 

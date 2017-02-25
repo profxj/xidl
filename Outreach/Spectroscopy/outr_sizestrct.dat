@@ -1,0 +1,17 @@
+     0.400000,   0.0400000, Angstroms, Atoms      , 1.00000       ,        hydrogen.jpg,  Hydrogen atom:  Radius = 0.25 Angstroms
+      2.00000,    0.200000, Angstroms, Atoms      , 1.00000       ,        hydrogen.jpg,  Hydrogen atom:  Radius = 0.25 Angstroms
+      8.00000,    0.800000, Angstroms, Atoms      , 1.00000       ,        water.jpg   ,  Water molecule: Radius = 1 Angstroms
+      40.0000,     4.00000, Angstroms, Atoms      , 1.00000       ,        water.jpg   ,  Water molecule: Radius = 1 Angstroms
+      200.000,     20.0000, Angstroms, Atoms      , 1.00000       ,             dna.jpg,  DNA Helix:  Diameter = 20 Angstroms
+      800.000,     80.0000, Angstroms, Atoms      , 1.00000       ,             dna.jpg,  DNA Helix:  Diameter = 20 Angstroms
+      4000.00,     400.000, Angstroms, Angstroms  ,     1.00000   ,        fluvirus.jpg,  Flu Virus:  Diameter = 1000 Angstroms
+      20000.0,     2000.00, Angstroms, Angstroms   ,  1.00000     ,        fluvirus.jpg,  Flu Virus:  Diameter = 1000 Angstroms
+      100000.,     10000.0,   microns, Hair Strands,       10000.0,        bacteria.jpg,  Bacteria:  Diameter = 1 micron
+      500000.,     50000.0,   microns, TBD         ,10000.0       , red_blood_cells.jpg,  Blood Cell: Diameter = 10 microns
+  2.00000e+06,     200000.,   microns, TBD         ,10000.0       , red_blood_cells.jpg,  Blood Cell: Diameter = 10 microns
+  1.00000e+07, 1.00000e+06,   microns, TBD         ,10000.0       ,      human_hair.jpg,  Human Hair: Diameter = 100 microns
+  5.00000e+07, 5.00000e+06,      mm  ,  TBD        ,1.00000e+07   ,          amoeba.jpg,  Amoeba:  Diameter = 0.5 mm
+  2.00000e+08, 2.00000e+07,      mm  , TBD         ,1.00000e+07   ,          redant.jpg,  Red Ant: Length = 1 mm
+  1.00000e+09, 1.00000e+08,      cm  , TBD         ,1.00000e+08   ,          redant.jpg,  Red Ant: Length = 1 mm     
+  5.00000e+09, 5.00000e+08,      cm  , TBD         ,1.00000e+08   ,          redant.jpg,  Red Ant: Length = 1 mm
+  2.00000e+10, 2.00000e+09,       m  , TBD         ,1.00000e+10   ,          redant.jpg,  Red Ant: Length = 1 mm

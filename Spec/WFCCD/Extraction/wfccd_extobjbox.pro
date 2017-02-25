@@ -140,13 +140,13 @@ pro wfccd_extobjbox, wfccd, mask_id, exp_id, SLIT_ID=slit_id, DEBUG=debug
           ; Guess
           xyguess[0] = wfobj[objslit[obj]].xcen
           xyguess[1] = wfobj[objslit[obj]].ycen - ymn
-          ; Boxcar
+
+          ;; Boxcar
           x_extobjbox, subfx, subwv, xyguess, spec, MSK=submsk, $
             WVMNX=[3200.,11000], PIX=pix, FRAC=frac, VAR=subvar, $
             CRVAL1=alog10(3400.d), CDELT=1.448662d-4,$ ; 100 km/s pixels
             NPIX=3500L, COLLMNX=[3700., 8000.], DEBUG=debug, /REDBLUE, $
-            /SKYSUB, /REJ_CR, /REBINC, BKAPER=[3.,3.], SIG_COLL=0.5,$
-            /SILENT
+            /REJ_CR, /REBINC, BKAPER=[3.,3.], SIG_COLL=0.5, /SILENT
 
           ; Write to structure
           if spec.npix NE 0 then begin

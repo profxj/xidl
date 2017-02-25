@@ -1,14 +1,15 @@
 ;+ 
 ; NAME:
 ; x_maxspln   
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
-;    Finds the maximum in a set of data using a spline
+;    Finds the maximum in a set of data using a spline.  The program
+;    simply splines the data and then finds the max.
 ;
 ; CALLING SEQUENCE:
 ;   
-;   maxsp = x_maxspln( xval, yval )
+;   maxsp = x_maxspln( xval, yval, EDGES=, EDGVAL=, SPMX=)
 ;
 ; INPUTS:
 ;   xval       - x pos
@@ -22,14 +23,17 @@
 ; OPTIONAL KEYWORDS:
 ;
 ; OPTIONAL OUTPUTS:
+;  EDGES   -- x-value Edges of peak corresponding to 0.333
+;  EDGVAL  -- y-value Edges of peak corresponding to 0.333
+;  SPMX    -- Maximum in the spline
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   maxsp = x_maxspln(data)
-;
+;   maxsp = x_maxspln(x, y)
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
+;  x_golden
 ;
 ; REVISION HISTORY:
 ;   29-Jan-2002 Written by JXP
@@ -50,14 +54,14 @@ end
 ;;;;
 
 
-function x_maxspln, xval, yval, EDGES=edges, EDGVAL=edgval, MXVAL=mxval
+function x_maxspln, xval, yval, EDGES=edges, EDGVAL=edgval, SPMX=spmx
 
 common x_maxspln
 
 ;
   if  N_params() LT 2  then begin 
     print,'Syntax - ' + $
-             'maxsp = x_maxspln(xval, yval, MXVAL=) [v1.0]'
+             'maxsp = x_maxspln(xval, yval, EDGES=, EDGVAL=) [v1.1]'
     return, -1
   endif 
 
@@ -79,11 +83,18 @@ common x_maxspln
 
   splin = spl_init(spl_x, spl_y, /double)
 
+  if not finite(splin[0]) then begin
+      ;; Spline crashed!  Not sure why..
+      print, 'x_maxspln: Bad spline!  Returning min'
+      spmx = xval[imx]
+      return, mx
+  endif
+
+
 ;  Use Golden for the Max
 
-  spmx = x_golden('x_maxspln_spline', xval(imx-1),xval(imx),xval(imx+1))
+  spmx = x_golden('x_maxspln_spline', xval[imx-1],xval[imx],xval[imx+1])
 
-  if arg_present( MXVAL ) then mxval = -x_maxspln_spline(spmx)
 
 ; EDGES
 
@@ -106,7 +117,9 @@ common x_maxspln
  endif
 
   ; Release memory
-  delvarx, spl_x, spl_y, splin
+;  delvarx, spl_x, spl_y, splin
       
+;  if arg_present( MXVAL ) then mxval = -x_maxspln_spline(spmx)
+  return, -1.*x_maxspln_spline(spmx)
   
 end

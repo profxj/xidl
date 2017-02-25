@@ -1,0 +1,60 @@
+<html>
+<head>
+<title>Kast Quick Redux</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+</head>
+
+<body>
+<h1 align="center">Quick Reduction of Kast Long-slit Data Using KastRedux</h1>
+<p>As part of the KastRedux package, there is a routine designed to 
+quickly reduce single object spectra.
+A fully reduced<br> 
+1D spectrum is produced in <1 min of time (non-optimal mode) on the 
+orthrus. Assuming all of the paths have been properly setup 
+on the user account<br>
+(source ~/.cshrc-xidl),
+one takes the following steps:</p>
+<ol>
+  <li> Launch IDL v5.4 after setting these paths<br>
+    <br>
+    <kbd>prompt&gt; idlde -32   (alternatively, idl -32)
+    </kbd></li>
+  <br><li>Run kast_qckrdx:<br>
+    <br>
+    <kbd>IDL&gt; kast_qckredux, 'obj_file', 'flat_file', spec, sig</kbd></li>
+  <br><li>Plotting (try one of the following):<br>
+    <kbd>IDL&gt; x_splot, spec, ytwo=sig</kbd></li>
+    <kbd>IDL&gt; x_specplot, spec, sig, wave=wave, inflg=4
+	  </kbd> </li>
+    <br>
+</ol>
+<p>
+A 1D spectrum and error array will be put in the variables spec and sig.
+You can plot these with x_splot as noted above.
+<h3>Options:</h3>
+<ol>
+  <li type="a">ARC='arc_file' :: specifies an arc image</li>
+  <li type="a">WAVE=wave :: will create a wavelength array 
+    provided an Arc image</li>
+  <li type="a">GRISM='B1' :: Specifies the grism/grating used.  
+	      Default is 'B1'</li>
+  <li type="a">/OPTIMAL :: Perform optimal extraction (based on a SDSS routine).
+This is a particularly expensive option on orthrus, not so bad on a fast
+machine.</li>
+  <li type="a">OBJLIN=# (Integer indicating the rough row # of the object;  By
+	      default, the program assumes the y-center of the 2D-image)
+  <li type="a">TRACE=array (Input a trace array for non-continuum objects
+    </li>
+</ol>
+<h3>Limitations:</h3>
+<ul>
+  <li>Primarily tested on quasars.</li>
+  <li>Only can wavelength calibrate data with the B1 grism.  This will
+	    be updated shortly.</li>
+</ul>
+<hr>
+
+e-mail: <a href="mailto:xavier@ucolick.org">xavier@ucolick.org</a><br >
+<i>last modified 03/18/04</i></font></td></tr></table>
+</body>
+</html>

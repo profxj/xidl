@@ -5,7 +5,7 @@
 ;
 ; PURPOSE:
 ;    Given the slitstr and the map, find slit positions in the
-;    original image and create object structure
+;    original image and create object structure. Used for the WFCCD
 ;
 ; CALLING SEQUENCE:
 ;   
@@ -39,8 +39,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-pro x_fndslitobj, img, wvimg, slitstr, objstr, WVGUESS=wvguess, $
-                  DEBUG=debug
+pro x_fndslitobj, img, wvimg, slitstr, objstr, WVGUESS=wvguess
 
 
 ;  Error catching
@@ -82,13 +81,14 @@ pro x_fndslitobj, img, wvimg, slitstr, objstr, WVGUESS=wvguess, $
 
 ; Loop on Good slits
   for qq=0L,ngdslit-1 do begin
+      splog, 'working on slit '+string(qq)+' ('+string(gdslit[qq])+')'
 
       ; Grab all of the pixels in the slit
       msk1 = bytarr(sz_img[0],sz_img[1])
       msk2 = bytarr(sz_img[0],sz_img[1])
       for i=0L, sz_img[0]-1 do begin
           yedg = round(slitstr[gdslit[qq]].yedg_orig[i,*])
-          msk1[i,yedg[0]+5:yedg[1]-5] = 1
+          msk1[i,yedg[0]+1:yedg[1]-1] = 1
           msk2[i,yedg[0]+1:yedg[1]-1] = 1
       endfor
       slitpix = where(msk1 EQ 1)

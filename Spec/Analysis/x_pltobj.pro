@@ -1,24 +1,37 @@
 ;+ 
 ; NAME:
 ; x_pltobj
-;    Version 1.0
+;    Version 1.1
 ;
 ; PURPOSE:
-;   Plots a spectrum and image together
+;   Sophisticated GUI for plotting 1D and 2D spectra together.
 ;
 ; CALLING SEQUENCE:
-;   
-;   x_pltobj, x, maskid, expsr, XSIZE=, YSIZE=
+;  x_pltobj, wave, fx, sig, infx, inwv, [imgwv], YSIZE=
+;             XSIZE=, PMNX=, YSIZE=, OBJNM=, ZIN=, XMAX=, LLIST=
 ;
 ; INPUTS:
+; wave -- 1D Wavelength array
+; fx   -- 1D flux array
+; sig  -- 1D sigma array
+; infx -- 2D flux image
+; inwv -- 2D wavelength image
+; [imgwv] -- 1D wavelength array giving approximate wave of the 2D
+;            image
 ;
 ; RETURNS:
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
-;   XSIZE      - Size of gui in screen x-pixels (default = 1000)
-;   YSIZE      - Size of gui in screen y-pixels (default = 600)
+;  XSIZE= -- Size of gui in screen x-pixels [default = ssz-300]
+;  YSIZE= -- Size of gui in screen y-pixels [default = ssz-400]
+;  PMNX=  -- Plot range of the 1D spectrum
+;  ZIN=   -- Input redshift for the object
+;  LLIST= -- Line list to use upon initialization (1: QAL, 2: GAL, 3:
+;            QSO)
+;  OBJNM= -- Title for the plot
+;  XMAX=  -- Maximum x value for the 1D plot
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -177,6 +190,7 @@ pro x_pltobj_event, ev
           widget_control, state.zabs_id, get_value=tmp
           zabs = tmp
           flg_lines = 1
+          x_pltobj_Plot, state
       end
       'SDRAW_BASE' : begin
           if ev.enter EQ 0 then begin ; Turn off keyboard
@@ -566,7 +580,7 @@ end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 pro x_pltobj, wave, fx, sig, infx, inwv, imgwv, $
-              XSIZE=xsize, I_YSIZE=i_ysize, S_YSIZE=s_ysize, PMNX=pmnx, $
+              XSIZE=xsize, PMNX=pmnx, $
               YSIZE=ysize, OBJNM=objnm, ZIN=zin, XMAX=xmax, LLIST=llist
 
 common x_pltobj_images
@@ -576,15 +590,16 @@ common x_specplot_lines
 ;
   if  N_params() LT 5  then begin 
     print,'Syntax - ' + $
-      'x_pltobj, wave, fx, sig, subfx, subwv, [imgwv], XSIZE=, '
-    print, '        I_YSIZE=, S_YSIZE= [v1.0]'
+      'x_pltobj, wave, fx, sig, subfx, subwv, [imgwv], XSIZE=, YSIZE= '
+    print, '   PMNX=, OBJNM=, ZIN=, XMAX=, LLIST=  [v1.1]'
     return
   endif 
 
 ;  Optional Keywords
 
-  if not keyword_set( XSIZE ) then xsize = 1200L
-  if not keyword_set( YSIZE ) then ysize = 800L
+  device, get_screen_size=ssz
+  if not keyword_set( XSIZE ) then    xsize = ssz[0]-300
+  if not keyword_set( YSIZE ) then    ysize = ssz[1]-400
   if not keyword_set( I_YSIZE ) then i_ysize = ysize/4
   if not keyword_set( S_YSIZE ) then s_ysize = 3*ysize/4
 

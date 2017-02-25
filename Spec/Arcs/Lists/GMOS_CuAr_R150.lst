@@ -1,0 +1,130 @@
+# This line list is derived from data drawn from the NIST atomic
+# spectra database on 3 February 2005.  It includes all lines of
+# all ionization stages of Cu and Ar between 3000 and 11000
+# angstroms.
+#
+# NIST database  http://physics.nist.gov/PhysRefData/ASD/
+#
+# Michael Richer
+# richer@astrosen.unam.mx
+#
+3545.845    1  CuAr  #     identified/used
+3559.508    1  CuAr #     identified/used
+3718.206    1  CuAr #     identified/used
+## last slit left off here
+3729.309    1  CuAr #     identified/used
+#3737.889    1  CuAr #     identified/used
+3765.27     1  CuAr #     identified/used
+3850.581    1  CuAr #     identified/used
+3946.0971   1  CuAr  # added from Gemini GMOS list
+#3994.792    1  CuAr #     identified/used
+#4013.857    1  CuAr #     identified/used
+#4033.809    1  CuAr #     identified/used
+#4052.921    1  CuAr #     identified/used
+4072.385    1  CuAr #     identified/used
+4131.363    1  CuAr #     identified/used
+4158.59     1  CuAr #      identified/used
+4200.674    1  CuAr 
+#4277.528    1  CuAr #     identified/used
+4271.0	     1  CuAr # blend wavelength added by hand by JFH 05/08
+#4277.528    1  CuAr #     identified/used
+4426.001    1  CuAr #     identified/used
+4481.811    1  CuAr # identified/used
+4510.733    1  CuAr # identified/used
+4545.052    1  CuAr      # identified/used
+4657.901    1  CuAr      # identified/used
+4726.868    1  CuAr      # identified/used
+4764.865    1  CuAr      # identified/used
+4806.02     1  CuAr      # identified/used
+4847.81     1  CuAr      # identified/used
+4879.864    1  CuAr      # identified/used
+4965.08     1  CuAr      # identified/used
+5017.163    1  CuAr     # possibly blend may need to tweak
+5062.037    1  CuAr      # identified/used
+5090.495    1  CuAr      # identified/used
+5218.2      1  CuAr       # identified/used
+5451.652    1  CuAr       # identified/used
+5495.874    1  CuAr       # identified/used
+5606.733    1  CuAr       # identified/used
+5650.704    2  CuAr       # identified/used usemaybe?
+5739.52     1  CuAr       # identified/used
+6036.0	    2  CuAr	  # blend wavelength added by JFH
+#6032.127    1  CuAr       # identified/used
+6110.82     1   CuAr 	   # blend wavelength added by JFH by eye.
+#6114.923    1  CuAr      # identified/used
+6172.278    1  CuAr      # identified/used
+6416.307    1  CuAr       # identified/used
+6677.282    1  CuAr       # identified/used
+6752.834    1  CuAr       # identified/used
+6871.289    1  CuAr       # identified/used
+6965.431    1  CuAr       # identified/used
+#6977.572    2  CuAr 
+#7022.86     2  CuAr 
+7030.251    1  CuAr       # identified/used
+7067.218    1  CuAr       # identified/used
+7147.042    1  CuAr       # identified/used
+7206.98     1  CuAr       # identified/used
+7272.936    1  CuAr       # identified/used
+7383.98     1  CuAr       # identified/used
+7435.368    2  CuAr       # identified/used
+7507.5	    1  CuAr	  # blend added by JFH 05/08
+#7514.652    1  CuAr       # identified/used this is blended
+7635.106    1  CuAr       # identified/used
+7723.761    1  CuAr       # identified/used
+7891.075    1  CuAr       # identified/used
+7948.176    1  CuAr       # identified/used
+8010.4715   1  CuAr	  # JFH added as blend of two lines below. 
+#8006.157    1  CuAr       # identified/used  these are blended
+#8014.786    1  CuAr       # identified/used  these are blended  
+#8092.63     1  CuAr       # identified/used  these are blended
+#8103.693    1  CuAr       # identified/used  these are blended
+#8115.311    1  CuAr       # identified/used  these are blended
+8110.000    1  CuAr	  # blend added by JFH 05/08
+8264.522    1  CuAr       # identified/used
+#8408.21     1  CuAr       # identified/used these are blended
+#8424.648    1  CuAr       # identified/used these are blended
+8416.9	    1 CuAr	    # blend added by JFH 05/08
+8521.442    1  CuAr       # identified/used
+8605.776    1  CuAr       # identified/used
+#8609.134    2  CuAr 
+8667.944    1  CuAr       # identified/used
+#8771.86     2  CuAr 
+#8849.91     1  CuAr       # identified/used
+#9075.394    2  CuAr 
+9122.967    1  CuAr       # identified/used
+#9194.638    1  CuAr       # identified/used
+9224.499    1  CuAr       # identified/used
+#W9291.531    1  CuAr       # identified/used
+9354.22     1  CuAr       # identified/used
+9657.786    1  CuAr       # identified/used
+9784.503    1  CuAr       # identified/used
+#9813.213    2  CuAr 
+#9827.978    2  CuAr 
+#9830.798    2  CuAr 
+#9861.28     2  CuAr 
+#9864.137    2  CuAr 
+#9883.969    2  CuAr 
+#9916.419    1  CuAr      # identified/used
+#9917.954    2  CuAr 
+#9925.594    2  CuAr 
+9931.5       1  CuAr   # added by JFH made up wavelength.  
+#9960.354    2  CuAr 
+#10006.588   2  CuAr 
+#10022.969   2  CuAr 
+#10038.093   2  CuAr 
+10037.0    1  CuAr        # added by JFH 05/08
+#10052.06    1  CuAr       # identified/used
+#10054.938   2  CuAr 
+#10080.354   2  CuAr 
+10332.72    2  CuAr       # identified/used
+#10467.177   2  CuAr 
+#10470.054   2  CuAr 
+10470.0535 1 CuAr
+#10478.034   1  CuAr 
+#10506.5     2  CuAr 
+#10673.565   2  CuAr 
+#10681.773   2  CuAr 
+#10683.034   2  CuAr 
+#10733.87    2  CuAr 
+#10759.16    2  CuAr 
+#10812.896   2  CuAr 

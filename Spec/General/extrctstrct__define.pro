@@ -1,3 +1,35 @@
+;+ 
+; NAME:
+; extrctstrct__define
+;    Version 1.1
+;
+; PURPOSE:
+;  Define the extraction structure
+;
+; CALLING SEQUENCE:
+;   tmp = {extrctstrct}
+;
+; INPUTS:
+;
+; RETURNS:
+;
+; OUTPUTS:
+;
+; OPTIONAL KEYWORDS:
+;   
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;
+; EXAMPLES:
+;
+; PROCEDURES/FUNCTIONS CALLED:
+;
+; REVISION HISTORY:
+;   Written by JXP
+;-
+;------------------------------------------------------------------------------
+
 pro extrctstrct__define
 
 ;  This routine defines the exraction structure

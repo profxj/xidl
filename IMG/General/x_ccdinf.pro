@@ -4,11 +4,12 @@
 ;   Version 1.0
 ;
 ; PURPOSE:
-;    Returns arcpix and orientation of ccd+tel combination
+;    Returns arcpix and orientation of ccd+tel combination.  This
+;   routine saves all of that key info in one spot, although it 
+;   is primarily used only for direct imaging.
 ;
 ; CALLING SEQUENCE:
-;   
-;   x_ccdinf, ccd, tel, arcpix, [orient]
+;   x_ccdinf, ccd, tel, arcpix, [orient], SAT=
 ;
 ; INPUTS:
 ;   ccd   -  Name of CCD ('SITe1', 'LRISR', 'WFTek5')
@@ -24,11 +25,12 @@
 ; OPTIONAL OUTPUTS:
 ;   orient - Orientation of the CCD:
 ;;                   -2 = SITe1 on LCO-40  (E up, N left)
+;  SAT=   -- Saturation limit of the CCD
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   x_ccdinf, 'SITe1', 'LCO-40', arcpix
+;   x_ccdinf, 'SITe1', 'LCO-40', arcpix, SAT=sat
 ;
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
@@ -45,7 +47,7 @@ pro x_ccdinf, ccd, tel, arcpix, orient, SAT=sat
   ; 
   if  N_params() LT 3  then begin 
       print,'Syntax - ' + $
-        'x_ccdinf, ccd, tel, arcpix, [orient], SAT= (v1.0)'
+        'x_ccdinf, ccd, tel, arcpix, [orient], SAT= (v1.1)'
       return
   endif 
 

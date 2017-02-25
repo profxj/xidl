@@ -66,10 +66,10 @@ pro wfccd_pltobj, wfccd, mask_id, expsr, obj_nm, XSIZE=xsize, $
           wfccd = x_guilist(fils)
       endif
       
-      ; Read
+      ;; Read
       wfccd_wrfspec, wffspec, wfccd, /read
 
-      ; Grab right object
+      ;; Grab right object
       if keyword_set( mask_id) then begin
           indx = x_getobjnm(wffspec, mask_id)
           objnm = mask_id
@@ -88,7 +88,7 @@ pro wfccd_pltobj, wfccd, mask_id, expsr, obj_nm, XSIZE=xsize, $
 
       ; Open Obj struct
       if not keyword_set( EXPSR ) then expsr = 0L
-      wfobj = xmrdfits(wffspec[indx].obj_fil[expsr], 1, $
+      wfobj = xmrdfits(strtrim(wffspec[indx].obj_fil[expsr],2), 1, $
                       STRUCTYP='specobjstrct', /silent)
       obj = (where(wffspec[indx].slit_id EQ wfobj.slit_id AND $
                    wfobj.obj_id EQ wffspec[indx].obj_id, nobj))[0]
@@ -118,7 +118,6 @@ pro wfccd_pltobj, wfccd, mask_id, expsr, obj_nm, XSIZE=xsize, $
       ; Obj Structure
       wfobj = xmrdfits(wfccd[exp].obj_fil, 1, STRUCTYP='specobjstrct', /silent)
 
-
       ; Check for objnm
       if not keyword_set(obj_nm) then begin
           obj = x_getobjnm(wfobj, objnm)
@@ -147,10 +146,17 @@ pro wfccd_pltobj, wfccd, mask_id, expsr, obj_nm, XSIZE=xsize, $
   endelse
 
   ;;;;;;;; SLIT ;;;;;;;;;;;;;
-  slitstr = xmrdfits(wfobj[obj].slit_fil, 1, STRUCTYP='mslitstrct', /silent)
+  slitstr = xmrdfits(wfobj[obj].slit_fil, 1, /silent)
+;  slitstr = xmrdfits(wfobj[obj].slit_fil, 1, STRUCTYP='mslitstrct', /silent)
   slit = where(slitstr.id EQ wfobj[obj].slit_id) 
 
   sz = size(fx, /dimensions)
+
+  ;; KLUDGE
+  if max(slitstr[slit].yedg_sky[*,0]) LT 1. then begin
+      slitstr[slit].yedg_sky[*,0] = slitstr[slit].yedg_orig[*,0]
+      slitstr[slit].yedg_sky[*,1] = slitstr[slit].yedg_orig[*,1]
+  endif
 
   ;;;;;;;; MASK ;;;;;;;;;;;;
   msk = bytarr(sz[0],sz[1])

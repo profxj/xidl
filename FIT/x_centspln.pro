@@ -1,18 +1,23 @@
 ;+ 
 ; NAME:
 ; x_centspln   
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
-;    Finds the center of a splined 'line'
+;  Given a 'peak', this routine will find the center of that peak in a
+;  non-parameteric manner.  The routine first spliens the peak.  It
+;  then steps in from both sides
+;  until it hits FRACPK of the peak value of the line.  Finally, the
+;  centroid is the midpoint of these two spots.
 ;
 ; CALLING SEQUENCE:
 ;   
 ;   xcen = x_centspln(xval, yval, [fracpk])
 ;
 ; INPUTS:
-;   xval       - x pos
-;   yval       - y pos 
+;   xval       - x values of the peak
+;   yval       - y values of the peak
+;   [FRACPK]   - Fraction of the peak for centroiding [default=0.3333]
 ;
 ; RETURNS:
 ;   xcen      - Center
@@ -20,9 +25,11 @@
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
-;   fracpk    - Fraction of peak to use for centriod (default=0.3333)
+;  /SILENT -- Turn off warnings
+;  /FORCE  -- Calculate a centroid even if the edges are non-sensical
 ;
 ; OPTIONAL OUTPUTS:
+;  EDGES=  -- Values of the spots on the peak corresponding to FRACPK
 ;
 ; COMMENTS:
 ;
@@ -31,6 +38,8 @@
 ;
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
+; x_fndspln
+; x_golden
 ;
 ; REVISION HISTORY:
 ;   07-Feb-2002 Written by JXP
@@ -51,15 +60,16 @@ end
 ;;;;
 
 
-function x_centspln, xval, yval, fracpk, SILENT=silent, FORCE=force, $
-                     EDGES=edges
+function x_centspln, xval, yval, fracpk, SILENT=silent, $
+                     FORCE=force, EDGES=edges
 
 common x_centspln
 
 ;
   if  N_params() LT 2  then begin 
     print,'Syntax - ' + $
-             'xcen = x_centspln(xval, yval, [fracpk]) [v1.0]'
+      'xcen = x_centspln(xval, yval, [fracpk], /SILENT, ' + $
+      '/FORCE, EDGES=) [v1.1]'
     return, -1
   endif 
 

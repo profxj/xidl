@@ -1,14 +1,15 @@
 ;+ 
 ; NAME:
 ; x_fit2dtrace   
-;    Version 1.0
+;    Version 1.1
 ;
 ; PURPOSE:
-;    Fits the traced y-distortion of a flat 
+;    Fits the traced y-distortion of a flat in 2D given a set of
+;    traces for at various spots in the image.
 ;
 ; CALLING SEQUENCE:
 ;   
-;   map = x_fit2dtrace( trcstr, FFIT=, RES= )
+;   map = x_fit2dtrace( trcstr, FITSTR=, RES=, NX=, NY=, /SILENT )
 ;
 ; INPUTS:
 ;   trcstr   - Trace structure
@@ -19,11 +20,12 @@
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
-;  nx -  Number of orders along x axis
-;  ny -  Number of orders along y axis
+;  nx -  Number of orders along x axis [default: 4L]
+;  ny -  Number of orders along y axis [default: 4L]
 ;
 ; OPTIONAL OUTPUTS:
-;   FFIT  - 2D fitting function of the trace
+;   FITSTR  - 2D fitting function structure of the trace
+;   RES   - Residual image of the fit
 ;
 ; COMMENTS:
 ;   Need to watch for memory issues with 2d surfaces
@@ -42,15 +44,14 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 function x_fit2dtrace, trcstr, RES=res, FITSTR=fitstr, NX=nx, NY=ny, $
-                       SILENT=silent, DBL=dbl
+                       SILENT=silent
 
 
 
 ;  Error catching
   if  N_params() LT 1  then begin 
     print,'Syntax - ' + $
-             'map = x_fit2dtrace( trcstr, RES=, FITSTR=, NX=, NY=, '
-    print, '                  /SVDFT, /DBL) [V1.0]'
+             'map = x_fit2dtrace( trcstr, RES=, FITSTR=, NX=, NY= [v1.1]'
     return, -1
   endif 
 

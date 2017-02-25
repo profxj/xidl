@@ -1,0 +1,9 @@
+Our plot shows how light behaves as a wave. In particular, we find that the color of light is determined by the wavelength of the wave. Amazingly, light is also observed to behave like a particle, similar to an electron or a tennis ball! Each photon travels at the speed of light (c = 300,000,000 meters per second) and has a very small Energy.  This Energy (E) is determined by the wavelength:
+
+E = h x c / wavelength
+
+where c is the speed of light and h is called "Planck's constant".  Planck's constant is a very tiny number, h = 6.6E-36 Joules seconds, so a single photon has a very small energy by our human standards.   For example, every photon of green light, which has a wavelength of 5000 Angstroms = 5E-7 meters, has an Energy = 4E-19 Joules.  Consider the number of photons emitted per second by a 100 Watt (100 Joules per second) lightbulb!
+
+The following counter specifies the number of photons per second being carried along in the wave you have made.  It is calculated from the Power (Energy per second) of the wave divided by the Energy per photon
+
+Number of Photons = Power / E

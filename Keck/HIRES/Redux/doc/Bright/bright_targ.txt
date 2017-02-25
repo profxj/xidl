@@ -1,0 +1,11 @@
+V1.0
+
+Here are a few things in my head right now...
+
+
+1.  Optimal extraction is probably a bad idea.  I need to put in 
+a better boxcar option.  Of course, CR's will be more of a pain
+but so be it.
+
+2.  If you are using the B deckers, I don't see how to do good
+sky subtraction.  Am investigating..

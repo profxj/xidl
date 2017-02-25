@@ -1,0 +1,15 @@
+#!/bin/csh -f
+
+if $1 == "" echo "Syntax is 'tar_mike.src  v1_3' or whatever version you want to export"
+if $1 == "" exit
+
+mkdir TMP
+cd TMP
+cvs -d horton.mit.edu:/home/CVS export -r $1 MIKE
+cd MIKE/doc
+idl mk_doc
+cd ../../
+tar -cvf ../mike-$1.tar MIKE/
+gzip ../mike-$1.tar
+cd ..
+rm -rf TMP

@@ -1,0 +1,382 @@
+\documentclass[11pt,letterpaper,dvips]{article}
+ 
+ 
+\usepackage{latexsym}
+\usepackage{fancybox}
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{color}
+%\usepackage{amstex}
+\usepackage{ulem}
+\usepackage{float}
+ 
+\pretolerance=10000
+\textwidth=7.0in
+\textheight=9.6in
+\voffset = -0.3in
+\topmargin=0.0in
+\headheight=0.00in
+\hoffset = -0.3in
+\headsep=0.00in
+\oddsidemargin=0in
+\evensidemargin=0in
+\parindent=2em
+\parskip=1.5ex
+ 
+\input{/u/xavier/bin/defs}
+\input{/u/xavier/bin/latex}
+
+\newcommand{\nnn}{ccd\#\#\#}
+ 
+\special{papersize=8.5in,11in}
+
+\renewcommand{\theenumi}{\Roman{enumi}}
+
+\begin{document}
+%\pagestyle{empty}
+ 
+
+\begin{center}
+{{\huge \bf Kast Data Reduction [v0.1]}}
+\end{center}
+
+\begin{enumerate}
+
+{\Large   \item Kast Suggested Calibrations }
+   \begin{itemize}
+	\item 10 Bias (0s) frames
+	\item 10 flat images (per setup and side)
+	\item 2 Arc Calibrations (one per side)
+	\item one Standard star \quad ({\it for each setup})
+   \end{itemize}
+
+{\Large   \item Pre-Reduction Setup }
+   \begin{itemize}
+	\item Computer Resources
+	\begin{itemize}
+	  \item $>$300 MHz processor
+	  \item 1G disk space / night
+	  \item 300M RAM
+	  \item Linux or Solaris
+	\end{itemize}
+	\item Solaris WARNINGS (These do not apply to Linux)
+	\begin{itemize}
+	  \item Solaris+IDL does not release memory until IDL is exited
+	  \item Consider exiting IDL occasionally and monitor memory usage
+	  \item IDL+Solaris freezes up on the CPU intermittently
+	  \begin{itemize}
+		\item Possibly bug in licensing software
+		\item Forced to kill IDL process and restart
+	  \end{itemize}
+	\end{itemize}
+	\item Software
+	\begin{itemize}
+	  \item gcc or cc
+	  \item IDL v5.4 or higher
+	  \item IDL packages
+		\begin{enumerate}
+		  \item {\bf djs} IDL package  (Schlegel)
+		  \item {\bf idlspec2d} IDL package  (Sloan public)
+		  \item {\bf xidl} IDL package   (JXP)
+		  \item {\bf Kast} Kast package [included with XIDL]  (JXP,GEP)
+		\end{enumerate}
+	\end{itemize}
+	\item Log sheets [somewhat optional]
+	\item This cookbook
+   \end{itemize}
+
+{\Large  \item Initial Setup (Repeat for each night) }
+
+  \begin{enumerate}
+
+    \item Create a new directory for the night (e.g.\ 06aug02) and enter it
+    \item Create a 'Raw/' directory and put all the raw data in it.  
+    \item If the filenames do not read b(r)\#\#\#\#.ccd, it is quite likely
+	the code will be unhappy
+    \item gzip the data (gzip *.fits)
+    \item Launch idl in the directory above Raw/ (e.g. \ 06aug02)
+    \item {\bf kast\_strct} :: Create the Kast structure.  
+	\begin{itemize}
+	\item This structure organizes
+	the entire night of data and is the most important file created.  
+	\item The routine creates a few things: (1) an IDL structure in memory with
+	whatever name you choose (e.g.\ kast); 
+	(2) the file 'kaststrct.fits' which is a fits
+	version of the structure; (3) the file 'kast.list' which is an ASCII
+	version of the fits file which lists the values of some of the tags.
+	To view the fits structure outside of IDL, I 
+	recommend the program 'fv' which I think stands for fitsview.  It allows
+	you to examine binary fits tables.  
+	\item If the NOEDIT keyword is not set, a
+	gui will launch which allows some editing of the kast structure 
+	(see below). \\
+         \quad Example: IDL$> \;$ {\bf kast\_strct}, kast, /MKDIR, [/NOEDIT] \\  
+         \quad Time   : $<$1s per image
+	\end{itemize}
+
+
+    \item {\bf kast\_editstrct} :: Modify the Kast structure.
+	The previous step creates the structure and takes a guess at the 
+	initial values of many of the tags based on the header card info.  It
+	is difficult, however, to automate all of the values for the tags and
+	therefore the user should carefully check the structure.  Also, the
+	user should set flg\_anly = 0 for all of images which should
+	be ignored during data reduction (bad flats, etc.).  For most of
+	the important tags, one can use {\bf kast\_editstrct}.  The rest must
+	be done from the command line by hand or through a simple
+	IDL script (recommended). The obvious tags to modify are: 
+	 \begin{itemize}
+	  \item Obj :: Object name (this propagates into the final spectra 
+		and {\bf should have no spaces!})
+	  \item flg\_anly :: Include in analysis (defaulted to 1 for yes)
+	  \item type :: OBJ, STD, DRK, TWI, QTZ, ARC, ZRO, ACQ, SLT, etc.  
+	  \item setup :: 1L, 2L, etc.  (unique integer for each instrument
+			setup including slit width)
+	 \end{itemize}
+         \quad Example: IDL$> \;$ {\bf kast\_editstrct}, kast \\  
+         \quad Time   : User interaction
+
+    \item Writing the Kast structure to disk:: In IDL you can modify the values
+	of any of the tags.  You can then save the structure in fits form and 
+	rewrite the ASCII file  with the routine {\bf kast\_wrstrct}. \\  
+         \quad Example: IDL$> \;$ {\bf kast\_wrstrct}, kast, FITS='name' \\
+         \quad Time   : fast
+
+    \item Reading the Kast structure from disk:: {\bf kast\_ar}
+	If no name is given, the file looks for the first fits 
+	file starting 'kast' that contains a '\_'.  \\
+         \quad Example: IDL$> \;$ kast = {\bf kast\_ar()} \\
+         \quad Example: IDL$> \;$ kast = {\bf kast\_ar(}'kast\_name.fits'{\bf )} \\
+         \quad Time   : fast
+
+  \end{enumerate}
+
+{\Large    \item Setup }
+	\begin{itemize}
+	  \item {\bf kast\_specsetup} ::
+	This routine examines the kast structure and looks for calibration
+	files associated with the various setups.
+	It groups together exposures with identical Obj name and 
+	sets the obj\_id tags accordingly.
+	A summary of the Kast exposures is put in 'kast\_specsumm.txt'. \\
+         \quad Example: IDL$> \;$ {\bf kast\_specsetup}, kast \\
+         \quad Time   : Fast
+	\end{itemize}
+
+
+{\Large  \item Process Flats }
+  \begin{itemize}
+	\item This routines process the QTZ flats to create a 
+	response image (pixel by pixel variations) for the CCD.
+
+	\item {\bf kast\_mkflat} :: Creates a stacked, normalized QTZ flat 
+	to correct pixel response variations.  
+	The routine stacks by median averaging the images then normalizes
+	by fitting a b-spline to the collapsed 1-D version of the stack. \\
+         \quad Example: IDL$> \;$ {\bf kast\_mkflat}, kast, setup, [side]\\
+         \quad Time   : 1s per flat 
+
+
+  \end{itemize}
+
+{\Large  \item Arc Images }
+  \begin{itemize}
+	\item {\bf kast\_mkarc} :: Process the Arcs.  
+	This step combines Arc frames, flattens the resultant image and outputs
+ 	the final frame into the Arcs/ directory.  \\
+         \quad Example: IDL$> \;$ {\bf kast\_mkarc}, kast, setup, [SIDE=side] \\
+         \quad Time   : $<$5s per image
+
+
+  \end{itemize}
+
+\end{enumerate}
+
+\clearpage
+
+\begin{center}
+{\Huge {\bf \quad 0. Extraction}}
+\end{center}
+
+  \begin{itemize}
+	\item The following routines all apply to a single object, i.e.\
+	multiple exposures of that object will be reduced together.
+	\item Most of the following routines take the {\it kast} structure,
+	and the {\it setup, side} and {\it obj\_id} tags. 
+  \end{itemize}
+
+\begin{enumerate}
+
+{\Large  \item Process the Image}
+
+  \begin{itemize}
+	\item {\bf kast\_proc} :: Flat field the Raw image.
+	This routine takes the index number of the kast structure as input
+	or keywords setup and obj.
+	This is the integer in the first column of the file 'kast.list'.
+	Output is in 'Final/' and is a flattened flux and inverse variance fits file
+	(one gzipped fits file with two exentsions per image). \\
+         \quad Example: IDL$> \;$ {\bf kast\_proc}, kast, setup, side, obj\_id  \\
+         \quad Time   : $<$5s per image \\
+	 \quad Image Check: {\bf xatv}, 'Final/f\_b(r)\#.ccd'
+
+  \end{itemize}
+
+{\Large  \item Identify the Object}
+
+  \begin{enumerate}
+	\item {\bf kast\_fndobj} :: Allows the user to interactively identify
+	the science objects (default is interactive selection).   It smashes a
+	region of the spectrum and finds all peaks containing 4
+	continuous pixels with 3 sigma significance.  The region is taken
+	to be 20 pixels to either side of SCICLM, which can be set 
+	explicity but by default is set to 700 and 515 for the 452/3306 and
+	300/7500 grisings using the d46 splitter and 783 for the 452/3306 
+	grising using the mirror.  For other setups there are no defaults and 
+	SCICLM should be set explicitly.
+	If not interactive, the program chooses the brightest object within
+	5 pixels of the center of the slit.  Set the keyword /AUTO to 
+	auto-identify the object and an aperture to mask for
+	sky subtraction (not recommended).
+	It then creates an object structure which
+	stores the spectra of all objects identified in the slit.
+
+\clearpage
+
+	\begin{center}
+	  {\Large {\bf specobjstrct} }
+	\end{center}
+	{\small
+	\begin{tabular}{lcl}
+	  \hline
+	  Tag & Type & Comment \\
+	  \hline
+         field &  ' ' &  Name of field \\
+         slit\_id &  0L & Used to store the order number (0-9) corresponding to
+				physical order (15-6)\\  
+         obj\_id &  ' ' & ID value (a=primary, b-z=serendip, x=NG) \\
+         flg\_anly &  0 &  0=No analysis\\ 
+         exp &  0. & \\
+         xcen &  0L &  Column where obj was id\\
+         ycen &  0. & \\
+         flg\_aper &  0 &  0=boxcar\\
+         aper &  fltarr(2) &  Widths of aperture, 0/1 = bottom/top (pixels)\\
+         skyrms &  0. &  RMS of sky fit\\
+         trace &  fltarr(5000) &\\
+         npix &  0L & \\
+         wave &  fltarr(5000) & \\
+         fx &  fltarr(5000) & \\
+         var &  fltarr(5000) &    $<=0$  rejected pix\\
+         flg\_flux & 0 &    0=f$_\lambda$, 1=f$_\nu$\\
+         flux &  fltarr(5000) &    Fluxed data\\
+         sig &  fltarr(5000) &    Err in fluxed data\\
+         date &  0.0d \\
+         UT &  ' ' \\
+         img\_fil &  ' ' \\
+         slit\_fil &  ' ' \\
+         instr\_strct &  ' ' & e.g. wfccdstr fits file\\
+	  \hline
+	\end{tabular}
+	}
+
+	\item The routine also does a crude trace to the object based on the
+	identified object peak location.  This trace is used to mask out the
+	object for sky subtraction.
+	\item If the object to find is a standard star and is labeled STD in the 
+	{\it kast} structure, the /STD flag should be used along with the 
+	structure, setup and side.  This increases the default aperture size for 
+	smashing in sky subtraction.
+	\item Output is 'Extract/Obj\_{\it name}.fits' \\
+         \quad Example: IDL$> \;$ {\bf kast\_fndobj}, kast, setup, side, obj\_id,
+		[exp, REFWV= /NOCLOB, /AUTO, /CHK, /STD] \\
+         \quad Time   : fast 
+
+  \end{enumerate}
+
+
+{\Large  \item Extraction}
+  \begin{itemize}
+	\item {\bf kast\_extract} ::
+	This procedure performs an extraction of the object for each 
+	exposure.  The defaut method uses the Sloan {\bf idlspec2d} package
+	{\bf extract\_image}, which extracts by fitting a Gaussian profile to 
+	the object along with a low order polynomial for the sky.  Setting 
+	the keyword {\bf BOXCAR} causes the procedure to perform a 
+	boxcar extraction of the object instead.  When using {\bf 
+	BOXCAR} it's recommended to follow this procedure up with a 
+	call to {\bf kast\_crays}, which identifies cosmic rays in the 
+	spectra and alters their variance arrays accordingly (works only 
+	when there exist multiple exposures of the same object).  \\ 
+
+	\item  All of the output spectra are written to the Obj structure \\
+	\item  A sky subracted image is added to the final image file 
+	stored in the directory {bf Final}, use the keyword {\bf CHK} 
+	to view the sky, sky-subtracted imgage and, in the default case,
+	the y-model calculated by {\bf extract\_image}. \\
+         \quad Example: IDL$> \;$ {\bf kast\_extract}, kast, setup, side, obj\_id, [/BOXCAR] \\
+         \quad Example: IDL$> \;$ {\bf kast\_crays}, kast, setup, side, obj\_id \\
+         \quad Time   : $<$10s per image
+	\item Examine the final product: \\
+         \quad IDL$> \;$ {\bf kast\_pltobj}, kast, setup, side, obj\_id, /noimg, /nowv \\
+	 \quad {\bf OR} \\
+	 \quad IDL$> \;$ {\bf xatv}, 'finalimage\_name', getsky$=$2 \\
+  \end{itemize}
+
+{\Large  \item Wavelength Calibrate Exposures (Required before fluxing images)} 
+  \begin{itemize}
+	\item {\bf kast\_wavesol} ::
+	This procedure wavelength calibrates the extracted spectra of a given 
+	object.  The default launches an interactive GUI to calibrate the 
+	Arc image.  It is recommended to use the {\bf /auto} keyword, which 
+	automates the process, is quite robust, and much less time consuming,  
+	working by cross-correlating an archived wavelength solution with the 
+	extracted ARC to 'reidentify' the lines.  It then performs a 
+	fifth order fit to the lines. \\
+         \quad Example: IDL$> \;$ {\bf kast\_wavesol}, kast, setup, side, obj\_id, /auto \\
+         \quad Time   : $<$10s per image
+         \quad Examine the output with:  
+	    IDL$> \;$ {\bf kast\_pltobj}, kast, setup, side, obj\_id, /noimg \\
+  \end{itemize}
+
+{\Large  \item Combine Multiple Exposures }
+  \begin{itemize}
+	\item {\bf kast\_combspec} ::
+	This procedure adds up multiple exposures of the same object,
+	weighting by S/N after scaling each exposure by median ratio to the
+	first.  It appropriately deals with rejected
+	pixels (e.g.\ flagged CR's).  For objects
+	with more than 2 exposures, it clips 5 sigma outliers as well.  Even
+	if you have only a single exposure, you need to run this routine prior
+	to fluxing and collapsing to a 1D spectrum as it creates the final
+	spectrum structure. \\
+	\item Output is a fits file in 'FSpec' named 'Fspec\_b(r)\#.ccd.gz'. \\
+         \quad Example: IDL$> \;$ {\bf kast\_combspec}, kast, setup, side, obj\_id \\
+         \quad Time   : fast \\
+         \quad Examine the output with:  
+	    IDL$> \;$ {\bf kast\_pltobj}, kast, setup, side, obj\_id, /noimg, /comb \\
+  \end{itemize}
+
+{\Large  \item Flux the Spectra}
+  \begin{itemize}
+	\item {\bf kast\_flux} ::
+	This procedure fluxes each extracted spectra or combined spectra 
+	for an object.  Generally,
+	I'd suggest using the flux calibration that is defaulted. \\
+	\item When the keyword {\bf /comb} is specified the program uses the 
+	combined spectrum and overwrites the flux array in the file created by
+	{\bf kast\_combspec}; this keyword also directs {\bf kast\_pltobj} 
+	to use the combined spectrum for plotting. \\
+         \quad Example: IDL$> \;$ {\bf kast\_flux}, kast, setup, side, obj\_id, [/comb] \\
+         \quad Time   : fast \\
+	\item Examine the final product: \\
+         \quad IDL$> \;$ {\bf kast\_pltobj}, kast, setup, side, obj\_id, /flux,
+		 [/noimg], [/comb] \\
+  \end{itemize}
+
+\end{enumerate}
+
+\clearpage
+
+\end{document}
+	
+

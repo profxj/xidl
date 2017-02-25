@@ -43,6 +43,7 @@ pro wfccd_subskyslit, slit_fil, slit, obj_fil, flux, wave, VAR=var, $
                       SKYIMG=skyimg, REJPIX=rejpix, CHK=chk, $
                       WVMNX=wvmnx, DEBUG=debug
 
+if not keyword_set( PER ) then per = 0.001
 
 ;  Error catching
   if  N_params() LT 3  then begin 
@@ -159,9 +160,12 @@ pro wfccd_subskyslit, slit_fil, slit, obj_fil, flux, wave, VAR=var, $
   ycen = round(total(slitstr[slit].yedg_sky[*,*],2)/2.)
   for i=0L,sz[0]-1 do wvoned[i] = wave[i,ycen[i]]
   dwv = wvoned - shift(wvoned,1)
-  a = where(dwv[1:sz[0]-1] GE 0.,na)
+; ??? MRB hack --- ignore very SMALL backwards steps in wavelngth
+;    also, only check for bad stuff far enough to the right
+  leftlimit=400L
+  a = where(dwv[leftlimit:sz[0]-1] GE PER*wvoned,na)
   if na NE 0 then begin
-      bdpx = a[0]+1 
+      bdpx = a[0]+leftlimit 
       msk[bdpx:sz[0]-1,*] = 0
   endif else bdpx = sz[0]-1
       

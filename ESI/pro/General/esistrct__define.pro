@@ -41,6 +41,7 @@ pro esistrct__define
          arc_fil: ' ', $        ; Name of the Arc image file (fits)
          map_fil: ' ', $        ; Name of the Map image file (fits)
          flat_fil: ' ', $       ; Name of the Flat image file (fits)
+         twiflat_fil: ' ', $     ; Name of the Twilight Flat image file (fits)
          obj_fil: ' ' $         ; Object structure
          }
 

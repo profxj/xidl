@@ -1,4 +1,4 @@
-	;+ 
+;+ 
 ; NAME:
 ; wfccd_arcimg
 ;    Version 1.0
@@ -153,8 +153,10 @@ pro wfccd_arcimg, wfccd, mask_id, exp_id, WFAIMG=wfaimg, NOFITS=nofits, $
 
 ; OUTPUT
 
-  if not keyword_set( NOFITS ) then $
-    mwrfits, wfaimg, outfil, /create, /silent
+  if not keyword_set( NOFITS ) then begin
+      mwrfits, wfaimg, outfil, /create, /silent
+      spawn, 'gzip -f '+outfil
+  endif
 
   print, 'wfccd_arcimg: All done!'
   return

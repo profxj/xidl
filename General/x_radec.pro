@@ -24,7 +24,9 @@
 ;
 ; OPTIONAL KEYWORDS:
 ;   ARCS - Outputs in arcseconds
-;   FLIP - Gives RA and DEC from decimal RA,DEC
+;   /FLIP - Gives RA and DEC from decimal RA,DEC
+;   /LONG -- Passes back a longer form (string only)
+;   /PSPC -- Parse on space instead of colon
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -41,30 +43,71 @@
 ;-
 ;------------------------------------------------------------------------------
 
-pro x_radec, ra, dec, rad, decd, ARCS=arcs, FLIP=flip
+pro x_radec, ra, dec, rad, decd, ARCS=arcs, FLIP=flip, LONG=long, PSPC=pspc
 
   if (N_params() LT 4) then begin 
     print,'Syntax - ' + $
-             'x_radec, ra, dec, rad, decd, /ARCS, /FLIP (v1.0)'
+             'x_radec, ra, dec, rad, decd, /ARCS, /FLIP, /LONG (v1.0)'
     return
   endif 
+
+  ;; Check if array
+  if not keyword_set( FLIP ) then begin
+      nra = n_elements(ra)
+      if nra GT 1 then begin
+          rad = dblarr(nra)
+          decd = dblarr(nra)
+          for qq=0L,nra-1 do begin
+              x_radec, ra[qq], dec[qq], d1, d2, ARCS=arcs, LONG=long, PSPC=pspc
+              rad[qq] = d1
+              decd[qq] = d2
+          endfor
+          return
+      endif
+  endif else begin
+      nra = n_elements(rad)
+      if nra GT 1 then begin
+          ra = strarr(nra)
+          dec = strarr(nra)
+          for qq=0L,nra-1 do begin
+              x_radec, s1, s2, rad[qq], decd[qq], /FLIP, ARCS=arcs, LONG=long
+              ra[qq] = s1
+              dec[qq] = s2
+          endfor
+          return
+      endif
+  endelse
 
   if not keyword_set( FLIP ) then begin
 
 ;  Remove blanks
       
-      rastr = strcompress(ra, /REMOVE_ALL)
-      decstr = strcompress(dec, /REMOVE_ALL)
+     if not keyword_set(PSPC) then begin
+        rastr = strcompress(ra, /REMOVE_ALL)
+        decstr = strcompress(dec, /REMOVE_ALL)
+     endif else begin
+        rastr = ra
+        decstr = dec
+     endelse
+
+      if strlen(rastr) LT 8 then begin
+          print, 'x_radec: Bad RA and DEC.  Continue as you wish'
+          stop
+          rad = 0.
+          decd = 0.
+          return
+      endif
       
       
 ;  Parse on colons and convert to float
       
-      rav = strsplit(rastr, ':', /extract)
-      decv = strsplit(decstr, ':', /extract)
-      
+      if not keyword_set(PSPC) then pc = ':' else pc = ' '
+      rav = strsplit(rastr, pc, /extract)
+      decv = strsplit(decstr, pc,  /extract)
                                 ; Deal with negative DEC
       flg_neg = 0
       if strmid(decv[0],0,1) EQ '-' then flg_neg = 1
+      if strmid(decv[0],0,2) EQ '--' then decv[0] = strmid(decv[0],1)
       
       rah = double(rav[0])
       ram = double(rav[1])
@@ -85,8 +128,7 @@ pro x_radec, ra, dec, rad, decd, ARCS=arcs, FLIP=flip
           rad = rad * 3600
           decd = decd * 3600
       endif
-;;;;;;;;;; PASS BACK STRING (FLIP)  ;;;;;;;;;;;;;;;; 
-  endif else begin
+  endif else begin ;;;;; PASS BACK STRING (FLIP)  ;;;;;;;;;;;;;;;; 
 
 ;  RA
       rah = fix(rad*24./360.)
@@ -96,8 +138,13 @@ pro x_radec, ra, dec, rad, decd, ARCS=arcs, FLIP=flip
         else srah = '0'+strtrim(rah,2)
       if ram GE 10 then sram = strtrim(ram,2) $
         else sram = '0'+strtrim(ram,2)
-      if ras GE 10 then sras = strmid(strtrim(ras,2),0,5) $
-        else sras = '0'+strmid(strtrim(ras,2),0,4)
+      if keyword_set( LONG ) then begin
+          if ras GE 10 then sras = strmid(strtrim(ras,2),0,7) $
+          else sras = '0'+strmid(strtrim(ras,2),0,6)
+      endif else begin
+          if ras GE 10 then sras = strmid(strtrim(ras,2),0,5) $
+          else sras = '0'+strmid(strtrim(ras,2),0,4)
+      endelse
 
       ra = strjoin([srah,':',sram,':',sras])
 
@@ -117,10 +164,13 @@ pro x_radec, ra, dec, rad, decd, ARCS=arcs, FLIP=flip
 
       if decm GE 10 then sdecm = strtrim(decm,2) $
         else sdecm = '0'+strtrim(decm,2)
-;      if decs GE 10 then sdecs = strtrim(decs,2) $
-;        else sdecs = '0'+strtrim(decs,2)
-      if decs GE 10 then sdecs = strmid(strtrim(decs,2),0,4) $
-        else sdecs = '0'+strmid(strtrim(decs,2),0,3)
+      if keyword_set( LONG ) then begin
+          if decs GE 10 then sdecs = strmid(strtrim(decs,2),0,6) $
+          else sdecs = '0'+strmid(strtrim(decs,2),0,5)
+      endif else begin
+          if decs GE 10 then sdecs = strmid(strtrim(decs,2),0,4) $
+          else sdecs = '0'+strmid(strtrim(decs,2),0,3)
+      endelse
 
       dec = strjoin([sdec,':',sdecm,':',sdecs])
 

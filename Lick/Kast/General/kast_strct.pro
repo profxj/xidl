@@ -4,27 +4,26 @@
 ;     Version 1.1
 ;
 ; PURPOSE:
-;    Creates and outputs a structure for a series of ESI frames
+;    Creates and outputs a structure for a series of Kast frames.
 ;    This structure organizes the data for the night and is used 
-;    to run most of the programs in the ESI package    
+;    to run most of the programs in the Kast package    
 ;
 ; CALLING SEQUENCE:
-;   
-;  kast_strct, struct, LIST=, /MKDIR, /NOFILE, OUTFIL=, /NOEDIT
+;  kast_strct, struct, LIST=, /NOMKDIR, OUTFIL=, /NOEDIT
 ;
 ; INPUTS:
 ;
 ; RETURNS:
 ;
 ; OUTPUTS:
-;   struct     -  IDL structure 
+;  struct  -- Kast IDL structure
 ;
 ; OPTIONAL KEYWORDS:
-;   LIST       - Image list:  e.g.  'gd_files.lst'
-;              Default is 'Raw/kast*.fits'
-;   MKDIR      - Make directories
-;   NOEDIT     - Do not edit the hand
-;   OUTFIL     - Name of fits output file
+;   LIST=     - Image list:  e.g.  'gd_files.lst'
+;               [Default is 'Raw/kast*.fits']
+;   /NOMKDIR   - Do not make default directories
+;   /NOEDIT    - Do not edit the hand
+;   OUTFIL=    - Name of fits output file [default: 'kaststrct.fits']
 ;   
 ;
 ; OPTIONAL OUTPUTS:
@@ -45,13 +44,13 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-pro kast_strct, struct, LIST=list, MKDIR=mkdir, NOFILE=nofile, $
+pro kast_strct, struct, LIST=list, NOMKDIR=nomkdir, $
                    OUTFIL=outfil, NOEDIT=noedit
 
 ;
   if  N_params() LT 1  then begin 
       print,'Syntax - ' + $
-        'kast_strct, struct, LIST=, MKDIR=, NOFILE=, NOLIST=, /NOEDIT (v1.1)'
+        'kast_strct, struct, LIST=, MKDIR=, LIST=, OUTFIL=, /NOEDIT [v1.1]'
       return
   endif 
   
@@ -78,7 +77,7 @@ pro kast_strct, struct, LIST=list, MKDIR=mkdir, NOFILE=nofile, $
 
 
 ; Make directories
-  if keyword_set( MKDIR ) then begin
+  if not keyword_set( NOMKDIR ) then begin
       a = findfile('OV/..', count=count)
       if count EQ 0 then file_mkdir, 'OV'
       a = findfile('Final/..', count=count)
@@ -244,8 +243,8 @@ pro kast_strct, struct, LIST=list, MKDIR=mkdir, NOFILE=nofile, $
       struct[q].obj_fil = ' '
   endfor
 
-; Close the ASCII file
-  if not keyword_set( NOFILE ) then kast_wrstrct, struct
+  ;; Create ASCII file
+  kast_wrstrct, struct
 
 ; Edit
   if not keyword_set( NOEDIT ) then kast_editstrct, struct

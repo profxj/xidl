@@ -70,7 +70,7 @@ pro esi_echcopyfnd, esi, obj_id, exp, NOCLOB=noclob, OFFSET=offset, $
   if not keyword_set(exp) then exp = lindgen(nindx)
 
 ; Opening template
-  cpyobj = xmrdfits(esi[cpyidx].obj_fil, 1, STRUCTYP='dblsobjstrct', /silent)
+  cpyobj = xmrdfits(esi[cpyidx].obj_fil, 1, STRUCTYP='esiobjstrct', /silent)
 
 ;  Loop
 
@@ -84,7 +84,7 @@ pro esi_echcopyfnd, esi, obj_id, exp, NOCLOB=noclob, OFFSET=offset, $
       esi[indx[exp[q]]].refordr = refordr
       if strlen(strtrim(objfil,2)) NE 0 and keyword_set(NOCLOB) then begin
           print, 'esi_echcopyfnd: Using Obj structure -- ', objfil
-          objstr = xmrdfits(objfil, 1, STRUCTYP='dblsobjstrct', /silent)
+          objstr = xmrdfits(objfil, 1, STRUCTYP='esiobjstrct', /silent)
           nobj = n_elements(objstr)
           flg_objstr = 1
       endif else begin
@@ -92,13 +92,13 @@ pro esi_echcopyfnd, esi, obj_id, exp, NOCLOB=noclob, OFFSET=offset, $
           objfil = 'Extract/Obj_'+esi[indx[exp[q]]].img_root
           esi[indx[exp[q]]].obj_fil = objfil
           ;; Create objects
-          tmp = { dblsobjstrct }
+          tmp = { esiobjstrct }
           objstr = replicate(tmp, 50)
-          objstr.slit_fil = ' '
-          objstr.spec2d_fil = ' '
+;          objstr.slit_fil = ' '
+;          objstr.spec2d_fil = ' '
           objstr.img_fil = ' '
           objstr.UT = ' '
-          objstr.instr_strct = ' '
+;          objstr.instr_strct = ' '
           objstr.field = ' '
           objstr.exp = esi[indx[exp[q]]].exp
           nobj = 0L
@@ -122,7 +122,7 @@ pro esi_echcopyfnd, esi, obj_id, exp, NOCLOB=noclob, OFFSET=offset, $
           for qq=0L,9 do begin
               objstr[qq].aper[*] = aper
               objstr[qq].obj_id = 'a'
-              objstr[qq].slit_id = qq
+              objstr[qq].order = qq
 
               ;; xcen
               objstr[qq].xcen = cpyobj[qq].xcen

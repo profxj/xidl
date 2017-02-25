@@ -4,7 +4,7 @@
 ;
 ; PURPOSE:
 ;   Calculate a single voigt profile, given wavelength, absorber, and
-;    an array of lines.
+;    an array of lines.  I recommend x_voigt
 ;
 ; CALLING SEQUENCE:
 ;   tau = voigtwal(wave,abs,lines)

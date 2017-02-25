@@ -1,3 +1,41 @@
+;+ 
+; NAME:
+; lwdfspecstrct__define
+;   Version 1.1
+;
+; PURPOSE:
+;  Creates a structure for Low dispersion spectroscopy that will hold the
+;  wavelength, flux and error arrays.  Also includes the ZANS
+;  structure which is useful for using SDSS redshift identification.
+; 
+;
+; CALLING SEQUENCE:
+;   tmp = {lwdfspecstrct}
+;
+; INPUTS:
+;
+; RETURNS:
+;
+; OUTPUTS:
+;
+; OPTIONAL KEYWORDS:
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;  Currently a maximum of 5000 pixels
+;
+; EXAMPLES:
+;
+;
+; PROCEDURES/FUNCTIONS CALLED:
+;
+; REVISION HISTORY:
+;   Written by JXP
+;-
+;------------------------------------------------------------------------------
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 pro lwdfspecstrct__define
 
 ;  This routine defines the structure for individual object spectra

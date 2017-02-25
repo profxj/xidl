@@ -1,33 +1,33 @@
 ;+ 
 ; NAME:
 ; proc_ech
-;     Version 1.0
+;     Version 1.2
 ;
 ; PURPOSE:
 ;    Finds all objects and traces them
 ;
 ; CALLING SEQUENCE:
 ;   
-;  proc_ech, esi, obj_id
+;  proc_ech, esi, slit
 ;
 ; INPUTS:
 ;   esi   -  ESI structure
-;   indx  -  Indices of objects to process
+;   [slit]  - slit size (e.g. 0.75)
 ;
 ; RETURNS:
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
-;   FLAT  - Flat file
-;   BIAS  - Bias frame
+;   
+;   
 ;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   proc_ech
+;   proc_ech, esi, 0.75
 ;
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
@@ -35,6 +35,7 @@
 ; REVISION HISTORY:
 ;   30-Jul-2002 Written by JXP
 ;   29-Aug-2002 Modified by JXP
+;   11-Mar-2008 Updated by MAR
 ;-
 ;------------------------------------------------------------------------------
 
@@ -44,15 +45,16 @@ pro proc_ech, esi, slit, MKALL=mkall, MKSTRCT=mkstrct, $
               NRMFLAT=nrmflat,FLATCHK=flatchk, ARCCHK=arcchk, $
               MKARC=mkarc, FARC_CHK=farc_chk, PROCSTD=procstd, $
               INTER=inter, STDCHK=stdchk, CLOBAIMG=clobaimg, PINTER=pinter,$
-              FITARC=fitarc, TRCARC=trcarc, CUAR=cuar, GUESSARC=guessarc,$
-              LINLIST=linlist, PIXSHFT=pixshft
+              FITARC=fitarc, AIMG=aimg, CUAR=cuar, GUESSARC=guessarc,$
+              LINLIST=linlist, PIXSHFT=pixshft, FIT2DARC=fit2darc, $
+              DEBUG=debug
 
   if  N_params() LT 1  then begin 
       print,'Syntax - ' + $
-        'proc_ech, esi, [slit], /IFLAT, /REDOOV, /MKALL, /CLOBBER, /MKMAP [v1.0]'
+        'proc_ech, esi, [slit], /IFLAT, /REDOOV, /MKALL, /CLOBBER, /MKMAP [v1.2]'
       print, '/CHK, /NRMFLAT, /FLATCHK, /ARCCHK, /MKARC, /FARC_CHK, /PROCSTD'
       print, '/INTER, /STDCHK, /CLOBAIMG, /PINTER, /FITARC, /TRCARC, /CUAR'
-      print, 'GUESSARC=, LINLIST=, PIXSHFT= '
+      print, 'GUESSARC=, LINLIST=, PIXSHFT=, /FIT2DARC, /DEBUG '
       return
   endif 
 
@@ -72,8 +74,8 @@ pro proc_ech, esi, slit, MKALL=mkall, MKSTRCT=mkstrct, $
   ;;;;;;;;;;;;;;
   ; Make the structure
   if keyword_set( MKSTRCT ) then begin
-      esi_strct, esi, /mkdir, NOEDIT=noedit
-      esi_wrstrct, esi, FITS='esi_n1.fits', /ANONLY
+      esi_strct, esi, NOEDIT=noedit
+      esi_wrstrct, esi, FITS='esistrct.fits', /ANONLY
   endif
                  
   ;;;;;;;;;;;;;;
@@ -87,7 +89,7 @@ pro proc_ech, esi, slit, MKALL=mkall, MKSTRCT=mkstrct, $
   if keyword_set( MKMAP ) then begin
       ;; 5-10min
       esi_echtrcholes, esi
-      esi_wrstrct, esi, FITS='esi_n1.fits', /ANONLY
+      esi_wrstrct, esi, FITS='esistrct.fits', /ANONLY
       esi_echmkmap, esi
   endif
   ;; OR COPY ECH_map.fits.gz, img_hole.fits.gz, hole_fit.idl 
@@ -96,7 +98,7 @@ pro proc_ech, esi, slit, MKALL=mkall, MKSTRCT=mkstrct, $
   if keyword_set( MKFLAT ) then begin
       ;; 30s/image
       esi_echmkflat, esi, slit, IFLAT=iflat
-      esi_wrstrct, esi, FITS='esi_n1.fits', /ANONLY
+      esi_wrstrct, esi, FITS='esistrct.fits', /ANONLY
   endif
 
   if keyword_set( NRMFLAT ) then begin
@@ -106,7 +108,7 @@ pro proc_ech, esi, slit, MKALL=mkall, MKSTRCT=mkstrct, $
           return
       endif
       esi_echfltsct, esi, slit, IFLAT=iflat, CHK=flatchk
-      esi_wrstrct, esi, FITS='esi_n1.fits', /ANONLY
+      esi_wrstrct, esi, FITS='esistrct.fits', /ANONLY
   endif
 
   ;;;;;;;  ARC  ;;;;;;;;;;
@@ -114,22 +116,27 @@ pro proc_ech, esi, slit, MKALL=mkall, MKSTRCT=mkstrct, $
       ;; <2min
       if not keyword_set( SLIT ) then return
       esi_echmkarc, esi, slit, CLOBBER=clobber
-      esi_wrstrct, esi, FITS='esi_n1.fits', /ANONLY
+      esi_wrstrct, esi, FITS='esistrct.fits', /ANONLY
   endif
   if keyword_set( FITARC ) then begin
       ;; 2min
       esi_echfitarc, esi, slit, CHK=FARC_CHK, INTER=inter, PINTER=pinter, $
         CUAR=cuar, CLOBBER=clobber, GUESSARC=guessarc, LINLIST=linlist
-      esi_wrstrct, esi, FITS='esi_n1.fits', /ANONLY
+      esi_wrstrct, esi, FITS='esistrct.fits', /ANONLY
   endif
-  if keyword_set( TRCARC ) then begin
+  if keyword_set( FIT2DARC ) then begin
+      ;; 2min
+      esi_fit2darc, esi, slit, CLOBBER=clobber, DEBUG=debug
+      esi_wrstrct, esi, FITS='esistrct.fits', /ANONLY
+  endif
+  if keyword_set( AIMG ) then begin
       ;; 10min :: Human interaction
       if keyword_set( INTER) then AUTO=0 else AUTO=1
       esi_echtrcarc, esi, slit, AUTO=auto, CUAR=cuar, LINLIST=linlist, $
-        GUESSARC=guessarc, PIXSHFT=pixshft
+        GUESSARC=guessarc, PIXSHFT=pixshft, /KLUDGE
       ;; 5min
       esi_echmkaimg, esi, slit, CHK=arcchk, CUAR=cuar
-      esi_wrstrct, esi, FITS='esi_n1.fits', /ANONLY
+      esi_wrstrct, esi, FITS='esistrct.fits', /ANONLY
   endif
 
   ;;;;;;; STD ;;;;;;
@@ -137,7 +144,8 @@ pro proc_ech, esi, slit, MKALL=mkall, MKSTRCT=mkstrct, $
   if keyword_set( PROCSTD ) then begin
       ;; 10min (sky sub)
       esi_echtrcstd, esi, slit, CHK=stdchk, CUAR=cuar
-      esi_wrstrct, esi, FITS='esi_n1.fits', /ANONLY
+      esi_wrstrct, esi, FITS='esistrct.fits', /ANONLY
+      ;; Or   cp $XIDL_ESI/CALIBS/STD_ECH###TRC.fits Extract/
   endif
 
   return

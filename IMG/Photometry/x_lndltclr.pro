@@ -1,13 +1,14 @@
 ;+ 
 ; NAME:
-; x_lndltclr   Version 1.0
+; x_lndltclr   
+;    Version 1.1
 ;
 ; PURPOSE:
-;    Returns the Landolt magnitude for a given filter
+;    Returns the Landolt color of a star
 ;
 ; CALLING SEQUENCE:
 ;   
-; clr = x_lndltclr(color, lndltstr) 
+;   clr = x_lndltclr(color, lndltstr) 
 ;
 ; INPUTS:
 ;   color - String name of the color (e.g. 'BV')
@@ -25,8 +26,7 @@
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   clr = x_lndltclr('R', landolt, SIGMAG=sig)
-;
+;   clr = x_lndltclr('BR', landolt)
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
 ;
@@ -34,10 +34,7 @@
 ;   08-Aug-2001 Written by JXP
 ;-
 ;------------------------------------------------------------------------------
-
-
-function x_lndltclr, color, landolt, SIGMAG=sigmag
-
+function x_lndltclr, color, landolt
 ;
   if  N_params() LT 2  then begin 
       print, 'Syntax - ' +$
@@ -45,8 +42,7 @@ function x_lndltclr, color, landolt, SIGMAG=sigmag
       return, -1
   endif 
 
-; Parse on color
-
+  ;; Parse on color
   case color of 
       'UB' : return, landolt.UB
       'UV' : return, landolt.UB + landolt.BV 

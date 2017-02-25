@@ -1,10 +1,12 @@
 ;+ 
 ; NAME:
 ; xoffset
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
-;    Calculates integer offsets between a series of images
+;    Calculates integer offsets between a series of images.  The
+;  program uses Sextractor to find objects in the image and then
+;  uses a brute force algorithm to find the integer offset.
 ;
 ; CALLING SEQUENCE:
 ;   
@@ -42,10 +44,11 @@ pro xoffset, imglist, INSTR=instr, FWHM=fwhm, OUTFIL=outfil
 ;
   if  N_params() LT 1  then begin 
     print,'Syntax - ' + $
-             'xoffset, imglist, INSTR=, FWHM=, OUTFIL= [v1.0]'
+             'xoffset, imglist, INSTR=, FWHM=, OUTFIL= [v1.1]'
     return
   endif 
 
+  if not keyword_set( INSTR ) then instr = ' '
 ;  Check for defaults
   chk = findfile('default.sex', COUNT=nfil)
   if nfil EQ 0 then begin
@@ -90,7 +93,7 @@ pro xoffset, imglist, INSTR=instr, FWHM=fwhm, OUTFIL=outfil
          ay = -1024.
          dx = 1.0
          dy = 1.0
-         nx = 2048
+         nx = 1000
          ny = 2048
          nstep = 1000
      end

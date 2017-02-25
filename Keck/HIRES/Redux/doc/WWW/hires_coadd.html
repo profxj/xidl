@@ -1,0 +1,61 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.70)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>hires_extract</TITLE>
+<META NAME="description" CONTENT="hires_extract">
+<META NAME="keywords" CONTENT="hires_extract">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+</HEAD>
+
+<BODY >
+
+<P>
+<DIV ALIGN="CENTER">
+<FONT SIZE="+3"><B>HIRedux Coadding</B></FONT>
+</DIV>
+
+<P>
+<FONT SIZE="+1">  </FONT>
+<UL>
+<LI>The following routines all apply to a single object, 
+i.e. 	multiple exposures of that object will be reduced together.
+</LI>
+<LI>Most of the following routines take the <I>hires</I> structure,
+	and the <I>setup, chip</I> and <I>obj_id</I> tags. 
+</LI>  
+</UL>
+
+<FONT SIZE="+2">Combining Multiple Exposures</FONT>
+<br>
+
+<a href="HIRES_doc.html#HIRES_COMBSPEC">hires_combspec</a> :: 
+Combine multiple exposures of a single object.  This will work 
+best if the setup did not change between exposures.  It may
+also work if the setup did change, but be careful.  Unless you
+have fluxed the data you should run with /NOFLUX on.  
+You can increase the aggresiveness of clipping by setting REJSIG=3.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: 
+IDL> <B>hires_combspec</B>, hires, setup, obj_id, chip, [exp_id], [/NOFLUX], 
+[/CHK, /MCHK]
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : ~1min per image 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Check  : hires_specplt, /fspec
+
+
+<P>
+
+
+
+<P>
+<BR><HR>
+<ADDRESS> Last modified 2006-1-30 </ADDRESS>
+</BODY>
+</HTML>

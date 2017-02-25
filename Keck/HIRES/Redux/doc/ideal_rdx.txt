@@ -1,0 +1,31 @@
+V1.0
+
+Ideally, the following steps would work:
+
+1.  Launch IDL
+
+2.  Parse the headers
+
+  IDL>  hires_strct, hires
+
+3.  Identify Setups 
+
+  IDL>  hires_setup, hires
+
+4.  Run hires_redux to reduce the data
+
+  IDL> hires_redux, hires
+
+  -- This will launch a GUI
+  -- Choose your setup #
+  -- Choose the Object
+
+    -- Touch DOFLATS to reduce the flats    
+    -- Touch DOARCS to reduce the arcs
+    -- Touch DOSLITF to trace the slit profile
+    -- Touch DOOBJ to process the science frame, trace, skysub and extract
+
+  -- If the code crashses at any point, it is best to exit hires_redux and
+     work on a step-by-step basis as discussed in the cookbook.
+
+

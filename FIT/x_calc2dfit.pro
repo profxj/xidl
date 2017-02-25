@@ -1,28 +1,30 @@
 ;+ 
 ; NAME:
 ; x_calc2dfit   
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
-;    Calculates a 2d fit-function at a set of xy pairs
+;    Calculates a 2d fit-function at a set of xy pairs.  
+;    Restricted to a 2D polynomial for now.
 ;
 ; CALLING SEQUENCE:
 ;   
 ;   fit = x_calc2dfit(xyval, func, ffit, nx, ny, NRM=, FITSTR=)
 ;
 ; INPUTS:
-;   xval       - Value(s) along one dimension
-;   [func]       - String for Fitting function (POLY)
-;   [ffit]       - Output from the fitting stuff
+;   xyval      - 2D array [npix, 2] of the x,y values
+;   [func]     - String for Fitting function (POLY)
+;   [ffit]     - Output from the fitting stuff
 ;   [nx]       - order of the 2d surface in x
 ;   [ny]       - order of the 2d surface in y
 ;
 ; RETURNS:
-;   fit        - Values at each xyval
+;   fit        - Values at each xyval [1D array]
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
+;  FITSTR= -- IDL structure for 2D fitting (recommended)
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -34,7 +36,7 @@
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
 ;
-	; REVISION HISTORY:
+; REVISION HISTORY:
 ;   31-Jan-2002 Written by JXP
 ;-
 ;------------------------------------------------------------------------------
@@ -47,7 +49,7 @@ function x_calc2dfit, xyval, func, ffit, nx, ny, NRM=nrm, FITSTR=fitstr, $
 ;
   if  N_params() LT 1  then begin 
     print,'Syntax - ' + $
-             'fit = x_calc2dfit(xyval, [func, ffit, nord], NRM=, FITSTR=) (V1.0)'
+             'fit = x_calc2dfit(xyval, [func, ffit, nx, ny], NRM=, FITSTR=) (V1.1)'
     return, -1
   endif 
 

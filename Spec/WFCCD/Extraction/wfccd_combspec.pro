@@ -77,7 +77,8 @@ pro wfccd_combspec, wfccd, mask_id, exp_id, SILENT=silent, PATCH=patch, $
   if not keyword_set( LIST ) then begin
       allexp = where(wfccd.type EQ 'OBJ' AND wfccd.flg_anly NE 0 AND $
                      wfccd.mask_id EQ mask_id)
-      if keyword_set(exp_id) then exp = allexp[exp_id] else exp=allexp
+;     want to allow exp_id==0!
+      if n_elements(exp_id) gt 0 then exp = allexp[exp_id] else exp=allexp
       nexp = n_elements(exp)
   endif else begin
       mask_id = 99L
@@ -100,7 +101,6 @@ pro wfccd_combspec, wfccd, mask_id, exp_id, SILENT=silent, PATCH=patch, $
         tmp = xmrdfits(wfccd[exp[q]].obj_fil, 1, STRUCTYP='specobjstrct', /silent) $
       else $ ;; LIST
         tmp = xmrdfits(files[q], 1, STRUCTYP='specobjstrct', /silent)
-        
 
       ; OBJ_NM
       if keyword_set(OBJ_NM) then begin
@@ -167,7 +167,25 @@ pro wfccd_combspec, wfccd, mask_id, exp_id, SILENT=silent, PATCH=patch, $
           sciobj = where(wfobj.slit_id EQ slit AND $
                          wfobj.obj_id EQ 'a' AND wfobj.flg_anly NE 0, nsci)
           if nsci NE 0 then begin
-              ;; Copy
+;; MRB-- only use ones where there is actual good data to use
+              isgd=bytarr(n_elements(wfobj))+1
+              for isci=0L,nsci-1 do begin
+                  npix=wfobj[sciobj[isci]].npix
+                  gdwv= $
+                    where(wfobj[sciobj[isci]].wave[0:npix-1] GT 4500. AND $
+                          wfobj[sciobj[isci]].wave[0:npix-1] LT 7000. AND $
+                          wfobj[sciobj[isci]].sig[0:npix-1] GT 0., ngd)
+                  if(ngd eq 0) then isgd[sciobj[isci]]=0
+              endfor
+              sciobj = where(wfobj.slit_id EQ slit AND $
+                             wfobj.obj_id EQ 'a' AND $
+                             wfobj.flg_anly NE 0 AND $
+                             isgd gt 0, nsci)
+              if nsci eq 0 then cnt=cnt+1L
+          endif
+
+          if nsci NE 0 then begin
+;; Copy
               wffspec[cnt].nexp = nsci
               for i=0L,nsci-1 do wffspec[cnt].texp[i] = wfobj[sciobj[i]].exp
               tmpstr = wffspec[cnt]
@@ -178,7 +196,11 @@ pro wfccd_combspec, wfccd, mask_id, exp_id, SILENT=silent, PATCH=patch, $
                   obj_fil = 'Extract/Obj_'+strmid(wfobj[sciobj[i]].spec2d_fil, $
                                                   ipos+3)
                   wffspec[cnt].obj_fil[i] = obj_fil
-              endfor
+; add 2d spectra names
+                  sp2d_fil = 'Final/f_ccd'+strmid(wfobj[sciobj[i]].spec2d_fil, $
+                                                  ipos+3)
+                  wffspec[cnt].spec2d_fil[i] = sp2d_fil
+             endfor
               ;; NPIX
               npix = wffspec[cnt].npix
               ;; Coadd
@@ -209,11 +231,28 @@ pro wfccd_combspec, wfccd, mask_id, exp_id, SILENT=silent, PATCH=patch, $
           sdpobj = where(wfobj.slit_id EQ slit AND $
                          wfobj.obj_id NE 'a' AND wfobj.flg_anly NE 0, nsdp)
           if nsdp EQ 0 then continue
+;; MRB-- only use ones where there is actual good data to use
+          isgd=bytarr(n_elements(wfobj))+1
+          for isdp=0L,nsdp-1 do begin
+              npix=wfobj[sdpobj[isdp]].npix
+              gdwv= $
+                where(wfobj[sdpobj[isdp]].wave[0:npix-1] GT 4500. AND $
+                      wfobj[sdpobj[isdp]].wave[0:npix-1] LT 7000. AND $
+                      wfobj[sdpobj[isdp]].sig[0:npix-1] GT 0., ngd)
+              if(ngd eq 0) then isgd[sdpobj[isdp]]=0
+          endfor
+          sdpobj = where(wfobj.slit_id EQ slit AND $
+                         wfobj.obj_id NE 'a' AND $
+                         wfobj.flg_anly NE 0 AND $
+                         isgd gt 0, nsdp)
+          if nsdp EQ 0 then continue
+
           srt = sort(wfobj[sdpobj].ycen)
 
           jj = 0L
           kk= 0L
           while(jj LT nsdp) do begin
+
               ;; Find all within 2pix
               kp = where( abs(wfobj[sdpobj].ycen-wfobj[sdpobj[srt[jj]]].ycen) $
                           LT 2., ngd)
@@ -258,9 +297,9 @@ pro wfccd_combspec, wfccd, mask_id, exp_id, SILENT=silent, PATCH=patch, $
                   wffspec[cnt].fx[0:npix-1] = temporary(fflux[0:npix-1])
                   wffspec[cnt].var[0:npix-1] = temporary(fvar[0:npix-1])
               endelse
+              cnt = cnt+1
               ;; Output
               wfccd_combspec_out, wffspec[cnt]
-              cnt = cnt+1
           endwhile
       endfor
   endif else begin         ;;;;;; OBJ_NM ;;;;;;
@@ -310,17 +349,22 @@ pro wfccd_combspec, wfccd, mask_id, exp_id, SILENT=silent, PATCH=patch, $
               wffspec[cnt].fx[0:npix-1] = temporary(fflux)
               wffspec[cnt].var[0:npix-1] = temporary(fvar)
           endelse
+
+          cnt = cnt+1
           ;; Output
 ;          wfccd_combspec_out, wffspec[cnt]
-          cnt = cnt+1
       endelse
+
   endelse
-              
+
 
 ;;;; OUTPUT  ;;;;
 
+
+
   if not keyword_set( OBJ_NM ) then wfccd_wrfspec, wffspec[0:cnt-1], outfil $
   else wfccd_wrfspec, wffspec, outfil
+
 
   close, /all
 

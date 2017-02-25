@@ -1,0 +1,11 @@
+
+
+-- pixel flats
+-- illum flats
+-- bad pixel masks using darks
+-- are darks currently useful given changes in bias level???
+
+-- Fix sky line tracing in some bad cases, i.e. 1348+0531
+
+-- FWHM computation in long_gprofile.pro?
+

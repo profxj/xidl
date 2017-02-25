@@ -167,7 +167,13 @@ common wfccd_analyse_cmm
               return
           endif
           state.nobj_list = cnt
-          state.obj_list[0:cnt-1] = a
+          state.obj_list[0:cnt-1] = strtrim(a,2)
+          ;; Truncate the gz
+          for qq=0L,cnt-1 do begin
+              slen = strlen(state.obj_list[qq])
+              if strmid(state.obj_list[qq],slen-2,2) EQ 'gz' then $
+                state.obj_list[qq] = strmid(state.obj_list[qq],0,slen-3)
+          endfor
       end
       1: begin
           a = a_wfccd[uniq(a_wfccd.mask_id,sort(a_wfccd.mask_id))].mask_id

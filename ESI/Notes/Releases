@@ -1,0 +1,10 @@
+2003
+Original 1.0
+ -- Supported ECH, LWD and IMG modes
+ -- Restricted to boxcar extraction
+
+Version 1.1 -- September 2004
+ -- Added optimal extraction for ECH mode
+ -- Improved tracing, optical solution
+ -- Improved wavelength calibration
+ -- Updated LWD mode

@@ -1,0 +1,49 @@
+1)  Setup
+
+vi .local_cshrc
+
+<ADD>
+
+setenv IDLUTILS_DIR ~/idl/idlutils
+setenv IDLSPEC2D_DIR ~/idl/idlspec2d 
+setenv XIDL_DIR ~/idl/xidl  
+setenv IDL_PATH +$IDL_DIR\/lib:+$IDL_DIR\/examples:+~/idl:+pro/
+  <The last line requires IDL_DIR is set properly.  This is your job!>
+
+2) IDLUTILS 
+
+cd ~/idl
+svn co https://www.sdss3.org/svn/repo/idlutils/trunk/ idlutils
+
+cd idlutils
+bin/evilmake clean   ; Won't work if you didn't set IDLUTILS_DIR
+bin/evilmake 
+
+
+3) IDLSPEC2D
+
+cd ~/idl
+svn co https://www.sdss3.org/svn/repo/idlspec2d/trunk/ idlspec2d
+
+cd idlspec2d
+$IDLUTILS_DIR/bin/evilmake clean
+$IDLUTILS_DIR/bin/evilmake 
+
+
+4) XIDL
+
+cd ~/idl
+
+svn co https://svn.ucolick.org/xidl/trunk xidl
+
+cd xidl
+bin/evilmake clean
+bin/evilmake 
+
+5) Run IDL and try  
+
+  IDL> .com x_splot
+
+and 
+
+  IDL> a = djs_median(findgen(100,100),1)

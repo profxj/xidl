@@ -1,10 +1,13 @@
 ;+ 
 ; NAME:
 ; cldy_plt2phs
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
-;    Plots [X/Fe+], [X/H0] vs. fN
+;  Plots a 2 phase solution (one purely neutral) given a Cloudy
+;  grid and related values.  The user also inputs a pair of ions and
+;  a ratio between them.
+;    
 ;
 ; CALLING SEQUENCE:
 ;   
@@ -12,12 +15,13 @@
 ;
 ; INPUTS:
 ;   grid  - CLOUDY grid
-;   NHI 
-;   FeH
-;   nH
-;   obsi   -  Observed pair of ions
+;   NHI   - N(HI) value
+;   FeH   - Metallicity of the gas
+;   nH    - Hydrogen volume density
+;   obsi  - Observed pair of ions
 ;   val   - Ratio of observed ions
 ;   ions  - Array of [Z,ion] vectors to plot
+;   [YMNX=] - Y limits of the plot
 ;
 ; RETURNS:
 ;   
@@ -28,6 +32,7 @@
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
+;  Developed for the analysis in Prochaska et al. 2002 (Q1755)
 ;
 ; EXAMPLES:
 ;   cldy_plt2phs, grid, 19.0d, -1.0d, -1.0d, [ [26,3], [26,2] ], -0.5,
@@ -48,7 +53,7 @@ pro cldy_plt2phs, grid, NHI, FeH, nH, obsi, val, ions, YMNX=ymnx
 ;
   if  N_params() LT 5  then begin 
       print, 'Syntax - ' +$
-        'cldy_plt2phs, grid, NHI, FeH, nH, obsi, val, ions (v1.0)'
+        'cldy_plt2phs, grid, NHI, FeH, nH, obsi, val, ions, YMNX= (v1.1)'
       print, 'Assumes obsi has [high,low] order'
       return
   endif 

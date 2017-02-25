@@ -1,0 +1,129 @@
+<html>
+<head>
+<title>The MIKE Redux Page</title>
+</head>
+<body TEXT="Black" bgcolor="#DEDED3" link="Blue" vlink="Brown" alink="Pink">
+<b>
+<center><hr>
+<h2>
+<font color="#0F75FF">
+The MIKE Redux Page</font></h2>
+<hr></center></b>
+
+<center>
+<h4> Brought to you by 
+<ul>
+ <li> Scott M. Burles (MIT)
+ <li> <a href="http://www.ucolick.org/~xavier"> Jason X. Prochaska</a> 
+  (UCO/Lick Observatory)
+ <li> Rebecca Bernstein (U Michigan)
+</ul>
+<hr> </h4>
+
+<table border = "0" cellspacing="10" cellpadding="3"><tr>
+<td  width="110" align="left" valign="top" bgcolor="LightGreen" >
+<center>
+<img src="MIKE.jpg" width="200" alt="MIKE">
+<hr> <h3>Quick Links</h3>
+<hr>
+<h4><a href="calib_sugg.html">Recommendations for Calibrations</a> </h4>
+<hr>
+<h4><a href="Code/index.html">MIKE Code</a> </h4>
+<br>
+<h4><a href="mike_install.html">MIKE Install</a></h4>
+<br>
+<h4><a href="mike_cookbook.html">MIKE cookbook</a></h4>
+<br>
+<h4><a href="mike_bugs.html">MIKE bugs (past and present)</a></h4>
+<br>
+<h4><a href="mike_steps.html">MIKE steps (executive summary)</a></h4>
+<br>
+</font>
+<br>
+</center>
+<br></td>
+
+<td width="500" valign="top">
+<b>
+<H3><font color="Red"> I. Overview of the Code</font></h3>
+The MIKE Redux code was built with the IDL software pacakge
+to reduce single point source objects.
+The code can work with users that have little
+IDL experience, but you will struggle at first.  I highly recommend you
+read the Intro to IDL book or some other resource before diving in.
+
+<br>
+
+The general approach of the code is as follows: 
+<ul>
+  <li> Examine the set of data files to determine image type
+  <li> Notify the user if necessary calibration data (e.g. Milky flats) is
+   missing
+  <li> Process the flats and trace the orders
+  <li> Process the arcs and create 2D wavelength solutions 
+  <li> Create a slit profile
+  <li> Process the object frames (flatten, CR reject)
+  <li> Identify and trace the object
+  <li> Sky subtract
+  <li> Extract
+  <li> Flux
+</ul>
+
+<p>
+
+
+</p>
+<H3><font color="Red"> II. Installing the Software</font></h3>
+
+The code relies on several IDL packages in addition the routines
+that were designed specifically for MIKE.  These include:
+
+<ul>
+
+ <li> The <a href="http://spectro.Princeton.EDU/idlspec2d_install.html">SDSS pipeline</a>
+      (both IDLUTILS and idlspec2d), 
+ <li> The <a href="Code/index.html">MIKE</a> package built by us.
+ <li> The <a href="http://www.ucolick.org/~xavier/IDL/index.html">XIDL</a> package built by JXP.
+</ul>
+
+
+
+<br> 
+
+More detailed notes for obtaining and installing these packages can
+be found here: <a href="mike_install.html">install notes</a>.  We wish
+to emphasize that the code expects the most up-to-date versions of
+the Sloan codes.  Users with old versions of any of these packages beware!
+
+<H3><font color="Red"> III. Using the Code</font></h3>
+
+Moderately detailed descriptions of running the code are given in
+this reduction <a href="mike_cookbook.html">cookbook</a>.  While we
+try to include a lot of detail here, it still is insufficient.  
+All of the MIKE routines are described in this 
+<a href="MIKE_doc.html">html file</a>.  Experienced IDL users
+should be able to dig into the codes and follow along.
+
+<br>
+
+Hopefully, we will include an example session of running the code in
+this space before long.
+
+<H3><font color="Red"> III. Developing the Code + Bug Fixing</font></h3>
+
+We do encourage all users to consider ways to improve the code
+and to suggest them to us.  Of course, we'd also like to hear about
+bugs.  Please do make an effort to verify it is a bug in the code
+as opposed to 'user error'.  Along those lines, if you are a novice
+to IDL, we suspect you will have many more 'user errors' than bugs 
+to find.
+
+<hr>
+This research is supported, in part, by NSF grant AST 03-07408.
+<hr>
+
+
+e-mail: <a href="mailto:mike@horton.mit.edu">mike@horton.mit.edu</a><br >
+<i>last modified 05/04/04</i></font></td></tr></table>
+</body>
+</html>

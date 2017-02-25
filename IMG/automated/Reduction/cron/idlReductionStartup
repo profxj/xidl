@@ -1,0 +1,40 @@
+!edit_input=1000
+device, true=24
+device, decompose=0
+!x.style = 1
+!y.style = 1
+.compile automated_canconnect.pro
+.compile automated_ccdproc.pro
+.compile automated_checklognames.pro
+.compile automated_cleanlog.pro
+.compile automated_cron_wrapper.pro
+.compile automated_fitwcs.pro
+.compile automated_FLWOccdproc.pro
+.compile automated_FLWOloopflats.pro
+.compile automated_FLWOmakebias.pro
+.compile automated_FLWOmakedark.pro
+.compile automated_FLWOmakeflats.pro
+.compile automated_FLWOmakescience.pro
+.compile automated_FLWOoscan.pro
+.compile automated_getdata.pro
+.compile automated_grabphot.pro
+.compile automated_imagestitch.pro
+.compile automated_imagezp.pro
+.compile automated_loopflats.pro
+.compile automated_makebias.pro
+.compile automated_makedark.pro
+.compile automated_makeflats.pro
+.compile automated_makelog.pro
+.compile automated_makeplan.pro
+.compile automated_makescience.pro
+.compile automated_makestr.pro
+.compile automated_makethumbnail.pro
+.compile automated_mklcpage.pro
+.compile automated_offset.pro
+.compile automated_oscan.pro
+.compile automated_phot.pro
+.compile automated_replot.pro
+.compile automated_stackimages.pro
+.compile automated_updateweb.pro
+.compile automated_work.pro
+automated_cron_wrapper,/FLWO

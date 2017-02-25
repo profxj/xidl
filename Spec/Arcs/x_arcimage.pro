@@ -4,16 +4,18 @@
 ;    Version 1.0
 ;
 ; PURPOSE:
-;    Creates an arcimage given a tracestructure
+;    Creates an arcimage given a tracestructure.  This code has been
+;    superseded by x_mkaimg.
 ;
 ; CALLING SEQUENCE:
 ;   
 ;   arcimg = x_arcimage( trcstrct, arcfit, sz_img )
 ;
 ; INPUTS:
-;   trcstrct  - Trace structure
-;   arcfit  - Arc fit structure ; Includes fit instructions
-;   sz_img    - Size of output image
+;   trcstrct - Trace structure (contains all of the info on the
+;              position and value of various arc lines)
+;   arcfit   - Template fit structure ; Includes fit instructions
+;   sz_img   - Size of output image
 ;   [lines]  - Line list strurcture (Usually defined)
 ;
 ; RETURNS:
@@ -22,8 +24,8 @@
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
-;  YSTRT  - Row defining the arcfit (default = middle)
-;  LINELIST  - Arc line list
+;  YSTRT  - Row defining the arcfit [default = middle]
+;  LINELIST  - Arc line list (in lieu of lines)
 ;  NSIG  - Sig of RMS from the fit that line must match
 ;
 ; OPTIONAL OUTPUTS:
@@ -32,7 +34,6 @@
 ;
 ; EXAMPLES:
 ;   arcimg = x_arcimage( trcstrct, arcfit, imgsz)
-;
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
 ;
@@ -50,8 +51,8 @@ function x_arcimage, trcstr, arcfit, sz_img, lines, YSTRT=ystrt, $
 ;  Error catching
   if  N_params() LT 3  then begin 
     print,'Syntax - ' + $
-             'x_arcimage( trcstr, arcfit, sz_img, [lines], LINELIST=, '
-    print, '         NSIG=) [v1.0]'
+             'img = x_arcimage( trcstr, arcfit, sz_img, [lines], LINELIST=, '
+    print, '         NSIG=) [v1.1]'
     return, -1
   endif 
 

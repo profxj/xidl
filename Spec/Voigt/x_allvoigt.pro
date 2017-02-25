@@ -1,25 +1,28 @@
 ;+
 ; NAME:
 ;   x_allvoigt
+;  Version 1.1
 ;
 ; PURPOSE:
 ;   Calculate a single voigt profile, given wavelength, absorber, and
-;    an array of lines.
+;    an array of lines.  Warning:  This program is not exact!
 ;
 ; CALLING SEQUENCE:
-;   tau = voigtwal(wave,abs,lines)
+;   tau = x_allvoigt(wave,lines, SIGMA=, MNDV=)
 ;
 ; INPUTS:
 ;   wave       - Array of wavelengths to realize voigt profile
-;   abs        - single absorber
-;   lines      - line(s) structure to compute voigt profile, if mutliple,
+;   lines      - Line(s) structure to compute voigt profile, if mutliple,
 ;                   the entire list will be looped through.
+;  RETURNS:
+;   tau        - Optical depth at each wavelength
 ;
 ; OPTIONAL INPUTS:
-;   SIGMA      - Resolution of instrument in pixels
+;   SIGMA=     - Resolution of instrument in pixels
+;   MNDV=      - Range in velocity to calculate Voigt over [defalut:
+;                1000 km/s]
 ;
 ; OUTPUTS:
-;   tau        - Optical depth at each wavelength
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -47,6 +50,7 @@
 ;
 ; REVISION HISTORY:
 ;   25-May-2000  Created by S. Burles, FNAL/IAP
+;                Modified by JXP
 ;-
 ;------------------------------------------------------------------------------
 
@@ -54,7 +58,7 @@ function x_allvoigt, wave, lines, SIGMA=sigma, MNDV=mndv
 
   if  N_params() LT 2  then begin 
     print,'Syntax - ' + $
-             'tau (fx) = x_allvoigt( wave (vel), lines, /VELO, SIGMA= [v1.1]'
+             'tau (fx) = x_allvoigt( wave, lines, SIGMA=, MNDV= ) [v1.1]'
     return, -1
   endif 
   
@@ -79,10 +83,16 @@ function x_allvoigt, wave, lines, SIGMA=sigma, MNDV=mndv
 
       ;; Find line center
       mn = min(abs(wave-line.wrest*(1.+line.zabs)), pcen)
-      if pcen EQ 0 or pcen EQ (npix-1) then continue
-      delv = spl*(wave[pcen+1]-wave[pcen])/wave[pcen]
-      pmn = (pcen - round(dv/delv)) > 0
-      pmx = (pcen + round(dv/delv)) < (npix-1)
+      if pcen EQ 0 or pcen EQ (npix-1) then begin
+         delv = abs(spl*(wave[1]-wave[0])/wave[0])
+         pmn = (pcen - round(dv/delv)) > 0
+         pmx = (pcen + round(dv/delv)) < (npix-1)
+      endif else begin
+         ;; Line-center is encompassed
+         delv = spl*(wave[pcen+1]-wave[pcen])/wave[pcen]
+         pmn = (pcen - round(dv/delv)) > 0
+         pmx = (pcen + round(dv/delv)) < (npix-1)
+      endelse
       vel = abs((wave[pmn:pmx]/(line.wrest*(1.0+line.zabs)) - 1.0)  / bnorm[i]) 
       
       a = line.gamma / (12.56637 * vd)
@@ -99,7 +109,7 @@ function x_allvoigt, wave, lines, SIGMA=sigma, MNDV=mndv
       ENDIF
       if (calc2[0] NE -1) then vo[calc2] = voigt(a,vel[calc2]) 
       
-      thistau = 0.014971475*(10.0^line.N)*line.f*vo/vd
+      thistau = 0.014971475*(10.0d^line.N)*line.f*vo/vd
       tau[pmn:pmx] = tau[pmn:pmx] + thistau 
   endfor
 

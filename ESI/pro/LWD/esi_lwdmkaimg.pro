@@ -46,7 +46,7 @@ pro esi_lwdmkaimg, esi, slit, LINTRC=lintrc, SZ_ARC=sz_arc, CHK=chk
 
 ;  Optional Keywords
   
-  if not keyword_set( SZ_ARC ) then sz_arc = [2048L, 3300L]
+  if not keyword_set( SZ_ARC ) then sz_arc = [2232L, 3300L]
 
 ; Get TRC Structure
   trcfil = 'Arcs/ATRC_LWD'+esi_slitnm(slit)+'.fits'

@@ -4,28 +4,28 @@
 ;     Version 1.2
 ;
 ; PURPOSE:
-;    Creates and outputs a structure for a series of direct images
+;    Creates and outputs a structure for a series of direct images.
+;    This is a key routine in organizing a night of imaging data.
 ;
 ; CALLING SEQUENCE:
 ;   
-;  xdimg_strct, struct, ccd, tel, LIST=list, MKDIR=mkdir,
-;      NOFILE=nofile
+;  xdimg_strct, struct, ccd, tel, LIST=, /MKDIR, /NOFILE
 ;
 ; INPUTS:
-;   CCD        - CCD/INSTRUMENT;  Options: Tek5, LRISR, SITe1, SITe3
-;   tel        - Telescope; Options: Keck, LCO-40, LCO-100
+;   CCD        - CCD/INSTRUMENT;  Options: Tek5, LRISR, SITe1, SITe3, NIRC2
+;   tel        - Telescope; Options: (Keck, LCO-40, LCO-100)
 ;
 ; RETURNS:
 ;
 ; OUTPUTS:
 ;   struct     -  Creates an IDL structure for direct images 
 ;               +  an ASCII file summarizing the structure
+;               +  a FITS file saving the IDL structure
 ;
 ; OPTIONAL KEYWORDS:
-;   LIST       - Image list (default is Raw/*.fits)
-;   MKDIR      - Make directories
-;   NOFILE     - Do not create the ASCII file
-;   MKDIR      - Create a set of directories which facilitate the rest
+;   LIST       - Image list [default is Raw/*.fits]
+;   /NOFILE     - Do not create the ASCII file
+;   /MKDIR      - Create a set of directories which facilitate the rest
 ;                    of the reduction process (e.g. Flats/ Bias/
 ;                    Photo/)
 ;
@@ -35,7 +35,6 @@
 ;
 ; EXAMPLES:
 ;   xdimg_strct, nght1_strct, 'Tek5', /MKDIR
-;
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
 ;   MRDFITS
@@ -48,10 +47,9 @@
 ;   18-July-2001 Written by JXP
 ;   22-Aug-2001  Allows for LRISR
 ;   24-Dec-2001  LRISR modifications
+;   14-June-2007 LKP updated to allow for NIRC2 data
 ;-
 ;------------------------------------------------------------------------------
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 pro xdimg_strct, struct, ccd, tel, LIST=list, MKDIR=mkdir, NOFILE=nofile, $
@@ -63,6 +61,9 @@ pro xdimg_strct, struct, ccd, tel, LIST=list, MKDIR=mkdir, NOFILE=nofile, $
         'xdimg_strct, struct, ccd, tel, LIST=, MKDIR=, NOFILE= (v1.2)'
       return
   endif 
+
+  COMMON SITE, lat, lng, tzone
+  DRADEG = 180.d0/!dpi
   
 ;  Optional Keywords
   
@@ -73,22 +74,31 @@ pro xdimg_strct, struct, ccd, tel, LIST=list, MKDIR=mkdir, NOFILE=nofile, $
   nimg = n_elements(img)
 
   if keyword_set( MKDIR ) then begin
-      a = findfile('Masks/..', count=count)
-      if count EQ 0 then file_mkdir, 'Masks', 'Masks/Sky'
-      a = findfile('OV/..', count=count)
-      if count EQ 0 then file_mkdir, 'OV'
-      a = findfile('Final/..', count=count)
-      if count EQ 0 then file_mkdir, 'Final'
-      a = findfile('Lists/..', count=count)
-      if count EQ 0 then file_mkdir, 'Lists'
-      a = findfile('Photo/..', count=count)
-      if count EQ 0 then file_mkdir, 'Photo'
-      a = findfile('Flats/..', count=count)
-      if count EQ 0 then file_mkdir, 'Flats'
-      a = findfile('Bias/..', count=count)
-      if count EQ 0 then file_mkdir, 'Bias'
+     a = findfile('Masks/..', count=count)
+     if count EQ 0 then file_mkdir, 'Masks', 'Masks/Sky'
+     a = findfile('Final/..', count=count)
+     if count EQ 0 then file_mkdir, 'Final'
+     a = findfile('Lists/..', count=count)
+     if count EQ 0 then file_mkdir, 'Lists'
+     a = findfile('Photo/..', count=count)
+     if count EQ 0 then file_mkdir, 'Photo'
+     a = findfile('Flats/..', count=count)
+     if count EQ 0 then file_mkdir, 'Flats'
+     
+     if ccd ne 'NIRC2' then begin
+        a = findfile('OV/..', count=count)
+        if count EQ 0 then file_mkdir, 'OV'
+        a = findfile('Bias/..', count=count)
+        if count EQ 0 then file_mkdir, 'Bias'
+     endif else begin
+        a = findfile('Darks/..', count=count)
+        if count EQ 0 then file_mkdir, 'Darks', 'Darks/Sub'
+        a = findfile('PixMask/..', count=count)
+        if count EQ 0 then file_mkdir, 'PixMask'
+     endelse
+     
   endif
-
+  
 ;  Header Keywords
 
   case tel of 
@@ -105,7 +115,31 @@ pro xdimg_strct, struct, ccd, tel, LIST=list, MKDIR=mkdir, NOFILE=nofile, $
                   objcrd = 'OBJECT'
                   amcrd = 'AIRMASS'
                   datecrd = 'DATE'
-              end
+               end
+              'NIRC2' : begin
+                  expcrd = 'ITIME'
+                  frmcrd = 'FRAMENO'
+                  racrd = 'RA'  ;For NIRC2 these RA and DEC are given in decimal degrees.
+                  deccrd = 'DEC'
+                  eqxcrd = 'EQUINOX'
+                  filtcrd = 'FWINAME'
+                  utcrd = 'UTC'
+                  objcrd = 'OBJECT'
+                  amcrd = 'AIRMASS'
+                  datecrd = 'DATE-OBS'
+                  gaincrd = 'GAIN'
+                  coaddscrd = 'COADDS'
+                  sampmodecrd = 'SAMPMODE'
+                   ; NOTE: The sampmode can either be 1, 2, or 3.  1 is never used.
+                   ; 2 means correlated readouts at the beginning and the end of the exposure.
+                   ; 3 means an another type of correlated readouts, even better than sampmode 2 if you're dominated by readnoise.
+                  multisamcrd = 'MULTISAM'
+                   ; NOTE: for a given sampmode type, you can have N number of reads.  This is the multisam number.
+                  camnamecrd = 'CAMNAME'
+                  naxis1crd = 'NAXIS1'
+                  naxis2crd = 'NAXIS2'
+                  shutter = 'SHRNAME'  ;*** lindsey
+               end
               else : begin
                   print, 'Not prepared for this ccd ', ccd
                   return
@@ -205,9 +239,11 @@ pro xdimg_strct, struct, ccd, tel, LIST=list, MKDIR=mkdir, NOFILE=nofile, $
   struct.rootpth = ' '
   struct.img_root = ' '
   struct.img_ov = ' '
+  struct.img_drk = ' '
   struct.img_msk = ' '
   struct.img_skymsk = ' '
   struct.img_final = ' '
+  struct.img_drksub = ' '
 
 ;  Loop on Indv images
 
@@ -235,27 +271,59 @@ pro xdimg_strct, struct, ccd, tel, LIST=list, MKDIR=mkdir, NOFILE=nofile, $
       if keyword_set( expcrd ) then struct[q].exp = sxpar(head, expcrd)
       if keyword_set( frmcrd ) then struct[q].Frame = sxpar(head, frmcrd)
       if keyword_set( gaincrd ) then struct[q].gain = sxpar(head, gaincrd)
-      if keyword_set( racrd ) then struct[q].RA = sxpar(head, racrd)
-      if keyword_set( deccrd ) then struct[q].DEC = sxpar(head, deccrd)
+      if keyword_set( racrd ) then begin
+         if ccd eq 'NIRC2' then ra_deg=sxpar(head, racrd) else struct[q].RA = sxpar(head, racrd)
+      endif
+      if keyword_set( deccrd ) then begin
+         if ccd eq 'NIRC2' then dec_deg=sxpar(head, deccrd) else struct[q].DEC = sxpar(head, deccrd)
+      endif
+      if ccd eq 'NIRC2' then begin
+         coords=adstring(ra_deg, dec_deg, 3)
+         coords=coords[0]
+         ra_sex=strmid(coords,1,2)+':'+strmid(coords,4,2)+':'+strmid(coords,7,7)
+         dec_sex=strmid(coords,16,3)+':'+strmid(coords,20,2)+':'+strmid(coords,23,7)
+         struct[q].RA = ra_sex
+         struct[q].DEC = dec_sex         
+      endif
       if keyword_set( eqxcrd ) then struct[q].Equinox = sxpar(head, eqxcrd)
       if keyword_set( filtcrd ) then $
         struct[q].filter = strtrim(sxpar(head, filtcrd),2)
-      if keyword_set( utcrd ) then struct[q].UT = sxpar(head, utcrd)
-      if keyword_set( objcrd ) then struct[q].Obj = sxpar(head, objcrd)
+      if keyword_set( utcrd ) then struct[q].UT = strtrim(sxpar(head, utcrd),2)
+      if keyword_set( objcrd ) then struct[q].Obj = strtrim(sxpar(head, objcrd),2)
       if keyword_set( amcrd ) then struct[q].AM = sxpar(head, amcrd)
       if keyword_set( datecrd ) then begin
           date = sxpar(head, datecrd)
-          struct[q].date = x_setddate(date)
+          struct[q].date = x_setddate(strtrim(date,2))
       endif
+      if keyword_set( coaddscrd ) then struct[q].coadds = sxpar(head, coaddscrd)
+      if keyword_set( sampmodecrd ) then struct[q].sampmode = sxpar(head, sampmodecrd)
+      if keyword_set( multisamcrd ) then struct[q].multisam = sxpar(head, multisamcrd)
+      if keyword_set( naxis1crd ) then struct[q].naxis1 = sxpar(head, naxis1crd)
+      if keyword_set( naxis2crd ) then struct[q].naxis2 = sxpar(head, naxis2crd)
 
 ;        Telescope
 
       struct[q].tel = tel
 
 ;        CCD specfic (readnoise)
+      
+;  NOTE: Before this point we have not distinguished between NIRC2
+;  wide and narrow cameras because their header keywords are pretty
+;  much the same.  But now we'll get into some specific stuff like
+;  readnoise, so we'd better differentiate here.
+      if ccd eq 'NIRC2' then begin
+         if keyword_set( camnamecrd ) then begin
+            camname = strtrim(sxpar(head, camnamecrd),2)
+            if camname eq 'wide' then struct[q].ccd = 'NIRC2W'
+            if camname eq 'narrow' then struct[q].ccd = 'NIRC2N'
+            if camname eq 'medium' then struct[q].ccd = 'NIRC2M'
+         endif
+      endif else begin
+         ccd = strtrim(ccd,2)
+         struct[q].ccd = ccd
+      endelse
 
-      struct[q].ccd = ccd
-      case ccd of 
+      case struct[q].ccd of 
           'MOSA' : begin
               struct[q].gain = 2.5   ; MOSA
               struct[q].readno = 5.0
@@ -267,6 +335,16 @@ pro xdimg_strct, struct, ccd, tel, LIST=list, MKDIR=mkdir, NOFILE=nofile, $
               struct[q].readno = 7.0
               struct[q].satur = 60000.
               struct[q].statsec = [0, 845, 0, 2047]
+          end
+          'NIRC2W' : begin
+             struct[q].readno = 60.0  ;Lindsey - look up the right number here.
+             struct[q].satur = 18000.  ;Lindsey - look up the right number here.
+             struct[q].statsec = [534, 650, 394, 482]
+          end
+          'NIRC2N' : begin
+             struct[q].readno = 60.0 ;Lindsey - look up the right number here.
+             struct[q].satur = 18000. ;Lindsey - look up the right number here.
+             struct[q].statsec = [534, 650, 394, 482]
           end
           'Tek5' : begin
               struct[q].satur = 25000.
@@ -315,7 +393,7 @@ pro xdimg_strct, struct, ccd, tel, LIST=list, MKDIR=mkdir, NOFILE=nofile, $
 
 ;        Image type
 
-      case ccd of 
+      case struct[q].ccd of 
           'LRISR' : begin
               trap = sxpar(head, 'TRAPDOOR')
               shut = sxpar(head, 'AUTOSHUT')
@@ -348,6 +426,86 @@ pro xdimg_strct, struct, ccd, tel, LIST=list, MKDIR=mkdir, NOFILE=nofile, $
                   endelse
               endif
               struct[q].type = 'OBJ' ; Object
+          end
+          'NIRC2W' : begin
+             shut = sxpar(head, 'SHRNAME')
+             domeaz = sxpar(head, 'DOMEPOSN')  ;dome's azimuth position
+             telaz = sxpar(head, 'AZ')  ; telescope's azimuth position
+             telaz = (telaz + 360.) mod 360.
+             domeaz = (domeaz + 360.) mod 360.
+             observatory, 'keck', obs_struct
+             tzone = obs_struct.tz
+             lng = 360.d0 - obs_struct.longitude
+             lat = obs_struct.latitude
+             jd = 2400000.5D + sxpar(head, 'MJD-OBS')
+             sunpos, jd, ra1, dec1           ; returns degrees
+             zenpos, jd, ra2, dec2           ; returns radians
+             ra2 = ra2 * DRADEG
+             dec2 = dec2 * DRADEG
+             sun_angle = 90. - djs_diff_angle(ra1, dec1, ra2, dec2)
+             ; Darks is shutter is closed
+             if strtrim(shut,2) eq 'closed' then begin
+                struct[q].type = 'DRK'
+                break
+             endif
+             ; Domeflat if shutter's open and telescope isn't pointing out of dome slit.
+             if abs(domeaz - telaz) GT 4. then begin
+                struct[q].type = 'DFT'
+                break
+             endif
+             ; Twilight if shutter's open, telescope points out of dome, 
+             ; but sun angle is greater than -12 degrees.
+             if sun_angle GT -12. then begin
+                struct[q].type = 'TWI'
+                break
+             endif
+             ; Standard frame if shutter's open, telescope points out of dome,
+             ; and sun is lower than -12 deg below horizon, but exposure time is LT 3 seconds.
+             if sxpar(head, 'ITIME') LT 3 then begin
+                struct[q].type = 'STD'
+             endif else begin
+                struct[q].type = 'OBJ'
+             endelse
+          end
+          'NIRC2N' : begin
+             shut = sxpar(head, 'SHRNAME')
+             domeaz = sxpar(head, 'DOMEPOSN') ;dome's azimuth position
+             telaz = sxpar(head, 'AZ')        ; telescope's azimuth position
+             telaz = (telaz + 360.) mod 360.
+             domeaz = (domeaz + 360.) mod 360.
+             observatory, 'keck', obs_struct
+             tzone = obs_struct.tz
+             lng = 360.d0 - obs_struct.longitude
+             lat = obs_struct.latitude
+             jd = 2400000.5D + sxpar(head, 'MJD-OBS')
+             sunpos, jd, ra1, dec1           ; returns degrees
+             zenpos, jd, ra2, dec2           ; returns radians
+             ra2 = ra2 * DRADEG
+             dec2 = dec2 * DRADEG
+             sun_angle = 90. - djs_diff_angle(ra1, dec1, ra2, dec2)
+             ; Darks is shutter is closed
+             if strtrim(shut,2) eq 'closed' then begin
+                struct[q].type = 'DRK'
+                break
+             endif
+             ; Domeflat if shutter's open and telescope isn't pointing out of dome slit.
+             if abs(domeaz - telaz) GT 4. then begin
+                struct[q].type = 'DFT'
+                break
+             endif
+             ; Twilight if shutter's open, telescope points out of dome, 
+             ; but sun angle is greater than -12 degrees.
+             if sun_angle GT -12. then begin
+                struct[q].type = 'TWI'
+                break
+             endif
+             ; Standard frame if shutter's open, telescope points out of dome,
+             ; and sun is lower than -12 deg below horizon, but exposure time is LT 3 seconds.
+             if sxpar(head, 'ITIME') LT 3 then begin
+                struct[q].type = 'STD'
+             endif else begin
+                struct[q].type = 'OBJ'
+             endelse
           end
           'Tek5' : begin
               imhead = sxpar(head, 'IMTYPE')
@@ -430,13 +588,12 @@ pro xdimg_strct, struct, ccd, tel, LIST=list, MKDIR=mkdir, NOFILE=nofile, $
                   end
               endcase
           end
-          else : print, 'xdimg_strct: ', ccd, $
+          else : print, 'xdimg_strct (image type): ', ccd, $
             ' not recognized, moving on..' ; Move along
       endcase
       
 ;        Set image names
 
-  
       lslsh = strpos(img[q],'/',/reverse_search)
       if lslsh NE -1 then begin
           struct[q].img_root = strmid(img[q], lslsh+1) 
@@ -485,9 +642,11 @@ pro xdimg_strct, struct, ccd, tel, LIST=list, MKDIR=mkdir, NOFILE=nofile, $
           struct[q].flg_final = 1
           struct[q].img_final = a[0]
       endif else struct[q].img_final = ' '
-        
+              
+;       No darks or coadd divided images have been created
+      struct[q].img_drk = ' '
+      struct[q].img_drksub = ' '
 
-      
   endfor
 
 ; Close the ASCII file

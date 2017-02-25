@@ -1,18 +1,18 @@
 ;+ 
 ; NAME:
 ; x_setaper   
-;       Version 1.0
+;       Version 1.1
 ;
 ; PURPOSE:
-;    Determine an aperture automatically
+;    Determine an aperture for an object automatically
 ;
 ; CALLING SEQUENCE:
-;   
-;   x_setaper, spec, center, [frac], RADIUS=
+;   x_setaper, spec, center, [frac], RADIUS=, /SKYSUB
 ;
 ; INPUTS:
 ;   spec      - Spectrum (fits file ok)
-;   center    - center of aperture (guess)
+;   center    - center of aperture (guess, actual center not essential)
+;   frac      - Fraction of profile to extract [default: 0.05 off each side]
 ;
 ; RETURNS:
 ;   aperture  - Aperture: float(2) array around center
@@ -20,6 +20,9 @@
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
+;  RADIUS=  -- Region of object profile to consider
+;  /SKYSUB  -- Calculate a median sky at outer regions of slit and 
+;              subtract off
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -53,7 +56,7 @@ function x_setaper, spec_in, center, frac, RADIUS=radius, SKYSUB=skysub
   if not keyword_set( RADIUS ) then radius = 20L
   
 ; Read in fits file if necessary
-  if size(spec_in,/type) EQ 7 then spec = mrdfits(spec_in, /silent) $
+  if size(spec_in,/type) EQ 7 then spec = xmrdfits(spec_in, /silent) $
   else spec = spec_in
 
 ; Setup

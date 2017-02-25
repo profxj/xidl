@@ -1,0 +1,10 @@
+
+The file FIRE_modelsky contains a synthetic model of the sky, scaled
+to match the version used by Gemini.  However, I've used the Rousselot
+line lists to generte a higher resolution model of the OH forest, at
+R=6000.  The line fluxes were scaled to match the lower resolution
+Gemini version in EW.
+
+Units are photons/cm^2/sec/micron/sq arcsec.
+
+

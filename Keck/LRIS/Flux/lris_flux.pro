@@ -4,25 +4,24 @@
 ;   Version 1.1
 ;
 ; PURPOSE:
-;    Plots any array interactively
+;    Flux an LRIS spectrum given a sensitivity function (archived)
 ;
 ; CALLING SEQUENCE:
-;   
-;   spec = x_apall(ydat, [head])
+;   flux = lris_flux(wave, spec, flux_fil, SIG=, FSIG=)
 ;
 ; INPUTS:
-;   ydat       - Values 
-;   [head]     - Header
+;   wave  -- Wavelength array
+;   spec  -- LRIS spectrum
+;  flux_fil -- Sensitivity function
 ;
 ; RETURNS:
+;   flux  -- Fluxed LRIS spectrum
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
-;   wave       - wavelength array
-;   DISPLAY    - Display the sky subtracted image with xatv
-;   OVR        - String array for ov region:  '[2050:2100, *]'
-;   ERROR      - Variance array
+;  EXP=  -- Exposure time [default: 1.]
+;  SIG=  -- Error array to flux as well
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -38,15 +37,13 @@
 ;   29-Aug-2003 Written by JXP
 ;-
 ;------------------------------------------------------------------------------
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 function lris_flux, wave, spec, flux_fil, SIG=sig, FSIG=fsig, EXP=exp
 
 ;
   if  N_params() LT 3  then begin 
       print,'Syntax - ' + $
-        'flux = lris_flux( wave, spec, flux_fil, SIG=, FSIG=)  [v1.0]'
+        'flux = lris_flux( wave, spec, flux_fil, SIG=, FSIG=, EXP=)  [v1.0]'
     return, -1
   endif 
 

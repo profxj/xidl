@@ -3,7 +3,9 @@
 ;   x_medsigclip
 ;
 ; PURPOSE:
-;   Median multiple images with sigma-rejection.
+;   Median multiple images with sigma-rejection.  Akin to avsigclip
+;   but does median analysis instead of averaging.  This is my favorite
+;   combine routine.
 ;
 ; CALLING SEQUENCE:
 ;   result = x_medsigclip( array, [ dimension, siglo=, sighi=, maxiter=, $
@@ -59,7 +61,7 @@
 ;
 ; REVISION HISTORY:
 ;   07-Jul-1999  Based on djs_avsigclip; Written by David Schlegel, Princeton.
-;   28-Jul-2001  Modfied by JXP (Added lo/hi sigrej)
+;   28-Jul-2001  Modfied by JXP (Added lo/hi sigrej, does median)
 ;-
 ;------------------------------------------------------------------------------
 function x_medsigclip, array, dim, siglo=siglo, sighi=sighi, maxiter=maxiter, $
@@ -95,9 +97,9 @@ function x_medsigclip, array, dim, siglo=siglo, sighi=sighi, maxiter=maxiter, $
    newsize = N_elements(array) / dimvec[dim-1]
    medarr = reform(fltarr(newsize), newdimvec)
 
-   soname = filepath('libxmath.so', $
+   soname = filepath('libxmath.' + idlutils_so_ext(), $
     root_dir=getenv('XIDL_DIR'), subdirectory='/lib')
-   soname2 = filepath('libxmath.so', $
+   soname2 = filepath('libxmath.' + idlutils_so_ext(), $
     root_dir=getenv('XIDL_DIR'), subdirectory='/lib')
 
    ; Check data types.  Will be strict in requiring identical types!
@@ -106,7 +108,6 @@ function x_medsigclip, array, dim, siglo=siglo, sighi=sighi, maxiter=maxiter, $
        if( size(array, /type) NE 4  OR $
            size(inmask, /type) NE 1 ) then begin
            print, 'x_medsigclip: Data types not right!'
-           stop
        endif
        retval = call_external(soname2, 'arrmedsigmask', $
                               ndim, dimvec, array, long(dim), float(siglo), $
@@ -117,7 +118,6 @@ function x_medsigclip, array, dim, siglo=siglo, sighi=sighi, maxiter=maxiter, $
 
        if size(array, /type) NE 4  then begin
            print, 'x_medsigclip: Data types not right!'
-           stop
        endif
        retval = call_external(soname, 'arrmedsigclip', $
                               ndim, dimvec, array, long(dim), float(siglo), $

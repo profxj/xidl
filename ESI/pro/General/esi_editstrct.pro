@@ -61,6 +61,7 @@ common esi_editstrct_common
       'CHGNAME': esi_editstrct_chgname, state
       'CHGTYPE': esi_editstrct_chgtype, state
       'CHGMODE': esi_editstrct_chgmode, state
+      'CHGSLIT': esi_editstrct_chgslit, state
       'CHGOBJID': esi_editstrct_chgobjid, state
       'DONE' : begin
           widget_control, ev.top, /destroy
@@ -241,6 +242,37 @@ common esi_editstrct_common
 end
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;  Change slit
+pro esi_editstrct_chgslit, state
+common esi_editstrct_common
+
+  ;; Check indx
+  if cmm_indx[0] LT 0 then begin
+      print, 'esi_editstrct_chgslit: Select entry first!'
+      return
+  endif
+
+  ;; Get type
+  slit = x_guilist(['0.33','0.5','0.75','1.0','1.25','6.0'], indx=indx)
+
+  ;; Change
+  case indx of 
+      0: cmm_esi[cmm_indx].slit = 0.33
+      1: cmm_esi[cmm_indx].slit = 0.50
+      2: cmm_esi[cmm_indx].slit = 0.75
+      3: cmm_esi[cmm_indx].slit = 1.00
+      4: cmm_esi[cmm_indx].slit = 1.25
+      5: cmm_esi[cmm_indx].slit = 6.00
+      else: stop
+  endcase
+
+  ;; Update
+  esi_editstrct_updlist, state
+
+  return
+end
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -294,7 +326,8 @@ common esi_editstrct_common
   chg_type = WIDGET_BUTTON(toolbar, value='Chng Type',uvalue='CHGTYPE', /align_right)
   chg_name = WIDGET_BUTTON(toolbar, value='Chng Name',uvalue='CHGNAME', /align_right)
   chg_mode = WIDGET_BUTTON(toolbar, value='Chng Mode',uvalue='CHGMODE', /align_right)
-  chg_mode = WIDGET_BUTTON(toolbar, value='Chng Objid',uvalue='CHGOBJID', /align_right)
+  chg_slit = WIDGET_BUTTON(toolbar, value='Chng Slit',uvalue='CHGSLIT', /align_right)
+  chg_obj = WIDGET_BUTTON(toolbar, value='Chng Objid',uvalue='CHGOBJID', /align_right)
 
 ; Create the list
   esi_editstrct_mklist, list

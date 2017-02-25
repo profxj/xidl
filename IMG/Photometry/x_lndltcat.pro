@@ -1,12 +1,13 @@
 ;+ 
 ; NAME:
-; x_lndltcat   Version 1.0
+; x_lndltcat   
+;   Version 1.1
 ;
 ; PURPOSE:
-;    Creates a fits file of the Landolt table
+;    Creates a fits file of the Landolt table.  Probably needs
+;  to be run only once unless a typo is corrected.
 ;
 ; CALLING SEQUENCE:
-;   
 ;   x_lndltcat, fil, fitsfil
 ;
 ; INPUTS:
@@ -25,8 +26,7 @@
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   x_lndltcat,
-;   '/home/xavier/idl/idlutils/IMG/Photometry/Lists/nlandolt.dat', 
+;   x_lndltcat, '/u/xavier/idl/xidl/IMG/Photometry/Lists/nlandolt.dat', 
 ;   'Landolt.fits'
 ;
 ;

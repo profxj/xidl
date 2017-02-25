@@ -1,0 +1,12 @@
+Template files:
+
+old_templ_arc_2x2B.idl 
+   -- Original template file
+
+templ_arc_2x2B.idl 
+   -- CCD modified on XXX
+   -- Essentially rotated from the original orientation
+
+templ_arc_3x2R.idl
+   -- From May 12, 2004
+   -- Not highly recommended

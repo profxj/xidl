@@ -1,0 +1,5 @@
+; IDL commands for building HTML documentation
+
+cd, '..'
+make_html_help, 'pro/*', 'doc/HIRES_doc.html', /strict, title='IDL Help for HIRedux'
+exit

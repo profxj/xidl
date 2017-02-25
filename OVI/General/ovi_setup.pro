@@ -8,24 +8,28 @@
 ;    spectroscopic images
 ;
 ; CALLING SEQUENCE:
-;   
-;  ovi_setup, struct, [ccd], [tel], LIST=list, MKDIR=mkdir, NOFILE=nofile, NOLIST=nolist
+;  ovi_setup, struct, phot_fil, FSPEC_FIL=, IMG_FIL=,$
+;              OUTFIL=, FLG_PHOT=, SURV_FIL=
 ;
 ; INPUTS:
-;   [CCD]        - Set specific CCD header keywords
-;                   Options: WFTek5 (default)
-;   [tel]        - Set telescope
-;                   Options: LCO-100 (default)
+;  phot_fil -- File containing the photometry of the galaxies
 ;
 ; RETURNS:
+;  struct -- A galaxy survey structure containing all of the relevant
+;            info for the set of observations
 ;
 ; OUTPUTS:
-;   struct     -  Creates an IDL structure for direct images 
-;         -  ASCII file summarizing the structure
+;  OUTFIL=  -- Name of galaxy structure output file 
+;              [default: 'ovi_strct.fits']
 ;
 ; OPTIONAL KEYWORDS:
-;   LIST       - Image list
-;   MKDIR      - Make directories
+;  SURV_FIL=  -- List of ID, RA and DEC for the galaxies
+;  flg_phot=  -- Type of survey (1= LCO)
+;  fspec_fil= -- Galaxy spectroscopic FITS file
+;  IMG_FIL=   -- List of image files 
+;  /WFCOEFF -- Setup the galaxy coefficients from the SDSS fits
+;  ID_KLUDGE=  -- Offset ID values by +1 for all IDs larger than this
+;                 input value (Kludge for 3C273)
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -46,12 +50,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 pro ovi_setup, struct, phot_fil, FSPEC_FIL=fspec_fil, IMG_FIL=img_fil,$
-               OUTFIL=outfil, FLG_PHOT=flg_phot, SURV_FIL=surv_fil
+               OUTFIL=outfil, FLG_PHOT=flg_phot, SURV_FIL=surv_fil, $
+               WFCOEFF=wfcoeff, ID_KLUDGE=id_kludge
 
 ;
-  if  N_params() LT 1  then begin 
+  if  N_params() LT 2  then begin 
       print,'Syntax - ' + $
-        'ovi_setup, struct, FSPEC_FIL=, IMG_FIL= [v1.0]'
+        'ovi_setup, struct, phot_fil, FSPEC_FIL=, IMG_FIL= OUTFIL=, FLG_PHOT=, SURV_FIL=, ID_KLUDGE= [v1.1]'
       return
   endif 
   
@@ -75,6 +80,12 @@ pro ovi_setup, struct, phot_fil, FSPEC_FIL=fspec_fil, IMG_FIL=img_fil,$
           nobj = n_elements(ID)
           struct = replicate(tmpstrct, nobj)
           struct.id = id
+          if keyword_set(ID_KLUDGE) then begin
+              ;; 
+              print, 'ovi_setup: Kludging the ID values!!'
+              kludge = where(id GE ID_KLUDGE)
+              struct[kludge].id = struct[kludge].id - 1
+          endif
           struct.obj_id = 'a'
           struct.flg_anly = 1
           struct.mag[0] = B
@@ -86,6 +97,8 @@ pro ovi_setup, struct, phot_fil, FSPEC_FIL=fspec_fil, IMG_FIL=img_fil,$
           ;; xy
           struct.xypix[0] = xpix
           struct.xypix[1] = ypix
+          ;; star, gal
+          struct.stargal = star
           ;; Area
           struct.area = karea
           ;; Redshift
@@ -132,6 +145,16 @@ pro ovi_setup, struct, phot_fil, FSPEC_FIL=fspec_fil, IMG_FIL=img_fil,$
                 struct[indx].flg_anly = struct[indx].flg_anly + 2
               ;; Redshift
               struct[indx].z = fspec[j].zans.z
+              ;; Fit coeff (WFCCD/SDSS)
+              if keyword_set(WFCOEFF) then begin
+                  nnrm = [0.985064d,  0.164177,  0.0492532,  0.0164177]
+                  coeff = double(fspec[j].zans.theta[0:3]) * nnrm
+                  coeff = coeff / sqrt(total(coeff^2))
+                  struct[indx].gal_coeff[0:3] = coeff
+                  ;; Early, late
+                  struct[indx].gal_coeff[4] = $
+                    total(coeff * [0.,1,-1,-1] ) / 1.5
+              endif
               ;; Fspec
               a = where( strlen(struct[indx].fspec_fil) EQ 0)
               struct[indx].fspec_fil[a[0]] = fspec_fil[i]

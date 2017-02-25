@@ -1,32 +1,37 @@
 ;+ 
 ; NAME:
 ; dla_fndtran   
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
-;    Fits a continuum to spectroscopic data interactively
+;    Given a DLA structure, calculates the rest EW of weak, rare
+;    transitions like OI 1355, BII, etc.
 ;
 ; CALLING SEQUENCE:
-;   
-;   dla_fndtran, fil, NHI, Z, NPIX=, SNR=, OUTFIL=, NSIG=
+;   dla_fndtran, dla, [fil], OUTFIL=, LMT=
 ;
 ; INPUTS:
+;   dla --  IDL DLA structure
+;   [fil] -- List of weak line transitions [default:
+;            '/u/xavier/DLA/Abund/weak_lin.dat']
 ;
 ; RETURNS:
 ;
 ; OUTPUTS:
+;   OUTFIL= -- Writes the values to OUTFIL [default: 'fort.23']
 ;
 ; OPTIONAL KEYWORDS:
+;   LMT= -- Minimum EW to print the transition [default: 0.5 mA]
 ;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   dla_fndtran, fil, NHI, Z
-;
+;   dla_fndtran, dla, outfil='weak_lin.dat'
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
+;
 ; REVISION HISTORY:
 ;   09-Dec-2002 Written by JXP
 ;-
@@ -39,12 +44,12 @@ pro dla_fndtran, dla, fil, OUTFIL=outfil, LMT=lmt
 ;
   if  N_params() LT 1  then begin 
     print,'Syntax - ' + $
-             'dla_fndtran, dla, fil, OUTFIL=, LMT= [v1.0]'
+             'dla_fndtran, dla, [fil], OUTFIL=, LMT= [v1.1]'
     return
   endif 
 
 ; Optional Keywords
-  if not keyword_set( fil ) then fil = '/u/xavier/DLA/Abund/weak_lin.dat'
+  if not keyword_set( fil ) then fil = '~/DLA/Abund/weak_lin.dat'
   if not keyword_set( outfil ) then outfil = 'fort.23'
   if not keyword_set( lmt ) then lmt = 0.5
 

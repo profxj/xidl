@@ -1,14 +1,15 @@
 ;+ 
 ; NAME:
 ; x_specbin
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
-;  Simply bins data up in integer pixels    
+;  Bins up 1D spectra in integer pixels. The routine returns a
+;  structure of flux and wavelength and variance that has been
+;  rebinned.
 ;
 ; CALLING SEQUENCE:
-;   
-;   bin = x_specbin(fx, nbin)
+;   bin = x_specbin(fx, nbin, VAR=, WAV=)
 ;
 ; INPUTS:
 ;   fx       - Flux
@@ -20,6 +21,8 @@
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
+;  VAR=  -- Input variance array
+;  WAV=  -- Input wavelength array
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -27,7 +30,6 @@
 ;
 ; EXAMPLES:
 ;   bin = x_specbin(fx, 3)
-;
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
 ;
@@ -37,13 +39,12 @@
 ;------------------------------------------------------------------------------
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-function x_specbin, fx, nbin, VAR=var, WAV=wav
+function x_specbin, fx, nbin, VAR=var, WAV=wav, velo=velo
 
 ;
   if  N_params() LT 2  then begin 
     print,'Syntax - ' + $
-             'bindat = x_specbin(fx, nbin, VAR=, WAV=) [V1.0]'
+             'bindat = x_specbin(fx, nbin, VAR=, WAV=) [V1.1]'
     return, -1
   endif 
 
@@ -60,28 +61,33 @@ function x_specbin, fx, nbin, VAR=var, WAV=wav
   nwfx = fltarr(npix)
   nwvar = fltarr(npix)
   nwwav = dblarr(npix)
+  nwvel = dblarr(npix)
 
 ; Bin
 
   for qq=0L,npix-1 do begin
       ii = qq*nbin
-
+      
       if qq NE npix-1 then begin
-          ; Add em up
-          nwfx[qq] = total(fx[ii:ii+nbin-1])/float(nbin)
-          if keyword_set( VAR ) then $
+                                ; Add em up
+         nwfx[qq] = total(fx[ii:ii+nbin-1])/float(nbin)
+         if keyword_set( VAR ) then $
             nwvar[qq] = total(var[ii:ii+nbin-1])/float(nbin)
-          if keyword_set( WAV ) then $
+         if keyword_set( WAV ) then $
             nwwav[qq] = total(wav[ii:ii+nbin-1])/float(nbin)
-      endif else begin ; Last pixel
-          nwfx[qq] = total(fx[ii:ii+lst-1])/float(lst)
-          if keyword_set( VAR ) then $
+         if keyword_set( VELO ) then $
+            nwvel[qq] = total(velo[ii:ii+nbin-1])/float(nbin)
+      endif else begin          ; Last pixel
+         nwfx[qq] = total(fx[ii:ii+lst-1])/float(lst)
+         if keyword_set( VAR ) then $
             nwvar[qq] = total(var[ii:ii+lst-1])/float(lst)
-          if keyword_set( WAV ) then $
+         if keyword_set( WAV ) then $
             nwwav[qq] = total(wav[ii:ii+lst-1])/float(lst)
+         if keyword_set( VELO ) then $
+            nwvel[qq] = total(velo[ii:ii+lst-1])/float(lst)
       endelse
-  endfor
-          
-  return, { fx: nwfx, var: nwvar, wave: nwwav}
+   endfor
+  
+  return, { fx: nwfx, var: nwvar, wave: nwwav, velo:nwvel}
 
 end

@@ -1,17 +1,16 @@
 ;+ 
 ; NAME:
 ;  x_speczoomreg
-;    Version 1.0
+;    Version 1.1
 ;
 ; PURPOSE:
-;    Sets a wavelength array given a header
+;    Sets region to zoom in on in a GUI
 ;
 ; CALLING SEQUENCE:
-;   
-;   x_speczoom, state, flg
+;   x_speczoom, state
 ;
 ; INPUTS:
-;   flg  = 0-In, 1-Out
+;  state  -- GUI state (requires TAGS xymnx tmpxy, flg_zoom)
 ;
 ; RETURNS:
 ;
@@ -24,8 +23,7 @@
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   x_speczoom, state, flg
-;
+;   x_speczoom, state
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
 ;
@@ -41,7 +39,7 @@ pro x_speczoomreg, state
 ;
   if  N_params() LT 1  then begin 
     print,'Syntax - ' + $
-             'x_speczoomreg, state [V1.0]'
+             'x_speczoomreg, state [v1.1]'
     return
   endif 
 

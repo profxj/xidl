@@ -4,7 +4,7 @@
 ;    Version 1.2
 ;
 ; PURPOSE:
-;    Plots any array interactively
+;    Trace a spectrum. Ok for quick reductions
 ;
 ; CALLING SEQUENCE:
 ;   
@@ -56,9 +56,9 @@ function x_trace, img, guess, cline, VAR=var, TFITSTR=tfitstr, $
 ;
   if  N_params() LT 1  then begin 
     print,'Syntax - ' + $
-      'fit = x_trace(img, guess, cline, TFITSTR=, '
-    print, '      NTRC=, PFUNC=, PNORD=, PHSIG=, PLSIG=, YBUFF=, /PINTER) '
-    print, '      /ROT, [v1.2]'
+      'fit = x_trace(img, guess, cline, TFITSTR=, /INTER, VAR='
+    print, '      NTRC=, PFUNC=, PNORD=, PHSIG=, PLSIG=, YBUFF=, /PINTER '
+    print, '      /ROT)  [v1.2]'
     return, -1
   endif 
 

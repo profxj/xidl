@@ -1,6 +1,7 @@
 ;+ 
 ; NAME:
-; write_wfccdstr   Version 1.0
+; write_wfccdstr   
+;  Version 1.0
 ;
 ; PURPOSE:
 ;    Write a wfccd_struct to an ASCII file

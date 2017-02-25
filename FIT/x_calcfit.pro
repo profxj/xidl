@@ -22,10 +22,11 @@
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
-;   nord       - Required for LEGEND
-;   FITSTR     - Fit structure (OVERRIDES input values of func, ffit)
+;   nord=      - Required for LEGEND
+;   FITSTR=    - Fit structure (OVERRIDES input values of func, ffit)
 ;
 ; OPTIONAL OUTPUTS:
+;   NRM=       - Normalization parameters (-1 to 1)
 ;
 ; COMMENTS:
 ;
@@ -41,7 +42,7 @@
 ;  BSPLIN
 ;  GAUSS
 ;
-	; REVISION HISTORY:
+; REVISION HISTORY:
 ;   20-Nov-2001 Written by JXP
 ;   31-Jan-2002 Added NRM, CHEBY func, FITSTR
 ;-
@@ -54,7 +55,7 @@ function x_calcfit, xval, func, ffit, NORD=nord, NRM=nrm, FITSTR=fitstr
 ;
   if  N_params() LT 1  then begin 
     print,'Syntax - ' + $
-             'fit = x_calcfit(xval, [func, ffit], NORD=, NRM=) (V1.2)'
+             'fit = x_calcfit(xval, [func, ffit], NORD=, NRM=, FITSTR=) (V1.2)'
     return, -1
   endif 
 
@@ -72,14 +73,14 @@ function x_calcfit, xval, func, ffit, NORD=nord, NRM=nrm, FITSTR=fitstr
 
   ; Error checking
 
-  if (func EQ 'LEGEND' AND not keyword_set( NORD )) then begin
-      print, 'Nord must be set for LEGEND'
+  if (func EQ 'LEGEND' OR func EQ 'CHEBY' AND not keyword_set( NORD )) $
+    then begin
+      print, 'Nord must be set for LEGEND or CHEBY'
       return, -1
   endif
 
 
 ; Function
-
   case func of 
       'POLY': begin 
           if n_elements(ffit) NE 1 then val = poly(xnrm,ffit) $

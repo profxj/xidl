@@ -1,27 +1,31 @@
 ;+ 
 ; NAME:
 ; kast_proc   
-;     Version 1.0
+;     Version 1.1
 ;
 ; PURPOSE:
-;    Process an image (bias subtract + flatten)
-;      WARNING! Assumes 1 bias and 1 flat for all images
+;    Process an image (flatten) and create variance array.  The
+;  routine also turns the DN into electrons by scaling by the gain.
+;      WARNING! Assumes 1 flat for all images
 ;
 ; CALLING SEQUENCE:
-;   
-;  kast_proc, kast, setup, obj_id
+;  kast_proc, kast, setup, obj_id, side, INDEX=, /CLOBBER
 ;
 ; INPUTS:
-;   kast   -  ESI structure
-;   indx  -  Indices of objects to process
+;   kast  - Kast IDL structure
+;  setup  --  Setup value
+;   side  --  Specific camera [blue (1) vs. red (2)]
+; obj_id  --  Object value
 ;
 ; RETURNS:
 ;
 ; OUTPUTS:
+;  Processed file (Final/f_###.ccd)
 ;
 ; OPTIONAL KEYWORDS:
-;   FLAT  - Flat file
-;   BIAS  - Bias frame
+;   INDEX  - Indices of objects to process
+;   FLAT   - Flat file
+; /CLOBBER - Overwrite processed image if it exists
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -41,19 +45,20 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-pro kast_proc, kast, setup, side, obj_id, CLOBBER=clobber, INDEX=index
+pro kast_proc, kast, setup, obj_id, side, CLOBBER=clobber, INDEX=index, $
+	 FLAT=flat
 
 ;
   if  N_params() LT 1  then begin 
       print,'Syntax - ' + $
-        'kast_proc, kast, setup, side, obj_id, INDEX=, /CLOBBER [v1.0]'
+        'kast_proc, kast, setup, obj_id, side, INDEX=, /CLOBBER, FLAT= [v1.1]'
       return
   endif 
 
 ;  Optional Keywords
-  if not keyword_set( SETUP ) then setup = 0
-  if not keyword_set( SIDE ) then side = 1
-  if not keyword_set( OBJ_ID ) then obj_id = 0
+  if not keyword_set( SETUP ) then setup = 0L
+  if not keyword_set( SIDE ) then side = 1L
+  if not keyword_set( OBJ_ID ) then obj_id = 0L
 
 ; Index
   if not keyword_set( INDEX ) then begin

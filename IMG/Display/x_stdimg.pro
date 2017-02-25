@@ -1,9 +1,10 @@
 ;+
 ; NAME:
-;       XSTDIMG
+;       X_STDIMG
 ; 
 ; PURPOSE: 
-;       Interactive display of 2-D images.
+;       Interactive display of 2-D images.  This is simply a stripped
+;  down version of atv.
 ;
 ; CATEGORY: 
 ;       Image display.

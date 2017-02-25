@@ -1,22 +1,27 @@
 ;+ 
 ; NAME:
 ; dla_esitosdss   
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
-;    Fits a continuum to spectroscopic data interactively
+;    Turn an ESI spectrum into SDSS 'quality' (i.e. lower resolution)
 ;
 ; CALLING SEQUENCE:
 ;   
-;   dla_esitosdss, fil, NHI, Z, NPIX=, SNR=, OUTFIL=, NSIG=
+;   dla_esitosdss, fil, wave, fx, sig, /PLOT
 ;
 ; INPUTS:
+;   fil  -- ESI fits file  [assumes binning of 1]
 ;
 ; RETURNS:
 ;
 ; OUTPUTS:
+;   wave -- Wavelength array
+;   fx -- Flux array
+;   sig -- Error array
 ;
 ; OPTIONAL KEYWORDS:
+;  /PLOT -- Plot the spectrum
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -34,12 +39,12 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-pro dla_esitosdss, fil, wave, fx, sig
+pro dla_esitosdss, fil, wave, fx, sig, PLOT=plot
 
 ;
   if  N_params() LT 4  then begin 
     print,'Syntax - ' + $
-             'dla_esitosdss, fil, wave, fx, sig [v1.0]'
+             'dla_esitosdss, fil, wave, fx, sig, /PLOT [v1.1]'
     return
   endif 
 
@@ -47,7 +52,9 @@ pro dla_esitosdss, fil, wave, fx, sig
 
 ; Read data file
   sig_fil = strmid(fil,0,strlen(fil)-6)+'e.fits'
-  esi_fx = x_readspec(fil, FIL_SIG=sig_fil, WAV=esi_wv, sig=esi_sig)
+  esi_fx = x_readspec(fil, FIL_SIG=sig_fil, WAV=esi_wv, sig=esi_sig, NPIX=npix)
+
+  if NPIX LT 27300L then stop 
 
 ; Smooth
 
@@ -56,9 +63,9 @@ pro dla_esitosdss, fil, wave, fx, sig
   smooth_sig = convol(esi_sig, kernel)
 
 ; Rebin
-  wave = rebin(esi_wv[0:27299], 3900L)
-  fx = rebin(smooth_fx[0:27299], 3900L)
-  sig = rebin(smooth_sig[0:27299], 3900L)
+  wave = rebin(esi_wv[0:27299L], 3900L)
+  fx = rebin(smooth_fx[0:27299L], 3900L)
+  sig = rebin(smooth_sig[0:27299L], 3900L)
 
 ; Check EW
   a = where(esi_wv GT 7900. AND esi_wv LT 7924.)
@@ -70,7 +77,8 @@ pro dla_esitosdss, fil, wave, fx, sig
   print, 'Smooth: ', total( 1-fx[a] )*dwv
 
 ; Plot
-;  x_specplot, fx, sig, wave=wave, inflg=4, /qal, /block
+  if keyword_set( PLOT ) then $
+    x_specplot, fx, sig, wave=wave, inflg=4, /qal, /block
 
   return
 end

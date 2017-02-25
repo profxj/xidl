@@ -1,11 +1,11 @@
 ;+ 
 ; NAME:
 ; x_photsol1   
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
-;    Performs the linear algebra on a set of obs with 2 free
-;    parameters, i.e., either Airmass fixed or NO color term
+;    Performs the linear algebra on a set of obs with 1 free
+;    parameters, i.e., Airmass fixed and NO color term
 ;
 ; CALLING SEQUENCE:
 ;   
@@ -36,7 +36,6 @@
 ; EXAMPLES:
 ;   x_photsol1, blah
 ;
-;
 ; PROCEDURES/FUNCTIONS CALLED:
 ;
 ; REVISION HISTORY:
@@ -53,7 +52,7 @@ pro x_photsol1, mo0, mT, sig, airmass, setam, $
   if  N_params() LT 6  then begin 
       print, 'Syntax - ' +$
         'x_photsol1, mo0, mT, sig, airmass, setam, '
-      print, '     coeffs, sigma_coeffs, CHISQ=, COLOR= (v 1.0)'
+      print, '     coeffs, sigma_coeffs, CHISQ=, COLOR= (v 1.1)'
       return
   endif 
 

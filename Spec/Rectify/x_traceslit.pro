@@ -4,7 +4,7 @@
 ;    Version 1.0
 ;
 ; PURPOSE:
-;    Traces the edges of a slit given a position on the CCD
+;    This is a failed attempt at a tracing program.  Do not use!
 ;
 ; CALLING SEQUENCE:
 ;   

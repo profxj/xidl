@@ -1,0 +1,6 @@
+<ION_SCRIPT>
+  <FRAMESET ROWS="*, *">
+    <FRAME NAME="form" SRC="ion-p?page=esi_s2n_top.ion">
+    <FRAME NAME="disp" SRC="ion-p?page=esi_s2n_blank.html">
+  </FRAMESET>
+</ION_SCRIPT>

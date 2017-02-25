@@ -1,37 +1,31 @@
 ;+ 
 ; NAME:
 ; fuse_norm
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
-;    Rebin a single data set to a new wavlength scale
-;      Simple adding (no weighting by S/N)
+;    Normalize a set of FUSE data by a continuum array
 ;
 ; CALLING SEQUENCE:
 ;   
-;   fuse_norm, gdpix, orig_wv, orig_fx, newwv, newfx
+;   fuse_norm, orig_dat, cont_fil, fin_fil 
 ;
 ; INPUTS:
-;   orig_wv
-;   orig_fx
-;   newwv
+;   orig_dat -- FITS file of original FUSE data
+;   cont_fil -- Continuum FITS file
+;   new_dat -- Name of new data file
 ;
 ; RETURNS:
 ;
 ; OUTPUTS:
-;   newfx
 ;
 ; OPTIONAL KEYWORDS:
-;  VAR         
 ;
 ; OPTIONAL OUTPUTS:
-;  NEWVAR      
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   fuse_norm, gdpix, orig_wv, orig_fx, newwv, newfx
-;
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
 ;
@@ -48,7 +42,7 @@ pro fuse_norm, orig_dat, cont_fil, fin_fil
 ;
   if  N_params() LT 3  then begin 
     print,'Syntax - ' + $
-             'fuse_norm, orig_dat, cont_fil, fin_fil [V1.0]'
+             'fuse_norm, orig_dat, cont_fil, fin_fil [V1.1]'
     return
   endif 
 

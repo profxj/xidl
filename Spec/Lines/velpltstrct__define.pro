@@ -1,6 +1,36 @@
+;+ 
+; NAME:
+; velpltstrct__define
+;   Version 1.1
+;
+; PURPOSE:
+;  Structure that is useful for velocity plots
+;
+; CALLING SEQUENCE:
+;   tmp = {velpltstrct}
+;
+; INPUTS:
+;
+; RETURNS:
+;
+; OUTPUTS:
+;
+; OPTIONAL KEYWORDS:
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;
+; EXAMPLES:
+;
+; PROCEDURES/FUNCTIONS CALLED:
+;
+; REVISION HISTORY:
+;  Written by JXP
+;---------------------------------------------------
 pro velpltstrct__define
 
-;  This routine defines the line list structure
+;  
 
   tmp = {velpltstrct, $
          wrest: 0.d, $

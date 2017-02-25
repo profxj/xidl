@@ -1,37 +1,32 @@
 ;+ 
 ; NAME:
-; x_radec
+; hires_wav
 ;
 ; PURPOSE:
-;    Turns RA, DEC in XX:XX:XX.X -DD:DD:DD.D format to decimal deg
-;      or VICE VERSA
+;   Create a line list appropriate for the HIRES emulator 
+; provided the redshift.
 ;
 ; CALLING SEQUENCE:
-;   
-;   x_radec, ra, dec, rad, decd, /ARCS, /FLIP
-;
+;  hires_wav, z, fil, /LLS   
+;  
 ; INPUTS:
-;   ra, dec    - RA and DEC in in RR:RR:RR.R -DD:DD:DD.D format 
-;                 Colons are required as separators
-;   rad, decd  - RA and DEC in decimal degrees (double)
+;   z  -- Redshift
+;  fil -- Output fil
 ;
 ; RETURNS:
 ;
 ; OUTPUTS:
-;   ra, dec    - RA and DEC in in RR:RR:RR.R -DD:DD:DD.D format 
-;                 Colons are required as separators
-;   rad, decd  - RA and DEC in decimal degrees (double)
 ;
 ; OPTIONAL KEYWORDS:
-;   ARCS - Outputs in arcseconds
-;   FLIP - Gives RA and DEC from decimal RA,DEC
+;   /LLS  -- Create a line list for LLS
+;   /shrt -- shorter line list
 ;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   hires_wav, 'q0440-221_wav.dat'
+;   hires_wav, 2.2, 'q0440-221_wav.dat'
 ;
 ; PROCEDURES CALLED:
 ;
@@ -40,17 +35,24 @@
 ;-
 ;------------------------------------------------------------------------------
 
-pro hires_wav, z, fil, LLS=lls
+pro hires_wav, z, fil, LLS=lls, GRB=grb, PRINT=print, shrt=shrt
 
   if (N_params() LT 2) then begin 
     print,'Syntax - ' + $
-             'hires_wav, z, fil, /LLS, (v1.0)'
+             'hires_wav, z, fil, /LLS, [v1.1]'
     return
   endif 
 
+  print, 'hires_wav: Note the wavelengths are converted to air'
+
   if keyword_set( LLS ) then linfil = getenv('XIDL_DIR')+ $
-    '/Spec/Lines/Lists/lls.lst' $ 
-  else linfil = getenv('XIDL_DIR')+'/Spec/Lines/Lists/qal.lst' 
+    '/Spec/Lines/Lists/lls.lst' 
+  if keyword_set( GRB ) then linfil = getenv('XIDL_DIR')+ $
+    '/Spec/Lines/Lists/qal.lst' 
+  if keyword_set( shrt ) then linfil = getenv('XIDL_DIR')+ $
+    '/Spec/Lines/Lists/dla_shrt.lst' 
+  if not keyword_set(LINFIL) then $
+	linfil = getenv('XIDL_DIR')+'/Spec/Lines/Lists/dla.lst' 
 
   close, /all
   openr, 20, linfil
@@ -59,11 +61,24 @@ pro hires_wav, z, fil, LLS=lls
   wave = 0.d
   mtlnm=' '
   ;; Read
+  allwv = dblarr(nln)
+  restwv = dblarr(nln)
+  allmtl = strarr(nln)
   for i=0,nln-1 do begin
       readf, 20, FORMAT='(f9.4,x,a10)', wave, mtlnm
-      obs = (z+1.0)*wave
-      ;; Print
-      printf, 2, obs, 'F 1', mtlnm, FORMAT='(1x,f8.3,6x,a,2x,a)'
+      allwv[i] = wave
+      restwv[i] = wave
+      allmtl[i] = mtlnm
+  endfor
+
+  ;; Redshift + Air
+  allwv = allwv*(1.+z)
+  vactoair, allwv
+
+  ;; Print
+  for i=0,nln-1 do begin
+      printf, 2, allwv[i], 'F 1', allmtl[i], FORMAT='(1x,f8.3,6x,a,2x,a)'
+      if keyword_set(PRINT) then print, restwv[i], ' ', allwv[i]
   endfor
 
   close, /all

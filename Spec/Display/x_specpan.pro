@@ -1,21 +1,25 @@
 ;+ 
 ; NAME:
-;  x_specpan   Version 1.0
+;  x_specpan   
+;   Version 1.1
 ;
 ; PURPOSE:
-;    Moves about a spectrum
+;    Moves about a spectrum to left or right in a GUI.  The
+;  state structure must have TAGS: xymnx and wave
 ;
 ; CALLING SEQUENCE:
-;   
-;   x_specpan, state, /LEFT
+;   x_specpan, state, /LEFT, /NOY
 ;
 ; INPUTS:
+;  state -- GUI state structure with TAGS: xymnx, wave
 ;
 ; RETURNS:
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
+;  /LEFT -- Pan left (default is right)
+;  /NOY  -- Do not rescale in y  (default is to rescale)
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -23,7 +27,6 @@
 ;
 ; EXAMPLES:
 ;   x_specpan, state, /LEFT
-;
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
 ;
@@ -35,11 +38,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 pro x_specpan, state, LEFT=left, NOY=noy
-
 ;
   if  N_params() LT 1  then begin 
     print,'Syntax - ' + $
-             'x_specpan, state, /LEFT, /NOY [V1.0]'
+             'x_specpan, state, /LEFT, /NOY [V1.1]'
     return
   endif 
 

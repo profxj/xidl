@@ -1,0 +1,99 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<title> Basic Spectroscopy Tool</title>
+
+<!-- Input junk.html here -->
+<!--#include virtual="./class.html"-->
+<!--#include virtual="./noboard.html"-->
+<!--#include virtual="./header.html"-->
+<!-- End junk.html here -->
+
+<div id="content_panel">  
+<table width="930" border="0" cellspacing="0" cellpadding="0">
+        <tr><td colspan="5">
+<img src="images/spacer_10x30.gif" width="10" height="10" /></td>
+        </tr>
+        <tr><td colspan="5" class="title">
+Basics of Spectroscopy Tool
+</td>
+        </tr>
+        <tr><td colspan="5">
+<img src="images/spacer_10x30.gif" width="10" height="20" /></td>
+        </tr>
+ </table>
+
+<table width="930" border="0" cellspacing="0" cellpadding="0">
+<tr><td colspan="5">
+<img src="images/spacer_10x30.gif" width="10" height="20" /></td>
+</tr>
+<tr>
+<td width="900" align=left colspan="9" class="more_non_p" align="center">
+The concepts of spectroscopy are unfamiliar to most students (and even
+many scientists!).  While our eyeballs are excellent imagers, 
+it is rare that one has an everyday opporutunity to obtain or analyze
+a spectrum.  
+<br><br>
+
+To introduce the basic concepts of spectroscopy, we have 
+designed a tool that serves two functions: 
+(1) enables the student to experiment with the design for
+producing a spectrum; and
+(2) presents the spectrum of several celestial and common-day
+sources as both a color histogram and an idealized plot.
+We describe these two modes in greater detail below.
+<br>
+        <tr><td colspan="5">
+<img src="images/spacer_10x30.gif" width="10" height="20" /></td>
+        </tr>
+</td>
+</tr>
+</table>
+
+<table width="930" border="0" cellspacing="0" cellpadding="5">
+<tr>
+<td width="150" colspan="5" valign="middle" class="more_non_p">
+This screen shot shows the experimental design for generating a 
+spectrum.  The student has control over the mirror angle and is
+encouraged to produce a spectrum by directing a light source
+(the Sun) through a dispersing element (prism).  The experiment
+then illustrates that the various colors of light are spread out
+producing a spectrum.
+</td>
+<td width="10" colspan="5" class="non_p">
+<img src="images/spacer_10x30.gif" width="5" height="10" /> </td>
+<td width="750" align="center" colspan="5" class="non_p">
+<img src="images/screen_basicexper.gif" width="750" alt="Submm"/></td>
+</tr>
+</table>
+
+<table width="930" border="0" cellspacing="0" cellpadding="5">
+        <tr><td colspan="5">
+<img src="images/spacer_10x30.gif" width="10" height="20" /></td>
+        </tr>
+<tr>
+<td width="750" align="center" colspan="5" class="non_p">
+<img src="images/screen_basicquasar.gif" width="750" alt="Submm"/></td>
+<td width="10" colspan="5" class="non_p">
+<img src="images/spacer_10x30.gif" width="5" height="10" /> </td>
+<td width="150" colspan="5" valign="middle" class="more_non_p">
+The other principal mode of this tool is the graphical display of
+an optical spectrum for a set of everyday and celestial objects
+(the Sun, a sodium street lamp, a quasar, galaxies).
+The students are encouraged to first view the spectrum as a histogram
+of colors.  This is, of course, the proper discription
+of the spectra that astronomers analyze for their research.
+The student can also overlay the idealized spectrum to gain insight
+into the relationship between color and wavelength.
+</td>
+</tr>
+</table>
+
+</div>
+<hr>
+
+</body>
+</html>
+

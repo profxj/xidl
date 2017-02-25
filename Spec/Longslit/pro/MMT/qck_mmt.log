@@ -1,0 +1,32 @@
+0) Put data in a 'Raw' diretory 
+  (gzip compress if you like)  
+
+1) Make/Edit the plan file
+ 
+  a)  start IDL from above Raw
+
+  b)  IDL> long_plan, 'a.*gz', 'Raw'
+
+  c) Edit plan.par for longslit 
+    i.   Set slitthres = 0.1)
+    ii.  Remove unnecessary arc, flats, etc.
+    iii.  Remove illumination flats for now (working on this)
+
+  c) cp plan.par plan_[newname].par
+
+
+2) Reduce the individual exposures 
+
+long_reduce, 'plan_[newname].par'
+
+  ;; check a file with
+  long_pltobj, scifil, /BRIGHT   (e.g. scifil= 'Science/a.0105.fits')
+
+3) Flux and combine
+  Use the scripts I attached
+
+  ;; For J1610
+  flux_obj, [105,107], 'J1610'
+  combine_obj, [105,107], 'J1610'
+
+  x_specplot, 'FSpec/J1610.fits', inflg=2

@@ -3,13 +3,13 @@
 ; x_getxpmnx
 ;
 ; PURPOSE:
-;  Create an array of velocity arrays for a string of transitions
+;  Find the pixels corresponding to xymnx in state
 ;
 ; CALLING SEQUENCE:
-;   
-;   all_velo = x_getxpmnx(wave, zabs, wrest, vmnx, ALL_PMNX=)
+;   pxmnx = x_getxpmnx(state)
 ;
 ; INPUTS:
+;  state -- Structure with TAGS wave, xymnx
 ;
 ; RETURNS:
 ;
@@ -22,7 +22,7 @@
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   all_velo = x_getxpmnx(wave, zabs, wrest, vmnx, ALL_PMNX=)
+;   pxmnx = x_getxpmnx(state)
 ;
 ; PROCEDURES CALLED:
 ;
@@ -35,7 +35,7 @@ function x_getxpmnx, state
 
   if (N_params() LT 1) then begin 
     print,'Syntax - ' + $
-             'xpmnx = x_getxpmnx(state) [v1.0]'
+             'xpmnx = x_getxpmnx(state) [v1.1]'
     return, -1
   endif 
 

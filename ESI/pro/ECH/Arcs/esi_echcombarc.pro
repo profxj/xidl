@@ -39,7 +39,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-pro esi_echcombarc, esi, indx, FLATFIL=flatfil
+pro esi_echcombarc, esi, indx, FLATFIL=flatfil, BIASFIL=biasfil, CLOBBER = CLOBBER
 
 ;
   if  N_params() LT 1  then begin 
@@ -62,15 +62,15 @@ pro esi_echcombarc, esi, indx, FLATFIL=flatfil
       print, 'esi_echcombarc: Arc ', out_fil, ' exists.  Returning'
       return
   endif
-
+  
   ;; Process
-  esi_echproc, esi, indx, FLATFIL=flatfil
+  esi_echproc, esi, indx, FLATFIL=flatfil, CLOBBER = CLOBBER, BIASFIL=biasfil
 
   case nimg of 
       1: begin ; 1 Image
           img_fil = esi[indx[0]].img_final
           img = xmrdfits(img_fil, 0, head, /silent)
-          var = xmrdfits(img_fil, 1, head, /silent)
+          var = xmrdfits(img_fil, 1, /silent)
       end
 
       2: begin ; 2 Images
@@ -80,7 +80,7 @@ pro esi_echcombarc, esi, indx, FLATFIL=flatfil
 
       else: begin ; Muliple means median scaled by exp
           ;; IMG
-          xcombine, esi[indx].img_final, img, FCOMB=2, $
+          xcombine, esi[indx].img_final, img, FCOMB = 2, $
             SCALE=esi[indx].exp, $
             GAIN=esi[indx[0]].gain, RN=esi[indx[0]].readno
           ;; VAR

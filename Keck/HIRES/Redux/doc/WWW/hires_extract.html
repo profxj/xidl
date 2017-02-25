@@ -1,0 +1,241 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.70)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>hires_extract</TITLE>
+<META NAME="description" CONTENT="hires_extract">
+<META NAME="keywords" CONTENT="hires_extract">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+</HEAD>
+
+<BODY >
+
+<P>
+<DIV ALIGN="CENTER">
+<FONT SIZE="+3"><B>HIRedux Extraction</B></FONT>
+</DIV>
+
+<P>
+<FONT SIZE="+1">  </FONT>
+<UL>
+<LI>The following routines all apply to a single object, i.e. 	multiple exposures of that object will be reduced together.
+</LI>
+<LI>Most of the following routines take the <I>hires</I> structure,
+	and the <I>setup, chip</I> and <I>obj_id</I> tags. 
+</LI>  
+</UL>
+
+<FONT SIZE="+2">All Obj</FONT>
+<br>
+
+<a href="HIRES_doc.html#HIRES_ALLOBJ">hires_allobj</a> :: Run all extraction routines described below.  At present, I tend to run the extraction 
+steps separately to check the progress of the code.
+Currently, it is preferable to run hires_allobj with these options:  
+<BR> IDL> <B> hires_allobj </B>, hires, 1, /procall
+
+
+<P>
+
+<FONT SIZE="+2">Process the Image</FONT>
+
+<OL>
+<LI><a href="HIRES_doc.html#HIRES_PROC">hires_proc</a> :: Bias subtract and flat field the Raw image.
+	This routine takes the index number of the hires structure as input
+	or keywords setup and obj.
+	The index number is the integer in the first 
+	column of the file 'hires.list'.
+	The resulting image is output in 'Final/' and is a 
+	flattened flux and inverse variance fits file
+	(one gzipped fits image with two extensions per file).
+        Output is 'Final/f_<I>name</I>.fits' 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>hires_proc</B>, hires, SETUP=setup, OBJ=obj_id  
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> rslt = <B>hires_proc_sngl</B>('rawfil', [chip]) 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 1min per image 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Check  : <B>xatv</B>, 'Final/f_<I>name</I>.fits'
+ <UL>
+  <LI> <I> You know the code is working right when</I> you check the image
+   and it looks reasonable.  
+  <LI> At this step, I strongly recommend that you check that the order traces
+   match your object.  I have found at least a couple of cases where the 
+   flat is not aligned with the object.  Am investigating the physical origin.
+   Anyhow, checking will be tough unless there is a decent amount of 
+   sky in your data.  But try this
+    <UL>
+    <LI> <B>xatv</B>, 'Final/f_<I>name</I>.fits'
+    <LI> <B>hires_chktrcflat</B>, hires, setup, chip, /nostop, /fit
+    </UL>
+  <LI> If there is a serious offset (i.e. more than one pixel), contact me.
+   You are likely to have troubles with sky subtraction and
+   extraction.
+    <LI> You can determine how large an offset you have by
+    specifying different values for XOFF=? in your
+    hires_chktrcflat call. 
+      <LI> Once you know serious an offset it is, you can
+      supply this to hires_proc, again with the XOFF=? tag.
+  <LI> If things look fine with one frame, I suspect they are all fine.
+ </UL>
+
+<P>
+</LI>
+<LI><a href="HIRES_doc.html#HIRES_OBJCR">hires_objcr</a> (Optional, recommended with caution) :: 
+	Compares two or more images to identify
+	cosmic rays.  For two images, it uses the
+	difference of the two images scaled to the exposure times and
+	is quite conservative.  One should <B>NOT</B> use this on 
+	    multiple exposures
+	of the same object if the object has moved along the slit. 
+        A CR mask is written to the FITS file in the inverse variance
+        array with CR's given a value of -1.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>hires_objcr</B>, hires, setup, obj_id, chip, [exp], /CHK
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 3min per pair
+
+ <UL>
+  <LI> <I> You know the code is working right when</I> you run with the
+/CHK keyword and the code is not identifiying excessive CR's along the
+object profile.  This will happen (in particular) if the object has moved
+significantly along the slit in between exposures.
+ </UL>
+</OL>
+
+<P>
+<FONT SIZE="+2">Identify and Trace the Object</FONT>
+
+<P>
+
+<UL>
+<LI><a href="HIRES_doc.html#HIRES_FNTOBJ">hires_fntobj</a> :: This code automatically identifies the object
+	in each order (rectify+collapse) and then traces using trace_crude.
+	A PCA analysis is then performed on the coefficients of each trace to
+	determine a smoothed (quasi-2D) solution that is useful for interpolation
+	and extrapolation.  The code then creates and Object structure
+	<B>hiresobstrct</B> that contains the trace and will contain the 1D 
+	extractions. Output: 'Extract/Obj_<I>name</I>.fits' 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>hires_fntobj</B>, hires, setup, obj_id, chip, 
+	/CHK 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : fast 
+  
+  <LI> This code creates an object structure in the Extract/ directory
+(e.g. 'Extract/Obj_mb0033.fits.gz') which holds information relating
+to the trace and extraction of the spectra.  
+<a href="../../pro/Object/hiresobjstrct__define.pro">Here is a 
+link</a> to the code which lists the tags used.
+  <LI> BRIGHT OBJECTS or the B DECKERS ::   If you are extracting a very
+	bright object and/or using the B deckers, you may wish to extend
+	the boxcar beyond the default value (it is 75%).  In
+	this case, set OBJAPER=[value,value], e.g. [0.9,0.9].  If you 
+	designate /STD, it uses [0.85, 0.85].  Note you can even choose
+	values in excess of 1 but (1) you should skip sky subtraction and
+	(2) will need to use /EXTENBOX in the Extract step. 
+  <LI> <I> You know the code is working right when</I> you run with the
+/CHK keyword and the fit to the position in the slit fraction is nearly
+constant and well fit as a function of trace number.  Also, the image
+with the trace overplotted should look sensible.  Alternatively (or
+in addition), check the QA output (e.g. 'QA/Obj01/qa_fntobj_0022B.ps.gz').
+The X0 and PCA0 coefficients should be well fit and the remaining PCA
+coefficients should show small variation.  Finally, the reduced_chi2 should
+be < 0.1 (blue) or <0.01 (red).
+<LI> QA: <a href="hires_trcqa.pdf">HERE</a> is an example of the QA. It
+is quite similar to the Edgeflat QA.
+<UL>
+  <LI> The first page plots the position of the object in the slit as
+	    a function of order number (non-physical).  The position is
+	    relative, i.e. 0.5 is the center of the slit.  The trend is
+	    primarily atmospheric although funny things appear when the
+	    orders begin to overlap.
+  <LI> The second page shows output from the PCA analysis.  The x0 and PCA0
+  components should be well fit (there may be red, rejected outliers).
+  <OL>
+  <LI> PCA1 should be confined to a small range of values 
+         (the magnitude is not particularly relevant) but may not.  It is
+		a modest but not major concern so long as the values are
+		well fit.
+  <LI> PCA2-4 should each be confined to a small range of values
+         (the magnitude is not particularly relevant). 
+  </OL>
+  <LI> The third page shows the row-by-row centroid and the fits.
+  This is not the final trace, but it should look good by eye.
+</UL>
+</UL>
+
+<P>
+<FONT SIZE="+2">Sky Subtraction</FONT>
+  
+<UL>
+<LI><a href="HIRES_doc.html#HIRES_SKYSUB">hires_skysub</a> :: Performs sky subtraction on an order by order
+	basis using a bspline fitting algorithm to all sky pixels in a given
+	order (the object is masked).  The sky spectrum is also cross-correlated
+	with the UVES sky line list to investigate a shift.  At the moment, 
+	  while it calculates the shift, it does nothing with the value.
+	  The sky subtracted image is only used to derive the object
+	  profile in the next step.  That is, don't fret if the image
+	  isn't so great, we are just after the zero level here.
+</LI>
+<LI>Output: Sky subtracted 2D image appended to the unsubtracted
+	flux and the variance 2D images (e.g. 'Final/f_<I>name</I>.fits'). Also
+	the bspline coefficients are written to 'Sky/sky_<I>name</I>.fits' 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>hires_skysub</B>, hires, setup, obj_id, chip, [/CHK, /FCHK]
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 10min per exposure 
+</LI>
+<LI>Examine the final product (and get wavelength info) by:
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;IDL> <B>xatv</B>, 'Final/f_<I>name</I>.fits', getsky=2, 
+		WVIMG='Arcs/Arc_<I>name</I>I.fits'
+  <LI> <I> You know the code is working right when</I> you run with /FCHK
+and the final image shows 'random' noise in places where sky lines
+used to be.  You can also run with /CHK to examine the order by order fits.
+Finally, the QA file (e.g. 'QA/Obj01/qa_skysub_0022B.ps.gz') shows
+a zoom in on key sky lines in the red or several small patches in the
+blue.
+  <LI> BRIGHT OBJECTS and/or the B DECKERS :: 
+	If you are observing bright objects and/or using the
+  B deckers, you may wish to ignore sky subtraction.  In fact, unless you
+  had exquisite seeing, I claim you CANNOT do sky subtraction with the B
+  deckers.  Therefore you should skip this step.
+  
+</LI>
+</UL>
+
+<P>
+<FONT SIZE="+2">Extraction</FONT>
+  
+<UL>
+<LI><a href="HIRES_doc.html#HIRES_EXTRACT">hires_extract</a> ::
+	This procedure is quite involved.  It is generally based on 
+	  mike_box (written primarily by S. Burles) which fits an 
+	  optimal profile and the sky to the data and then extracts.  
+	  The main modification is that I take the optimal profile and
+	  sky fit and then extract in a different manner than mike_box.
+</LI>
+<LI>Output:  The tags .box_fx, .box_var, .box_wv, .fx, 
+	.var, .wave and .fin_trc are usually all filled 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>hires_extract</B>, hires, setup, obj_id, chip, [/RESCHK, /SKIPSKYSUB]
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 15min per exposure (longer for high SNR data) 
+</LI>
+<LI>Examine the final product: 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;IDL> <B>hires_specplt</B>, [/BOX]
+  
+  <LI> <I> You know the code is working right when</I> the reduced chi^2
+values are 1.2 or lower (a bit higher for very bright objects).
+  <LI> BRIGHT OBJECTS or the B DECKERS :: 
+	If you are observing bright objects and/or using the
+  B deckers, you may have skipped sky subtraction as noted above.
+  In this case, you will need to turn /SKIPSKYSUB on.  For BRIGHT targets,
+	I recommend you use the /BBOX switch which turns on /SKIPSKYSUB,
+	/NOMEDSCATT (scattered light will be fit on all chips),
+	/EXTENBOX (in case you demand a boxcar larger than the nominal 
+	slit length) and /NOPROF  (no optimal profile fitting).
+</UL>
+
+
+<P>
+<BR><HR>
+<ADDRESS> Last modified 2005-10-10 </ADDRESS>
+</BODY>
+</HTML>

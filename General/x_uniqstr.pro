@@ -1,11 +1,10 @@
 ;+ 
 ; NAME:
 ; x_uniqstr   
-;    Version 1.0
+;    Version 1.1
 ;
 ; PURPOSE:
-;    Given an array of strings, return an array of unique values +
-;    number
+;    Obsolote:  Superseded by UNIQ
 ;
 ; CALLING SEQUENCE:
 ;   

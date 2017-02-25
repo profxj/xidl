@@ -1,0 +1,81 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<title> Contributors</title>
+
+<!-- Input junk.html here -->
+<!-- End junk.html here -->
+<!--#include virtual="./class.html"-->
+<!--#include virtual="./board.html"-->
+<!--#include virtual="./header.html"-->
+
+
+<div id="left_menu">
+  <table width="196" border="0" cellpadding="0" cellspacing="0">
+    <tr>
+      <td height="40">&nbsp;</td>
+    </tr>
+    <tr>
+      <td class="menu"><span class="menu_title">Contributors</span></td>
+    </tr>
+    <tr>
+      <td class="menu">&nbsp;</td>
+    </tr>
+    <tr>
+      <td class="menu"><span class="menu_title">Designers</span></td>
+    </tr>
+    <tr>
+      <td class="menu"><a href="#kathy" class="menu_text">Kathy Cooksey</a></td>
+    </tr>
+    <tr>
+      <td class="menu"><a href="#jxp" class="menu_text">Jason X. Prochaska</a></td>
+    </tr>
+    <tr>
+      <td height="10">&nbsp;</td>
+    </tr>
+    <tr>
+      <td class="menu"><span class="menu_title">Educators</span></td>
+    </tr>
+    <tr> <td class="menu"><span class="menu_title">Funding</span></td> </tr>
+    <tr> <td class="menu"><a href="#NSF" class="menu_text">NSF</a></td> </tr>
+    <tr>
+      <td height="10">&nbsp;</td>
+    </tr>
+  </table>
+
+</div>
+
+<div id="content_panel">
+  <table width="720" border="0" cellspacing="0" cellpadding="5">
+	<tr>
+		<td height="5" colspan="2">&nbsp;</td>
+	</tr>
+	<tr>
+		<td colspan="2" class="title"></td>
+	</tr>
+    <tr>
+      <td width="200" valign="top"><img src="images/cooksey.jpg" alt="Madau" height="148" vspace="40" /></td>
+      <td width="418"><p><a name="cooksey" id="cooksey"></a></p>
+        <p><span class="p_lead_in style2">Kathy Cooksey</span> PhD student 
+<a href="http://www.ucolick.org/~kcooksey/">Cooksey</a> is pursuing thesis research on the enrichment of the intergalactic medium at low redshifts through a survey of OVI, CIV, CIII, and SiIV using archival UV spectra. She has extensive experience designing and leading inquiry programs for secondary education, primarily through the COSMOS program.</p>
+    </tr>
+    <tr>
+      <td width="200" valign="top"><img src="images/jxp.jpg" alt="JXP" width="200" vspace="40" /></td>
+      <td width="418"><p><a name="jxp" id="chandra"></a></p>
+        <p><span class="p_lead_in style2">Jason X. Prochaska  </span> Professor <a href="http://www.ucolick.org/~xavier">Prochaska</a> is faculty at the University of California, Santa Cruz.  His research focuses on the gas within, nearby, and in between galaxies at great distance.  He can be reached at:
+<font color="red">xavier at ucolick.org</font></p>
+    </tr>
+    <tr>
+      <td width="200" valign="top"><img src="images/nsf_logo.gif" alt="JXP" width="200" vspace="40" /></td>
+      <td width="418"><p><a name="NSF" id="chandra"></a></p>
+        <p><span class="p_lead_in style2">The National Science Foundation</span>The NSF supports reserach and education in the United States in all areas of science and engineering.  They offer a CAREER grant to young faculty which is designed to support their research while engaging them in education beyond their home institution.  The efforts here 
+are primarily supported through an NSF CAREER grant (AST-0548180) to Prof. Prochaska.
+    </tr>
+  </table>
+</div>
+
+
+</body>
+</html>

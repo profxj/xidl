@@ -1,0 +1,41 @@
+
+This directory contains ASCII data files for the HST 
+spectrophotometric standard stars taken from the CALSPEC 
+directory at STScI. 
+
+23 of these composite spectra (usually formed from IUE and 
+Oke data) are calibrated using the primary White Dwarf standards 
+(see Bohlin, Colina & Finlay, AJ, 110, 1316, 1995 and 
+http://www.stsci.edu/ftp/instrument_news/Observatory/calspec.html
+for details). 
+For six more objects there are composite spectra based on IUE 
+data and spectrum models. Data files for 10-Lac, Eta-Aur and 
+Lam-Lep were not included. See Bohlin and Lindler (STScI 
+Newsletter, Vol..9, No. 2, p. 19, 1992) for details on these 
+spectra.
+
+The files with prefix 'm' list wavelength (A) and AB magnitude.
+
+The files with prefix 'f' list wavelength (A), flux 
+(ergs/cm/cm/s/A * 10**16) and flux (milli-Jansky).
+
+The files can be converted to MIDAS tables (.TBL). DOITHST.PRG 
+is the MIDAS procedure to convert all the files and FORMAT.FMT 
+is the format file for the tables.
+
+NOTE. The following stars only have model data for the optical 
+(3300-10000A) range and should NOT be used for flux calibration 
+over this range:
+BPM16274
+HR1996
+HR4554
+HR5191
+HD49798
+HD60753
+
+There is an explanatory text and finding charts available for 
+these standard stars. These are available on the World Wide Web
+(http://www.eso.org/spect-phot-standards/optuvstandards.html) 
+or contact J. R. Walsh (jwalsh@eso.org) for details.
+
+September 1996

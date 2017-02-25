@@ -6,11 +6,10 @@
 ; PURPOSE:
 ;    Helps identify standard stars in a field by driving the program
 ;     x_starid which is an interactive, GUI program.
-;    
 ;
 ; CALLING SEQUENCE:
 ;   
-;   xdimg_starid, struct, LST_PATH=, OUT_PATH=
+;   xdimg_starid, struct, LST_PATH=, INDX=
 ;
 ; INPUTS:
 ;   struct -- dimg_strct defining the images of interest.  This
@@ -25,12 +24,14 @@
 ;   OUT_PATH   - Output name for id files (default: 'Photo/')
 ;
 ; OPTIONAL OUTPUTS:
+;   INDX -- Subset of indices for standards to fit
+;   INORIENT -- Choose a number in the range [-4,4] to change the 
+;                   orientation of standards plotted on the image. 
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   xdimg_starid, dimg
-;
+;   xdimg_starid, strct
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
 ;
@@ -44,12 +45,12 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-pro xdimg_starid, struct, LST_PATH=lst_path, INDX=indx
+pro xdimg_starid, struct, LST_PATH=lst_path, INDX=indx, INORIENT=inorient
 
 ;
   if  N_params() LT 1  then begin 
       print, 'Syntax - ' +$
-        'xdimg_starid, struct, LST_PATH=, OUT_PATH= [v1.1]'
+        'xdimg_starid, struct, LST_PATH=, INDX=, INORIENT= [v1.1]'
       return
   endif 
 
@@ -73,6 +74,10 @@ pro xdimg_starid, struct, LST_PATH=lst_path, INDX=indx
 
   x_starid, struct[stds].img_final, struct[stds[0]].date, $
     struct[stds[0]].ccd, struct[stds[0]].tel, OBJ=struct[stds].obj, $
-    LST_PATH=lst_path, OUT_PATH=out_path
+    LST_PATH=lst_path, OUT_PATH=out_path, INORIENT=inorient
+
+  ; Resave the updated structure so that you can pick up where you left off easily.
+   mwrfits, struct, 'struct.fits', /create
+
 
 end

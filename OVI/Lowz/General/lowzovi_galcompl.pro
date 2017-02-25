@@ -4,17 +4,17 @@
 ;   Version 1.0
 ;
 ; PURPOSE:
-;    Launches a cw_field and grabs input from the user
+;    Simple routine to check the completeness of the LCO survey
+;  in terms of the FUSE spectra (z<0.11), in terms of the QSO redshift,
+;  as a function of impact parameter, etc.
 ;
 ; CALLING SEQUENCE:
-;   
-;   string = lowzovi_galcompl(title)
+;  lowzovi_galcompl, list
 ;
 ; INPUTS:
-;   title - Title
+;   list -- List of Galaxy structure files
 ;
 ; RETURNS:
-;   string - String
 ;
 ; OUTPUTS:
 ;
@@ -25,10 +25,9 @@
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   string = lowzovi_galcompl( 'Enter filename: ')
-;
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
+; lowzovi_galcompl
 ;
 ; REVISION HISTORY:
 ;   30-Sep-2002 Written by JXP
@@ -36,13 +35,11 @@
 ;------------------------------------------------------------------------------
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-pro lowzovi_galcompl, list
-
+pro lowzovi_galcompl, list, NOWRIT=nowrit, STRUCT=struct
 ;
   if  N_params() LT 1  then begin 
     print,'Syntax - ' + $
-             'lowzovi_galcompl, list [v1.0]'
+             'lowzovi_galcompl, list [v1.1]'
     return
   endif 
 
@@ -58,10 +55,13 @@ pro lowzovi_galcompl, list
   gd_gal = where(struct.flg_gal NE 0, ngd)
 
   for qq=0L,ngd-1 do begin
+     ;; QSO RA and DEC
+     x_radec, struct[gd_gal[qq]].qso_ra, struct[gd_gal[qq]].qso_dec, $
+              qso_ra, qso_dec
       ;; Open the file
       gal_str = xmrdfits(struct[gd_gal[qq]].gal_fil, 1, /silent)
 
-   ; Count the galaxies
+      ;; Count the galaxies
       good_z = where(gal_str.flg_anly MOD 8 GT 3 AND $
                      gal_str.obj_id EQ 'a', nz)
 
@@ -86,8 +86,10 @@ pro lowzovi_galcompl, list
    ; Completeness
       all_surv = where(gal_str.flg_survey MOD 2 EQ 1 AND $
                        gal_str.obj_id EQ 'a', nsurv)
-      impact = sqrt(gal_str[all_surv].ra^2 + $
-             gal_str[all_surv].dec^2)  ;; Arcseconds
+      gcirc, 1, gal_str[all_surv].ra/15, gal_str[all_surv].dec, $
+             qso_ra/15., qso_dec, impact  ;; In arcseconds
+;      impact = sqrt(gal_str[all_surv].ra^2 + $
+;             gal_str[all_surv].dec^2)  ;; Arcseconds
       cut195 = where(gal_str[all_surv].mag[1] LT 19.5, n195)
       ;; R < 19.5, p < 5'
       all_imp = where(impact[cut195] LT 300., nall)
@@ -123,7 +125,7 @@ pro lowzovi_galcompl, list
 
   endfor
   ;; Write-out
-  lowzovi_wrdat, struct, LIST=list
+  if not keyword_set(NOWRIT) then lowzovi_wrdat, struct, list
 
   return
 end

@@ -251,7 +251,13 @@ pro esi_lwdskysub, esi, obj_id, expsr, SKYREG=skyreg, REFWV=refwv, CHK=chk, $
       img_new = img - tmp
       badpix = where(msk EQ 0 OR img_arc LE 0.)
       img_new[badpix] = 0.
+
+      ;; Display
+      if keyword_set( CHK ) then begin
+          xatv, img_new, min=-20., max=200., /block
+      endif
       
+      print, 'esi_lwdskysub: Writing sky image to ', imgfil
       ;; Ouptut New Image
       mwrfits, img, imgfil, head, /create, /silent
       mwrfits, var, imgfil, /silent

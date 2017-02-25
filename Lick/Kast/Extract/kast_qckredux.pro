@@ -1,30 +1,49 @@
 ;+ 
 ; NAME:
 ; kast_qckredux   
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
-;    Plots any array interactively
+;   Perform a quick and dirty (and rather accurate) reduction of a
+;  Kast spectrum.  Very useful at the telescope.
 ;
 ; CALLING SEQUENCE:
-;   
-;   spec = x_apall(ydat, [head])
+;  kast_qckredux, img, flat, spec, sig, ARC=, OVR=, $
+;                  CLINE=, APER=, SKYFUNC=, SKYNORD=, SKYREG=, 
+;                  /DISPLAY, /NOREJ, TRACE=, /NOSKY=, STRCT=, RN=, GAIN=, 
+;                  VAR=, CRUDE=, TINTER=, /SILENT,
+;                  WAVE=, /OPTIMAL, /AINTER, OBJLIN=, /DEBUG, /APINTER, 
+;                  YMODEL=, SIGMA=, /CHK=
 ;
 ; INPUTS:
-;   ydat       - Values 
-;   [head]     - Header
+;   img  -- Image to extract from (raw fits file)
+;  flat  -- Name of flat file (fits)
 ;
 ; RETURNS:
+;  spec  -- 1D spectrum
+;   sig  -- Error of 1D spectrum
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
-;   wave       - wavelength array
-;   DISPLAY    - Display the sky subtracted image with xatv
-;   OVR        - String array for ov region:  '[2050:2100, *]'
-;   ERROR      - Variance array
+;  /CRUDE   -- Use the routine trace_crude to trace [recommended]
+;  CLINE=   -- Row to use to identify object  [default: half way on image]
+;  APER=    -- Aperture for boxcar extraction  (output or input)
+;  TRACE=   -- Trace of the object (output or input)
+;  /CHKTRC  -- Check the trace by eye
+;  /DISPLAY -- Display the sky subtracted image with xatv
+;  /NOREJ   -- Turn off rejection in sky subtraction (not recommended)
+;  /AINTER  -- Interactively fiddle with the Arc peakup
+;  OBJLIN=  -- Row near the object trace [default: center of image]
+;  /OPTIMAL -- Perform optimal extraction
+;  YMODEL   -- 2D model of the image created by extract_image
+;  RN=      -- Readnoise of the image [default: 3.29]
+;  ARC=     -- Arc image (fits file)
+;  /DEBUG   -- Debug the program (this one often 'breaks')
+;  SIGMA=   -- Approximate sigma of the Gaussian profile (for Optimal)
 ;
 ; OPTIONAL OUTPUTS:
+;  WAVE=    -- Wavelength array (requires Arc image)
 ;
 ; COMMENTS:
 ;
@@ -43,7 +62,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 pro kast_qckredux, img, flat, spec, sig, ARC=arc, OVR=ovr, $
-                   CLINE=cline, APER=aper, $
+                   CLINE=cline, APER=aper, GRISM=grism, $
                    SKYFUNC=skyfunc, SKYNORD=skynord, SKYREG=skyreg, $
                    DISPLAY=DISPLAY, NOREJ=norej, TRACE=trace, NOOV=noov, $
                    NOSKY=nosky, STRCT=strct, RN=rn, GAIN=gain, VAR=var, $
@@ -58,16 +77,17 @@ pro kast_qckredux, img, flat, spec, sig, ARC=arc, OVR=ovr, $
     print,'Syntax - ' + $
              'kast_qckredux, img, spec, sig, CLINE=, APER=, SKYFUNC=, SKYNORD=, '
     print, '        SKYREG=, /DISPLAY, /NOREJ, TRACE=, /NOOV, /NOSKY, STRCT=,'
-    print, '        RN=, GAIN=, VAR=, /crude, /tinter, ERROR=, /SILENT, SIG= ) [V1.0]'
+    print, '        RN=, GAIN=, VAR=, /crude, /tinter, ERROR=, /SILENT,'
+    print, '        /CHK, SIGMA=, [v1.1]'
     return
   endif 
 
 ;  Optional Keywords
 
   ; gain and read noise
-  if not keyword_set(GAIN) then gain=3.8
+  if not keyword_set(GAIN) then gain=3.9
   if not keyword_set(GRISM) then grism = 'B1'
-  if not keyword_set(RN) then rn=6.
+  if not keyword_set(RN) then rn=6.5 ;blue-- red = 8.3 for slow
 
 ; Test if it is a file or image
 
@@ -154,6 +174,8 @@ pro kast_qckredux, img, flat, spec, sig, ARC=arc, OVR=ovr, $
           if not keyword_set( SKYLOW ) then skyfstr.lsig = 2.
           if not keyword_set( SKYHIGH ) then skyfstr.hsig = 2.
           skyfstr.niter = 2
+          skyfstr.flg_rej = 1
+          skyfstr.maxrej = 5
       endif
 
       ;; SUBTRACT SKY
@@ -176,7 +198,7 @@ pro kast_qckredux, img, flat, spec, sig, ARC=arc, OVR=ovr, $
       if arg_present( SIG ) then begin
           spec = x_extract(fimg, [objlin-aper[0],objlin+aper[1]], $
                            trace, spec_var, sky, CAPER=cline, $
-                           SKYRMS=skyrms, RN=rn, GAIN=gain) 
+                           SKYRMS=skyrms, RN=rn, GAIN=gain, VAR=var) 
           fsig = sqrt(spec_var)
       endif else spec = x_extract(fimg, [objlin-aper[0],objlin+aper[1]], $
                                   trace, CAPER=cline)
@@ -206,6 +228,16 @@ pro kast_qckredux, img, flat, spec, sig, ARC=arc, OVR=ovr, $
               templt = getenv('XIDL_DIR')+'/Lick/Kast/Calibs/kastfit_g1.idl'
               linlist = getenv('XIDL_DIR')+'/Spec/Arcs/Lists/kast_blue3.lst'
           end
+          'B3': begin
+              ;templt = getenv('XIDL_DIR')+'/Lick/Kast/Calibs/kastfit_g3.idl'
+              templt = 'kastfit_g3.idl'
+              linlist = getenv('XIDL_DIR')+'/Spec/Arcs/Lists/kast_blue2.lst'
+          end 
+          'R4': begin
+              ;templt = getenv('XIDL_DIR')+'/Lick/Kast/Calibs/kastfit_12005000.idl'
+              templt = 'kastfit_12005000.idl'
+              linlist = getenv('XIDL_DIR')+'/Spec/Arcs/Lists/kast_blue2.lst'
+          end 
           else: stop
       endcase
       ;; Find Shift

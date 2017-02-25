@@ -1,0 +1,41 @@
+# units Angstroms (air)
+2968.687  1 Ar # (added by JFH from ThAr list)
+3018.36   2 Zn
+3021.5003 1 Hg # (added by JFH from DEIMOS list)
+3035.78   1 Zn
+3072.06   2 Zn
+3075.90   1 Zn 
+3125.67   2 Hg
+3131.70   1 Hg
+3252.524  1 Cd 
+3261.055  1 Cd 
+3282.33   1 Zn 
+3302.58   1 Zn 
+3341.48   1 Hg
+3345.02   1 Zn 
+3403.652  1 Cd 
+3417.9035 2 NeI # (added by JFH)
+3466.85   1 CdIblend
+3472.5711 2 NeI # (added by JFH)
+3499.952  2 Cd
+3515.1900 2 NeI # (added by JFH)
+3520.5005 2 Cd  # (added by JFH)
+3593.5263 2 NeI # (added by JFH)
+3600.1691 2 NeI # (added by JFH)
+3610.508  1 Cd 
+3611.01   2 CdIblend 
+3650.153  1 Hg
+3654.84   1 Hg
+3663.279  1 Hg
+3948.9789 2 Ar
+4046.563  1 Hg
+4077.831  1 Hg
+4158.5896 2 Cd # (added by JFH)
+4164.1795 2 Ar # (added by JFH)
+4181.8836 2 Ar # (added by JFH)
+4190.7126 2 Ar # (added by JFH)
+4200.6745 2 Ar	
+4306.672  1 Cd 
+4358.327  1 Hg
+4412.989  1 Cd 
+#3466.200 1 Cd JFH replaced with blended wave center. 

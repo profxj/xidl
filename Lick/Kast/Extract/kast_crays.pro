@@ -1,20 +1,25 @@
 ;+
 ; NAME:
 ; kast_crays
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
-;   Detect cosmic rays, set effected pixels' var = -1
+;   Detect cosmic rays, set affected pixels to have var = -1
 ;
 ; CALLING SEQUENCE:
-;
 ;   kast_crays, kast, setup, side, obj_id, [exp_id], CHK=chk
 ;
 ; INPUTS:
+;   kast  --  Kast IDL structure
+;  setup  --  Setup value
+;   side  --  Specific camera [blue (1) vs. red (2)]
+; obj_id  --  Object value
+;  [exp_id]  --  Exposure indices
 ; 
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
+;  /CHK  -- Print out info on CRays
 ;
 ; COMMENTS:
 ;
@@ -26,10 +31,6 @@
 ; REVISION HISTORY:
 ;   01-September-2003 Written by GEP
 ;-
-;--------------------------------------------------------------------------------
-
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 pro kast_crays, kast, setup, side, obj_id, exp_id, CHK=chk
 

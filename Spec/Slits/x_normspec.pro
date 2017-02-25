@@ -7,7 +7,6 @@
 ;    Normalizes a multi-slit image given a normalized flat
 ;
 ; CALLING SEQUENCE:
-;   
 ;   nrmspec = x_normspec( img, flat, [var, nrmvar])
 ;
 ; INPUTS:
@@ -20,8 +19,6 @@
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
-;  YMED      -  Number of pixel offset from yedg to take median of
-;  YNRM      -  Number of pixels outside yedg to normalize
 ;
 ; OPTIONAL OUTPUTS:
 ;

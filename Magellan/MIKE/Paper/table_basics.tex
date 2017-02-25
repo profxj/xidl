@@ -1,0 +1,46 @@
+% comment these 2 lines if using \input
+%\documentclass{aastex}
+%\begin{document}
+
+\begin{deluxetable}{lcc} 
+\tablecolumns{14} 
+\tablewidth{0pc}
+\tablecaption{Basic Parameters \label{tab:basics}}
+\tablehead{
+  \colhead{} &
+  \colhead{Blue Side} & 
+  \colhead{Red Side}}
+\startdata                 
+focal ratio (effective)& F/3.9 
+                       & F/3.6            \\ 
+scale at CCD           & 8.2 pix/$''$ ($0.12''/$pix)      
+                       & 7.5 pix/$''$ ($0.13''/$pix)      \\
+$\Delta \lambda$/pixel (unbinned)   & $\sim 0.02$\AA
+                       & $\sim 0.05$\AA      \\
+detector               & $2048\times4096$ (15$\mu$m pixels)  
+                       & $2048\times4096$ (15$\mu$m pixels)  \\
+gain                   & 0.47 e-/DN    
+                       & 1.0 e-/DN        \\
+read noise             & 2 e-/pix 
+                       & 3.5e-/pix        \\
+dark current           & 5 DN/pix/hr
+                       & 2 DN/pix/hr      \\
+Wavelength range       & 3200--5000\AA 
+                       & 4900--10,000\AA  \\
+Resolution (FWHM; $0.35''$ slit) & 83,000 
+                       & 65,000           \\
+Resolution (FWHM; $1.0''$ slit) & 28,000
+                       & 22,000           \\
+Echelle grating        & R2.4
+                       & R2                \\
+Prism (cross disperser)& Fused Silica, 38deg (2 prisms) 
+                       & PBM2, 47deg (1 prism) \\
+\enddata 
+%\tablecomments{{\bf 1:} The grating position and wavelength ranges for
+%  the standard setup are given in \S.}%\ref{xx}
+\label{tab:basic.params}
+\end{deluxetable} 
+
+%comment this lines if using \input
+%\end{document}
+

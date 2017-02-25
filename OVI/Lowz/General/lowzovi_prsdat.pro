@@ -4,12 +4,12 @@
 ;  V1.1
 ;
 ; PURPOSE:
-;    Given a list of DLA base files, fill up the structure ;
+;    
 ; CALLING SEQUENCE:
-;   
-;   lowzovi_prsdat, stucture, filename
+;   lowzovi_prsdat, stucture, list, LISTNMS=
 ;
 ; INPUTS:
+;  [list]  -- List of OVI files [default: tot_ovi.lst]
 ;
 ; RETURNS:
 ;   structure      - IDL structure
@@ -17,32 +17,29 @@
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
-;  LIST - File
-;  ION - Input ionic column densities
-;  NOELM - Supress inputting Elemental values
 ;
 ; OPTIONAL OUTPUTS:
+;  LISTNMS=  -- Array of list names
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   lowzovi_prsdat, struct, '/u/xavier/DLA/Lists/tot_dla.lst'
-;
+;   lowzovi_prsdat, struct
 ;
 ; PROCEDURES CALLED:
 ;
 ; REVISION HISTORY:
-;   31-May-2001 Written by JXP
-;   02-Jan-2003 Added metallicity sturcture
+;   Oct-2003 Added metallicity sturcture
 ;-
 ;------------------------------------------------------------------------------
 pro lowzovi_prsdat, supstrc, list, listnms=listnms
 
-; lowzovi_prsdat -- Reads in DLA data to a structure
+; lowzovi_prsdat -- Reads in Galaxy data to a structure for the
+;   OVI project
 
   if (N_params() LT 1) then begin 
     print,'Syntax - ' + $
-             'lowzovi_prsdat, struct, [filename], (v1.0)' 
+             'lowzovi_prsdat, struct, [filename], [v1.1]' 
     return
   endif 
 

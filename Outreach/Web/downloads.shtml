@@ -1,0 +1,86 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<title> Spectroscopic Inquiry from UC Santa Cruz</title>
+
+<!-- Input junk.html here -->
+<!-- End junk.html here -->
+<!--#include virtual="./class.html"-->
+<!--#include virtual="./noboard.html"-->
+<!--#include virtual="./header.html"-->
+
+
+<div id="content_panel">
+  <table width="920" border="0" cellspacing="0" cellpadding="5">
+	<tr>
+		<td height="5" colspan="2">&nbsp;</td>
+	</tr>
+	<tr>
+		<td colspan="2" class="title">Downloads:</td>
+	</tr>
+
+	<tr>
+		<td colspan="2"><p><span color="p_lead_in style2">
+All of the tools were built with the IDL programming language and
+require that software to be run.  Becuase the full IDL package is
+rather expensive (500-2000 USD), we have built the tools to be run
+with the IDL Virtual Machine (free).  You must first download and
+install this software, however.  Choose the software for your operating
+system (e.g. Linux, Windows, Mac) from <a href="http://www.ittvis.com/download/download.asp?searchstring=&radDownloadType=Download&ProductVersion=279&Platform=All+Platforms&DownloadType=All+Types&submit=Submit">this link</a>.
+  </span></p></td>
+	</tr>
+	<tr>
+		<td colspan="2"><p><span color="p_lead_in style2">
+Once the IDL Virtual Machine software is installed, you can run any of
+the tools.  Just grab the ones you want (or the full package) from the
+Table below.  Unpack the tools in a directory of your choice.  Launch
+the IDL Virtual Manager.  Finally, choose the tool you wish to run
+(these all have a .SAV extension).
+  </span></p></td>
+	</tr>
+
+    <tr>
+
+  </table>
+
+<table width="930" border="0" cellspacing="0" cellpadding="0">
+        <tr><td colspan="5">
+<img src="images/spacer_10x30.gif" width="10" height="10" /></td>
+        </tr>
+        <tr><td colspan="5" class="title">
+Tools and more<br>
+</td>
+</tr>
+</table>
+        <tr><td colspan="5">
+<img src="images/spacer_10x30.gif" width="10" height="10" /></td>
+        </tr>
+
+<table width="930" border="0" cellspacing="0" cellpadding="5">
+<tr>
+<td width="280" colspan="5" align="center" class="p_lead_in style2"> Tool </td>
+<td width="50" colspan="5" align="center" class="p_lead_in style2"> IDL file </td>
+<td width="150" colspan="5" align="center" class="p_lead_in style2"> Download </td>
+</tr>
+
+<tr>
+<td width="280" colspan="5" align="center" class="small_non_p">
+<a href="tools_basicspec.shtml" class="red_link">Basic Spectroscopy</a>
+</td>
+<td width="50" colspan="5" align="center" class="small_non_p">
+OUTR_BASICSPECTRA.SAV
+</td>
+<td width="150" colspan="5" align="center" class="small_non_p">
+<a href="tools/basicspectra.tar.gz" class="red_link">basicspectra.tar.gz</a>
+</td>
+</tr>
+
+</table>
+
+</div>
+
+
+</body>
+</html>

@@ -1,0 +1,108 @@
+<script>
+startList = function() {
+if (document.all&&document.getElementById) {
+navRoot = document.getElementById("nav");
+for (i=0; i<navRoot.childNodes.length; i++) {
+node = navRoot.childNodes[i];
+if (node.nodeName=="LI") {
+node.onmouseover=function() {
+this.className+=" over";
+  }
+  node.onmouseout=function() {
+  this.className=this.className.replace(" over", "");
+   }
+   }
+  }
+ }
+}
+</script>
+
+</html>
+
+</head>
+
+
+<body onload="startList;" bgcolor="slategray">
+
+<div id="banner_panel">
+  <table width="930" border="0" cellpadding="0" cellspacing="0" bordercolor="#8479BC">
+    <tr bgcolor="#003366">
+      <td width="930" align="center"><h1><font color=#FFCC00>Spectroscopy in the Classroom<br>
+ from UC Santa Cruz/Lick Observatory</font></h1></td>
+	</tr>
+   <tr>
+     <td> 
+        <img src="images/logo.jpg" width="930" />
+     </td>
+   </tr>
+  </table>
+</div>
+
+
+<div id="drop_down_bar">
+<div id="bar">
+  <table width="930" height="30" border="0" cellpadding="0" cellspacing="0">
+	<tr>
+		<td width="12">&nbsp;</td>
+
+    <ul id="nav">
+  <li><a href="index.shtml" class="center_navigation">Home</a>
+    <ul id="nav">
+        <li><a href="funding_index.shtml" class="drop_down_nav">Our Sponsors</a></li>
+    </ul>
+    </li>
+    </ul>
+
+    <ul id="nav">
+  <li><a href="for_educators.shtml" class="center_navigation">For Educators</a>
+    <ul id="nav">
+        <li><a href="materials.shtml" class="drop_down_nav">Materials List</a></li>
+        <li><a href="experiments.shtml" class="drop_down_nav">Inquiry Experiments</a></li>
+        <li><a href="tools.shtml" class="drop_down_nav">Inquiry Tools</a></li>
+        <li><a href="downloads.shtml" class="drop_down_nav">Inquiry Downloads</a></li>
+        <li><a href="grade5_lectures.shtml" class="drop_down_nav">5th Grade
+  Lectures</a></li>
+      </ul>
+    </li>
+   </ul>
+
+    <ul id="nav">
+	  <li><a href="contributors.shtml" class="center_navigation">Contributors</a>
+        <ul id ="nav">
+          <li><a href="contributors.shtml#cooksey" class="drop_down_nav">Kathy Cooksey</a></li>
+          <li><a href="contributors.shtml#jxp" class="drop_down_nav">Jason X. Prochaska</a></li>
+		  </ul>
+	  </li>
+   </ul>
+  
+    <ul id="nav">
+  <li><a href="glossary.shtml" class="center_navigation">Glossary</a>
+        <ul id ="nav">
+          <li><a href="glossary.shtml#alphabetical" class="drop_down_nav">Alphabetical</a></li>
+          <li><a href="glossary.shtml#basics" class="drop_down_nav">Basics</a></li>
+          <li><a href="glossary.shtml#celestial" class="drop_down_nav">Celestial Objects</a></li>
+		  </ul>
+    </li>
+  </ul>
+
+    <ul id="nav">
+  <li><a href="index.shtml" class="center_navigation">Web links</a>
+    <ul id="nav">
+<!--      <li><a href="http://en.wikipedia.org/wiki/Spectroscopy" class="drop_down_nav">Inquiry design</a></li> -->
+      <li><a href="http://www.exploratorium.edu/IFI/about/inquiry.html" class="drop_down_nav">Exploratorium Inquiry</a></li>
+      <li><a href="http://loke.as.arizona.edu/~ckulesa/camp/index.html" class="drop_down_nav">Astronomy Camp</a></li>
+      <li><a href="http://cfao.ucolick.org/EO/programs.php" class="drop_down_nav">CfAO EWD</a></li>
+      <li><a href="doc/inquiry.pdf" class="drop_down_nav">Inquiry Debrief</a></li>
+      <li><a href="http://calteach.ucsc.edu" class="drop_down_nav">CalTeach</a></li>
+      <li><a href="http://en.wikipedia.org/wiki/Spectroscopy" class="drop_down_nav">Wikipedia</a></li>
+    </ul>
+    </li>
+  </ul>
+	</td>
+
+	</tr>
+ 
+  </table>
+</div>
+</div>
+

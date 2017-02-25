@@ -3,7 +3,8 @@
 ;   extract_row
 ;
 ; PURPOSE:
-;   Fit the fiber profiles and background in a single row with least squares
+;   Fit the fiber profiles and background in a single row with least
+;   squares.  Grabbed by JXP to save a version.
 ;
 ; CALLING SEQUENCE:
 ;   ans = extract_row( fimage, invvar, xcen, sigma, [ymodel=, fscat=, 

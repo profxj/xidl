@@ -1,3 +1,43 @@
+;+ 
+; NAME:
+; xgetx_plt
+;    Version 1.1
+;
+; PURPOSE:
+;  Returns the y-value corresponding to the y-pixel on a GUI.
+;   Requires pos, xymnx or the appropriate Structure.
+;
+; CALLING SEQUENCE:
+;  yval = xgety_plt(ytmp, pos, xymnx, size, /STRCT)
+;   
+; INPUTS:
+;  ytmp -- y-pixel value
+;  pos  -- Fraction of plot window covered by plot (2 element array)
+;  xymnx -- x-y limits of plot window (4 element array: x0,y0,x1,y1)
+;
+; RETURNS:
+;   yval -- 
+;
+; OUTPUTS:
+;
+; OPTIONAL KEYWORDS:
+;  /STRCT -- ytmp contains a structure with the relevant tags
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;
+; EXAMPLES:
+;   uniq = x_uniqstr( lbls, count=count)
+;
+;
+; PROCEDURES/FUNCTIONS CALLED:
+;
+; REVISION HISTORY:
+;   17-Nov-2001 Written by JXP
+;-
+;------------------------------------------------------------------------------
+
 function xgety_plt, ytmp, pos, xymnx, size, STRCT=strct
 
   if  N_params() LT 1  then begin 

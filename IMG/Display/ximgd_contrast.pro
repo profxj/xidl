@@ -1,14 +1,13 @@
 ;+ 
 ; NAME:
 ; ximgd_contrast
-;    Version 1.0
+;    Version 1.1
 ;
 ; PURPOSE:
-; Routine to contrast the draw window when a top-level contrast event
-; occurs.
+;   Routine to set the contrast and brightness depending on the 
+;   position of the cursor.
 ;
 ; CALLING SEQUENCE:
-;   
 ;   ximgd_contrast, state
 ;
 ; INPUTS:
@@ -26,7 +25,6 @@
 ;
 ; EXAMPLES:
 ;   ximgd_contrast, state
-;
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
 ;

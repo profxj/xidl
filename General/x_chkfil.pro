@@ -1,26 +1,25 @@
 ;+ 
 ; NAME:
 ; x_chkfil   
-;    Version 1.0
+;    Version 1.1
 ;
 ; PURPOSE:
-;    Given an array of strings, return an array of unique values +
-;    number
+;    Check for a file and return the number of entries matching
 ;
 ; CALLING SEQUENCE:
 ;   
-; uniq = x_chkfil(strings, COUNT=count)
+; flag = x_chkfil(fil, COUNT=, /SILENT)
 ;
 ; INPUTS:
-;   strings - Array of strings
+;   fil - Filename 
 ;
 ; RETURNS:
-;   uniq  - Array of unique members
+;   flag  - 0: No file; 1: One file; 2: More than one
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
-;   sort - Sort the output
+;  /SILENT -- Suppress messages to screen
 ;
 ; OPTIONAL OUTPUTS:
 ;  COUNT - number of unique strings
@@ -28,13 +27,14 @@
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   flg = x_chkfil( lbls, count=count)
-;
+;   flg = x_chkfil('junk.dat', count=cnt, /SILENT)
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
 ;
 ; REVISION HISTORY:
 ;   07-May-2002 Written by JXP
+;   08-Jun-2011 Use IDL's file_search() instead of findfile()
+;               for speed, KLC
 ;-
 ;------------------------------------------------------------------------------
 
@@ -45,11 +45,11 @@ function x_chkfil, fil, COUNT=count, SILENT=silent
   ; 
   if  N_params() LT 1  then begin 
       print,'Syntax - ' + $
-        'flg = x_chkfil(fil, COUNT=) (v1.0)'
+        'flg = x_chkfil(fil, COUNT=, /SILENT) (v1.1)'
       return, -1
   endif 
 
-  a = findfile(fil, COUNT=count)
+  a = file_search(fil, COUNT=count)
   case count of 
       0: begin
           if not keyword_set( SILENT ) then $

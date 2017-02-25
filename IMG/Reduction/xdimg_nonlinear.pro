@@ -4,10 +4,10 @@
 ;  Version 1.0
 ;
 ; PURPOSE:
-;    Performs non-linear correction on a ccd image
+;    Performs non-linear correction on a ccd image.  Only setup
+;   for SITe3 at this point.
 ;
 ; CALLING SEQUENCE:
-;   
 ;   newimg = xdimg_nonlinear(img, ccd)
 ;
 ; INPUTS:
@@ -44,7 +44,7 @@ function xdimg_nonlinear, img, ccd
 ;
   if  N_params() LT 2  then begin 
       print,'Syntax - ' + $
-        'newimg = xdimg_nonlinear(img, ccd) (v1.0)'
+        'newimg = xdimg_nonlinear(img, ccd) (v1.1)'
       return, -1
   endif 
   

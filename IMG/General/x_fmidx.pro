@@ -1,7 +1,7 @@
 ;+ 
 ; NAME:
 ; x_fmidx
-;    Version 1.0
+;    Version 1.1
 ;
 ; PURPOSE:
 ;    Converts frame number to index -- Useful for ccd###
@@ -34,15 +34,13 @@
 ;   14-Nov-2001 Written by JXP
 ;-
 ;------------------------------------------------------------------------------
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 function x_fmidx, struct, frame
 
   ; 
   if  N_params() LT 2  then begin 
       print,'Syntax - ' + $
-        'idx = x_fmidx, struct, frame, (v1.0)'
+        'idx = x_fmidx, struct, frame, [v1.1]'
       return, -1
   endif 
 

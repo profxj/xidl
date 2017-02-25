@@ -1,3 +1,40 @@
+;+ 
+; NAME:
+;  x_tvy
+;   Version 1.1
+;
+; PURPOSE:
+;    Returns the y value of the image from the pixel value
+;
+; CALLING SEQUENCE:
+;   
+;   y = x_tvy(tv, /INTG)
+;
+; INPUTS:
+;   tv -- TV structure  (tvstrct)
+;
+; RETURNS:
+;   y  -- y value from the image from the pixel value
+;
+; OUTPUTS:
+;
+; OPTIONAL KEYWORDS:
+;  /INTG  -- Returns an integer value
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;
+; EXAMPLES:
+; 
+; PROCEDURES/FUNCTIONS CALLED:
+
+; REVISION HISTORY:
+;   
+;
+;------------------------------------------------------------------------------
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 function x_tvy, tv, INTG=intg
 
   if  N_params() LT 1  then begin 

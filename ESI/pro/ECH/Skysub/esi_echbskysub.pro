@@ -258,7 +258,7 @@ pro esi_echskysub, esi, obj_id, exp, CHK=chk, STD=std, NORD=nord, ORDR=ordr, $
       
 
 ;  Exposures
-  if not keyword_set(exp) then exp = lindgen(nindx)
+  if size(exp,/type) EQ 0 then exp = lindgen(nindx)
 
 ;  Read Arc
   print, 'esi_echskysub: Reading Arc file ', $

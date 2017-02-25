@@ -1,33 +1,33 @@
 ;+ 
 ; NAME:
 ; x_addnoise
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
-;  Simply bins data up in integer pixels    
+;  Simple routine to add noise to a normalized spectrum.  
 ;
 ; CALLING SEQUENCE:
 ;   
-;   bin = x_addnoise(fx, nbin)
+;   newf = x_addnoise(fx, snr, SEED=)
 ;
 ; INPUTS:
-;   fx       - Flux
-;   nbin     - Number of pixels to bin on
+;   fx       - Flux array
+;   snr      - Signal-to-noise per pixel of the data
 ;
 ; RETURNS:
-;   bin       - Structure of data
+;   newfx    - Flux array with noise
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
+;  SEED=  -- Seed for random number generator [Default: -1322]
 ;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   bin = x_addnoise(fx, 3)
-;
+;   newfx = x_addnoise(fx, 15.)
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
 ;

@@ -1,10 +1,11 @@
 ;+ 
 ; NAME:
 ; x_golden
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
-;    Uses the NR routine 'golden' to find a function minimum
+;    Uses the NR routine 'golden' to find the x-value where
+;    the function has a minimum
 ;
 ; CALLING SEQUENCE:
 ;   
@@ -12,10 +13,11 @@
 ;
 ; INPUTS:
 ;   func - String name of the IDL function
-;   a,b,c  - Values bracketing the minimum
+;   a,c  - Values bracketing the minimum
+;   b    - Best guess at minimum
 ;
 ; RETURNS:
-;   min - Minimum value
+;   min - x-value of function minimum
 ;
 ; OUTPUTS:
 ;
@@ -29,7 +31,6 @@
 ; EXAMPLES:
 ;   num = x_golden('func', 0.0, 1.0)
 ;
-;
 ; PROCEDURES/FUNCTIONS CALLED:
 ;
 ; REVISION HISTORY:
@@ -39,12 +40,12 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-function x_golden, func, a, b, c, TOL=tol, OFFSET=offset
+function x_golden, func, a, b, c, TOL=tol 
 
 ;
   if  N_params() LT 4  then begin 
     print,'Syntax - ' + $
-             'line = x_golden(func, a, b, TOL=, OFFSET=) [v1.0]'
+             'line = x_golden(func, a, b, c, TOL=) [v1.1]'
     return, -1
   endif 
 

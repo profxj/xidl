@@ -4,32 +4,37 @@
 ;  V1.1
 ;
 ; PURPOSE:
-;    Given a list of DLA base files, fill up the structure ;
+;   For FUSE observations, calculate ionic column densities for all
+;   ions in the FUSE structure.  The code allows for limits and does a
+;   weighted mean for multiple transitions.
+;
 ; CALLING SEQUENCE:
-;   
-;   lowzovi_prsdat, stucture, filename
+;   fuse_calcion, strct_fil, zabs, ion_fil, NHI=, HAND=
 ;
 ; INPUTS:
+;   strct_fil -- FITS file for the FUSE structure
+;   zabs -- Absorption redshift of the system
 ;
 ; RETURNS:
-;   structure      - IDL structure
 ;
 ; OUTPUTS:
+;   ion_fil -- Output ion file
 ;
 ; OPTIONAL KEYWORDS:
-;  LIST - File
-;  ION - Input ionic column densities
-;  NOELM - Supress inputting Elemental values
+;  NHI=  -- NHI value and error [required at present!]
+;  HAND= -- Input file of ionic column densities used to override the
+;           values that would otherwise be derived by this program.
 ;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   fuse_calccolm, struct, fil_instr
-;
+;   fuse_calcion, strct_fil, zabs, 'PKS0405_z495.ion'
 ;
 ; PROCEDURES CALLED:
+;  getabnd
+;  getion
 ;
 ; REVISION HISTORY:
 ;   11-Sep-2003 Written by JXP
@@ -39,7 +44,7 @@ pro fuse_calcion, strct_fil, zabs, ion_fil, NHI=nhi, HAND=hand
 
   if (N_params() LT 3) then begin 
     print,'Syntax - ' + $
-             'fuse_calccolm, strct, zabs, ion_fil, NHI= (v1.0)' 
+             'fuse_calcion, strct, zabs, ion_fil, NHI=, HAND= (v1.1)' 
     return
   endif 
 
@@ -63,7 +68,8 @@ pro fuse_calcion, strct_fil, zabs, ion_fil, NHI=nhi, HAND=hand
   strct = xmrdfits(strct_fil, 1, /silent)
 
   ;; Grab key lines
-  a = where(abs(strct.zabs-zabs) LT 0.0002 AND $
+;  a = where(abs(strct.zabs-zabs) LT 0.0002 AND $
+  a = where(abs(strct.zabs-zabs) LT 0.0005 AND $
            strct.flg NE 0, nsys)
       
   strct = strct[a]
@@ -125,13 +131,15 @@ pro fuse_calcion, strct_fil, zabs, ion_fil, NHI=nhi, HAND=hand
           ;; Lines
           glin = where(atmval EQ nZ AND ionval EQ nion $
                        AND strct.flg MOD 2 EQ 1, ngd)
+;          if nz EQ 14 then stop
 
           if flg_h NE 1 then begin
           if ngd EQ 0 then continue else cnt = cnt+1
           case ngd of
               1:  begin  ; Set value
                   ;; Check n sigma
-                  if strct[glin].Ncolm LT nsig*strct[glin].sigNcolm $
+                  if (strct[glin].Ncolm LT nsig*strct[glin].sigNcolm OR  $
+                  strct[glin].ew[0] LT nsig*strct[glin].sigew[0]) $
                     AND strct[glin].flg NE 3 then begin
                       ;; Upper limit
                       fcolm[cnt] = alog10(nsig*strct[glin].sigNcolm)

@@ -1,0 +1,40 @@
+Using darks from 20120401
+  -- 300s each
+
+Tried without the slit first.  This stunk.  Making a slit:
+
+tspec_plan, 'Raw/', '*.fits.gz'
+  Edited to "dflat", restricted to frames 11-20
+
+tspec_combine_flats, 'plan_20120401.par', 'combine_dflat.fits', IMAGE=image, /clobber
+
+;; Trace
+tset_slits = tspec_traceorders( image, 'combine_dflat.fits', /chk )
+
+;;Ordermask
+ordermask = tspec_ordermask(tset_slits) 
+      
+;;Write out the order files
+orderfile = 'tspec-orders.fits'
+mwrfits, ordermask, orderfile, /create
+mwrfits, tset_slits, orderfile
+
+;; Try again
+
+tspec_superdark, 'dark_300s.lst', slitfile='tspec-orders.fits'
+  ;; Much better
+  ;; But seems like too many hot pixels still
+  ;; Raised the threshold to 10
+
+tspec_superdark, 'dark_300s.lst', slitfile='tspec-orders.fits', bad_value=10.
+  ;; This looks good   
+     --  Actually a bit too few in the K-band
+  ;; Most of these are obvious in science frames
+     -- And in difference images (e.g. sci-tspec120402_0066.fits)
+  ;; Generated 
+  Archived:  tspec-badpix-20120401_300s.fits.gz
+
+;; Trying a 30s run to see if it improves the K-band
+  tspec_superdark, 'dark_30s.lst', slitfile='tspec-orders.fits', bad_value=5.
+   ;; K-band was almost identical
+     -- sticking with the 300s frame

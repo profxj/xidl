@@ -59,7 +59,7 @@ pro wfccd_cleanarc, wfccd, mask_id, exp_id, PER=per
 
 ;  Optional Keywords
 
-  if not keyword_set( PER ) then per = 0.001
+  if not keyword_set( PER ) then per = 1.e-4
 
 ;  ARCFIL
   i = strpos(wfccd[exp].arc_fil, '_')
@@ -117,9 +117,12 @@ pro wfccd_cleanarc, wfccd, mask_id, exp_id, PER=per
      ycen = round(total(wfslit[qq].yedg_orig[*,*],2)/2.)
      for i=0L,sz[0]-1 do wvoned[i] = wfaimg[i,ycen[i]]
      dwv = wvoned - shift(wvoned,1)
-     a = where(dwv[1:sz[0]-1] GE 0.,na)
+; ??? MRB hack --- ignore very SMALL backwards steps in wavelngth
+;    also, only check for bad stuff far enough to the right
+     leftlimit=400L
+     a = where(dwv[leftlimit:sz[0]-1] GE PER*wvoned,na)
      if na NE 0 then begin
-         bdpx = a[0]+1 
+         bdpx = a[0]+leftlimit 
          for ii=bdpx,sz[0]-1 do $
            wfaimg[ii,wfslit[qq].yedg_orig[ii,0]:wfslit[qq].yedg_orig[ii,1]]=0.
      endif 

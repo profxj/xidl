@@ -1,0 +1,16 @@
+1.  Massage Intro
+2.  Add a Calibration summary table
+  Lamp  ExpTime  Notes
+	3.  Add Bias subtraction section
+	4.  Add ThAr notes (vaccum wavelengths)
+5.  Revise and discuss sensitivity figure (Fluxing)
+6.  Add an appendix on HIRES, UVES extensions?
+7.  Finish all Fig captions
+8.  Write an abstract
+
+
+=======
+Post Submission
+
+1.  New website: http://www.lco.cl/telescopes-information/magellan/instruments/mike
+

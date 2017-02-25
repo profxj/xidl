@@ -1,47 +1,47 @@
 ;+ 
 ; NAME:
 ; prs_cldygrid
-;  V1.0
+;  V1.1
 ;
 ; PURPOSE:
 ;    Parses a standard binary fits file into the CLOUDY struct
+;    for Photoionized models
+;
 ; CALLING SEQUENCE:
 ;   
 ;   prs_cldygrid, stucture, filename
 ;
 ; INPUTS:
-;   filename       - File
+;   filename   - Cloudy File
+;   ROOT=  - Path to Cloudy files [default: /u/xavier/Cloudy/Grid/Output]
 ;
 ; RETURNS:
-;   structure      - IDL structure strctcldy
+;   structure  - IDL structure strctcldy containing the Cloudy info
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
-;  ION - Input ionic column densities
-;  NOELM - Supress inputting Elemental values
 ;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   parse_dlalst, struct, '/home/xavier/DLA/Lists/tot_dla.lst'
+;   prs_cldygrid, struct, 'HM01A.fits'
 ;
 ;
 ; PROCEDURES CALLED:
+;  xmrdfits
 ;
 ; REVISION HISTORY:
 ;   31-May-2001 Written by JXP
 ;-
 ;------------------------------------------------------------------------------
-pro prs_cldygrid, supstrc, infil, ROOT=root
-
-; prs_cldygrid -- Reads in CLOUDY grid
+pro prs_cldygrid, supstrc, infil, ROOT=root, STRUCT=struct
 
   if (N_params() LT 2) then begin 
     print,'Syntax - ' + $
-             'prs_cldygrid, struct, infil, ROOT= (v1.0)'
+             'prs_cldygrid, struct, infil, ROOT=, /STRUCT (v1.0)'
     return
   endif 
 
@@ -53,6 +53,10 @@ pro prs_cldygrid, supstrc, infil, ROOT=root
 ; Read in the Binary Fits file
 
   tmp1 = xmrdfits(file,1,/silent)
+  if keyword_set(STRUCT) then begin
+      supstrc = tmp1
+      return
+  endif
 
 ; Create the Structure
 
@@ -68,7 +72,8 @@ pro prs_cldygrid, supstrc, infil, ROOT=root
   supstrc.nH = tmp1.nH
   supstrc.Jnu = tmp1.Jnu
   supstrc.Spec = tmp1.Spec
-  supstrc.flg = tmp1.flg_cldy
+  if tag_exist(tmp1, 'FLG_CLDY') then supstrc.flg = tmp1.flg_cldy $
+  else supstrc.flg = tmp1.flg
 
 ; Ions
 

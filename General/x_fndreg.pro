@@ -1,10 +1,11 @@
 ;+ 
 ; NAME:
 ; x_fndreg
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
-;    Finds data points within a number of regions
+;    Finds data points within a number of regions.  
+;    [This is a rather difficult routine to use]
 ;
 ; CALLING SEQUENCE:
 ;   
@@ -20,10 +21,9 @@
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
-;   NPNT -
 ;
 ; OPTIONAL OUTPUTS:
-;
+;   NPNT -  Number of points within the regions
 ; COMMENTS:
 ;
 ; EXAMPLES:
@@ -40,7 +40,7 @@ function x_fndreg, xdat, reg, NPNT=npnt
 
   if (N_params() LT 2) then begin 
     print,'Syntax - ' + $
-             'pts = x_fndreg(xdat, reg, NPNT=)  [V1.0]'
+             'pts = x_fndreg(xdat, reg, NPNT=)  [V1.1]'
     return, -1
   endif 
 
@@ -56,6 +56,7 @@ function x_fndreg, xdat, reg, NPNT=npnt
           bla = where(reg[noti,*] LT reg[i,1] AND reg[noti,*] GT reg[i,0], count)
           if count NE 0 then begin
               print, 'Regions may not overlap!'
+              npnt = 0
               return, -1
           endif
       endfor
@@ -75,7 +76,7 @@ function x_fndreg, xdat, reg, NPNT=npnt
       endif
   endfor
 
-  if pts[0] NE -1 then npnt = n_elements(pts)
+  if pts[0] NE -1 then npnt = n_elements(pts) else npnt = 0
 
   return, pts
 

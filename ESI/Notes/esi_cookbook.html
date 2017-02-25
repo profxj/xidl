@@ -1,0 +1,1461 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.70)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>esi_cookbook</TITLE>
+
+<LINK REL="STYLESHEET" HREF="esi_cookbook.css">
+
+<LINK REL="next" HREF="node1.html">
+</HEAD>
+
+<BODY >
+
+<P>
+<DIV ALIGN="CENTER">
+<FONT SIZE="+3"><B>ESI (Echellette) Data Reduction [v2.0]</B></FONT>
+
+</DIV>
+
+<P>
+
+<FONT SIZE="+2">Echellette Suggested Calibrations </FONT>
+   
+<UL>
+
+<OL>
+<LI>five Bias (0s) frames
+</LI>
+<LI>five Pin Hole images (dome?)
+</LI>
+<LI>ten QTZ Flats (Dome preferred) &nbsp;&nbsp;&nbsp;&nbsp;(<I>each slit size</I>)
+</LI>
+<LI>Arc Calib:  five CuAr (600s) + five HgXe &nbsp;&nbsp;&nbsp;&nbsp;(<I>each slit size</I>)
+</LI>
+<LI>one Standard star &nbsp;&nbsp;&nbsp;&nbsp;(<I>each slit size</I>)
+   
+</LI>
+</UL>
+
+<P>
+<FONT SIZE="+2">Pre-Reduction Setup </FONT>
+   
+<UL>
+<LI>Computer Resources
+	
+<UL>
+<LI> >300 MHz processor
+</LI>
+<LI>5G disk space / night
+</LI>
+<LI>750M RAM (1G on Solaris)
+</LI>
+<LI>Linux or Solaris
+	
+</LI>
+</UL>
+</LI>
+<LI>Solaris WARNINGS (These do not apply to Linux)
+	
+<UL>
+<LI>Solaris+IDL does not release memory until IDL is exited
+</LI>
+<LI>Consider exiting IDL occasionally and monitor memory usage
+</LI>
+<LI>IDL+Solaris freezes up on the CPU intermittently
+	  
+<UL>
+<LI>Most likely a bug in licensing software
+</LI>
+<LI>Forced to kill IDL process and restart
+	  
+</LI>
+</UL>
+</LI>
+</UL>
+</LI>
+<LI>Software
+	
+<UL>
+<LI>gcc or cc
+</LI>
+<LI>IDL v6.1 or later
+</LI>
+<LI>IDL packages
+		
+<OL>
+<LI><B>idlutils</B> SDSS package  (Schlegel)
+</LI>
+<LI><B>idlspec2d</B> SDSS package  (Sloan public)
+</LI>
+<LI><B>xidl</B> <a href="http://www.ucolick.org/~xavier/IDL/index.html">IDL 
+ package</a>   (JXP)
+		
+</OL>
+</UL>
+<LI>Log sheets [somewhat optional]
+</LI>
+<LI>This cookbook
+   
+</LI>
+</UL>
+
+<P>
+<FONT SIZE="+2">Initial Setup (Repeat for each night) </FONT>
+
+<P>
+
+<OL>
+<LI>Create a new directory for the night (e.g. 06aug02) and enter it
+</LI>
+<LI>Create a 'Raw/' directory and put all the raw data in it.  
+</LI>
+<LI>If the filenames do not read esi####.fits, it is quite likely
+	the code will be unhappy
+</LI>
+<LI>gzip the data (gzip *.fits)
+</LI>
+<LI>Create a 'pro/' directory and copy the files from 
+ $XIDL_DIR/ESI/pro/redux into it 
+	(e.g. <I>proc_ech.pro, extract_ech.pro</I>).<br>
+	<B>These files can and should be used to run most of the steps that follow.</B>
+</LI>
+<LI>Launch idl in the directory above Raw/ 
+</LI>
+<LI><B><a href="ESI_doc.html#ESI_EDITSTRCT">esi_strct</B></a> :: Create the esi structure.  
+	
+<UL>
+<LI>This structure organizes
+	the entire night of data and is the most important file created.  The 
+	structure is listed on the next page.  
+</LI>
+<LI>The routine creates a few things: 
+  <ol> 
+  <li> An IDL structure in memory with whatever name you choose (e.g. esi); 
+  <li> The file 'esistrct.fits' which is a fits
+	version of the structure; 
+  <li> The file 'esi.list' which is an ASCII
+	version of the fits file which lists the values of some but not all tags.
+  </ol>
+	To view the structure outside of IDL, I 
+	recommend the program 'fv' which I think stands for fitsview.  It allows
+	you to examine binary fits tables.  
+</LI>
+<LI>By default, a gui will launch which allows some editing of the esi structure 
+	(see below). 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+<B>esi_strct</B>, esi
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>proc_ech</B>, esi, /MKSTRCT 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 1s per image
+	
+</LI>
+</UL>
+
+<P>
+<DIV ALIGN="CENTER">
+<FONT SIZE="+2"><B>esistrct</B></FONT>
+	
+</DIV>
+
+<P>
+<FONT SIZE="-1">	</FONT><TABLE CELLPADDING=3 BORDER="1">
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1">
+	  Tag </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> Type </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Comment </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+	  
+         frame </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> 0     </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> FRAME Number </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         flg_anly </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> 0   </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1">  Analysis flag 0=Don't Analyse, 2 = bias sub, 4=scatt </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         Obj </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> ' '       </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Object Name </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         obj_id </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> 0L     </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Obj ID </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         type </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> ' '    </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> ObjTyp : OBJ,STD,DRK,ZRO,IFLT,DFLT,ARC,MSK,IMG,TWI </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         slit </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> 0.    </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Slit width </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         exp </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> 0.d        </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Exposure time </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         imfilt </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> ' '     </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Image Filter : U,B,V,R,I, C </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         mode </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> 0L     </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Mode:  0=Image, 1=LowD, 2=Echellette </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         CCD </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> ' '     </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> CCD </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         TEL </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> ' '    </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Telescope </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         namp </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> 0     </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Number of Amps </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         arclamp</FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> 0 </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Arc Lamps: (Binary flag)  1=CuAr, 2=Xe, 4=HgNe </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         qtzlamp</FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> 0 </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> QTZ Lamp: 0=off, 1=On </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         rotmode</FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> 0</FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1">  Rotation mode: 0=Stationary</FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1">  
+         ccdspeed</FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> ' ' </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1">        CCD Speed </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         gain </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> 0.     </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Gain </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         readno </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> 0.     </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Read Noise </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         date </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> 0.0d    </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Date of Obs </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         UT </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> ' '    </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> UT </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         RA </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> ' '    </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> RA </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         DEC </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> ' '    </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> DEC </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         Equinox </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> 0.     </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> EQUINOX </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         refordr</FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> 0L </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1">         Reference order (ECH only) </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         rootpth </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> ' '    </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Path of the Root </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         img_root </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> ' '   </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Root name (usually in Raw directory) </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         flg_ov </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  0     </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> OV FILE?  0=No, 1=Yes   </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         img_ov </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  ' '   </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Name of OV file (with directory) </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         flg_final </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> 0   </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Final File? 0=No </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         img_final </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> ' '  </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Name of Final img </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         ystrt </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> 0L      </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Column for initiating the trace </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         arc_fil </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> ' '   </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Name of the Arc image file (fits) </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         map_fil </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> ' '   </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Name of the Map image file (fits) </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         flat_fil </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> ' '   </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Name of the Flat image file (fits) </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         obj_fil </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> ' '  </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1">  Name of object structure (fits) </FONT></TD>
+</TR>
+</TABLE>
+
+<P>
+</LI>
+<LI><B><a href="ESI_doc.html#ESI_EDITSTRCT">esi_editstrct</B></A> :: Modify the ESI structure.
+	The previous step creates the structure and takes a guess at the 
+	initial values of many of the tags based on the header card info.  It
+	is difficult, however, to automate all of the values for the tags and
+	therefore the user should carefully edit the structure.  For most of
+	the important tags, one can use <B>esi_editstrct</B>.  The rest must
+	be done from the command line by hand.
+	The obvious tags to modify are: 
+	 
+<UL>
+<LI>Obj :: Object name (this propagates into the final spectra 
+		and <B>should have no spaces!</B>)
+</LI>
+<LI>flg_anly :: Include in analysis (defaulted to 1 for yes)
+</LI>
+<LI>type :: ARC, IFLT, TWI, OBJ, STD, etc.  
+</LI>
+<LI>mode :: ECH, LWD, IMG 
+	 
+</LI>
+</UL>
+
+<P>
+&nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B><a href="ESI_doc.html#ESI_EDITSTRCT">esi_editstrct</B></a>, esi 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : User interaction
+
+<P>
+</LI>
+<LI>Writing the ESI structure to disk:: In IDL you can modify the values
+	of any of the tags.  You can then save the structure in fits form and 
+	rewrite the ASCII file  with the routine <B>esi_wrstrct</B>. 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>esi_wrstrct</B>, esi, FITS='name' 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : fast
+
+<P>
+</LI>
+<LI>Reading the ESI structure from disk:: <B>esi_ar</B>
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ esi = <B>esi_ar()</B> 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ esi = <B>esi_ar('esi_name.fits')</B> 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : fast
+
+<P>
+</LI>
+<LI><B><a href="ESI_doc.html#ESI_ECHSETUP">esi_echsetup</a></B> :: ECH Setup
+	
+<UL>
+<LI>This routine examines the esi structure and looks for calibration
+	files associated with the various slit widths of your ECH files.  
+	It groups together exposures with identical Obj name and ESI mode and
+	sets the obj_id tags accordingly.
+	A summary of the ECH exposures is put in 'esiECH_summ.txt'. 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>esi_echsetup</B>, esi 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>proc_ech</B>, esi, /SETUP 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : Fast
+	
+</LI>
+</UL>
+
+<P>
+</LI>
+</OL>
+
+<P>
+<FONT SIZE="+2">Create Bias (Zero) frame</FONT>
+	
+<UL>
+<LI><a href="ESI_doc.html#ESI_MKZERO"><b>esi_mkzero</a></b>
+We have found that creating a Zero frame is preferred
+	over an overscan subtraction.  If you have taken Bias (0s) frames,
+	the process is straightforward.  If you haven't, you can copy the image
+	(or make a soft link) 'BiasS.fits' from 
+        $XIDL_DIR/ESI/CALIBS into the 'Bias/' directory.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>esi_mkzero</B>, esi, /NOIMG
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>proc_ech</B>, esi, /MKZERO 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 3-5min 
+</LI>
+<LI>To check the Bias frame : <B>xatv</B>, 'Bias/Bias1x1S.fits'
+	
+</LI>
+</UL>
+
+<P>
+<FONT SIZE="+2">Pinhole Map</FONT>
+  
+<UL>
+<LI>One may have taken a series of pinhole traces using the
+	pinhole mask and the QTZ lamp to trace out the light path along
+	the CCD.  If so, the following task can be used to fit the pinhole
+	traces and create a MAP which is required for the data reduction.
+	In lieu of your own pinhole images, you will need to copy the files
+	(or make soft links)
+	<I>hole_fit.idl, ECH_map.fits, img_hole.fits</I> from 
+$XIDL/ESI/CALIBS to Maps/.  <br> <B>At this point, I would recommend
+	using the CALIBS files over creating new ones.</B>
+
+<P>
+</LI>
+<LI><a href="ESI_doc.html#ESI_ECHTRCHOLES"><B>esi_echtrcholes</B></a> :: 
+This routine will combine all pinhole
+	images (denoted by the 9.99 slit width) and then trace the pinholes.
+	Output is 'Maps/img_hole.fits' and 'Maps/hole_fit.idl' 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>esi_echtrcholes</B>, esi 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>proc_ech</B>, esi, /MKMAP 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   :  <10min
+
+<LI><a href="ESI_doc.html#ESI_MKMAP"><B>esi_echmkmap</B></a> :: 
+This routine takes all of the good pinhole traces and makes an optical
+map.  This is used to rectify the arcs for 2D fitting.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>esi_echmkmap</B>, esi 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   :  <5min
+  
+</LI>
+</UL>
+
+<P>
+<FONT SIZE="+2">Process Flats (Steps 1,2)</FONT>
+  
+<UL>
+<LI>These routines processes your QTZ calibration frames to (1) trace
+	the edges of each order, (2) calculate the gain mismatch between multiple
+	amplifiers, and (3) correct pixel-to-pixel variations.  
+	Dome flats show significantly less scattered light than the internal
+	flats and should be used when possible.
+	Use the /IFLAT switch to use internal flats.
+</LI>
+<LI><a href="ESI_doc.html#ESI_ECHMKFLAT"><B>esi_echmkflat</B></a> :: The first routine simply combines the flats.  The output is
+	a bias subtracted, median flat placed in 'Flats/'.  If one does not specify
+	the slit size, the program loops through all sizes. 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>esi_echmkflat</B>, esi, [slit], HOT_THRESH=30, [/IFLAT]
+<!-- <BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+  <B>proc_ech</B>, esi, [slit], /MKFLAT [/IFLAT] -->
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 30s per flat 
+</LI>
+<LI><a href="ESI_doc.html#ESI_ECHTRACEORDERS"><B>esi_echtraceorders</B></a> :: This
+routine traces the slit orders.  That's all.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>esi_echtraceorders</B>, esi, [slit], [/CHK]
+<!-- <BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+  <B>proc_ech</B>, esi, [slit], /MKFLAT [/IFLAT] -->
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 30s per flat 
+</LI>
+<!-- <LI><a href="ESI_doc.html#ESI_ECHFLTSCT"><B>esi_echfltsct</B></a> :: The next step is to subtract scattered light and normalize the flat.
+	The scattered light is quite significant for Internal flats but also
+	important for Dome flats.  This code requires the slit size 
+	explicitly.  The routine also normalizes the flat and also matches the
+	gain on the two halves of the amplified CCD.  If you are using the
+	archived pinhole map (most likely), then you should use the keyword
+	/KLUDGEOR to deal with an anomoly in Order 14.  The
+	output is 'Flats/FlatECH<I>slit</I>_{bin}N.fits' where slit = 50, 75, or 10 and bin = 1x1, 2x1, etc.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>esi_echfltsct</B>, esi, slit, [/IFLAT], 
+		[/KLUDGEOR]
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>proc_ech</B>, esi, slit, /NRMFLAT, [/IFLAT] 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 1min 
+</LI>
+-->
+<!-- <LI>Check the Flat: <B>xatv</B>, 'Flats/FlatECH<I>slit</I>N.fits' -->
+  
+</LI>
+</UL>
+
+<P>
+<FONT SIZE="+2">Process Arc Image </FONT> <br><br>
+  
+This is the most important set of steps.  The sky subtraction
+	algorithm will only succeed with a good Arc Image.  It should be 
+	emphasized that we only create one Arc Image per slit size and apply
+	this to all of the exposures taken with that slit size.  The following
+	routines are well automated but should be checked carefully if you are
+	doing a 'final' reduction.  I think it is possible that one could use
+	an Arc image from a previous run or the CALIBS database 
+	but wouldn't recommend it just
+	yet.  All of the following routines require a specific slit size.
+
+<OL>
+<P>
+</LI>
+<LI><a href="ESI_doc.html#ESI_ECHMKARC"><B>esi_echmkarc</B></a> 
+        :: Process the Arcs.  
+	This step bias subtracts
+	and flat fields the arc images.  If there is an image taken with all
+	the lamps on (arclamp = 7) then the code will take that.  Otherwise,
+	it will the Arcs together to make a CuAr+HgNe+Xe image.  Output
+	is: 'Arcs/ArcECH_<I>slit</I>.fits'.  Note: unless you have processed
+        the flat through Step 3 (unlikely), you should see a series of warnings
+        that you are NOT flatfielding the Arcs.  
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+  <B>esi_echmkarc</B>, esi, slit 
+<!-- <BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>proc_ech</B>, esi, slit, /MKARC
+-->
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 1-15min
+
+<P>
+</LI>
+<LI><a href="ESI_doc.html#ESI_ECHFITARC"><B>esi_echfitarc</B></a> 
+        :: This routine extracts a 1D spectrum down the
+	center of each order and determines the wavelength solution.  
+	There are two levels of interatction with this routine.  The most
+	interaction (not recommended) is to use /INTER which prompts the
+	user to identify and fit the Arc lines.  I recommend using the
+	option /PINTER which has the program attempt to identify a set of
+	lines in each order.  The user than interactively fits the lines
+	using the routine <B>x_identify</B> which calls <B>x1dfit</B>.
+	As long as your arc lines are within several 
+	pixels of my solution, things ought to run smoothly.
+	The output is an IDL file containing the polynomial fits for each
+	order: 'Arcs/ArcECH_<I>slit</I>fit.idl'.  The program also creates
+	a ps file to examine the quality of fits.   One can input their
+	own set of linelists or restrict the code to use only CuAr lines
+	(/CUAR).
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>esi_echfitarc</B>, esi, slit, [/PINTER]
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>proc_ech</B>, esi, slit, /FITARC
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 2min per order
+
+<LI><a href="ESI_doc.html#ESI_FIT2DARC"><B>esi_fit2darc</B></a> 
+        :: This routine takes the good lines from esi_echfitarc and
+	then performs a 2D fit to the lines.  This is useful for 
+	interpolating through the edges of the blaze.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>esi_fit2darc</B>, esi, slit
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>proc_ech</B>, esi, slit, /FIT2DARC
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 2min per order
+
+<P>
+</LI>
+<LI><a href="ESI_doc.html#ESI_ECHTRCARC"><B>esi_echtrcarc</B></a>  
+        :: This routine traces arc lines in each
+	order.  It first straightens the curved orders,  but does not rectify
+	the arc lines.  It simply traces them and then maps back to the 
+	original data frame in the following step.  I recommend interactively
+	choosing the lines the program uses to trace but on can also let
+	the program choose (/AUTO).  Output is a series of files in the
+	'Arcs/TRC' directory (1 per order) including ps files for rough 
+	inspection.  
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>esi_echtrcarc</B>, esi, slit, /AUTO 
+<BR> &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>proc_ech</B>, esi, slit, /AIMG  (This does the following step too)
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 2min  
+ (>10 min interactively)
+
+<P>
+</LI>
+<LI><a href="ESI_doc.html#ESI_ECHMKAIMG"><B>esi_echmkaimg</B></a> 
+	:: This routine takes the arc traces and
+	uses them to create a full Arc Image in the data frame.
+	The final wavelength image is then converted to vacuum wavelengths.
+	Output is : 'Arcs/ArcECH_<I>slit</I>IMG.fits'
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>esi_echmkaimg</B>, esi, slit, /CHK 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 5min  
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Check output with: <B>xatv</B>, 'Arcs/ArcECH_<I>slit</I>IMG.fits'
+  
+</LI>
+</OL>
+
+<P>
+<FONT SIZE="+2">Process Flats (Step 3)</FONT>
+  
+<UL>
+<LI>This final routine subtracts the scattered light from the flat and then
+   produces a normalized, pixel flat.
+</LI>
+<LI><a href="ESI_doc.html#ESI_ECHFLTSCT"><B>esi_echfltsct</B></a> :: The final 
+flat step is to subtract scattered light and normalize the flat.
+	The scattered light is quite significant for Internal flats but also
+	important for Dome flats.  This code requires the slit size 
+	explicitly.  The routine also normalizes the flat and also matches the
+	gain on the two halves of the amplified CCD. 
+	The output is 'Flats/FlatECH<I>slit</I>_{bin}N.fits' where slit = 50, 
+        75, or 10 and bin = 1x1, 2x1, etc.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>esi_echfltsct</B>, esi, slit, [/IFLAT], 
+		[/KLUDGEOR]
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 10min 
+</LI>
+<LI>Check the Flat: <B>xatv</B>, 'Flats/FlatECH_<I>bin_slit</I>N.fits', min=0.9, max=1.1
+  
+</LI>
+</UL>
+
+
+<P>
+<FONT SIZE="+2">Process the Standard</FONT> <br>
+
+<UL>
+<LI> This routine is currently only used for producing a model for tracing
+faint objects. To Flux data, process the standard star the same way
+as the other images under Extraction and follow the fluxing directions below.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Use /STANDARD in your
+	call to extrct_ech below. 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>extrct_ech</B>,esi, obj_id, /FNDOBJ, /STANDARD
+
+</LI>
+<br>
+<LI> In lieu of flats, one can grab the standard trace from the CALIBS directory.
+
+</LI>
+<LI><a href="ESI_doc.html#ESI_ECHTRCSTD"><B>esi_echtrcstd</B></a> :: Process the standard star (bias, flatten),
+	centroid it using a small region in order 11 (this can be modified), 
+	skysubtract, and then trace it through the 10 orders.
+	The output are a processed image in 'Final/', an Obj structure in 
+	'Extract' (see below), and the file 
+	'Extract/STD_ECH<I>slit</I>_TRC.fits' which is the trace for the 
+	standard star. 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>esi_echtrcstd</B>, esi, slit, FWHM=5.0, [/CHK, /CLOBBER]  
+<!-- <BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>proc_ech</B>, esi, slit, /PROCSTD 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 10min (mainly sky sub)
+-->
+  
+</LI>
+</UL>
+
+<P>
+</LI>
+</OL>
+
+<P>
+<hr>
+
+<P>
+<DIV ALIGN="CENTER">
+<FONT SIZE="+3"><B>&nbsp;&nbsp;&nbsp;&nbsp;0. Extraction</B></FONT>
+
+</DIV>
+
+<P>
+
+<UL>
+<LI>The following routines all apply to a single object, i.e. 	multiple exposures of that object will be reduced together.
+</LI>
+<LI>I suggest you use a .pro file like <I>extrct_ech.pro</I> 
+	to guide the process.  It provides a convenient way 
+	of stepping through the reduction.
+</LI>
+<LI>Most of the following routines take the <I>esi</I> structure
+	and <I>obj_id</I>.
+  
+</LI>
+</UL>
+
+<P>
+
+<FONT SIZE="+2">Process the Image</FONT>
+
+<UL>
+
+<LI><a href="ESI_doc.html#ESI_ECHPROC"><B>esi_echproc</B></a> 
+	:: Bias subtract and flat field the Raw image.
+	This routine takes the index number of the esi structure as input.
+	This is the integer in the first column of the file 'esi.list'.
+	One can subtract scattered light with the flag (/SUBSCAT), but I
+	currently don't recommend it.  The contribution is small for almost all
+	objects.
+	Output is in 'Final/' and is a flattened flux and variance fits file
+	(one gzipped fits file with two exentsions per image). 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>esi_echproc</B>, esi, indx, [/SUBSCAT]  
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>extrct_ech</B>, esi, obj_id, /PROCOBJ, [/SUBSCAT] 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 1min per image
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Check  : <B>xatv</B>, 'Final/f_esi#.fits'
+
+<P>
+</LI>
+</UL>
+
+<P>
+
+<P>
+<DIV ALIGN="CENTER">
+<FONT SIZE="+2"><B>specobjstrct</B> </FONT>
+	
+</DIV>
+	<FONT SIZE="-1">	</FONT><TABLE CELLPADDING=3 BORDER="1">
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1">
+	  Tag </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> Type </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Comment </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+	  
+         field </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  ' ' </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1">  Name of field </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         slit_id </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  0L </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Used to store the order number (0-9) corresponding to
+				physical order (15-6)</FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1">   
+         obj_id </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  ' ' </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> ID value (a=primary, b-z=serendip, x=NG) </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         flg_anly </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  0 </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1">  0=No analysis</FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1">  
+         exp </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  0. </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         xcen </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  0L </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1">  Column where obj was id</FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         ycen </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  0. </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         flg_aper </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  0 </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1">  0=boxcar</FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         aper </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  fltarr(2) </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1">  Widths of aperture, 0/1 = bottom/top (pixels)</FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         skyrms </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  0. </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1">  RMS of sky fit</FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         trace </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  fltarr(5000) </FONT></TD>
+<TD></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         npix </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  0L </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         wave </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  fltarr(5000) </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         fx </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  fltarr(5000) </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         var </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  fltarr(5000) </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1">    <IMG
+ WIDTH="45" HEIGHT="31" ALIGN="MIDDLE" BORDER="0"
+ SRC="img5.png"
+ ALT="$&lt;=0$"> rejected pix</FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         flg_flux </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> 0 </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1">    0=f<IMG
+ WIDTH="13" HEIGHT="31" ALIGN="MIDDLE" BORDER="0"
+ SRC="img6.png"
+ ALT="$_\lambda$">, 1=f<IMG
+ WIDTH="13" HEIGHT="31" ALIGN="MIDDLE" BORDER="0"
+ SRC="img7.png"
+ ALT="$_\nu$"></FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         flux </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  fltarr(5000) </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1">    Fluxed data</FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         sig </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  fltarr(5000) </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1">    Err in fluxed data</FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         date </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  0.0d </FONT></TD>
+<TD></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         UT </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  ' ' </FONT></TD>
+<TD></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         img_fil </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  ' ' </FONT></TD>
+<TD></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         slit_fil </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  ' ' </FONT></TD>
+<TD></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         instr_strct </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  ' ' </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> e.g. wfccdstr fits file</FONT></TD>
+</TR>
+</TABLE>
+
+<P>
+<FONT SIZE="+2">Identify the Object</FONT>
+
+<P>
+
+<OL>
+<LI><a href="ESI_doc.html#ESI_ECHFNDOBJ"><B>esi_echfndobj</B></a> 
+	:: Automatically finds objects in each order.
+	It then creates an object structure which
+	stores the spectra of all objects identified in the slit.
+	The IDL structure created is described below.
+
+<P>
+</LI>
+<LI>The routine also does a pseudo-trace to the object based on the
+	paths of the pin-hole traces.  This trace is used to mask out the
+	object for sky subtraction.  At present the code assumes that there
+	are no serendipitous objects in the slit to mask.
+</LI>
+<LI>Output is 'Extract/Obj_esi<I>##</I>.fits' 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>esi_echfndobj</B>, esi, obj_id, [exp], /USESTD, FWHM=5.0, [/CHK] 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : fast 
+
+<P>
+</LI>
+<LI><B>esi_echcopyfnd</B> :: If desired, the user can copy the
+	trace from another object using this routine.   The program takes
+	the trace from the alternate object and allows the user to choose
+	a different aperture for masking. The keyword CPYIDX is required
+	and refers to the index number of the template object.  An offset
+	can also be applied to this trace using OFFSET=.  
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>esi_echcopyfnd</B>, esi, obj_id, [exp], 
+		CPYIDX=, [APER=, OFFSET=]
+<BR>       &nbsp;&nbsp;&nbsp;&nbsp;Time   : fast 
+  
+</LI>
+</OL>
+
+<P>
+<FONT SIZE="+2">Sky Subtraction</FONT>
+  
+<UL>
+<LI><a href="ESI_doc.html#ESI_ECHSKYSKUB"><B>esi_echskysub</B></a> ::
+	This procedure subtracts the sky from each order, one by one for
+	each exposure with a given <I>obj_id</I>.  The main recipe adopts either
+	(a) a series of low order POLYNOMIALS row by row for orders 0 to 5
+	(physical orders 15 to 11) or (b) a 1D 
+	Bspline fit to the wavelength, flux pairs for orders 6-9. 
+	I have found that the polynomials work best in the low sky regions and
+	the BSPLINE works significantly better in the orders with strong
+	sky lines.
+	There are some fancy features added in to deal with
+	bright sky lines which get switched off or reduced for short exposures.
+</LI>
+<LI>Current issues::  One current failing of the code is sky subtraction
+	in order 11 where the amplifiers meet.  The ratio of the gain is calculated
+	from the Flat image and this ratio is not constant in time.  This 
+	sometimes leads to over subtraction of sky in some regions. 
+</LI>
+<LI>Options ::
+	
+<UL>
+<LI>BORDR= 5L ::  Sets the order (non-physical) where the Bspline 
+		routine takes over.
+</LI>
+<LI>ORDR= [0L, 9L] ::  Sets the first and last order for sky subtraction.
+		This is useful for repeating sky subtraction in an order or two
+		with improved parameters.
+</LI>
+<LI>SKLFIL= ' ' ::  Input file for fine tuning skyline subtraction with
+		the Bspline routine.  Entires have this format: 
+<BR>		&nbsp;&nbsp;&nbsp;&nbsp;ordr # wvmin wvmax flag 
+<BR>
+where the flag = 1 places breakpoints at the center of each row
+		and 2 places one at each end.  One usually turns on /NOVAC with this
+		keyword
+</LI>
+<LI>/NOVAC :: Does not apply a vacuum correction to the skyline info.
+	  	This probably would only be used with SKLFIL 
+	
+</LI>
+</UL>
+</LI>
+<LI>Output is the sky subtracted 2D image appended to the unsubtracted
+	flux and the variance 2D images (e.g. 'Final/f_esi#.fits') 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>esi_echskysub</B>, esi, obj_id, [/FCHK, /CHK]
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>extrct_ech</B>, esi, obj_id, /SKYSUB, [/SKY_FCHK]
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 10min per exposure 
+<BR></LI>
+<LI>Examine the final product (and get wavelength info) by:
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;IDL>
+ <B>xatv</B>, 'Final/f_esi#.fits', getsky=2, 
+		WVIMG='Arcs/ArcECH_slitIMG.fits'
+  
+</LI>
+</UL>
+
+<P>
+<FONT SIZE="+2">Trace OBJ (yes, again)</FONT>
+  
+<UL>
+<LI><a href="ESI_doc.html#ESI_ECHFNDOBJ"><B>esi_echfndobj</B></a> ::
+    Use esi_echfndobj to find and trace as documented above.  The algorithm
+    is performed on the sky subtracted image which helps (a little).
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>esi_echtrcobj</B>, esi, obj_id, 
+		[exp], /USESTD, /SKYSUB, FWHM=5. [/CHK, STDFIL=]
+<BR>  
+</LI>
+</UL>
+
+<P>
+<FONT SIZE="+2">Extraction</FONT>
+  
+<OL>
+<LI><a href="ESI_doc.html#ESI_ECHEXTOBJ"><B>esi_echextobj</B></A> ::
+	This procedure performs a boxcar (default) or optimal 
+	extraction of the object in each
+	order.  It then rebins to a 1D spectrum using linear interpolation
+	of the wavelength solution.  This is the only binning of the data
+	during the entire reduction scheme.  All spectra are also shifted to
+	zero heliocentric velocity and placed on a wavelength array with 
+	33000 pixels, w0 = 3900 Ang and constant velocity pixels at 10km/s.
+
+<P>
+</LI>
+<LI>All of the output is written to the Obj structure 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+  <B>esi_echextobj</B>, esi, obj_id, [/OPTIMAL, /CHK]
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+  <B>extrct_ech</B>, esi, obj_id, /EXTOBJ, [/OPTIMAL]
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 3min (box), 10min (optimal)
+</LI>
+<LI>Examine the final product: 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;IDL>
+ <B>esi_echspecplt</B>
+  
+</LI>
+</OL>
+
+<P>
+<FONT SIZE="+2">Combine Multiple Exposures (REQUIRED)</FONT>
+  
+<UL>
+<LI><a href="ESI_doc.html#ESI_ECHCOMBSPEC"><B>esi_echcombspec</B></a> ::
+	This procedure adds up multiple exposures of the same object, order
+	by order, weighting by S/N after scaling each exposure to have the
+	same flux as the first.  It appropriately deals with CR's.  For objects
+	with more than 2 exposures, it clips 5 sigma outliers as well.  Even
+	if you have only a single exposure, you need to run this routine prior
+	to fluxing and collapsing to a 1D spectrum as it creates the final
+	spectrum structure that is necessary for fluxing and coadding to 1D.
+</LI>
+<LI>Output is a fits file in 'FSpec' named 'Obja_ech.fits' where
+	Obj is the name in the Obj tag and 
+	the letter 'a' signifies the primary science object.  In the future,
+	I might allow multiple objects to be extracted and would label 
+	them 'b', 'c'..
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>esi_echcombspec</B>, esi, obj_id 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+  <B>extrct_ech</B>, esi, obj_id, /COMBOBJ
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : fast 
+<BR>  
+</LI>
+</UL>
+
+<P>
+<FONT SIZE="+2">Flux the Spectra</FONT>
+  
+<UL>
+
+<LI><a href="ESI_doc.html#ESI_ECHcalibstd"><B>esi_echcalibstd</B></a>:: 
+If you are using your own
+standard star, you need to run this before fluxing. Before
+that, you need to extract the standard using the algorithms
+listed above.  Note: You should set NFIND=1 fot the esi_echfndobj steps.
+Then run this algorithm.<br>
+You have to specify one of these three keywords: HSTFIL,
+ESOFIL, or OTHER. These specify the calibration file. Make
+sure your standard is there: $XIDL_DIR/Spec/Flux/ <br>
+An Interactive Sensitivity Function window will appear. Once
+you close that, it will write idl sav file to be used with the
+fluxing code.
+
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+  <B>esi_echalibstd</B>, esi, obj_id, HSTFIL='name.dat'
+
+
+</LI>
+<br>
+
+<LI><a href="ESI_doc.html#ESI_ECHFLUXFIN"><B>esi_echfluxfin</B></a> ::
+	This procedure fluxes each order of the combined frame.  Generally,
+	I'd suggest using the flux calibration that is defaulted 
+	(i.e. ECH_FLUX#.fits in CALIBS).
+   </LI>
+<LI>This program overwrites the fx array in the file created by
+	<B>esi_echcombspec</B>.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>esi_echfluxfin</B>, esi, obj_id, /OLD
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+  <B>extrct_ech</B>, esi, obj_id, /FLUX, /OLD,[/CLOBBER]
+<BR> If you are using your own standard:
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+  <B>extrct_ech</B>, esi, obj_id, /FLUX, flxfil='Extract/sens_esi????.idl, [/CLOBBER]
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : fast 
+<BR></LI>
+<LI>Examine the final product: 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;IDL>
+  <B>esi_echspecplt</B>, /fspec
+  
+</LI>
+
+</UL>
+
+<P>
+<FONT SIZE="+2">Collapse to 1D</FONT>
+  
+<UL>
+<LI><a href="ESI_doc.html#ESI_ECHCOADDFIN"><B>esi_echcoaddfin</B></a> ::
+	This procedure coadds the various orders into a 1D spectrum.  It does
+	weight by S/N but is otherwise rather simple minded.  This includes the
+	fact that various regions of the spectra are ignored, especially data
+	in the lower left hand of the CCD. 
+</LI>
+<LI>Output is two fits files in 'FSpec' with names 'Obja_F.fits' and
+	'Obja_E.fits'.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>esi_echcoaddfin</B>, esi, obj_id 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+  <B>extrct_ech</B>, esi, obj_id, /COADD
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : fast 
+<BR></LI>
+<LI>Examine the final product: 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;IDL>
+ <B>x_specplot</B>, 'FSpec/Name_F.fits', 
+		'FSpec/Name_E.fits'
+  
+</LI>
+</UL>
+
+
+<P>
+<FONT SIZE="+2">Continuum fitting and normalization</FONT>
+  
+<UL>
+<LI><a href="ESI_doc.html#x_continuum"><B>x_continuum</B></a> ::
+	This procedure allows you to continuum fit the spectra
+	after fluxing.
+</LI>
+<LI>Output is a continnuum file
+
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>x_continuum</B>, 'fluxed_spectrum_F.fits', OUTFIL='continfile.fits'
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : fast 
+  
+</LI>
+
+<LI><a href="ESI_doc.html#x_nrmspec"><B>x_nrmspec</B></a> ::
+	This procedure allows you to normalize the data based on
+	the continuum fit previously done.
+</LI>
+<LI>Output is a normalized spectrum (and optionally an error array)
+
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>x_nrmspec</B>, 'fluxed_spectrum_F.fits',
+ 'continfile.fits', 'output_normalized_spectrum.fits',
+ EFIL='error_array.fits', OUTE='normalized_error_array'
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : fast 
+<BR></LI>
+<LI>Examine the final product: 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;IDL>
+ <B>x_specplot</B>, 'FSpec/Name_F_normalized.fits', 
+		'FSpec/Name_E_normalized.fits'
+  
+</LI>
+
+
+</UL>
+
+
+
+
+<P>
+</LI>
+</OL>
+
+
+
+
+<hr>
+<hr>
+
+<P>
+
+<P>
+<FONT SIZE="+2"><B>&nbsp;&nbsp;&nbsp;&nbsp;0. LWD Reduction</B></FONT>
+
+<P>
+
+<UL>
+<LI>The following routines setup and then proceed through the
+	reduction of data taken in the LWD mode with ESI.
+</LI>
+<LI>I suggest you use a .pro files like 
+	<I>proc_lwd.pro,extrct_lwd.pro</I> 
+	to guide the process.  
+</LI>
+<LI>Most of the following routines take the <I>esi</I> structure,
+	and the slit size or the <I>obj_id</I>.
+  
+</LI>
+</UL>
+
+<P>
+
+<FONT SIZE="+2">Create Bias (Zero) frame</FONT>
+	
+<UL>
+
+<OL>
+<LI>We have found that creating a Zero frame is preferred
+	over an overscan subtraction.  If you have taken Bias (0s) frames,
+	the process is straightforward.  If you haven't, you can copy the image
+	'Bias<i>bin</i>S.fits' from $XIDL_DIR/ESI/CALIBS 
+        into the 'Bias/' directory.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>esi_mkzero</B>, esi 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>proc_lwd</B>, esi, /MKBIAS 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 3-5min 
+</LI>
+<LI>To check the Bias frame : <B>xatv</B>, 'Bias/BiasS.fits'
+	
+</LI>
+</UL>
+
+<P>
+<FONT SIZE="+2">LWD Setup</font> :: <a href="ESI_doc.html#ESI_LWDSETUP"><B>esi_lwdsetup</B></a> 
+	
+<UL>
+<LI>This routine examines the esi structure and looks for calibration
+	files associated with the various slit widths of your LWD files.  
+	It groups together exposures with identical Obj name and ESI mode and
+	sets the obj_id tags accordingly.
+	A summary of the LWD exposures is put in 'esiLWD_summ.txt'. 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>esi_lwdsetup</B>, esi 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>proc_lwd</B>, esi, /SETUP 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : Fast
+	
+</LI>
+</UL>
+
+<P>
+<FONT SIZE="+2">Arc Image </FONT>
+  
+<OL>
+<LI>This is the most crucial step.  The sky subtraction
+	algorithm will only succeed with a good Arc Image.  It should be 
+	emphasized that we only create one Arc Image per slit size and apply
+	this to all of the exposures taken with that slit size.  The following
+	routines are well automated but should be checked carefully if you are
+	doing a 'final' reduction.  I think it is possible that one could use
+	an Arc image from a previous run but wouldn't recommend it just
+	yet.  All of the following routines require a specific slit size.
+</LI>
+<LI>For LWD mode, only the HgNe and Xe lamps are useful.  Therefore
+	we focus on these images (i.e. arclamp = 6).  
+</LI>
+<LI><a href="ESI_doc.html#ESI_LWDMKARC"><B>esi_lwdmkarc</B></a> 
+	:: Process the Arcs.  This step bias subtracts,
+	trims and combines all of the Arc images.
+        Note that we find it is best not to flat field the Arc, at least not
+	with an unnormalized arc. Output is: 'Arcs/ArcLWD_<I>slit</I>.fits' 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>esi_lwdmkarc</B>, esi, slit 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 2min
+
+<P>
+</LI>
+<LI><a href="ESI_doc.html#ESI_LWDFITARC"><B>esi_lwdfitarc</B></a> 
+	:: This routine extracts a 1D spectrum along
+	row 820 (default) of Arc image and determines the wavelength solution.  
+	Currently, I recommend using the /INTER mode although you can
+	try and let the code run automatically.
+	As long as your arc lines are within 3 pixels of my 
+	solution, things ought to run smoothly in AUTO mode.
+	The output is an IDL file containing the polynomial fits for each
+	order: 'Arcs/AFIT_LWD<I>slit</I>.fits'.  The program also creates
+	a ps file to examine the quality of fits.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>esi_lwdfitarc</B>, esi, slit, [/INTER]
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 2min 
+
+<P>
+</LI>
+<LI><a href="ESI_doc.html#ESI_LWDTRCARC"><B>esi_lwdtrcarc</B></a> 
+	:: This routine traces arc lines throughout
+	the image.  It will parse out the ends of traces where the algorithm
+	tends to have trouble.
+	Output is an anonymous structure written to the binary fits 
+        file 'Arcs/ATRC_LWD<I>slit</I>.fits'. 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>esi_lwdtrcarc</B>, esi, slit 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 2min  
+
+<P>
+</LI>
+<LI><a href="ESI_doc.html#ESI_LWDMKAIMG"><B>esi_lwdmkaimg</B></a> 
+	:: This routine takes the arc traces and
+	uses them to create a full Arc Image in the data frame.  The main
+	routine performs a 2D polynomial surface fit to the traces from
+	the previous step.  This is very expensive but needs to be only
+	run once per night per slit width.
+	Output is : 'Arcs/ArcECH_<I>slit</I>IMG.fits'
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>esi_lwdmkaimg</B>, esi, slit, [/CHK]
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 20min  
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Check output with: <B>xatv</B>, 'Arcs/ArcECH_<I>slit</I>IMG.fits'
+</LI>
+<LI>To run all three steps at once, use:
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;IDL>
+ <B>proc_lwd</B>, esi, slit, /MKAIMG, [/INTER] 
+<BR>  
+</LI>
+</OL>
+
+<P>
+<FONT SIZE="+2">Process Flats </FONT>
+  
+<UL>
+<LI><a href="ESI_doc.html#ESI_LWDMKFLAT"><b>esi_lwdmkflat</b></a> :: 
+	This routine processes the QTZ calibration frames, producing
+	a normalized flat useful to correcting pixel-to-pixel variations. 
+	The routine bias subtracts and combines individual exposures.
+	It then fits a high order bspline to a strip of the flat in order
+	to normalize to unity.
+</LI>
+<LI>Output is 'Flats/FlatLWD_<I>slit</I>.fits'
+         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>esi_lwdmkflat</B>, esi, slit 
+ <BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>proc_lwd</B>, esi, slit, /MKFLAT 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 5-10min
+</LI>
+<LI>Check the Flat: <B>xatv</B>, 'Flats/FlatLWD_<I>slit</I>.fits'
+  
+</UL>
+<P>
+<FONT SIZE="+2">Extract</FONT>
+  
+<OL>
+<LI><a href="ESI_doc.html#ESI_LWDPROC"><b>esi_lwdproc</b></a> :: 
+	This routine bias subtracts and flattens the science frame.
+</LI>
+<UL>
+<LI>Output is 'Final/f_esi####.fits'
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>esi_lwdproc</B>, esi, obj_id, [/CLOBBER]
+ <BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>ext_lwd</B>, esi, obj_id, /PROCOBJ
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 1min/image
+</LI>
+<LI>Check: <B>xatv</B>, 'Final/f_esi####.fits'
+</UL>
+
+<LI><a href="ESI_doc.html#ESI_LWDFNDOBJ"><b>esi_lwdproc</b></a> :: 
+	This routine finds the science object and any other serendips in the
+      slit.  I highly recommend you use the INTER mode.  With this, you
+      need to set the aperture size around the obj for sky subtraction
+      (not extraction!). The routine also creates the Obj structure in Extract.
+</LI>
+<UL>
+<LI>Output is 'Extract/Obj_esi####.fits'
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>esi_lwdfndobj</B>, esi, obj_id, [/CLOBBER]
+ <BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>ext_lwd</B>, esi, obj_id, /FNDOBJ
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time: fast
+</UL>
+
+<LI><a href="ESI_doc.html#ESI_LWDSKYSUB"><b>esi_lwdskysub</b></a> :: 
+	Sky subtract the image.
+</LI>
+<UL>
+<LI>Output is in 'Final/f_esi####.fits'
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>esi_lwdskysub</B>, esi, obj_id, [/CHK]
+ <BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>ext_lwd</B>, esi, obj_id, /SKYSUB, [/SKYCHK]
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time: fast
+</UL>
+
+<LI><a href="ESI_doc.html#ESI_LWDTRCOBJ"><b>esi_lwdtrcobj</b></a> :: 
+	Trace the sky subtracted image.  Use a STD trace as a
+      guide.
+</LI>
+<UL>
+       &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>esi_lwdtrcobj</B>, esi, obj_id, [/CHK]
+ <BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>ext_lwd</B>, esi, obj_id, /TRCOBJ, [/TRCCHK, FILSTD=, /STD]
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time: fast
+</UL>
+  
+<LI><a href="ESI_doc.html#ESI_LWDEXTOBJ"><b>esi_lwdextobj</b></a> :: 
+	Extract the object.
+</LI>
+<UL>
+        &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>esi_lwdextobj</B>, esi, obj_id, [APER=]
+ <BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>ext_lwd</B>, esi, obj_id, /EXTRCT, [APER=]
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time: 1min
+</UL>
+  
+<LI><a href="ESI_doc.html#ESI_LWDFLUX"><b>esi_lwdflux</b></a> :: 
+	Flux the object.
+</LI>
+<UL>
+        &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>esi_lwdextobj</B>, esi, obj_id
+ <BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>ext_lwd</B>, esi, obj_id, /FLUX, [/FORCE]
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time: fast
+</UL>
+
+<LI><a href="ESI_doc.html#ESI_LWDCOMB"><b>esi_lwdcomb</b></a> :: 
+	Combine multiple exposures (or a single).  Required even
+      for single objects.
+      
+</LI>
+<UL>
+         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>esi_lwdcomb</B>, esi, obj_id
+ <BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL>
+ <B>ext_lwd</B>, esi, obj_id, /COMB
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time: fast
+</UL>
+  
+</LI>
+</UL>
+</LI>
+</OL>
+
+
+
+
+<P>
+<BR><HR>
+<!--Table of Child-Links-->
+<A NAME="CHILD_LINKS"></A>
+
+<UL>
+<LI><A NAME="tex2html4"
+  HREF="node1.html">About this document ...</A>
+</UL>
+<!--End of Table of Child-Links-->
+<HR>
+<!--Navigation Panel-->
+<A NAME="tex2html2"
+  HREF="node1.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="file:/opt/latex2html./2002-2-1/icons/next.png"></A> 
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="file:/opt/latex2html./2002-2-1/icons/up_g.png"> 
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="file:/opt/latex2html./2002-2-1/icons/prev_g.png">   
+<BR>
+<B> Next:</B> <A NAME="tex2html3"
+  HREF="node1.html">About this document ...</A>
+<!--End of Navigation Panel-->
+<ADDRESS>
+Jason Prochaska
+2004-09-16
+</ADDRESS>
+</BODY>
+</HTML>

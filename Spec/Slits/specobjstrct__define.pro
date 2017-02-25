@@ -1,3 +1,35 @@
+;+ 
+; NAME:
+; specobjstrct__define
+;   Version 1.1
+;
+; PURPOSE:
+;  This routine creates a structure to describe the spectrum for an
+;  object in a given slit
+;
+; CALLING SEQUENCE:
+;   tmp = {specobjstrct}
+;
+; INPUTS:
+;
+; RETURNS:
+;
+; OUTPUTS:
+;
+; OPTIONAL KEYWORDS:
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;
+; EXAMPLES:
+;
+; PROCEDURES/FUNCTIONS CALLED:
+;
+; REVISION HISTORY:
+;  Written by JXP
+;-
+;----------------------------------------------------------------------
 pro specobjstrct__define
 
 ;  This routine defines the structure for individual object spectra

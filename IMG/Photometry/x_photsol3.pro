@@ -1,15 +1,16 @@
 ;+ 
 ; NAME:
 ; x_photsol3   
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
-;    Performs the linear algebra on a set of obs 
+;    Performs the linear algebra on a set of obs.  Fits for three
+;  free parameters: zero point, airmass term, color term
 ;
 ; CALLING SEQUENCE:
 ;   
-; x_photsol3, mo0, mT, sig, airmass, color, $
-;      modelfit=modelfit
+; x_photsol3, mo0, mT, sig, airmass, color, coeffs, sigma, 
+;      CHISQ=, NCORR=
 ;
 ; INPUTS:
 ;   mo0 -  Observed magnitudes

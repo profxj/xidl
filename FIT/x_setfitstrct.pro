@@ -1,34 +1,38 @@
 ;+ 
 ; NAME:
 ; x_setfitstrct   
-;     Version 1.0
+;     Version 1.1
 ;
 ; PURPOSE:
-;    Subtracts a scattered light model from the data
-;    Outputs to the same image (usually OV/ov_esi####.fits)
+;    Initizlies a 1D FIT structure.
 ;
 ; CALLING SEQUENCE:
 ;   
-;  x_setfitstrct, esi, /DFLAT
+;  fitstr = x_setfitstrct(NITER=, MINPT=, MAXREJ=, FUNC=, NORD=,
+;  HSIG=, lSIG=, FLGREJ=)
 ;
 ; INPUTS:
-;   esi     -  ESI structure
 ;
 ; RETURNS:
 ;
 ; OUTPUTS:
-;  Image with scattered light removed
 ;
 ; OPTIONAL KEYWORDS:
-;   DFLAT      - Use Dome flats where possible
+;  NITER -- Number of iterations for FIT  [default: 1L]
+;  MINPT -- Number of points to keep in FIT [default: 1L]
+;  MAXREJ -- Max Number of points to reject [default: 100L]
+;  FUNC -- Max Number of points to reject [default: 'POLY']
+;  NORD -- Order of the fit [default: 3L]
+;  HSIG -- Upper sigma for rejection [default: 3.]
+;  LSIG -- Lower sigma for rejection [default: 3.]
+;  /FLGREJ -- Turn on rejection [default: NONE]
 ;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   x_setfitstrct, esi
-;
+;   fitstr= x_setfitstrct(/FLGREJ)
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
 ;

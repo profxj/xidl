@@ -1,17 +1,16 @@
 ;+ 
 ; NAME:
 ; ximgd_icolor
-;    Version 1.0
+;    Version 1.1
 ;
 ; PURPOSE:
-; Sets up zooming
+; Sets the color for the Image given a name or index
 ;
 ; CALLING SEQUENCE:
-;   
-;   ximgd_initcolors, state, flg
+;   ximgd_icolor, color
 ;
 ; INPUTS:
-;   state       - Structure with tv dependent info
+;   color  -- Color index (string or long)
 ;
 ; RETURNS:
 ;
@@ -24,13 +23,12 @@
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   ximgd_initcolors, state, flg
-;
+;   ximgd_icolor, 'red'
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
 ;
 ; REVISION HISTORY:
-;   08-Feb-2002 Written by JXP
+;   08-Feb-2002 Written by JXP (taken from some Schlegel program)
 ;-
 ;------------------------------------------------------------------------------
 

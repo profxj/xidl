@@ -1,0 +1,38 @@
+General:
+--every instance of normalization should use sdss_normspec, which might need to 
+   become a function
+
+;; sdss_chkciv.pro
+--Add in wavelength bound modification functionality of sdss_fixciv.
+--Have it use the strct.wrest[0] to set the doublet for the structure
+   and remove dblt_name= option?
+
+;; sdss_civsearch.pro
+--have it sort input list and structure to remove requirement that
+they already be in same order.
+
+;; sdss_ewciv.pro
+--improve AODM, basically must figure out SDSS saturation
+
+;; sdss_fixciv.pro
+--may become obsolete with upgraded sdss_chkciv
+--fix to work with new codes
+--check works with other doublets
+
+;; sdss_fndciv.pro
+
+;; sdss_fndlin.pro
+--have it search both normalized continua and save both centroid lists
+in the sdsscontistrct.
+--have it sort input list and structure to remove requirement that
+they already be in same order.
+
+;; sdss_functions.pro
+
+;; sdss_runpipeline.pro
+
+;; sdsscivstrct__define.pro
+
+;; sdsscontistrct__define.pro
+--Have it save the centroids found with the other continuum for 
+ easy swapping.

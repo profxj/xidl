@@ -1,7 +1,7 @@
 ;+ 
 ; NAME:
 ; kast_mkflat   
-;     Version 1.0
+;     Version 1.1
 ;
 ; PURPOSE:
 ;    Process flat file
@@ -11,7 +11,8 @@
 ;  kast_mkflat, kast, slit
 ;
 ; INPUTS:
-;   kast     -  ESI structure
+;   kast  --  Kast IDL structure
+;  setup  --  Setup value
 ;
 ; RETURNS:
 ;
@@ -19,14 +20,14 @@
 ;  One normalized flat per slit width
 ;
 ; OPTIONAL KEYWORDS:
-;   DFLAT      - Use Dome flats where possible
+; /CLOBBER -- Clobber any previous processed image
 ;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   kast_mkflat, kast
+;   kast_mkflat, kast, 1L
 ;
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
@@ -35,22 +36,17 @@
 ;   01-Mar-2003 Written by JXP
 ;-
 ;------------------------------------------------------------------------------
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-pro kast_mkflat, kast, setup, SIDE=side, CLOBBER=clobber
-
+pro kast_mkflat, kast, setup, CLOBBER=clobber
 ;
   if  N_params() LT 2  then begin 
       print,'Syntax - ' + $
-        'kast_mkflat, kast, setup, SIDE=side, /CLOBBER [v1.0]'
+        'kast_mkflat, kast, setup, /CLOBBER [v1.1]'
       return
   endif 
   
 ;  Optional Keywords
   
-  if not keyword_set( SIDE ) then side = 3L
   if not keyword_set( OVLBL ) then ovlbl = 'Raw/'
 
   c_set = strtrim(setup,2)

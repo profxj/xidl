@@ -1,0 +1,44 @@
+January 2010
+
+ -- Focusing on the over-skysubtraction issue
+        e.g. 3702A in Order 97 (and 96 but not as bad)
+         -- Systematically 0.5 electrons per pix too subtracted
+         -- Focus on 237, 1756  (3860A in order 93) , image B0142
+
+hires = hires_ar('hiresstrct.fits')
+hires.setup =1
+hires.obj_id =1
+hires.arc_img ='Arcs/Arc_B0140_I.fits'
+hires.obj_fil ='Extract/Obj_0142B.fits'
+hires_extract, hires, 1, 1, [1], [1], ordrs=[93]
+hires_extract, hires, 1, 1, [1], [1], ordrs=[93], /TRY_IVAR
+
+  ;; Image is already over-subtracted before x_extechopt
+      -- Scattered light? Must be
+      -- It is set to a constant of 5 electrons (about right)
+
+  ;; Chi2 appears minimized
+      -- Offsetting by a constant does not help
+      -- Appears to be a big chi2 penalty in the highest flux, single pixel
+      -- No obvious wavelength dependence
+      -- A scalar change to ivar does nothing
+
+  ;; Key problem -- Negative data has poorer variance!
+      -- Trying
+          readno = 3.0
+          new_ivar = 1.0/((img>0.) + 2*readno^2)
+     hires_extract, hires, 1, 1, [1], [1], ordrs=[93], /TRY_IVAR
+          :: No luck
+      -- Trying
+          tst_ivar[inorder[ys]] = 1.0/( (img[inorder[ys]]-yfit - 7.)>0. $
+            + 7. + 2*readno^2)
+          :: Success!!
+          :: Key = Flat variance across the zero point
+          :: Not too sensitive to the zero-point kludge
+
+  ;; Final product mainly unchanged, however...
+      -- The modeling gives a non-zero object which means
+        a non-zero sky.  This is going to be very hard to avoid
+      -- I suspect this is driven by the scattered light issue
+          :: Trying no scattered light sub == profile will be wrong
+          

@@ -1,37 +1,32 @@
 ;+ 
 ; NAME:
 ; fuse_bindat
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
-;    Rebin a single data set to a new wavlength scale
-;      Simple adding (no weighting by S/N)
+;    Rebin FUSE data from 'Raw' to 'useful'
 ;
 ; CALLING SEQUENCE:
 ;   
-;   fuse_bindat, gdpix, orig_wv, orig_fx, newwv, newfx
+;   fuse_bindat, orig_dat, new_dat, nbin
 ;
 ; INPUTS:
-;   orig_wv
-;   orig_fx
-;   newwv
+;   orig_dat -- FITS file of original FUSE data
+;   new_dat -- Name of new data file
+;   [nbin] -- Number of pixels to smooth over [default: 3L]
 ;
 ; RETURNS:
 ;
 ; OUTPUTS:
-;   newfx
 ;
 ; OPTIONAL KEYWORDS:
-;  VAR         
 ;
 ; OPTIONAL OUTPUTS:
-;  NEWVAR      
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   x_specrebin, gdpix, orig_wv, orig_fx, newwv, newfx
-;
+;   fuse_bindat, 'PKS0405_orig.fits', 'PKS0405_new.fits'
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
 ;
@@ -46,11 +41,14 @@ pro fuse_bindat, orig_dat, new_dat, nbin
 
 
 ;
-  if  N_params() LT 3  then begin 
+  if  N_params() LT 2  then begin 
     print,'Syntax - ' + $
-             'fuse_bindat, orig_dat, new_dat, nbin [V1.0]'
+             'fuse_bindat, orig_dat, new_dat, [nbin] (V1.1)'
     return
   endif 
+
+; Optional keywords
+  if not keyword_set( NBIN ) then nbin = 3L
 
 ; Open data
 

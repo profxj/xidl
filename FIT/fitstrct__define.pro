@@ -1,7 +1,42 @@
+;+ 
+; NAME:
+; fitstrct__define
+;   Version 1.1
+;
+; PURPOSE:
+;    IDL structure for 1D fitting
+;
+; CALLING SEQUENCE:
+;   
+;   tmp = {fitstrct}
+;
+; INPUTS:
+;
+; RETURNS:
+;
+; OUTPUTS:
+;
+; OPTIONAL KEYWORDS:
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;
+; EXAMPLES:
+;   tmp = {fitstrct}
+;
+;
+; PROCEDURES/FUNCTIONS CALLED:
+;
+; REVISION HISTORY:
+;   31-Jan-2002 Written by JXP
+;-
+;------------------------------------------------------------------------------
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 pro fitstrct__define
 
 ;  This routine defines the Fit structure
-
   tmp = {fitstrct, $
          func: ' ',  $       ; Name
          nord: 0L,   $      ; Order number

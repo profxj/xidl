@@ -1,0 +1,237 @@
+; Marc's ESI redux for March 20, 2010
+
+;;;helpful things.
+; help,esi,/str
+; help,esi  
+; To read in an esi structure, do: 
+; esi = esi_ar('esi_2010Mar20.fits') ;;; load saved file
+; esi = esi_ar('esistrct.fits')      ;;; Load this file
+; esi = esi_ar()
+
+; 0.)  Create Structure.
+esi_strct, esi
+
+;Change Analysis flag with flip Anly
+; not reducing exposures 1, 12, 35, 36, 37, 39, 63, 65, 66
+; Marked exposres 38 and 64 as STD, as well as 65, 66
+; The main standard star will use is 64
+
+;;;;;esi_strct: All done!  Fits file in esistrct.fits
+
+; 1.) setup the calibration files and group objects
+;;; Output txt as well as save esi structure to a new file this will be 
+esi_echsetup, esi
+
+;;; Save a copy of the structure in case you want it later.
+
+esi_wrstrct, esi, FITS='esistrct.fits', /ANONLY
+
+; 2.) Process Bias Frame
+esi_mkzero, esi, /NOIMG
+; check the bias frames
+xatv, 'Bias/Bias1x1S.fits'
+
+; 3.) Pinhole 
+; Pinhole Map - just used CALIBS files rather than creating new ones
+; ie: make softlinks to the Map files in $XIDL/ESI/CALIBS or equivalent
+ln -s $ESI_CALIBS/hole_fit.idl Maps/
+ln -s $ESI_CALIBS/ECH_map.fits.gz Maps/
+ln -s $ESI_CALIBS/img_hole.fits.gz Maps/  ;;Is this not needed anymore?
+
+; 4.) Process Flat Frames
+chk=0
+slit = 0.75
+
+esi_echmkflat, esi, slit, HOT_THRESH = 30, /CLOBBER
+esi_echtraceorders, esi, slit, chk = chk
+
+esi_wrstrct, esi, FITS='esistrct.fits', /ANONLY
+
+; 5.) Process Arcs.
+
+chk=0
+slit = 0.75
+
+
+esi_echmkarc, esi, slit, /clobber
+
+esi_echfitarc, esi, slit, /clobber
+
+esi_fit2darc, esi, slit, /clobber
+
+esi_echtrcarc, esi, slit, /auto, pksig = 5.0
+
+esi_echmkaimg, esi, slit, chk = chk
+
+esi_wrstrct, esi, FITS='esistrct.fits', /ANONLY
+
+; 6.)  Reprocess flat frames  (Like step 4)
+;;; This normalizes the flats
+;;; For some reason it has to occur after the processing of the arcs
+chk=0
+slit = 0.75
+
+esi_echfltsct, esi, slit, chk = chk
+esi_wrstrct, esi, FITS='esistrct.fits', /ANONLY
+
+; check flat
+xatv, 'Flats/FlatECH75_1x1N.fits'
+
+; 7.) Process a Standard Star. (For Tracing.)
+chk=0
+slit = 0.75
+esi_echtrcstd, esi, slit, chk = chk, fwhm = 5.0, /clobber
+
+
+esi_wrstrct, esi, FITS='esistrct.fits', /ANONLY
+
+
+;---------------------------------
+; Done with processing at this point
+;---------------------------------
+
+-------------------------------------------
+-------------------------------------------
+; 8.) Reduce a standard star
+esi = esi_ar('esistrct.fits')
+CHK = 1
+objind = 63L
+
+; Note, objind is frame number -1 in this case. Check in future
+help, esi[63], /str
+
+; (a) Proccess standard star
+esi_echproc, esi, objind, /CLOBBER
+
+esi_wrstrct, esi, FITS='esistrct.fits', /ANONLY
+
+; (b) Find standard star 
+esi_echfndobj, esi, objind, NFIND = 1, CBIN = CBIN, /STD, FWHM = FWHM, /USESTD
+esi_wrstrct, esi, FITS='esistrct.fits', /ANONLY
+
+; (c) Sky subtract
+esi_echskysub, esi, objind, fchk = chk, bordr = 3, /STD
+esi_wrstrct, esi, FITS='esistrct.fits', /ANONLY
+
+; (d) Refine trace
+esi_echfndobj, esi, objind, chk = chk, nfind = 1, /USESTD, /SKYSUB, FWHM = 5.0, /STD
+esi_wrstrct, esi, FITS='esistrct.fits', /ANONLY
+
+; (e) Trace and extract standard. This step uses boxcar extraction
+esi_echextobj, esi, objind, /chk, /STD
+esi_wrstrct, esi, FITS='esistrct.fits', /ANONLY
+
+
+;; (f) Flux calibrate
+
+ ;;create sensitivity function
+ ;;Only need to do this once, so don't repeat after first time. 
+esi_echcalibstd, esi, objind, HSTFIL = 'fbd33d2642.dat'
+
+;; This calls x_echfitstd, which requires user interaction. 
+;; Need to select each order by clicking on it with the right  mouse button
+;; Then left click twice around areas you want to cut out (exclude)
+;; All broad absorption lines etc. 
+
+;; Use the following commands to move around:
+;; l - left
+;; r - right
+;; i - zoom in
+;; o - zoom out
+;; t - top
+;; b - bottom
+;; Left click: select range to exclude
+;; Right click: select order
+
+;; (g) Now combine, flux, and coadd spectra from this night
+FLUXFIL = 'Extract/sens_esi0064.idl'
+esi_echcombspec, esi, objind, obj_nm = 'a', /STD
+esi_echfluxfin, esi, objind, fluxfil = fluxfil, obj_nm = 'a', /STD
+esi_echcoaddfin, esi, objind, obj_nm = 'a', /SKY, /NOVAR, /STD
+
+esi_wrstrct, esi, FITS='esistrct.fits', /ANONLY
+
+;---------------------------------
+
+;---------------------------------
+;;;;;;;;;;;;STOPPED HERE!
+; 9.)  Process Science Objects.
+;;; slit = 0.75
+;;; DONT Close IDL1 and IDL0
+;;; fchk should be set to 1 unless you have looked at it before!
+
+esi = esi_ar('esistrct.fits') 
+slit=0.75
+chk=0
+FLUXFIL = 'Extract/sens_esi0064.idl'
+esi_reduce_all_obj, esi, slit, fluxfil=fluxfil, /fchk
+
+;;; or
+esi_reduce_all_obj, esi, slit, fluxfil=fluxfil, /nocr
+
+
+10.) If you didn't do /fchk, then run this and look at the residuals
+
+esi_redux_check
+
+; Look at the files in Check
+
+11.) OK So now you have a bunch of files under FSpec.
+;;;you can check them out using 
+
+x_specplot, 'FSpec/J0831+4046a_F.fits', 'FSpec/J0831+4046a_E.fits'
+x_specplot, 'FSpec/J0834+2140a_F.fits', 'FSpec/J0834+2140a_E.fits'
+x_specplot, 'FSpec/J1004+4347a_F.fits', 'FSpec/J1004+4347a_E.fits'
+x_specplot, 'FSpec/J1042+3107a_F.fits', 'FSpec/J1042+3107a_E.fits'
+x_specplot, 'FSpec/J1111+3509a_F.fits', 'FSpec/J1111+3509a_E.fits'
+x_specplot, 'FSpec/J1204-0021a_F.fits', 'FSpec/J1204-0021a_E.fits'
+x_specplot, 'FSpec/J1312+2307a_F.fits', 'FSpec/J1312+2307a_E.fits'
+x_specplot, 'FSpec/J1443+2724a_F.fits', 'FSpec/J1443+2724a_E.fits'
+x_specplot, 'FSpec/J1513+1058a_F.fits', 'FSpec/J1513+1058a_E.fits'
+x_specplot, 'FSpec/J1659+2709a_F.fits', 'FSpec/J1659+2709a_E.fits'
+
+Remember, Capital D lets you put in a 20.3 NHI DLA
+;------------------
+
+rsync -avn 2010-Mar-20/ /esi/data/2010-Mar-20/
+
+;------------------
+
+cd /esi/RedData
+
+mkdir -p J0831+4046
+mkdir -p J0834+2140
+mkdir -p J1004+4347
+mkdir -p J1042+3107
+mkdir -p J1111+3509
+mkdir -p J1204-0021
+mkdir -p J1312+2307
+mkdir -p J1443+2724
+mkdir -p J1513+1058
+mkdir -p J1659+2709
+
+cp J0831+4046a_F.fits /esi/RedData/J0831+4046/J0831+4046a_xF.fits
+cp J0834+2140a_F.fits /esi/RedData/J0834+2140/J0834+2140a_xF.fits
+cp J1004+4347a_F.fits /esi/RedData/J1004+4347/J1004+4347a_xF.fits
+cp J1042+3107a_F.fits /esi/RedData/J1042+3107/J1042+3107a_xF.fits
+cp J1111+3509a_F.fits /esi/RedData/J1111+3509/J1111+3509a_xF.fits
+cp J1204-0021a_F.fits /esi/RedData/J1204-0021/J1204-0021a_xF.fits
+cp J1312+2307a_F.fits /esi/RedData/J1312+2307/J1312+2307a_xF.fits
+cp J1443+2724a_F.fits /esi/RedData/J1443+2724/J1443+2724a_xF.fits
+cp J1513+1058a_F.fits /esi/RedData/J1513+1058/J1513+1058a_xF.fits
+cp J1659+2709a_F.fits /esi/RedData/J1659+2709/J1659+2709a_xF.fits
+
+cp J0831+4046a_E.fits /esi/RedData/J0831+4046/J0831+4046a_xE.fits
+cp J0834+2140a_E.fits /esi/RedData/J0834+2140/J0834+2140a_xE.fits
+cp J1004+4347a_E.fits /esi/RedData/J1004+4347/J1004+4347a_xE.fits
+cp J1042+3107a_E.fits /esi/RedData/J1042+3107/J1042+3107a_xE.fits
+cp J1111+3509a_E.fits /esi/RedData/J1111+3509/J1111+3509a_xE.fits
+cp J1204-0021a_E.fits /esi/RedData/J1204-0021/J1204-0021a_xE.fits
+cp J1312+2307a_E.fits /esi/RedData/J1312+2307/J1312+2307a_xE.fits
+cp J1443+2724a_E.fits /esi/RedData/J1443+2724/J1443+2724a_xE.fits
+cp J1513+1058a_E.fits /esi/RedData/J1513+1058/J1513+1058a_xE.fits
+cp J1659+2709a_E.fits /esi/RedData/J1659+2709/J1659+2709a_xE.fits
+
+
+
+

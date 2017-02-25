@@ -4,24 +4,27 @@
 ;   Version 1.0
 ;
 ; PURPOSE:
+;  Create a table of COG values and fit a spline to it.  The routine
+;  then writes the output to a FITS file for future usage.
 ;   
-;
 ; CALLING SEQUENCE:
-;   
-;   x_splncogmax, ew_red, sig_ew, flambda, Nval, blmt, FNDB=
+;   x_splncogmax, tmax, tval, tabul, NSTP=, OUTFIL=, TMIN=, STRCT=
 ;
 ; INPUTS:
-;   ew_red  -- Reduced ew
-;   sigew  - Error in ew
-;   flambda  -- f lambda (assumes A not cm)
-;   blmt    --  Limits for b value search (assumes km/s)
+;  tmax -- Maximum optical depth to consider
 ;
 ; RETURNS:
-;   ew   - Equivalent width
+;  tval -- Array of optical depth values
+;  tabul -- Array of COG values (reduced EW)
 ;
 ; OUTPUTS:
+;  STRCT=  -- Structure containing tval, tabul, and the SPLINE
+;  OUTFIL= -- FITS file where the spline is written (as a structure)
 ;
 ; OPTIONAL KEYWORDS:
+;  TMIN= -- Minimum optical depth to consider [default: 1e-4]
+;  NSTP= -- Number of points to evaluate at between TMIN and tmax
+;           [default: 1000L]
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -29,8 +32,8 @@
 ;
 ; EXAMPLES:
 ;
-;
 ; PROCEDURES/FUNCTIONS CALLED:
+;
 ; REVISION HISTORY:
 ;   15-Sep-2003 Written by JXP
 ;-
@@ -73,14 +76,14 @@ end
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-pro x_splncogmax, tmax, tval, tabul, NSTP=nstp, STRCT=strct, $
-                  OUTFIL=outfil
+pro x_splncogmax, tmax, tval, tabul, NSTP=nstp, OUTFIL=outfil, TMIN=tmin, $
+                  STRCT=strct
 
   common x_splncogmax_cmm
 ;
   if  N_params() LT 3  then begin 
     print,'Syntax - ' + $
-             'x_splncogmax, tmax, tval, tabul, NSTP= [v1.0]'
+             'x_splncogmax, tmax, tval, tabul, NSTP=, TMIN=, OUTFIL=, STRCT= [v1.1]'
     return
   endif 
 

@@ -1,10 +1,10 @@
 ;+ 
 ; NAME:
-; kast_calibstd   
+; lris_calibstd   
 ;   Version 1.1
 ;
 ; PURPOSE:
-;    Plots any array interactively
+;    CURRENTLY UNDER CONSTRUCTION
 ;
 ; CALLING SEQUENCE:
 ;   
@@ -40,8 +40,7 @@
 ;------------------------------------------------------------------------------
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-pro kast_calibstd, kast, indx, outfil, HSTFIL=hstfil
+pro lris_calibstd, kast, indx, outfil, HSTFIL=hstfil
 
 ;
   if  N_params() LT 2  then begin 

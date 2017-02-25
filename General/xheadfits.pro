@@ -1,34 +1,32 @@
 ;+ 
 ; NAME:
 ; xheadfits
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
-;    Convert input to data whether it is a fits file or not
+;    Uses headfits to read the header of a fits file.  The only
+;   advantage of xheadfits is that the file can be compressed and
+;   yet the filename may be named without the gz extension.
 ;
 ; CALLING SEQUENCE:
-;   
-;   dat = x_readimg(img)
+;   head = xheadfits(fil, _EXTRA)
 ;
 ; INPUTS:
-;   img       - Fits file or data
+;   fil -- FITS Filename
 ;
 ; RETURNS:
-;   dat       - Data in fits file or the input data
+;   head -- Header
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
-;  FSCALE      - Data is float
 ;
 ; OPTIONAL OUTPUTS:
-;  HEAD        - Header
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   dat = xheadfits('spec.fits')
-;
+;   head = xheadfits('spec.fits')
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
 ;
@@ -61,17 +59,20 @@ function xheadfits, fil, _EXTRA=extra
 
   a = findfile(fil, count=na)
   if na EQ 0 then begin
-      gz_fil = fil+'.gz'
+      gz_fil = strtrim(fil,2)+'.gz'
       b = findfile(gz_fil, count=nb)
       if nb EQ 0 then begin
-          print, 'xmrdfits: Files ', fil, gz_fil, ' do not exist!'
-          return, -1
+          print, 'xheadfits: Files ', fil, gz_fil, ' do not exist!'
+          z_fil = strtrim(fil,2)+'.Z'
+          c = findfile(z_fil, count=nc)
+          if nc NE 0 then datfil = z_fil else return, -1 
       endif else datfil = gz_fil
   endif else datfil = fil
 
   ;; COMPRESS?
   len = strlen(fil)
-  if strmid(fil,len-1) EQ 'z' then COMPRESS=1 else compress = 0
+;  if strmatch(strmid(fil,len-1),'z',/fold_case) $
+;    then COMPRESS=1 else compress = 0
 
   return, headfits(datfil, COMPRESS=compress, _EXTRA=EXTRA)
 

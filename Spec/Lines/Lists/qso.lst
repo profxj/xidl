@@ -1,28 +1,30 @@
 27
  1026.00  1   Ly  beta
  1035.00  1    O    VI
- 1216.00  1   Ly alpha
- 1238.81  2    N     V
- 1242.80  2    N     V
- 1393.76  2   Si    IV
+ 1218.21  1   Ly alpha # shifted
+ 1240.01  2    N     V
+ 1304.35  2    O     I
+ 1396.80  2   Si    IV # shifted 
  1406.00  1    O  [IV]
- 1550.00  2    C    IV
- 1907.00  1    C  III]
- 1909.00  1    C  III]
+ 1544.66  2    C    IV # shifted
+ 1637.69  2    He   II # shifted
+ 1856.59  2    Al  III # shifted
+ 1903.91  1    C  III] # shifted
  2327.71  1    C   II]
- 2796.82  2   Mg    II
- 2803.83  2   Mg    II
+ 2423.83  1   Ne  [IV]
+ 2799.40  2   Mg    II # shifted
  3345.96  1   Ne   [V]
  3426.98  1   Ne   [V]
- 3727.26  1    O  [II]
- 3729.96  1    O  [II]
+ 3728.30  1   O [II]  # Boroson et al. 2004 value
  4341.69  2    H gamma
  4364.44  1    O [III]
- 4862.70  2    H     b
+ 4862.68  2    H     b
  4960.29  1    O [III]
  5008.24  1    O [III]
  6549.91  1    N  [II]
  6564.63  1    H     a
- 6585.42  1    N  [II]
- 6718.95  1    S  [II]
- 6733.16  1    S  [II]
+ 6585.27  1    N  [II] # Boroson et al. 2004 value
+ 6718.29  1    S  [II] # Boroson et al. 2004 value
+ 6732.67  1    S  [II] # Boroson et al. 2004 value
+# 3728.48  1    O  [II]
+# 3729.96  1    O  [II]

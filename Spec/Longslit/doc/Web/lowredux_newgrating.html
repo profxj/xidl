@@ -1,0 +1,168 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.70)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Adding a Grating for an Instrument in the LowRedux Package</TITLE>
+<META NAME="description" CONTENT="kast_cook">
+<META NAME="keywords" CONTENT="kast_cook">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+</HEAD>
+
+<BODY >
+
+<P>
+<DIV ALIGN="CENTER">
+<FONT SIZE="+3"><B>Adding a Grating for an Instrument in the LowRedux Package</B></FONT>
+</DIV>
+
+<br>
+<br>
+
+<FONT SIZE="+2"> <a href="index.html">BACK</a>
+<br>
+<br>
+
+<FONT SIZE="+1">
+This page describes the effort required to modify the code
+to add a new grating for data reduction.
+
+
+</DIV>
+<hr>
+<P>
+<FONT SIZE="+2">Summary from Chris Wilmer on MMT RCS<FONT>
+<br>
+<br>
+
+<ol>
+
+  <LI> 1. adding a new grating to XIDL
+
+<p>
+This is the procedure I followed to add new grating data
+for XIDL. The refurbished Red Channel Spectrograph on the
+MMT has the choice of several gratings. Two of these are
+the 600-6310 and 1200-7700. The 600-6310 was already
+included  so the present case is for 1200-7700<br>
+<br>
+To include these some of the code has to be updated:
+xidl/Spec/Longslit/pro/General/long_reduce_params.pro<br>
+
+For this, one has to find the lines corresponding to
+this telescope (mmt) and  instrument. The MMT FITS
+keyword for a grating is "DISPERSE":<br>
+<br>
+
+ENDIF ELSE IF strmatch(telescope, 'mmt') THEN BEGIN<br>
+   bsp = 0.72<br>
+   box_rad = 7<br>
+   PEAK_SMTH = 10.0D<br>
+   IF strmatch(detector, 'mmtblue*') then BEGIN<br>
+       grating = strcompress(sxpar(scihdr, 'DISPERSE'), /rem)<br>
+       CASE grating OF<br>
+          '300GPM':  skyfile = GETENV('LONGSLIT_DIR') + $<br>
+                               '/calib/sky/mmt_sky_bcs_300.sav'<br>
+          '800GPM':  skyfile = GETENV('LONGSLIT_DIR') + $<br>
+				       '/calib/sky/mmt_sky_bcs_800.sav'<br>
+		   ELSE: message, 'ERROR: Unknown grating'<br>
+       ENDCASE<br>
+   ENDIF ELSE BEGIN <br>
+      grating = strcompress(sxpar(scihdr, 'DISPERSE'), /rem)<br>
+      CASE grating OF<br>
+         '600-6310':  skyfile = GETENV('LONGSLIT_DIR') + $<br>
+                                '/calib/sky/mmt_sky_rcs_600.sav'<br>
+         '1200-7700': skyfile = GETENV('LONGSLIT_DIR') + $<br>
+                                '/calib/sky/mmy_sky_rcs_1200_7700_red.sav'<br>
+         ELSE: message, 'ERROR: Unknown grating', grating<br>
+      endcase<br>
+</p>
+
+
+  <LI> Adding a new ARC solution
+
+<p>
+One problem encountered using the Red Channel Spectrograph, was the
+lack of a good table of HeNeAr lines in the 9400-10300 AA region of
+the spectrum. At the telescope I carried out a long series of 
+integrations of arcs that allowed me creating a "super-HeNeAr"
+exposure bringing out the fainter lines. This was done by
+co-adding the _raw_ frames. This is important since the spectral 
+interval of the arcs and science frames must be the same 
+(at least that is what I think is true). This description
+has the XIDL distribution stored in an ~/idl/ directory:<br>
+<br>
+~/idl/xidl <br>
+</p>
+
+  <OL>
+    <LI> Create  a table with wavelengths for this spectrum:
+
+    <p>
+mmt_1200_10300_shifted.lst<br>
+...<br>
+9534.1629 1 Ne I<br>
+9657.786  1 Ar I<br>
+...<br>
+<br>
+This is stored normally at<br>
+<br>
+~/idl/xidl/Spec/Arcs/Lists
+</p>
+
+    <LI> Create the co-added 1-D spectrum:
+<p>
+mmt_1200_10300_shifted.fits<br>
+</p>
+
+    <LI> read spectrum and calculate the wavelength solution. The
+  arc will be read into "spec", while "calib" will be written
+  by x_identify
+
+<p>
+spec = mrdfits('mmt_1200_10300_shifted',0)<br>
+<br>
+x_identify, spec, calib, linelist='mmt_1200_10300_shifted.lst',$<br>
+lineroot='~/idl/xidl/Spec/Arcs/Lists'<br>
+</p>
+
+
+    <LI> Once the fit is good you want to save it for later use. 
+  The naming here is being used to make it uniform with the
+  spectra already stored in the XIDL database:
+
+<p>
+archive_arc = spec 
+save, archive_arc, calib,filename='mmt_red_1200_10300_shifted.sav'
+</p>
+
+    <LI> Place the file in 
+
+<p>
+~/idl/xidl/Spec/Longslit/calib/
+</p>
+
+
+    <LI>Now back to reducing data using the new solution:
+
+<p>
+long_reduce,'n1.par',linelist='mmt_1200_10300_shifted.lst',$
+reid_file='mmt_red_1200_10300_shifted.sav'
+</p>
+
+  </ol>
+</ol>
+
+
+<P>
+<BR><HR>
+<ADDRESS> Last modified 2007-5-11 </ADDRESS>
+</BODY>
+</HTML>

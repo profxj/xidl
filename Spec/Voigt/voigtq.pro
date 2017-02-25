@@ -1,3 +1,35 @@
+;+ 
+; NAME:
+; voigtq
+;    Version 1.0
+;
+; PURPOSE:
+;    Creates a quick Voigt profile using code written by SB.
+;   Not recommended for usage
+;
+; CALLING SEQUENCE:
+;   
+; INPUTS:
+;
+; RETURNS:
+;
+; OUTPUTS:
+;
+; OPTIONAL KEYWORDS:
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;
+; EXAMPLES:
+;
+; PROCEDURES/FUNCTIONS CALLED:
+;
+; REVISION HISTORY:
+;   07-Feb-2002 Written by JXP
+;-
+;------------------------------------------------------------------------------
+;  
 
 ;  Line is a structure with:
 ;

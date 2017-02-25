@@ -42,7 +42,8 @@
 
 pro wfccd_setslits, wfccd, mask_id, flg, SLITSTR=slitstr, NOVERIFY=noverify, $
                     FLAT=flat, MAP=map, SVFLT=svflt, OUTFIL=outfil, $
-                    SILENT=silent, DEBUG=debug
+                    SILENT=silent, DEBUG=debug, THETA=theta, SHIFT=shift, $
+                    NOFIT=nofit
 
 ;
   if  N_params() LT 1  then begin 
@@ -81,10 +82,27 @@ pro wfccd_setslits, wfccd, mask_id, flg, SLITSTR=slitstr, NOVERIFY=noverify, $
 ;  Slits
   if not keyword_set( SILENT ) then $
     print, 'wfccd_setslits: Setting the slits...'
-  x_setslits, nwflt, slitstr, YSTRT=wfccd[flts[0]].ystrt, DEBUG=debug
-
+  if(wfccd[flts[0]].rotated) then begin
+      splog, 'rotated slit, will not match flat!!'
+      x_setslits, nwflt, slitstr, YSTRT=wfccd[flts[0]].ystrt, $
+        DEBUG=debug, /nofit, theta=wfccd[flts[0]].theta, $
+        shift=wfccd[flts[0]].shift
+      if not keyword_set( NOVERIFY ) then begin
+          splog, 'comparing to the exposure'
+          img=xmrdfits(strtrim(wfccd[obj[0]].rootpth+ $
+                               wfccd[obj[0]].img_root,2), 0, /silent)
+          img=img[0:2047,0:2046]
+          nx=(size(img,/dim))[0]
+          img = x_rectify(img, map)
+          x_stsltgui, img, slitstr
+      endif
+  endif else begin
+      x_setslits, nwflt, slitstr, YSTRT=wfccd[flts[0]].ystrt, $
+        DEBUG=debug
 ;  Check the slits
-  if not keyword_set( NOVERIFY ) then x_stsltgui, nwflt, slitstr
+      if not keyword_set( NOVERIFY ) then x_stsltgui, nwflt, slitstr
+  endelse
+
 
 ;  Map the Slits into the Original Frame
   if not keyword_set( SILENT ) then $

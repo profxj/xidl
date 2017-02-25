@@ -48,6 +48,7 @@ function esi_slitnm, slit
   endif 
   
   case slit of 
+      0.00: c_s = '00'
       0.30: c_s = '30'
       0.50: c_s = '50'
       0.75: c_s = '75'

@@ -3,7 +3,8 @@
 ;       XATV
 ; 
 ; PURPOSE: 
-;       Interactive display of 2-D images.
+;       Interactive display of 2-D images.  Based largely on 
+;  Aaron Barths ATV.
 ;
 ; CATEGORY: 
 ;       Image display.
@@ -371,6 +372,7 @@ state.colorbar_base_id = widget_base(base, $
                                      frame = 2)
 
 minmax_fram_base = widget_base(state.info_base_id, /row, /base_align_right)
+butt_fram_base = widget_base(state.info_base_id, /row, /base_align_right)
 
 
 state.frame_id = cw_bgroup(minmax_fram_base, ['0','1','2','3'], $
@@ -396,23 +398,28 @@ state.max_text_id = cw_field(min_base, $
                              /return_events, $
                              xsize = 12)
 
-tmp_string = string(1000, 1000, 1.0d-10, $
-                    format = '("(",i4,",",i4,") ",g14.7)' )
+tmp_string = string(10000, 1000, 1.0d-10, $
+                    format = '("(",i5,",",i4,") ",g14.7)' )
 
-state.location_bar_id = widget_label (state.info_base_id, $
+;state.location_bar_id = widget_label (state.info_base_id, $
+loc_base = widget_base(minmax_fram_base, /column, /base_align_right)
+
+state.location_bar_id = widget_label (loc_base, $
                                       value = tmp_string,  $
                                       uvalue = 'location_bar',  frame = 1)
 
 tmp_string = string(1.0e-10, 1.0d-10, $
                     format = '(g12.5,3x,g14.7)' )
-state.wavesig_bar_id = widget_label (state.info_base_id, $
+;state.wavesig_bar_id = widget_label (state.info_base_id, $
+state.wavesig_bar_id = widget_label (loc_base, $
                                       value = tmp_string,  $
                                       uvalue = 'wavesig_bar',  frame = 1)
 
 tmp_string = string(12, 12, 12.001, -60, 60, 60.01, ' J2000', $
         format = '(i2,":",i2,":",f6.3,"  ",i3,":",i2,":",f5.2," ",a6)' )
     
-state.wcs_bar_id = widget_label (state.info_base_id, $
+;state.wcs_bar_id = widget_label (state.info_base_id, $
+state.wcs_bar_id = widget_label (loc_base, $
                                  value = tmp_string,  $
                                  uvalue = 'wcs_bar',  frame = 1)
 
@@ -427,7 +434,8 @@ track_window = widget_draw(track_base, $
                            ysize=state.track_window_size, $
                            frame=2, uvalue='track_window')
 
-modebase = widget_base(buttonbar_base, /row, /base_align_center)
+;modebase = widget_base(buttonbar_base, /row, /base_align_center)
+modebase = widget_base(butt_fram_base, /row, /base_align_center)
 modelist = ['Color', 'Zoom', 'Blink', 'ImExam']
 mode_droplist_id = widget_droplist(modebase, $
                                    frame = 1, $
@@ -435,7 +443,8 @@ mode_droplist_id = widget_droplist(modebase, $
                                    uvalue = 'mode', $
                                    value = modelist)
 
-button_base = widget_base(buttonbar_base, row=2, /base_align_right)
+;button_base = widget_base(buttonbar_base, row=2, /base_align_right)
+button_base = widget_base(butt_fram_base, row=2, /base_align_right)
 
 invert_button = widget_button(button_base, $
                               value = 'Invert', $
@@ -1662,11 +1671,19 @@ CASE headtype OF
         dec = lat
         IF num_equinox NE 2000.0 THEN precess, ra, dec, num_equinox, 2000.0
     END 
+    ;; JXP
+    'DEC-': BEGIN    
+        ra = lon
+        dec = lat
+        IF num_equinox NE 2000.0 THEN precess, ra, dec, num_equinox, 2000.0
+    END 
+    'LINE': return, 'Blah'
+    else: stop
 ENDCASE  
 
 ; Now convert RA,dec (J2000) to desired display coordinates:  
 
-IF (disp_type[0] EQ 'RA--') THEN BEGIN ; generate (RA,dec) string 
+IF (disp_type[0] EQ 'RA--' OR disp_type[0] EQ 'DEC-') THEN BEGIN ; generate (RA,dec) string 
    disp_ra  = ra
    disp_dec = dec
    IF num_disp_equinox NE 2000.0 THEN precess, disp_ra, disp_dec, $
@@ -1792,7 +1809,7 @@ loc_string = $
          state.flipcoord[1], $
          main_image[state.flipcoord[0], $
                     state.flipcoord[1]], $
-         format = '("(",i4,",",i4,") ",g14.7)') 
+         format = '("(",i5,",",i4,") ",g14.7)') 
 widget_control, state.location_bar_id, set_value = loc_string
 
 ; update wavelength and sigma
@@ -2140,7 +2157,8 @@ end
 ;    Fits file reading routines
 ;--------------------------------------------------------------------
 
-pro xatv_readfits, fitsfilename=fitsfilename, newimage=newimage
+pro xatv_readfits, fitsfilename=fitsfilename, newimage=newimage, $
+                   EXTEN=exten, LRIS_MOS=lris_mos
 
 ; Read in a new image when user goes to the File->ReadFits menu.
 ; Do a reasonable amount of error-checking first, to prevent unwanted
@@ -2171,7 +2189,7 @@ endif else begin
 endelse
 
 ; Get fits header so we know what kind of image this is.
-head = headfits(fitsfile)
+head = headfits(fitsfile, EXTEN=exten)
 
 ; Check validity of fits file header 
 if (n_elements(strcompress(head, /remove_all)) LT 2) then begin
@@ -2187,8 +2205,10 @@ if (!ERR EQ -1) then begin
 endif
 
 ; Two system variable definitions are needed in order to run fits_info
-defsysv,'!TEXTOUT',1
-defsysv,'!TEXTUNIT',0
+defsysv,'!TEXTOUT',exists=test_exists
+if test_exists EQ 0 then defsysv,'!TEXTOUT',1 else !TEXTOUT=1
+defsysv,'!TEXTUNIT',exists=test_exists
+if test_exists EQ 0 then defsysv,'!TEXTUNIT',0 else !TEXTUNIT=0
 
 ; Find out if this is a fits extension file, and how many extensions
 ; JXP kludge to deal with error in fits_info
@@ -2199,7 +2219,7 @@ origin = strcompress(sxpar(head, 'ORIGIN'), /remove_all)
 naxis = sxpar(head, 'NAXIS')
 
 ; Make sure it's not a 1-d spectrum
-if (numext EQ 0 AND naxis LT 2) then begin
+if (numext EQ 0 AND naxis LT 2) and not keyword_set(LRIS_MOS) then begin
     xatv_message, 'Selected file is not a 2-d FITS image!', $
       window = window, msgtype = 'error'
     return
@@ -2216,8 +2236,10 @@ endif else if ((instrume EQ 'WFPC2') AND (naxis EQ 3)) then begin
     xatv_wfpc2_read, fitsfile, head, cancelled
 endif else if ((naxis EQ 3) AND (origin EQ '2MASS')) then begin
     xatv_2mass_read, fitsfile, head, cancelled
+endif else if keyword_set(LRIS_MOS) then begin
+    xatv_lrismos_read, fitsfile, head
 endif else begin
-    xatv_plainfits_read, fitsfile, head, cancelled
+    xatv_plainfits_read, fitsfile, head, cancelled, EXTEN=exten
 endelse
 
 if (cancelled EQ 1) then return
@@ -2305,8 +2327,7 @@ xatv_setmain
 end
 
 ;----------------------------------------------------------------
-
-pro xatv_plainfits_read, fitsfile, head, cancelled
+pro xatv_plainfits_read, fitsfile, head, cancelled, EXTEN=exten
 
 common xatv_state
 common xatv_images
@@ -2314,7 +2335,27 @@ common xatv_images
 ; Fits reader for plain fits files, no extensions.
 
 delvarx, main_image
-main_image = xmrdfits(fitsfile, 0, head, /silent, /fscale) 
+if not keyword_set( EXTEN ) then exten = 0L
+main_image = xmrdfits(fitsfile, exten, head, /silent, /fscale) 
+xatv_setmain
+
+end
+
+;----------------------------------------------------------------
+pro xatv_lrismos_read, fitsfile, head
+
+common xatv_state
+common xatv_images
+
+; Fits reader for plain fits files, no extensions.
+
+delvarx, main_image
+;;
+image = x_readmhdufits(fitsfile, header=head, /notrim, $
+                       /nobias)
+if strcmp(strcompress(sxpar(head, 'INSTRUME'), /rem),'LRISBLUE') then $
+  image = rotate(image,7)  ;; Rotating to original orientatio of LRISb
+main_image = image 
 xatv_setmain
 
 end
@@ -2445,7 +2486,7 @@ if (filename EQ '') then return
 if (nfiles GT 0) then begin
     mesg = strarr(2)
     mesg[0] = 'Overwrite existing file:'
-    tmp_string = strmid(filename, rstrpos(filename, '/') + 1)
+    tmp_string = strmid(filename, strpos(filename, '/',/reverse_search) + 1)
     mesg[1] = strcompress(tmp_string + '?', /remove_all)
     result =  dialog_message(mesg, $
                              /default_no, $
@@ -2556,7 +2597,7 @@ result = ''
 if (nfiles GT 0) then begin
     mesg = strarr(2)
     mesg[0] = 'Overwrite existing file:'
-    tmp_string = strmid(forminfo.filename, rstrpos(forminfo.filename, '/') + 1)
+    tmp_string = strmid(forminfo.filename, strpos(forminfo.filename, '/',/reverse_search) + 1)
     mesg[1] = strcompress(tmp_string + '?', /remove_all)
     result =  dialog_message(mesg, $
                              /default_no, $
@@ -2844,10 +2885,10 @@ state.imagename = state.svimgnm[nimg]
 if (state.imagename EQ '') then begin
     widget_control, state.base_id, tlb_set_title = 'xatv'
 endif else begin
-    slash = rstrpos(state.imagename, '/')
+    slash = strpos(state.imagename, '/',/reverse_search)
     ; inserted untested code for MacOS and Windows delimiters
-    if (slash EQ -1) then slash = rstrpos(state.imagename, '\')
-    if (slash EQ -1) then slash = rstrpos(state.imagename, ':')
+    if (slash EQ -1) then slash = strpos(state.imagename, '\',/reverse_search)
+    if (slash EQ -1) then slash = strpos(state.imagename, ':',/reverse_search)
 
     if (slash NE -1) then name = strmid(state.imagename, slash+1) $
       else name = state.imagename
@@ -2907,7 +2948,8 @@ if (noparams EQ -1) then begin
 endif
 
 ; coordinate types that we can't use:
-if ( (strcompress(string(astr.ctype[0]), /remove_all) EQ 'PIXEL') $
+if ( (strcompress(string(astr.ctype[0]), /remove_all) EQ 'PIXEL') OR $
+     (strcompress(string(astr.ctype[0]), /remove_all) EQ 'pixel') $
      or (strcompress(string(astr.ctype[0]), /remove_all) EQ '') ) then begin
     widget_control, state.wcs_bar_id, set_value = '---No WCS Info---'
     state.wcstype = 'none'
@@ -5617,7 +5659,11 @@ pro xatv, image, frameno, $
           wvimg=wvimg, $
           GETWV=getwv, $
           GETSKY=getsky, $
-          GETSIG=getsig
+          GETSIG=getsig, $
+          arcpow=arcpow, $
+          EXTEN=exten, $
+          VACUUM=vacuum, $
+          LRIS_MOS=lris_mos
 
 common xatv_state
 common xatv_images
@@ -5674,7 +5720,8 @@ if ( (n_params() NE 0) AND (size(image, /tname) EQ 'STRING')) then begin
     if (count EQ 0) then begin
         print, 'ERROR: File not found!'
     endif else begin
-        xatv_readfits, fitsfilename=ifexists[0], newimage=newimage
+        xatv_readfits, fitsfilename=ifexists[0], newimage=newimage, $
+          EXTEN=exten, LRIS_MOS=lris_mos
     endelse
 endif
 
@@ -5716,6 +5763,8 @@ if keyword_set( WVIMG ) then begin
     ; Update flag
     if state.wavesig_flg MOD 2 EQ 0 then state.wavesig_flg = state.wavesig_flg + 1
     wave_image = x_readimg(wvimg, /dscale)
+    if keyword_set(arcpow) then wave_image = 10^wave_image
+    if keyword_set(vacuum) then airtovac, wave_image 
 endif
 
 if keyword_set( GETWV ) then begin

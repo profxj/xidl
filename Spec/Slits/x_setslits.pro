@@ -1,195 +1,216 @@
 ;+ 
 ; NAME:
-; x_setslits   
-;    Version 1.0
-;
+;   x_setslits
 ; PURPOSE:
-;    Finds slit edges on the 'flattened' flat
-;      WARNING -- This program has only been tested for the WFCCD
-;
+;    Finds slit edges on the 'flattened' flat in the presence of rotation
 ; CALLING SEQUENCE:
-;   
-;   x_setslits, slitstr, flatimg
-;
+;   slackers_setslits, flatimg, slitstr
 ; INPUTS:
-;   slitstr     - Slit structure
 ;   flat        - Flat image or fits file
-;
-; RETURNS:
-;
-; OUTPUTS:
-;
-; OPTIONAL KEYWORDS:
-;
-; OPTIONAL OUTPUTS:
-;
+;   slitstr     - Slit structure
 ; COMMENTS:
-;
-; EXAMPLES:
-;   x_setslits, slitstr, flatimg
-;
-;
-; PROCEDURES/FUNCTIONS CALLED:
-;
+;   This piece of code allows for a slight rotation (-2 to 2 deg) of
+;   the mask, which can cause overlapping slits and other annoying
+;   things.
 ; REVISION HISTORY:
-;   14-Feb-2002 Written by JXP
+;  14-Feb-2002 Written by JXPj
+;   6-Apr-2004 Revised by MRB 
 ;-
 ;------------------------------------------------------------------------------
+pro match_slits, peak, guess, imatch
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ipeak=sort(peak)
+iguess=sort(guess)
 
-pro x_setslits, flat, slitstr, YSTRT=ystrt, DEBUG=debug
+j=0L
+imatch=lonarr(n_elements(guess))-1L
+for i=0L, n_elements(iguess)-1L do begin
+    while(peak[ipeak[j]] lt guess[iguess[i]] and $
+          j lt n_elements(ipeak)-1L) do j=j+1L
+    jlo=j-1L
+    jhi=j
+    if(j eq 0L) then begin
+        jlo=0L
+        jhi=1L
+    endif
+    if(j eq n_elements(peak)-1L) then begin
+        jlo=n_elements(peak)-2L
+        jhi=n_elements(peak)-1L
+    endif
+    dm0=abs(peak[ipeak[jlo]]-guess[iguess[i]])
+    dm1=abs(peak[ipeak[jhi]]-guess[iguess[i]])
+    if(dm0 le dm1) then imatch[iguess[i]]=jlo else imatch[iguess[i]]=jhi
+endfor
 
+end
+;
+pro x_setslits, flat, slitstr, YSTRT=ystrt, DEBUG=debug, $
+                       MINMAXTHETA=minmaxtheta, NTHETA=ntheta, $
+                       MINMAXSHIFT=minmaxshift, NSHIFT=nshift, $
+                       NOFIT=nofit, THETA=theta, SHIFT=shift
 
-;  Error catching
-  if  N_params() LT 2  then begin 
+; Error catching
+if  N_params() LT 2 then begin 
     print,'Syntax - ' + $
-             'x_setslits, flat, slitstr [v1.0]'
+      'slackers_setslits, flat, slitstr'
     return
-  endif 
+endif 
 
+; Optional Keywords
+if not keyword_set( YSTRT ) then ystrt = 400L
+if not keyword_set( MINMAXTHETA ) then minmaxtheta = [-2.,2.] ; in deg
+if not keyword_set( NTHETA ) then ntheta=200L
+if not keyword_set( MINMAXSHIFT ) then minmaxshift = [-50.,50.] ; in pix
+if not keyword_set( NSHIFT ) then nshift=200L
+if not keyword_set( WIDTH ) then width=80L
+if not keyword_set( NSIG ) then nsig=50.
+if not keyword_set( CLOSESLIT ) then closeslit=5.
 
-;  Optional Keywords
-
-  if not keyword_set( YSTRT ) then ystrt = 400L
-  if not keyword_set( MXSHFT ) then mxshft = 150L
+if(keyword_set(NOFIT)) then begin
+    nx=(size(flat,/dim))[0]
+    ny=(size(flat,/dim))[1]
+    nslit=n_elements(slitstr)
+    slitstr.yedg_flt=slitstr.yedg-shift-theta*!DPI* $
+      (replicate(1.,2)#slitstr.xpos-0.5*float(nx))/180.
+endif else begin
 
 ; Allow flat to be fits file
+    dat = x_readimg(flat, /fscale)
+    sz_img = size(dat, /dimensions)
 
-  dat = x_readimg(flat, /fscale)
-  sz_img = size(dat, /dimensions)
+; Now find the initial guess for slit positions by trying a whole
+; bunch of offsets and rotation angles. 
+    nslit = n_elements(slitstr)
 
-; Reset yedg for median
+    mintheta=minmaxtheta[0]*!DPI/180.
+    maxtheta=minmaxtheta[1]*!DPI/180.
+    thetas=mintheta+(maxtheta-mintheta)*(findgen(ntheta)+0.5)/float(ntheta)
+    minshift=minmaxshift[0]
+    maxshift=minmaxshift[1]
+    shifts=minshift+(maxshift-minshift)*(findgen(nshift)+0.5)/float(nshift)
 
-  nslit = n_elements(slitstr)
+    smsh = djs_median(dat[ystrt-width/2L:ystrt+width/2L,*],1)
+    saw = shift(smsh,1) - shift(smsh,-1)
+    x_fndpeaks, abs(saw), center, NSIG=nsig, PEAK=peak, /thin, $
+      /force, pkwdth=1, /silent
 
-; Create the sawtooth
+    nx=(size(flat,/dim))[0]
+    ny=(size(flat,/dim))[1]
+    chi2=fltarr(ntheta,nshift)
+    for i=0L, ntheta-1L do begin
+        for j=0L, nshift-1L do begin
+            guess=slitstr.yedg-shifts[j]-thetas[i]* $
+              (replicate(1.,2)#slitstr.xpos-0.5*float(nx))
+            match_slits, peak, guess, imatch
+            chi2[i,j]=total((peak[imatch]-guess)^2,/double)
+        endfor
+    endfor
+    minchi2=min(chi2, imin)
+    theta=thetas[imin mod ntheta]
+    shift=shifts[imin/ntheta]
+    guess=slitstr.yedg-shift-theta* $
+      (replicate(1.,2)#slitstr.xpos-0.5*float(nx))
 
-  smsh = djs_median(dat[ystrt-10:ystrt+10,*],1)
-  saw = shift(smsh,1) - shift(smsh,-1)
-  npix = n_elements(saw)
+; Proceed with this guess --- find the nearest bottom to each bottom,
+;                             the nearest top to each top, within the
+;                             distance CLOSESLIT; if none, revert to
+;                             the guess
+    tops=peak[where(saw[peak] GT 0, ntop)]
+    if(ntop eq 0) then message, 'no tops in the flat, must not be a flat image'
+    match_slits, tops, guess[1,*], imatch
+    for i=0L, nslit-1L do begin
+        dm=abs(guess[1,i]-tops[imatch[i]])
+        if(dm lt closeslit) then begin
+            slitstr[i].yedg_flt[1]=tops[imatch[i]]
+        endif else begin
+            slitstr[i].yedg_flt[1]=guess[1,i]
+            splog,'using guess for top of slit '+string(i)+' at '+ $
+              string(guess[1,i])
+        endelse
+    endfor
 
-; Create a 'spectrum' of the slits
-  slit_spec = fltarr(sz_img[1])
-  for q=0L,nslit-1 do begin
-      tp_slit = round(slitstr[q].yedg[1]) < (sz_img[1]-4)
-      ; Make peak
-      slit_spec[tp_slit-1] = 0.3
-      slit_spec[tp_slit] = 1.
-      slit_spec[tp_slit+1] = 0.3
-      ; Bottom
-      bt_slit = 0 > round(slitstr[q].yedg[0])
-      ; Make valley
-      slit_spec[bt_slit] = -0.3
-      slit_spec[bt_slit-1] = -1.
-      slit_spec[bt_slit-2] = -0.3
-  endfor
-  
-; Trim the edges
-  saw[0:5] = 0.
-  saw[npix-5:npix-1] = 0. 
+    bots=peak[where(saw[peak] LT 0, nbot)]
+    if(nbot eq 0) then message, 'no bots in the flat, must not be a flat image'
+    match_slits, bots, guess[0,*], imatch
+    for i=0L, nslit-1L do begin
+        dm=abs(guess[0,i]-bots[imatch[i]])
+        if(dm lt closeslit) then begin
+            slitstr[i].yedg_flt[0]=bots[imatch[i]]
+        endif else begin
+            slitstr[i].yedg_flt[0]=guess[0,i]
+            splog,'using guess for bot of slit '+string(i)+' at '+ $
+              string(guess[0,i])
+        endelse
+    endfor
+    slitstr.yedg_flt=(slitstr.yedg_flt > 1.) < (float(ny)-2.)
 
-; FFT
-  fft_saw = fft(saw)
-  fft_spec= fft(slit_spec)
+; check for zero-width slits
+    for i=0L, nslit-1L do begin
+        if(slitstr[i].yedg_flt[0] ge slitstr[i].yedg_flt[1]) then $
+          message, 'zero-width slit found, that is not supposed to happen'
+    endfor
 
-; CORRELATE
-  corr = fft( fft_saw * conj(fft_spec), /inverse)
+endelse
 
-; ANS
-  ans = double(corr)
+; Now that we have the full slits determined, make them
+; non-overlapping 
+;   a- count number of slits covering each row
+ninrow=lonarr(ny)
+for i=0L, nslit-1L do begin
+    rlo=long(djs_floor(slitstr[i].yedg_flt[0]))
+    rhi=long(djs_ceil(slitstr[i].yedg_flt[1]))
+    ninrow[rlo:rhi]=ninrow[rlo:rhi]+1L
+endfor
+;   b- within each slit, find largest contiguous set with exactly one coverage 
+for i=0L, nslit-1L do begin
+    rlo=long(djs_floor(slitstr[i].yedg_flt[0]))
+    rhi=long(djs_ceil(slitstr[i].yedg_flt[1]))
+    ione=where(ninrow[rlo:rhi] eq 1, none)
+    if(none eq 0) then begin 
+        splog, 'lost entire slit '+string(i)+ $
+          ' (priority= '+string(slitstr[i].priority)+'), setting flg_anly=0'
+        slitstr[i].flg_anly=0
+    endif else begin 
+        inot=where(ninrow[rlo:rhi] ne 1, nnot)
+        if(nnot gt 0) then begin
+            ncontig=0L
+            for r=rlo, rhi do begin
+                for rp=r, rhi do begin
+                    if(rp-r+1L gt ncontig) then begin
+                        inot=where(ninrow[r:rp] ne 1, nnot)
+                        if(nnot eq 0) then begin
+                            contighi=rp
+                            contiglo=r
+                            ncontig=rp-r+1L
+                        endif
+                    endif
+                endfor
+            endfor
+            slitstr[i].yedg_flt[0]=contiglo-0.5
+            slitstr[i].yedg_flt[1]=contighi+0.5
+        endif
+    endelse
+endfor
 
-;;;;;;;;
-;; DEBUG
-  if keyword_set( DEBUG ) then begin
-      x_splot, ans, /block
-      stop
-  endif
-
-; Get SHIFT
-  mx1 = max(ans[0:mxshft-1], shift1)
-  mx2 = max(ans[sz_img[1]-mxshft-1:sz_img[1]-1], shift2)
-  if mx2 GT mx1 then shift = shift2+sz_img[1]-mxshft-1 else shift = shift1
-  if shift GT (sz_img[1]/2) then shift = shift - sz_img[1]
-
-; Find the peaks
-  x_fndpeaks, abs(saw), center, NSIG=50., PEAK=peak, /thin, $
-    /force, pkwdth=1, /silent
-;  tsaw = saw
-;  tpeak = peak
-;  x_splot, abs(saw), XTWO=center, YTWO=abs(saw[peak]), PSYM_Y2=2, /block
-;  x_fndpeaks, abs(saw), center, NSIG=50., PEAK=peak, /thin, /norecent
-;  npk = n_elements(peak)
-
-; Sort the slit tops from top to bottom
-;  srt = sort(slitstr.yedg[1])
-;  srt = reverse(srt)
-  
-; Reverse peak as necessary (and flip saw)
-;  if abs(peak[0]-slitstr[srt[0]].yedg[1]) GT $
-;    abs(peak[npk-1]-slitstr[srt[0]].yedg[1]) then begin
-;;      peak = reverse(peak)
-;      saw = -saw
-;  endif
-
-; Find tops and bottoms
-  top = peak[where(saw[peak] GT 0, ntop)]
-  bot = peak[where(saw[peak] LT 0, nbot)]
-
-  ; Padding
-  bot = [-10000, bot, -10000, -10000]
-  top = [-10000, top, -10000, -10000]
-  
-; LOOP ON SLITS
-
-  dslit = fltarr(9)
-  cslit = fltarr(9)
-  for ii=0L,nslit-1 do begin
-      ; Get nearest top and bot
-      mn = min(abs(slitstr[ii].yedg[1]+shift - top), itop)
-      mn = min(abs(slitstr[ii].yedg[0]+shift - bot), ibot)
-
-      ; D values
-      dslit[0] = top[itop]-bot[ibot]
-      dslit[1] = top[itop]-bot[ibot+1]  
-      dslit[2] = top[itop+1]-bot[ibot]
-      dslit[3] = top[itop-1]-bot[ibot]
-      dslit[4] = top[itop]-bot[ibot-1]
-      dslit[5] = top[itop+1]-bot[ibot-1]
-      dslit[6] = top[itop-1]-bot[ibot+1]
-      dslit[7] = top[itop+1]-bot[ibot+1]
-      dslit[8] = top[itop-1]-bot[ibot-1]
-
-      ; Centers
-      cslit[0] = (top[itop]+bot[ibot])/2.
-      cslit[1] = (top[itop]+bot[ibot+1])/2.  
-      cslit[2] = (top[itop+1]+bot[ibot])/2.
-      cslit[3] = (top[itop-1]+bot[ibot])/2.
-      cslit[4] = (top[itop]+bot[ibot-1])/2.
-      dslit[5] = (top[itop+1]-bot[ibot-1])/2.
-      dslit[6] = (top[itop-1]-bot[ibot+1])/2.
-      dslit[7] = (top[itop+1]-bot[ibot+1])/2.
-      dslit[8] = (top[itop-1]-bot[ibot-1])/2.
-
-      ; Slit info
-      cs = (slitstr[ii].yedg[1]+slitstr[ii].yedg[0])/2. + shift
-      ds = slitstr[ii].yedg[1]-slitstr[ii].yedg[0]
-
-      ; Good cen
-      gdcen = where(abs(cslit-cs) LT 7., ngd)
-      if ngd NE 0 then begin
-          ; MIN D
-          mn = min(abs(dslit[gdcen]-ds), best)
-          ; Set
-          slitstr[ii].yedg_flt[1] = cslit[gdcen[best]] + ds/2.
-          slitstr[ii].yedg_flt[0] = cslit[gdcen[best]] - ds/2.
-      endif else begin
-          print, 'x_setslits: No good slit.  Better check!'
-          slitstr[ii].yedg_flt[1] = cs + ds/2.
-          slitstr[ii].yedg_flt[0] = cs - ds/2.
-      endelse
-  endfor
-
-  return
+if(NOT keyword_set(NOFIT)) then begin
+; Finally, determine which are vignetted and set them to flg_anly==0
+    inone=where(ninrow eq 0, none)
+    background=median(smsh[inone])
+    sigback=djsig(smsh[inone],sigrej=3)
+    slitflux=fltarr(nslit)
+    for i=0L, nslit-1L do begin
+        rlo=long(djs_floor(slitstr[i].yedg_flt[0]))
+        rhi=long(djs_ceil(slitstr[i].yedg_flt[1]))
+        slitflux[i]=median(smsh[rlo:rhi])
+        if(slitflux[i] lt background+sigback) then begin
+            splog, 'looks like vignetted slit '+string(i)+ $
+              ' (priority= '+string(slitstr[i].priority)+ $
+              '), setting flg_anly=0'
+            slitstr[i].flg_anly=0
+        endif
+    endfor
+endif
+    
+return
 end
 

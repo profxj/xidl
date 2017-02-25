@@ -1,0 +1,40 @@
+** 1.   Reject lines to improve 1D Arc fit RMS:  Orders 89, 90, 100
+  --- I wonder if line centroiding is failing in x_templarc
+** 2.   Deal with vignetting at >4000pix in Trace flat
+  -- Just blue?
+** 3.   Modify hires_slitflat as Scott suggested (extrapolation)
+**4.   Worry about scattered light in skysub
+**5.   Add header to Final files
+** 6.   Subtract scattered light prior to Flat normalization
+** 7.   Consider optical mapping of the wavelength solution
+** 8.   Worry about DETILT for Internal flats
+** 9.   Fit higher order to interpolation in x_fntobj
+**10.  Set aper according to seeing (i.e. obj profile)
+11.  Wavelengths wrong at edge of Order #68?
+**12.  Add an asymmmetric profile for Optimal (non-parametric?)
+**13.  Need to improve sky sub for X Optimal
+** 14.  Bluest orders are probably dragging things down in x_fittflat; 
+**      Consider a separation limit on using it in the fit.  That is, don't
+**      fit them but do extrapolate. Only should be important for the blue chip.
+** 15.  Normalization in the bluest orders is not so good.   Probably best to
+	do NO NORMALIZATION in those orders for now.
+     The problem is more scattered light than anything else.  This would
+     be solved with a better flat.
+**16.  Why are the counts so discrete given the OV sub?
+**17.  Fix wavelength zeropoint.  Something is wrong
+18.  Enable stacked flat input for hires_qckrdx
+19.  Create logfiles of diagnostic output
+20.  Consider lower order coeff for Arc solutions
+** 21.  Fix helio!!
+22.  Set row_shift in fitarc according to Delta(ECHANGL)
+## 23.  Change x_templarc so that it can return only 5 lines well spaced on the chip
+  with maximum signal
+24.  Consider a Bias frame
+25.  Get more arc lines for the bluest orders
+*26.  Toss out orders on the edge for Edgeflat
+27.  Toss out orders for tracing (optional)
+	28.  Deal with slit edges for setups without Flats (extrapolate the 
+	  normalization out a few pixels or toss out...)
+29.  Modify hires_fndtmpl so that ECHANGL is minimized when getting the
+   'outlying' orders
+30.  Mask out bad columns

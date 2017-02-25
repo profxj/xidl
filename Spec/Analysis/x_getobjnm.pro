@@ -1,17 +1,19 @@
 ;+ 
 ; NAME:
 ; x_getobjnm
-;    Version 1.0
+;    Version 1.1
 ;
 ; PURPOSE:
-;  Get the index of the object name OR return the list of obj_nm
+;  Get the index of the object name OR return the list of obj_nm.
+;  This is a pretty specific routine.  If obj_nm is not specified the
+;  routine launches a GUI to have the user choose.
 ;
 ; CALLING SEQUENCE:
-;   
-;   indx = x_getobjnm(objstr, [obj_nm])
+;   indx = x_getobjnm(objstr, [obj_nm], LST=)
 ;
 ; INPUTS:
-;  objstr
+;  objstr  -- Object structure
+;  [obj_nm] -- Name of object for which the index is desired
 ;
 ; RETURNS:
 ;   indx -  Index of the object name OR list of obj_nm
@@ -19,17 +21,19 @@
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
-;  LIST - Return the list instead of the index
+;  /LST - Return the list instead of the index
 ;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   x_objfspec, x, maskid, expsr
+;  indx = x_getobjnm(objstr)
+;  list = x_getobjnm(objstr, /LST)
 ;
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
+; x_guilist
 ;
 ; REVISION HISTORY:
 ;   30-Jul-2002 Written by JXP

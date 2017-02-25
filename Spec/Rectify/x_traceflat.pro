@@ -1,28 +1,32 @@
 ;+ 
 ; NAME:
 ; x_traceflat   
-;    Version 1.0
+;    Version 1.1
 ;
 ; PURPOSE:
 ;    Traces the y-distortion of a flat of a number of slits
 ;
 ; CALLING SEQUENCE:
-;   
-;   x_traceflat, img, map
+;  x_traceflat, img, tracestrct, VAR=, GAIN=, RN=, SAW=, $
+;                ystrt=, /NOTRANS
 ;
 ; INPUTS:
 ;   img       - Input image
 ;
 ; RETURNS:
+; trcstr -- A trace structure describing the curvature of individual
+;           slits or orders
 ;
 ; OUTPUTS:
-;   map - Map of the y-distortion
 ;
 ; OPTIONAL KEYWORDS:
-;   YSTRT - COLUMN/ROW to start at
-;   NOTRANS - No transpose of original image
+;  YSTRT    -- COLUMN/ROW to start at
+;  /NOTRANS  -- Do not transpose original image
+;  VAR=     -- Variance image input
+;  GAIN,RN= -- Values to create a VAR array
 ;
 ; OPTIONAL OUTPUTS:
+;  SAW=  -- The sawtooth image
 ;
 ; COMMENTS:
 ;
@@ -48,7 +52,7 @@ pro x_traceflat, img, tracestrct, VAR=var, GAIN=gain, RN=rn, SAW=saw, $
   if  N_params() LT 2  then begin 
     print,'Syntax - ' + $
              'x_traceflat, img, tracestrct, VAR=, GAIN=, RN=, SAW= '
-    print,   '           ystrt= [v1.0]'
+    print,   '           ystrt= [v1.1]'
     return
   endif 
 

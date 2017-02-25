@@ -1,17 +1,16 @@
 ;+ 
 ; NAME:
 ; x_setapergui   
-;       Version 1.0
+;       Version 1.1
 ;
 ; PURPOSE:
-;   Sets objects and apertures interactively
+;   Sets objects and apertures interactively using a GUI
 ;
 ; CALLING SEQUENCE:
-;   
-;   x_setapergui, img, [head]
+;   x_setapergui, img, XSIZE=, YSIZE=, CLINE=, PEAKFRAC=, OBJSTR=
 ;
 ; INPUTS:
-;   img       - Values 
+;   img   - 1D or 2D image
 ;
 ; RETURNS:
 ;
@@ -20,15 +19,17 @@
 ; OPTIONAL KEYWORDS:
 ;   xsize      - Draw window xsize (pixels)
 ;   ysize      - Draw window ysize (pixels)
-;   CLINE      - Center line for 2D image
+;   CLINE      - Center line for 2D image to 'extract' 1D [default: sz[1]/2]
+;   PEAKFRAC=  - Fraction of peak 
 ;
 ; OPTIONAL OUTPUTS:
+;  OBJSTR=  -- Object structure with the aperture filled in.  This will
+;              include multiple objects if they are identified.
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
 ;   x_setapergui, 'spec.fits'
-;
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
 ;  XGETX_PLT
@@ -36,6 +37,7 @@
 ;  XGETXPIX_PLT
 ;  XGETYPIX_PLT
 ;  GETCOLOR (Coyote)
+;  DJS_MEDIAN
 ;
 ; REVISION HISTORY:
 ;   17-Nov-2001 Written by JXP
@@ -143,12 +145,12 @@ pro x_setapergui_event, ev
               ; Quit
 
               'Q': begin
-                  if state.flg_objstr EQ 0 then begin
-                      tmp1 = state.aper
-                      state.aper[0] = tmp1[0] < tmp1[1]
-                      state.aper[1] = tmp1[0] > tmp1[1]
-                      *state.pnt_aper = state.aper
-                  endif
+;                  if state.flg_objstr EQ 0 then begin
+                  tmp1 = state.aper
+                  state.aper[0] = tmp1[0] < tmp1[1]
+                  state.aper[1] = tmp1[0] > tmp1[1]
+                  *state.pnt_aper = state.aper
+;                  endif
                   widget_control, ev.top, /destroy
                   return
               end
@@ -493,8 +495,17 @@ common x_setapergui_cmmn
 
 ;  Optional Keywords
 
-  if not keyword_set( XSIZE ) then    xsize = 1000
-  if not keyword_set( YSIZE ) then    ysize = 600
+  device, get_screen_size=ssz
+  if not keyword_set( XSIZE ) then begin
+      if ssz[0] gt 2*ssz[1] then begin    ;in case of dual monitors
+          ssz[0]=ssz[0]/2      
+          ; force aspect ratio in case of different screen resolution,
+          ; assumes widest resolution used is a 1.6 aspect ratio.
+          if ssz[0]/ssz[1] lt 1.6 then ssz[1]=ssz[0]/1.6 
+      endif
+      xsize = ssz[0]-400
+  endif
+  if not keyword_set( YSIZE ) then    ysize = ssz[1]-400
   if not keyword_set( PEAKFRAC ) then    peakfrac = 0.15
   
 ; Convert to 1D as necessary
@@ -514,7 +525,7 @@ common x_setapergui_cmmn
   if arg_present( OBJSTR ) then flg_objstr = flg_objstr + 1
   x_setapergui_initcommon, flg_objstr, objstr
 
-
+  
 ;    STATE
   state = { fx: ydat, $
             wave: findgen(n_elements(ydat)), $

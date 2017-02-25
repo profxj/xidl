@@ -1,19 +1,19 @@
 ;+ 
 ; NAME:
 ; x_fluxcalib   
-;    Version 1.0
+;    Version 1.1
 ;
 ; PURPOSE:
 ;    Given a spectrum and a flux calib solution, calibrate
 ;
 ; CALLING SEQUENCE:
-;   
-;   fx_fnu = x_fluxcalib(wv, fx, fitstr)
+;   fx_fnu = x_fluxcalib(wv, fx, fitstr, [var, newvar], /FLAMBDA, DLMB=, TRUCONV=)
 ;
 ; INPUTS:
 ;   wv   - Wavelength array
 ;   fx   - Stellar flux  (e- per pixel)
 ;   fitstr - Calibration fitting function (assumes alog10 for flux)
+;   [var]  - Variance array
 ;
 ; RETURNS:
 ;   fx_fnu - Flux in fnu (or flambda)
@@ -21,9 +21,12 @@
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
-;   FLAMBDA - Return flambda instead of fnu
+;   /FLAMBDA - Return flambda instead of fnu
+;   DLMB -- Delta lambda (or km/s if negative) of wavelength array
+;   /LINEAR - Assume fitstr *not* in alog10 for flux
 ;   
 ; OPTIONAL OUTPUTS:
+;   newsig -- Fluxed variance array
 ;
 ; COMMENTS:
 ;
@@ -40,22 +43,24 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-function x_fluxcalib, wv, fx, fitstr, var, newsig, $
+function x_fluxcalib, wv, fx, fitstr, var, newsig, LINEAR=linear, $
                       DLMB=dlmb, FLAMBDA=flambda, TRUCONV=truconv
 ;
   if  N_params() LT 3  then begin 
     print,'Syntax - ' + $
       'fx_fnu = x_fluxcalib(wv, fx, fitstr, [var, newvar], /FLAMBDA, '
-    print, '            DLMB=, TRUCONV=) [v1.0]'
+    print, '            /LINEAR, DLMB=, TRUCONV=) [v1.1]'
     return, -1
   endif 
 
 ;  Optional Keywords
+  if not keyword_set(scale) then scale = 1.
 
 ; Calculate the conversion factor
   convfact = x_calcfit(wv, FITSTR=fitstr)
   ; Take 10^
-  truconv = 10.^convfact
+  if keyword_set(LINEAR) then truconv = convfact $
+  else truconv = 10.^convfact   ; could be really large
 
 ; Find dwv at each pixel
 

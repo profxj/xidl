@@ -1,0 +1,160 @@
+<html>
+<head>
+<title>The Low-Redux Page</title>
+</head>
+<body TEXT="Black" bgcolor="#DEDED3" link="Blue" vlink="Brown" alink="Pink">
+<b>
+<center><hr>
+<h2>
+<font size="+3" color="#0F75FF">
+The Low-Redux Page</font></h2>
+<hr></center></b>
+
+<font size="+2"> 
+<center>
+<h3> Brought to you by: <br>
+<br>
+ <a href="http://astro.berkeley.edu/~jhennawi"> Joe Hennawi</a> (UC Berkeley) 
+<br>
+ <a href="http://web.mit.edu/physics/facultyandstaff/faculty/scott_burles.html"> Scott Burles</a> (MIT)
+<br>
+  David Schlegel (LBL) <br>
+  <a href="http://www.ucolick.org/~xavier"> Jason X. Prochaska</a> 
+  (UCO/Lick Observatory) <br>
+</h3>
+</font>
+<hr>
+
+<font size="+1"> 
+<h4>  The core routines in this package have been developed to reduce longslit and multi-slit data from several, optical spectrometers on the Keck, Gemini, MMT, and Lick telescopes.  The routines were initially developed for observations of faint point sources (quasars) but have been tested on 
+bright point sources and relatively bright galaxies.
+
+<hr>
+
+<table border = "0" cellspacing="10" cellpadding="3"><tr>
+<td  width="200" align="left" valign="top" bgcolor="LightGreen" >
+<center>
+<hr> <h3>Quick Links</h3>
+<hr>
+<h4><a href="http://www.ucolick.org/~xavier/IDL/xidl_install.html">Low-Redux (XIDL) Install</a></h4>
+<h4><a href="kast_cook.html">Lick/KAST cookbook</a></h4>
+<h4><a href="lris_cook.html">Keck/LRIS cookbook</a></h4>
+<h4><a href="gmos_cookbook_v1.1.txt">GMOS cookbook</a></h4>
+<h4><a href="lowredux_qa.html">Low-Redux QA Examples</a></h4>
+<h4><a href="lowredux_version.html">Low-Redux Version Notes</a> </h4>
+<br>
+</font>
+<br>
+</center>
+<br></td>
+
+<td width="500" valign="top">
+<b>
+<H3><font color="Red"> I. Overview of the Code</font></h3>
+The code was developed in the spirit of algorithms developed for the 
+SDSS spectral pipeline, the DEIMOS spectral pipeline, and the
+echelle pipelines developed for the MIKE and HIRES spectrometers. 
+Unlike many of these other codes, the routines here are meant to
+form a nearly black-box pipeline.  This is especially true for
+longslit reductions.  
+<br>
+
+The general approach of the code is as follows: 
+<ol>
+  <li> Examine the set of data files to determine image type.
+  <li> User then edits the 'plan' file.  
+  <li> All of the following steps occur within one routine
+  <ul>
+    <li> Process the flats and trace the orders
+    <li> Process the arcs and create 2D wavelength solutions 
+    <li> Create a slit profile
+    <li> Process the object frames (flatten, CR reject)
+    <li> Identify and trace the objects in the slit
+    <li> Sky subtract
+    <li> Extract
+    <li> Correct for flexure using sky lines
+    <li> Correct to vaccum, heliocentric frame
+  </ul>
+  <li> Coadd multiple exposures
+  <li> Create a sensitivity function from a standard
+  <li> Flux
+</ol>
+
+<p>
+
+
+</p>
+<H3><font color="Red"> II. Installing the Software</font></h3>
+
+The code relies on several IDL packages in addition the routines
+specific to this pipeline.
+
+<ul>
+
+ <li> The <a href="http://spectro.Princeton.EDU/idlspec2d_install.html">SDSS codes</a>
+      (both IDLUTILS and idlspec2d), 
+ <li> The <a href="http://www.ucolick.org/~xavier/IDL/index.html">XIDL</a> package built by JXP.
+</ul>
+
+
+
+<br> 
+
+More detailed notes for obtaining and installing these packages can
+be found here: <a href="http://www.ucolick.org/~xavier/IDL/xidl_install.html">install notes</a>.  We wish
+to emphasize that the code expects the most up-to-date versions of
+the Sloan codes.  Users with old versions of any of these packages beware!
+
+<H3><font color="Red"> III. Instrument Supported</font></h3>
+
+Beta Quality (best)<p>
+<ul>
+ <li> <a href="kast_cook.html"> Lick/KAST Spectrometer</a> 
+  <ul> 
+     <LI> Blue side: G1, G3 (462/3306, 800/3460) 
+     <LI> Red side:  1200/5000 grating
+  </ul> 
+ <li> <a href="bcs_cook.html"> MMT/BCS Spectrometer</a>
+  <ul> 
+     <LI> 800 grism
+     <LI> 831/3600 grism
+     <LI> 831/3900 grism
+  </ul> 
+ <li> <a href="lris_cook.html"> Keck/LRIS Spectrometer</a>
+  <ul> 
+     <LI> Both longslit and mutli-slit modes are supported
+     <LI> Blue side (longslit): 300/5000, 600/4000, 1200/3400 grisms
+     <LI> Blue side (multi-slit): 300/5000, 1200/3400 grisms
+     <LI> Red side: All gratings both multi-slit and long-slit
+  </ul> 
+</ul>
+
+Additional instruments (less supported):
+<ul>
+ <li>  Gemini/GMOS Spectrometer
+ <li>  Keck/DEIMOS Longslit
+</ul>
+  
+
+If you have a longslit spectrum you wish reduced which is not included
+in the above lists, contact JH or JXP.  Odds are we can add it to
+the package in quick fashion.  Multi-slit is more challenging, but
+will also be considered.
+
+
+<H3><font color="Red"> IV. Developing the Code + Bug Fixing</font></h3>
+
+We do encourage all users to consider ways to improve the code
+and to suggest them to us.  Of course, we'd also like to hear about
+bugs.  Please do make an effort to verify it is a bug in the code
+as opposed to 'user error'.  Along those lines, if you are a novice
+to IDL, we suspect you will have many more 'user errors' than bugs 
+to find.
+
+<hr>
+This research is supported, in part, by NSF grant AST 03-07408.
+<hr>
+
+<i>last modified May/2007</i></font></td></tr></table>
+</body>
+</html>

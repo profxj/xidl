@@ -1,31 +1,40 @@
 ;+ 
 ; NAME:
 ; lowzovi_parse   
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
-;    Launches a cw_field and grabs input from the user
-;
+;  Launches a GUI to allow the user to interactively parse all of the
+;  galaxies in a specific structure file.
+; 
 ; CALLING SEQUENCE:
-;   
-;   string = lowzovi_parse(title)
+; lowzovi_parse, gal, prs_state, RMAX=, ZMNX=, SPEC=, FLGSCI=, 
+;    SURVEY=, /NOINTER, INDX=, MAX_RHO=
 ;
 ; INPUTS:
-;   title - Title
+;   gal       -- Galaxy structure
+; [prs_state] --
 ;
 ; RETURNS:
-;   string - String
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
+;  RMAX=  -- Maximum magnitude to consider [default: 99.9]
+;  ZMNX=  -- 2-element array specifying max min of redshift interval
+;  /SPEC  -- Parse all objects with a spectrum
+;  FLGSCI= -- Sci flag (1=science target)
+;  /SURVEY -- In the main survey?
+;  /NOINTER -- Do not launch the GUI
+;  MAX_RHO= -- Maximum impact parameter
 ;
 ; OPTIONAL OUTPUTS:
+;  INDX=  -- Indices of galaxies matching the criteria
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   string = lowzovi_parse( 'Enter filename: ')
+;   lowzovi_parse, ovi
 ;
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
@@ -173,6 +182,7 @@ common lowzovi_parse_common
       a = where( lzoviparse_gal[lzoviparse_indx].flg_anly MOD 4 GT 1, na)
       if na EQ 0 then lzoviparse_indx = -1 else lzoviparse_indx = lzoviparse_indx[a]
   endif
+  if lzoviparse_indx[0] EQ -1 then return
 
   ;; Rmag
   if state.flg_rmag EQ 1 then begin
@@ -183,12 +193,14 @@ common lowzovi_parse_common
       if na EQ 0 then lzoviparse_indx = -1 $
       else lzoviparse_indx = lzoviparse_indx[a]
   endif
+  if lzoviparse_indx[0] EQ -1 then return
 
   ;; Redshift
   if state.flg_z EQ 1L then begin
       a = where( lzoviparse_gal[lzoviparse_indx].flg_anly MOD 8 GT 3, na)
       if na EQ 0 then lzoviparse_indx = -1 else lzoviparse_indx = lzoviparse_indx[a]
   endif
+  if lzoviparse_indx[0] EQ -1 then return
 
   ;; Survey
   if state.flg_survey EQ 1 then begin
@@ -196,6 +208,7 @@ common lowzovi_parse_common
       if na EQ 0 then lzoviparse_indx = -1 $
       else lzoviparse_indx = lzoviparse_indx[a]
   endif
+  if lzoviparse_indx[0] EQ -1 then return
 
   ;; Impact
   if state.flg_impact EQ 1 then begin
@@ -205,6 +218,7 @@ common lowzovi_parse_common
       if na EQ 0 then lzoviparse_indx = -1 $
       else lzoviparse_indx = lzoviparse_indx[a]
   endif
+  if lzoviparse_indx[0] EQ -1 then return
 
   ;; Zmin, zmax
   if state.flg_zmnx EQ 1 then begin
@@ -213,6 +227,7 @@ common lowzovi_parse_common
       if na EQ 0 then lzoviparse_indx = -1 $
       else lzoviparse_indx = lzoviparse_indx[a]
   endif
+  if lzoviparse_indx[0] EQ -1 then return
 
   return
 end
@@ -228,16 +243,16 @@ end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-pro lowzovi_parse, gal, prs_state, RMAX=rmax, ZMNX=zmnx, ZDELV=zdelv, $
-                   SPEC=spec, PARC=parc, FLGSCI=flgsci, SURVEY=survey, $
-                   NOINTER=nointer, INDX=indx
+pro lowzovi_parse, gal, prs_state, RMAX=rmax, ZMNX=zmnx, $
+                   SPEC=spec, FLGSCI=flgsci, SURVEY=survey, $
+                   NOINTER=nointer, INDX=indx, MAX_RHO=max_rho
 
 common lowzovi_parse_common
 
 ;
   if  N_params() LT 1  then begin 
     print,'Syntax - ' + $
-             'lowzovi_parse, ovi [v1.0]'
+             'lowzovi_parse, ovi, prs_state, RMAX=, ZMNX=, SPEC=, FLGSCI=, SURVEY=, /NOINTER, INDX=, MAX_RHO= [v1.1]'
     return
   endif 
 
@@ -292,6 +307,13 @@ common lowzovi_parse_common
 
   if keyword_set( SPEC ) then state.flg_spec = spec
   if keyword_set( FLGSCI ) then state.flg_sci = flgsci
+  ;; Zmin max
+  if keyword_set( ZMNX ) then begin
+      state.zmin = zmnx[0]
+      state.zmax = zmnx[1]
+      state.flg_zmnx = 1L
+  endif
+  
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -357,10 +379,11 @@ common lowzovi_parse_common
       WIDGET_CONTROL, base, set_uvalue = state, /no_copy
       
       xmanager, 'lowzovi_parse', base
-  endif
+      prs_state = temporary(lzoviparse_state)
+  endif else prs_state = temporary(state)
 
 ; Finish
-  prs_state = temporary(lzoviparse_state)
+  
   indx = temporary(lzoviparse_indx)
   delvarx, lzoviparse_gal
   

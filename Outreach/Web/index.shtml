@@ -1,0 +1,71 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<title> Basics of Spectroscopy</title>
+
+<!-- Input junk.html here -->
+<!-- End junk.html here -->
+<!--#include virtual="./class.html"-->
+<!--#include virtual="./noboard.html"-->
+<!--#include virtual="./header.html"-->
+
+<div id="content_panel">  
+
+<table width="930" border="0" cellspacing="0" cellpadding="0">
+        <tr><td colspan="5" class="title"><font color="red">
+   <a href="tools_wavelength.shtml"><img src="images/screen_xray.gif" height="270" border="2"/></a></font>
+        <img src="images/spacer_10x30.gif" width="50" />
+        <a href="tools_basicspec.shtml"><img src="images/waves_dispersion.gif" height="270" border="2"/></a>
+   </font> 
+        </tr>
+ </table>
+
+<center>
+<table width="930" border="0" cellspacing="0" cellpadding="0">
+        <tr><td colspan="5"><img src="images/spacer_10x30.gif" width="10" height="10" /></td>
+        </tr>
+        <tr>                <td height="5" colspan="2">&nbsp;</td>
+        </tr>   
+        <tr><td colspan="5" class="title">The Program</tr></td>
+        <tr>                <td height="5" colspan="2">&nbsp;</td> </tr>   
+    <tr>
+      <td height="40" colspan="5" align="center" valign="middle" class="non_p">
+  We have developed a set of computer-based
+inquiry tools and laboratory "experiments" aimed 
+at high school students to promote learning of physics and chemistry with
+spectroscopy.  By inquiry, we refer to engaging the student's prior knowledge
+in the process of learning new scientific content.
+These web pages describe the scientific content and process skills
+addressed by these materials.
+We encourage you to explore the material here.  Everything is 
+freely disseminated, either through these web pages or upon request.  
+<bf>Educators</bf>, please visit this 
+<a href="for_educators.shtml" class="nonp_links">link for educators</a> for a more detailed discussion
+of all the classroom materials that we have developed. 
+</p>
+Our program is run by university faculty, PhD students, and high school
+educators with a passion for educating secondary students in science.  The
+activities are primarily
+funded by the <a href="http://www.nsf.gov" class="nonp_links">National Science Foundation</a> which is
+committed to education in all areas of science and engineering, specifically
+through an NSF CAREER grant AST-0548180.
+       </td>
+    </tr>
+        <tr>                <td height="5" colspan="2">&nbsp;</td> </tr>   
+ </table>
+</center>
+
+<table width="930" border="0" cellspacing="0" cellpadding="0">
+        <tr><td colspan="5" class="title"><font color="red"><a href="tools_basicspec.shtml"><img src="images/screen_basicquasar.gif" width="380" border="2"/></a></font>
+        <img src="images/spacer_10x30.gif" width="50" />
+        <a href="tools_spectrallines.shtml"><img src="images/screen_specline.gif" width="400" border="2"/></a></font> 
+        </tr>
+ </table>
+
+</div>
+
+
+</body>
+</html>

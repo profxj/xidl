@@ -1,0 +1,203 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<title> Spectroscopic Glossary</title>
+
+<!-- Input junk.html here -->
+<!-- End junk.html here -->
+<!--#include virtual="./class.html"-->
+<!--#include virtual="./board.html"-->
+<!--#include virtual="./header.html"-->
+
+
+<div id="left_menu">
+  <table width="196" border="0" cellpadding="0" cellspacing="0">
+    <tr>
+      <td height="40">&nbsp;</td>
+    </tr>
+    <tr>
+      <td class="menu"><span class="menu_title">Glossary</span></td>
+    </tr>
+    <tr>
+      <td class="menu">&nbsp;</td>
+    </tr>
+    <tr>
+      <td class="menu"><span class="menu_title"><a name="alphabetical" id="alphabetical"></a>All (Alphabetical)</span></td>
+    </tr>
+    <tr> <td class="menu"><a href="#absline" class="menu_text">absorption line</a></td> </tr>
+    <tr> <td class="menu"><a href="#angstrom" class="menu_text">Angstrom</a></td> </tr>
+    <tr> <td class="menu"><a href="#color" class="menu_text">color</a></td> </tr>
+    <tr> <td class="menu"><a href="#Doppler shift" class="menu_text">Doppler shift</a></td> </tr>
+    <tr> <td class="menu"><a href="#emissline" class="menu_text">emission line</a></td> </tr>
+    <tr> <td class="menu"><a href="#light" class="menu_text">light</a></td> </tr>
+    <tr> <td class="menu"><a href="#photon" class="menu_text">photon</a></td> </tr>
+    <tr> <td class="menu"><a href="#quasar" class="menu_text">quasar</a></td> </tr>
+    <tr> <td class="menu"><a href="#redshift" class="menu_text">redshift</a></td> </tr>
+    <tr> <td class="menu"><a href="#specline" class="menu_text">spectral line</a></td> </tr>
+    <tr> <td class="menu"><a href="#spectroscopy" class="menu_text">spectroscopy</a></td> </tr>
+    <tr> <td class="menu"><a href="#spectrum" class="menu_text">spectrum</a></td> </tr>
+    <tr> <td class="menu"><a href="#wavelength" class="menu_text">wavelength</a></td> </tr>
+    <tr>
+      <td height="10">&nbsp;</td>
+    </tr>
+    <tr>
+      <td class="menu"><span class="menu_title"><a name="basics" id="basics"></a>Basics</span></td>
+    </tr>
+    <tr> <td class="menu"><a href="#absline" class="menu_text">absorption line</a></td> </tr>
+      <tr> <td class="menu"><a href="#color" class="menu_text">color</a></td> </tr>
+      <tr> <td class="menu"><a href="#emissline" class="menu_text">emission line</a></td> </tr>
+    </tr>
+    <tr>
+    <tr>
+      <td height="10">&nbsp;</td>
+    </tr>
+    <tr>
+      <td class="menu"><span class="menu_title"><a name="celestial" id="celestial"></a>Celestial Objects</span></td>
+    </tr>
+    <tr>
+      <td class="menu"><a href="#quasar" class="menu_text">quasar</a></td>
+    </tr>
+    <tr>
+      <td height="10">&nbsp;</td>
+    </tr>
+    <tr>
+      <td class="menu"><span class="menu_title">Kinematics (motion)</span></td>
+    </tr>
+    <tr> <td class="menu"><a href="#Doppler shift" class="menu_text">Doppler shift</a></td> </tr>
+    <tr> <td class="menu"><a href="#redshift" class="menu_text">redshift</a></td> </tr>
+    <tr>
+      <td height="10">&nbsp;</td>
+    </tr>
+  </table>
+
+</div>
+
+<div id="content_panel">
+  <table width="720" border="0" cellspacing="0" cellpadding="5">
+	<tr>
+		<td height="5" colspan="2">&nbsp;</td>
+	</tr>
+	<tr>
+		<td colspan="2" class="title"></td>
+	</tr>
+    <tr>
+      <td width="200" valign="top"><img src="images/glossary/absline.gif" alt="JXP" width="200" vspace="40" /></td>
+      <td width="418"><p><a name="absline" id="absline"></a></p>
+        <p><span class="p_lead_in style2">absorption line</span> A feature identified
+in the spectrum of an object.  It marks the absence of light at a specific wavelength,
+most frequently due to atoms in front or within the object.  These atoms absorb the
+light and usually re-emit it into a new direction that is not exactly toward us.
+These spectral lines are used to measure the chemical composition, 
+velocity, temperature,
+and motions of astronomical objects.  Note that an absorption line is the silhouette
+of an <a href="#emissline">emission line</a>.
+    </tr>
+
+    <tr>
+      <td width="200" valign="top"><img src="images/glossary/water.jpg" alt="color" height="148" vspace="40" /></td>
+      <td width="418"><p><a name="angstrom" id="angstrom"></a></p>
+        <p><span class="p_lead_in style2">Angstrom</span> 
+A physical measure of distance named after the Physicist Anders J. Angstrom.
+There are 10 billion Angstomrs in 1 meter.  A single molecule of
+water has a size of approximately 1 Angstrom.  Astronomers tend to use
+Angstroms to measure the wavelength of light.  Optical light (the light
+we see with our eyeball) has wavelengths ranging from 4000 to 7000 Angstroms.
+    </tr>
+
+    <tr>
+      <td width="200" valign="top"><img src="images/glossary/color.gif" alt="color" height="148" vspace="40" /></td>
+      <td width="418"><p><a name="color" id="color"></a></p>
+        <p><span class="p_lead_in style2">color</span> 
+   The property of an object associated with its visual appearance that is derived
+ from the wavelengths of light that it reflects, emits, and absorbs.   Our eyeballs 
+ are only sensitive to optical light, e.g. red, blue, green, yellow colors.
+    </tr>
+
+    <tr>
+      <td width="200" valign="top"><img src="images/glossary/emissline.jpg" alt="color" height="148" vspace="40" /></td>
+      <td width="418"><p><a name="emissline" id="emissline"></a></p>
+        <p><span class="p_lead_in style2">emission line</span> 
+Light emitted at a very precise wavelength.  Physically, this light corresponds
+to an electron moving between two orbital levels around an atom.
+Similar to an <a href="#absline">absorption line</a>, emission lines
+can be used to measure the chemical composition, 
+velocity, temperature,
+and motions of astronomical objects.   The example shown on the left is a 
+the "Stingray" Planetary Nebula.  Most of the color you see
+is due to emission lines of Oxygen
+and Hydrogen.
+    </tr>
+
+    <tr>
+      <td width="200" valign="top"><img src="images/glossary/light.jpg" alt="color" height="148" vspace="40" /></td>
+      <td width="418"><p><a name="light" id="light"></a></p>
+        <p><span class="p_lead_in style2">light</span> 
+Light is the energy associated with electromagnetic intereactions, for 
+example an accelerated electron.   Of course, we simply think of light
+as the 'stuff' that allows us to see objects in the universe.  Light is
+not merely limited to the optical colors that our eyeballs observe
+but also includes gamma-rays, X-rays, radio waves, and microwaves.  
+These various types of light only differ in their <a href="#wavelength">wavelength</a>
+and therefore also their energy.
+    </tr>
+
+    <tr>
+      <td width="200" valign="top"><img src="images/glossary/quasar.jpg" alt="color" height="148" vspace="40" /></td>
+      <td width="418"><p><a name="quasar" id="quasar"></a></p>
+        <p><span class="p_lead_in style2">quasar</span> 
+A quasar is an extremely bright and distant object generally located at the
+center of a massive galaxy.
+Astronomers believe that quasars are powered by gas accreting onto a very
+massive black hole; many have as much mass as one billion Suns!
+These are among the
+brightest and most massive single objects in our universe.  
+Quasars are almost certain to play a major
+role in the formation of galaxies, especially during the first several
+billion years of our universe.  In addition, scientists study the light 
+emitted by quasars to infer the properties of gas in the early universe.
+    </tr>
+
+    <tr>
+      <td width="200" valign="top"><img src="images/glossary/redshift.png" alt="color" height="148" vspace="40" /></td>
+      <td width="418"><p><a name="redshift" id="redshift"></a></p>
+        <p><span class="p_lead_in style2">redshift</span> 
+From a purely observational perspective, redshift refers to the apparent
+shift of the wavelength of light to larger values (i.e. to the red).
+This shift may occur because the source is moving away from the observer,
+because the space between the source and observer is expanding, 
+or because the source is emitting within
+a strong gravitational field (e.g. near a black hole).
+Observers measure the redshift of light, especially 
+<a href="#absline">absorption lines</a> and 
+<a href="#emissline">emission lines</a> to infer the velocity and/or 
+distance of astronomical objects (stars, galaxies, quasars).
+Such measurements require one to obtain a <a href="#spectrum">spectrum</a>
+of the source.
+    </tr>
+
+    <tr>
+      <td width="200" valign="top"><img src="images/glossary/sun_spectrum.jpg" alt="color" height="148" vspace="40" /></td>
+      <td width="418"><p><a name="spectrum" id="spectrum"></a></p>
+        <p><span class="p_lead_in style2">spectrum</span> 
+An evaluation of the brightness of the light emitted by an objects as a function
+of the wavelength of that light.  For example, the Sun emits light a wide
+range of colors but the peak in its emission occurs at the green/yellow color
+which corresponds to a wavelength of approximately 
+5500 <a href="#angstrom">Angstroms</a>.   Many astronomical objects
+(stars, galaxies) emit or absorb a significant amount of light at a
+specific set of wavelengths producing 
+<a href="#absline">absorption</a> and 
+<a href="#emissline">emission lines</a>. 
+By obtaining a spectrum of these features, astronomers can 
+measure the chemical composition, velocity, temperature,
+and motions of astronomical objects.  
+    </tr>
+
+  </table>
+</div>
+
+
+</body>
+</html>

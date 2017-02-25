@@ -1,6 +1,3 @@
-PRO Ps_close, noprint = np, saveas = fn, printer = pnk, noid = noid, $
-             transparency = trsp, llwr = use_llwr, comment = comm
-;
 ;+
 ; Name:
 ;
@@ -12,9 +9,6 @@ PRO Ps_close, noprint = np, saveas = fn, printer = pnk, noid = noid, $
 ;    adds an optional time-stamp in the lower left corner,  
 ;    sends the PostScript file to the default printer ('lw'),
 ;    and restore the plotting device saved by PS_Open.
-;
-;    If color PostScript was enabled (see keyword /COLOR in PS_Open),
-;    then you are out of luck because we don't have a color printer.
 ;
 ; Calling sequence:
 ;
@@ -53,7 +47,8 @@ PRO Ps_close, noprint = np, saveas = fn, printer = pnk, noid = noid, $
 ;              added LEDGER support
 ;   11-May-94: added /LLWR
 ;
-;-
+PRO Ps_close, noprint = np, saveas = fn, printer = pnk, noid = noid, $
+             transparency = trsp, llwr = use_llwr, comment = comm, silent=silent
 ;
   COMMON ps_common, old_dname, old_pfont, file_name, opened, color, ledger
 ;
@@ -78,13 +73,13 @@ PRO Ps_close, noprint = np, saveas = fn, printer = pnk, noid = noid, $
   IF keyword_set(fn) THEN BEGIN
     cmd = ['cp', file_name, fn]
     spawn, cmd, /noshell
-    print, 'PostScript plot saved as ', fn
+    if ~keyword_set(silent) then print, 'PostScript plot saved as ', fn
   END
 ;
   IF NOT keyword_set(np) THEN BEGIN
     IF color THEN BEGIN
       IF keyword_set(pnk) THEN $
-        message, /info, 'PRINTER specification ('+pn+') ignored'
+        if ~keyword_set(silent) then message, /info, 'PRINTER specification ('+pn+') ignored'
       IF ledger EQ 1 THEN BEGIN
         mode =  'ledger'
       ENDIF ELSE BEGIN
@@ -109,14 +104,14 @@ PRO Ps_close, noprint = np, saveas = fn, printer = pnk, noid = noid, $
          stop,'Ahem, do not use this option, or ask Chris to fix it.'
       ENDIF ELSE BEGIN
         spawn, ['lpr', '-P'+pn, file_name], /noshell
-        message, /info, 'PostScript plot printed on printer '+pn
+        if ~keyword_set(silent) then message, /info, 'PostScript plot printed on printer '+pn
       ENDELSE
     ENDELSE
   END
 ;  
   set_plot, old_dname
   !p.font =  old_pfont
-  message, /info, 'plotting device restored as ' + old_dname
+  if ~keyword_set(silent) then message, /info, 'plotting device restored as ' + old_dname
 ;  
   return
 END

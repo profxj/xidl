@@ -19,6 +19,7 @@
 ;   esi   -  Creates a combined ZRO frame for data reduction
 ;
 ; OPTIONAL KEYWORDS:
+;  FLAT_FIL= -- 
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -38,13 +39,12 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-pro esi_lwdmkflat, esi, slit, SVOV=svov, REDOOV=redoov, $
-                   CHK=chk, INTER=inter
+pro esi_lwdmkflat, esi, slit, CHK=chk, FLAT_FIL=flat_fil
 
 ;
   if  N_params() LT 2  then begin 
       print,'Syntax - ' + $
-        'esi_lwdmkflat, esi, slit, /SVOV, /CHK [v1.0]'
+        'esi_lwdmkflat, esi, slit, /CHK, FLAT_FIL= [v1.1]'
       return
   endif 
   
@@ -62,8 +62,7 @@ pro esi_lwdmkflat, esi, slit, SVOV=svov, REDOOV=redoov, $
       return
   endif
   
-;  Grab the files
-
+  ;;  Grab the files
   flat = where(esi.mode EQ 1 AND esi.flg_anly NE 0 AND $
                esi.type EQ flt AND esi.slit EQ slit, nflat)
   if nflat EQ 0 then begin
@@ -72,21 +71,24 @@ pro esi_lwdmkflat, esi, slit, SVOV=svov, REDOOV=redoov, $
       return
   endif
 
-; BIAS subtract
-  if not keyword_set( REDOOV ) then bias = where(esi[flat].flg_ov EQ 0, nbias) $
-  else begin
-      nbias = n_elements(flat)
-      bias = lindgen(nbias)
-  endelse
-  if nbias NE 0 then esi_subbias, esi, flat[bias]
-
-; Median Combine
-  xcombine, 'OV/ov_'+esi[flat].img_root, img_flat, head, $
-    FCOMB=2, SCALE='MED', GAIN=esi[flat[0]].gain, RN=esi[flat[0]].readno
+  if not keyword_set( flat_fil ) then begin
+      ;; BIAS subtract
+      if not keyword_set( REDOOV ) then $
+        bias = where(esi[flat].flg_ov EQ 0, nbias) $
+      else begin
+          nbias = n_elements(flat)
+          bias = lindgen(nbias)
+      endelse
+      if nbias NE 0 then esi_subbias, esi, flat[bias]
+      
+      ;; Median Combine
+      xcombine, 'OV/ov_'+esi[flat].img_root, img_flat, head, $
+        FCOMB=2, SCALE='MED', GAIN=esi[flat[0]].gain, RN=esi[flat[0]].readno
     
+  endif else img_flat = xmrdfits(flat_fil,/silent)
   sz_flat = size(img_flat, /dimensions)
-  
-; Read Arc Image
+      
+  ;; Read Arc Image
   img_arc = mrdfits(arcfil, /silent)
   sz_arc = size(img_arc, /dimensions)
   if sz_arc[0] NE sz_flat[0] OR sz_arc[1] NE sz_flat[1] then begin
@@ -95,49 +97,31 @@ pro esi_lwdmkflat, esi, slit, SVOV=svov, REDOOV=redoov, $
       return
   endif
 
-; Normalize
-  wvmx = 0.
+  ;; Normalize
   wvmn = 4000.
-  med_wv = fltarr(62)
-  med_fx = fltarr(62)
-  cnt = 0L
-  print, 'esi_mklwdflat: Normalizing...'
-  ;; Median
-  while(CNT LE 61) do begin
-;      print, 'esi_mklwdflat: cnt= ', cnt
-      wvmx = wvmn + 100.
-      a = where(img_arc LT wvmx AND img_arc GE wvmn)
-      med_wv[cnt] = median(img_arc[a])
-      med_fx[cnt] = median(img_flat[a])
-      cnt = cnt+1L
-      wvmn = wvmn + 100.
-  endwhile
-      
-  print, 'esi_mklwdflat: Fitting...'
-  if not keyword_set( INTER ) then begin
-      ;; Fit
-      fitstr = {fitstrct}
-      fitstr.func = 'BSPLIN'
-      fitstr.nord = 15L
-      fitstr.hsig = 5.
-      fitstr.lsig = 5.
-      fitstr.niter = 1
-      fitstr.maxrej = 3
-      fit = x_fitrej(med_wv, med_fx, FITSTR=fitstr)
+  gd = where(img_arc GT wvmn AND img_flat GT 100., ngd)
+  srt = sort(img_arc[gd])
+  gd = gd[srt]
 
-      ;; Plot
-      if keyword_set( CHK ) then begin
-          x_splot, med_wv, med_fx, YTWO=fit, /block
-          stop
-      endif
-  endif else begin
-      fit = x1dfit(med_wv, med_fx, FITSTR=fitstr, /inter)
-  endelse
+  ;; Median
+  nstp = 500L
+  med_wv = fltarr(nstp)
+  med_fx = fltarr(nstp)
+
+  nimg = ngd / nstp
+  for qq=0L,nstp-1 do begin
+      med_wv[qq] = median(img_arc[gd[qq*nimg:(qq+1)*nimg-1]])
+      med_fx[qq] = median(img_flat[gd[qq*nimg:(qq+1)*nimg-1]])
+  endfor
+
+  print, 'esi_mklwdflat: Fitting...'  ; Might consider a straight spline
+  bset = bspline_iterfit(med_wv, med_fx, everyn=3, maxiter=5L,$
+                        upper=5, lower=5, nordr=3, yfit=yfit)
 
   ;; Calculate everywhere
   fit_flat = img_flat*0.
-  a = where(img_arc GT 4000. AND img_arc LT wvmx)
-  fit_flat[a] = x_calcfit(img_arc[a], FITSTR=fitstr)
+  a = where(img_arc GT wvmn)
+  fit_flat[a] = bspline_valu(img_arc[a], bset)
 
   ;; Divide
   nrm_flat = img_flat*0.

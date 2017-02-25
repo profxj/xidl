@@ -1,23 +1,24 @@
 ;+ 
 ; NAME:
 ; ximgd_initcolors
-;    Version 1.0
+;    Version 1.1
 ;
 ; PURPOSE:
-; Sets up zooming
+; Load a simple color table with the basic 8 colors in the lowest 
+; 8 entries of the color table.  Also set top color to white.
 ;
 ; CALLING SEQUENCE:
 ;   
-;   ximgd_initcolors, state, flg
+;   ximgd_initcolors, /CLR
 ;
 ; INPUTS:
-;   state       - Structure with tv dependent info
 ;
 ; RETURNS:
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
+;   /CLR  -- Sets up the colors (not sure why you wouldnt set CLR)
 ;
 ; OPTIONAL OUTPUTS:
 ;

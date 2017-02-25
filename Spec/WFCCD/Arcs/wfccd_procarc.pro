@@ -118,6 +118,7 @@ pro wfccd_procarc, wfccd, mask_id, SVOV=svov, MAP=map, CLOBBER=clobber, $
               ; Output
               outfil = strtrim('Arcs/ArcR_'+strmid(wfccd[arcs[i]].img_root,3),2)
               mwrfits, nwarc, outfil, /create
+              spawn, 'gzip -f '+outfil
               ; Update structure
               a = where(flgobj EQ i)
               wfccd[obj[a]].arc_fil = outfil
@@ -133,6 +134,7 @@ pro wfccd_procarc, wfccd, mask_id, SVOV=svov, MAP=map, CLOBBER=clobber, $
       ; Output
       outfil = 'Arcs/ArcR_'+strmid(wfccd[arcs[0]].img_root,3)
       mwrfits, nwarc, outfil, /create
+      spawn, 'gzip -f '+outfil
       ; Update structure
       wfccd[obj].arc_fil = outfil
   endelse

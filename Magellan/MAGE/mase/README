@@ -1,0 +1,101 @@
+Old Pipeline Instructions
+Instructions for reducing a run worth of data using the MagE pipeline.
+
+
+1) Trace the orders using traceflats.
+
+   	 tset_slits = mage_findslits(<flat field filename>)
+
+	 Best to use a Sky flat with good SNR here, or combination 
+	 of several flats.
+
+
+2) Make the "pixel image" used to index the tilt of sky lines
+
+   	mage_makepix, <arc file>, <pixel file>, tset_slits
+
+	Here, the arc file should be one closely associated with the 
+	tflat used to trace the slits.  <pixel file> is the name of the
+	output, which indicates slit tilt wrt CCD rows.
+
+3) Make the flat field.  First, organize which files will be blue, green, 
+   and red flats.  Then, pass these to the makeflat routine to construct 
+   the superflat.
+
+       bluefiles  = ['magexxxx.fits','magexxxy.fits',...]
+       greenfiles = ['mageyxxx.fits','mageyxxy.fits',...]
+       redfiles   = ['magezxxx.fits','magezxxy.fits',...]
+       illumfiles = [...]
+       mage_makeflat, path=<flatpath>, blue=bluefiles, green=greenfiles, $
+       		      red=rdfiles, orders="Orders.fits", $
+		      piximg=<pixel img file from (2)>, illum=illumfiles, $
+		      output="Flat.fits"
+
+
+4) Make a "mage structure."  This groups objects by name from the
+header, and then tries to assign an arc to each frame, taken at a
+nearby telescope pointing and time.
+
+       mage_mkstrct, mage, rawpath='../Raw/'
+
+rawpath points to a dir that has the raw files in it.  Best to include
+the trailing slash, I think.
+
+5) Edit the mage structure.  In particular, make sure frames that you
+want to combine into a co-added spectrum have the same mage.obj_id tag
+number.  The pipeline will loop over the obj_it tag and co-add all
+exposures with the same obj_id.
+
+6) Run mage_sensfunc on a std star exposure.  This creates a
+sensitivity function for the night and/or run.
+
+mage_sensfunc, <mage_structure> <fits file of std> arcfile=arc, $
+	       fluxtable=<ESO table of std star flux> $
+	       sensfile=<output file for sens function>
+
+This will start an interactive routine that you can use to select
+regions of the std star to mask out for fitting.  
+
+6) Run the pipeline.  This will loop over obj_id, and bias subtract,
+flatten, sky subtract, and extract each frame.  Then it flux
+calibrates using the given sensitivity function, and corrects
+wavelengths into vacuum heliocentric frame.  Finally, it combines the
+orders into a single 1D spectrum with wavelength bins uniform in
+velocity / log(lambda).  You can pass a prticular obj_id if you like;
+if you ignore this then all objects are reduced.  This can take a long
+time.
+
+mage_pipe, <mage structure>, sensfunc=<sens func file>
+
+
+The results should be contained in a directory called "Final" in the
+main directory where you are running the reductions.
+
+
+
+
+TO DO:
+------
+
+1) Right now, the rebinned 1D pixels are given a width of 22 km/s, and
+a resolution of R = 4100 * 1" / slitwidth are written into the
+headers.  We should measure the actual resolution on sky lines rather
+than taking it from the MagE webpage.  Also, I think 22 km/s pixels is
+right, but we might measure this too from the 2D arc images.
+
+2) Better logging of reduction steps might be a good idea.  I've tried
+to log some info in the header of the final spectrum, but this may not
+be complete.  In particular, I log the heliocentric velocity
+correction, which can be hard to reconstruct otherwise.
+
+3) a utility to read and write mage structures and produce a log of
+reduction steps from it would be nice.  Right now, the mage struct can
+be written to disk with mwrfits and read back in using 
+
+mage = mrdfits(<filename>, 1, structyp='magestrct')
+
+
+
+
+
+

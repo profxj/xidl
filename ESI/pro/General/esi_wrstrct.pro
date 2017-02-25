@@ -63,6 +63,7 @@ pro esi_wrstrct, esi, ANONLY=anonly, OUTFIL=outfil, FITS=fits
   close, /all
   openw, 1, outfil
 
+  FORMAT =  '(%" %3d  %22s %2d %20s %7s %4s %4s %5d %4.2f %2d %2d %3s %5.2f %2d %2d")'
   for q=0,nimg-1 do begin
       
       if esi[q].obj_id GE 0L then begin
@@ -74,26 +75,26 @@ pro esi_wrstrct, esi, ANONLY=anonly, OUTFIL=outfil, FITS=fits
           1: mode = 'LWD'
           2: mode = 'ECH'
           else:
-      endcase
+       endcase
+      ;;FORMAT = '(i4,1x,a7,1x,i1,1x,a12,1x,a3,1x,a4,a5,i5,f5.2,i2,i2,a2,f5.2,2i2)', $
       if (not keyword_set( ANONLY ) OR esi[q].flg_anly NE 0) then $
-        printf, 1, $
-        FORMAT='(i4,1x,a7,1x,i1,1x,a12,1x,a3,1x,a4,a5,i5,f5.2,i2,i2,a2,f5.2,2i2)',$
-        q, $
-        esi[q].img_root, $
-        esi[q].flg_anly, $
-        esi[q].Obj, $
-        id_str, $
-        mode, $
-        esi[q].type, $
-        long(esi[q].exp), $
-        esi[q].slit, $
-        esi[q].arclamp, $
-        esi[q].qtzlamp, $
-        esi[q].imfilt, $
-        esi[q].AM, $
-        esi[q].flg_ov, $
-        esi[q].flg_final
-        
+         printf, 1, FORMAT =  FORMAT $
+                 , q, $
+                 esi[q].img_root, $
+                 esi[q].flg_anly, $
+                 esi[q].Obj, $
+                 id_str, $
+                 mode, $
+                 esi[q].type, $
+                 long(esi[q].exp), $
+                 esi[q].slit, $
+                 esi[q].arclamp, $
+                 esi[q].qtzlamp, $
+                 esi[q].imfilt, $
+                 esi[q].AM, $
+                 esi[q].flg_ov, $
+                 esi[q].flg_final
+      
       
   endfor
 

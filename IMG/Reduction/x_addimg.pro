@@ -1,10 +1,11 @@
 ;+ 
 ; NAME:
 ; x_addimg
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
-;    Combines a set of images
+;    Combines a set of images.  I think this routine is entirely
+;  superseded by xcombine.
 ;
 ; CALLING SEQUENCE:
 ;   

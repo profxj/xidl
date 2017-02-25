@@ -1,0 +1,73 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<title> Basics of Spectroscopy: Educators</title>
+
+<!-- Input junk.html here -->
+<!-- End junk.html here -->
+<!--#include virtual="./class.html"-->
+<!--#include virtual="./noboard.html"-->
+<!--#include virtual="./header.html"-->
+
+
+<div id="content_panel">  
+
+<table width="930" border="0" cellspacing="0" cellpadding="0">
+        <tr><td colspan="5" class="title"><font color="red"><img src="images/inquiry.gif" height="240" border="2"/></font>
+        <img src="images/spacer_10x30.gif" width="50" />
+        <img src="images/spacer_10x30.gif" width="50" />
+        <img src="images/inquiryWheel.gif" height="240" border="2"/></font> 
+        </tr>
+ </table>
+
+<center>
+<table width="930" border="0" cellspacing="0" cellpadding="0">
+        <tr><td colspan="5"><img src="images/spacer_10x30.gif" width="10" height="10" /></td>
+        </tr>
+        <tr>                <td height="5" colspan="2">&nbsp;</td>
+        </tr>   
+        <tr><td colspan="5" class="title">For Educators</tr></td>
+        <tr>                <td height="5" colspan="2">&nbsp;</td> </tr>   
+    <tr>
+      <td height="40" colspan="5" align="left" valign="middle" class="non_p">
+Greetings educators, <br><br>
+These activities are being designed and developed to enable you to bring
+first-class astronomy research to the classroom with the goal of inspiring
+science learning.  We are guided by the philosophies related to inquiry
+methods, i.e. we aim to promote learning by enabling students to explore
+their scientific environment, generate and test hypotheses, and 
+It is our hope that by integrating current astronomical research we can
+excite students' curiosity and engage them in scientific learning.
+<br><br>
+Currently, the bulk of the materials have been developed for secondary
+education with physics and chemistry curricula in mind.  This includes
+concepts of temperature, light, atomic structure, chemical composition,
+velocity, and basic quantum mechanics.  The tools are very generic, however,
+and can easily be modified to address new curricula.  Furthermore, they
+are constructed as 'stand-alone' tools.  One can develop lesson plans
+that integrate several of the tools (e.g. the lab experiments that we
+present) or use individual tools as demos in class to illustrate
+specific curriculum.
+<br><br>
+Please follow the links under "For Educators" to examine the tools
+and experiments that we have developed to date.  We will be generating 
+additional content as the days go by and we greatly encourage you to get
+involved.  Even the simplest of feedback is appreciated (contact information
+is listed under the "Contributors").
+<br><br>
+Sincerely, <br><br>
+The Contributors
+       </td>
+    </tr>
+        <tr>                <td height="5" colspan="2">&nbsp;</td> </tr>   
+ </table>
+</center>
+
+
+</div>
+
+
+</body>
+</html>

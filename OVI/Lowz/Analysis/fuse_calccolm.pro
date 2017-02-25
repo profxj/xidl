@@ -6,21 +6,25 @@
 ; PURPOSE:
 ;    Given a list of DLA base files, fill up the structure ;
 ; CALLING SEQUENCE:
-;   
-;   lowzovi_prsdat, stucture, filename
+;  fuse_calccolm, strct_fil, instr_list, abs_list, NSIG=nsig
 ;
 ; INPUTS:
 ;
 ; RETURNS:
-;   structure      - IDL structure
+;  strct_fil  -- FUSE absorption line structure
+;  instr_list -- List of instruments (expected to be the 
+;                FUSE channels than STIS)
+;  abs_list   -- List of files guiding the column density measurments
+;                (formatting is key here)
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
-;  LIST - File
-;  ION - Input ionic column densities
-;  NOELM - Supress inputting Elemental values
-;
+;  NSIG=  -- Number of sigma for signficance [default: 3.]
+;  ROOTDIR - pre-pend string to instr_list file names
+;  SUFFIX - for STIS-like files, suffix to search and replace
+;           (default: ['f.fits','e.fits'])
+;;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
@@ -33,20 +37,24 @@
 ;
 ; REVISION HISTORY:
 ;   10-Sep-2003 Written by JXP
+;    6-Jun-2007 Sort lines in structure (to match with *.clm), KLC
 ;-
 ;------------------------------------------------------------------------------
-pro fuse_calccolm, strct_fil, instr_list, abs_list, NSIG=nsig
+pro fuse_calccolm, strct_fil, instr_list, abs_list, NSIG=nsig,  $
+                   ROOTDIR=rootdir, SUFFIX=suffix
 
   if (N_params() LT 3) then begin 
     print,'Syntax - ' + $
-             'fuse_calccolm, strct, instr_list, abs_list (v1.0)' 
+             'fuse_calccolm, strct, instr_list, abs_list, NSIG=  [v1.1]' 
     return
   endif 
 
   if not keyword_set( NSIG ) then nsig = 3.
+  if not keyword_set( SUFFIX ) then suffix = ['f.fits','e.fits'] 
 
 ;  Read instrument file list
   readcol, instr_list, instr_fil, inst_dw, inst_w0, format='a,f,f'
+  if keyword_set(rootdir) then instr_fil = rootdir+instr_fil
 
   nlist = n_elements(instr_fil)
   if nlist LT 7 then stop
@@ -102,36 +110,50 @@ pro fuse_calccolm, strct_fil, instr_list, abs_list, NSIG=nsig
           readf, 1, dumd, dumi
           wv_lin[i] = dumd
           ;; Mask
-          a = where(abs(strct.zabs-zabs) LT 0.0002 AND $
+          a = where(abs(strct.zabs-zabs) LT 0.002 AND $
                     abs(strct.wrest-wv_lin[i]) LT 0.003, na)
-          if na NE 1 then begin
-              print, 'na', na
-              print, zabs, wv_lin[i]
-              stop
-          endif
+;          if na NE 1 then begin
+;              print, 'na', na
+;              print, zabs, wv_lin[i]
+;              stop
+;          endif
+          if na eq 0 then stop,'fuse_calccolm: no matching line',zabs,wv_lin[i]
+          if na gt 1 then begin
+             dum = min(strct[a].zabs-zabs,imn,/absolute)
+             a = a[imn]
+          endif 
           msk[a] = a[0]
           flg_lin[i] = dumi
-      endfor
+      endfor                    ;end read lines from *.clm
       
       ;; Create colm arrays
-      all_N = dblarr(ncalc, 10)
-      all_sN = dblarr(ncalc, 10)
+      all_N = dblarr(ncalc, nlist)
+      all_sN = dblarr(ncalc, nlist)
       
       ;; Subset of structure
       gd = where(msk GE 0L)
+      srt = sort(strct[gd].wrest) ;assumes abs_lin ordered by wrest
+      gd = gd[srt]              ;to match abs_lin
       
 ;  Loop on instruments
       for qq=0L,nlist-1 do begin
           ;; Find lines
           lin = where(strct[gd].instr MOD 2^(qq+1) GT (2^qq-1), nlin)
+
+          ;; Test
+          test = file_search(instr_fil[qq],count=ntest)
+          if ntest eq 0 then continue
+
+          ;; Grab the spectrum
           if nlin NE 0 then begin
               print, 'fuse_calcen: Reading ', instr_fil[qq]
               ;; Open data
               if qq LE 6 then $
-                fx = x_readspec(instr_fil[qq], SIG=sig, wav=wave, NPIX=npix, inflg=3)$
+                fx = x_readspec(instr_fil[qq], SIG=sig, wav=wave, $
+                                NPIX=npix, inflg=3)$
               else begin        ; STIS
-                  spos = strpos(instr_fil[qq], 'f.fits')
-                  sig_fil = strmid(instr_fil[qq], 0, spos)+'e.fits'
+                  spos = strpos(instr_fil[qq], suffix[0])
+                  sig_fil = strmid(instr_fil[qq], 0, spos)+suffix[1]
                   fx = x_readspec(instr_fil[qq], SIG=sig, wav=wave, NPIX=npix, $
                                   fil_sig=sig_fil, inflg=0)
               endelse
@@ -154,14 +176,26 @@ pro fuse_calccolm, strct_fil, instr_list, abs_list, NSIG=nsig
               mn = min(abs(strct[jj].wv_lim[0] - wave), pmin)
               mx = min(abs(strct[jj].wv_lim[1] - wave), pmax)
               
+              ;; Limit to 'expected' flux range -sigma < flux <
+              ;; 1+sigma, KLC
+              ;; Similar to fuse_calcewn
+              rng = lindgen(pmax-pmin+1) + pmin
+              nfx = where(fx[rng] lt -abs(sig[rng]),nnfx)
+              pfx = where(fx[rng] gt 1.+abs(sig[rng]),npfx)
+
+              nwfx = fx[rng]
+              if nnfx ne 0 then nwfx[nfx] = -2*abs(sig[rng[nfx]])
+              if npfx ne 0 then nwfx[pfx] = 1+2*abs(sig[rng[pfx]])
+
               ;; Calculate N
-              x_aodm, wave[pmin:pmax], fx[pmin:pmax], sig[pmin:pmax], $
+;              x_aodm, wave[pmin:pmax], fx[pmin:pmax], sig[pmin:pmax],$
+              x_aodm, wave[pmin:pmax], nwfx, sig[pmin:pmax], $
                 strct[jj].wrest, clm, sig_clm
               
               all_N[lin[ii],qq] = clm
               all_sN[lin[ii],qq] = sig_clm
-          endfor
-      endfor
+          endfor                ;end measure ncolm for lines from same instr
+      endfor                    ;end instr loop
       
       ;; Combine N
       for ii=0L,ncalc-1 do begin
@@ -191,7 +225,11 @@ pro fuse_calccolm, strct_fil, instr_list, abs_list, NSIG=nsig
           if weight_N LT nsig*weight_sN AND strct[jj].flg NE 3 then begin
               weight_N = nsig*weight_sN
               ;; Adjust the flag
-              if strct[jj].flg MOD 8 LT 3 then strct[jj].flg = strct[jj].flg + 4
+              if strct[jj].flg MOD 8 LT 3 then begin
+                  strct[jj].flg = strct[jj].flg + 4
+                  print,'fuse_calccolm: upper limit now for ',$
+                    strct[jj].zabs,strct[jj].wrest
+              endif 
           endif
 
           ;; Log
@@ -221,9 +259,9 @@ pro fuse_calccolm, strct_fil, instr_list, abs_list, NSIG=nsig
               print, flg_lin[ii], strct[jj].flg
               stop 
           endif
-      endfor
+      endfor                    ;end loop line (combining N)
       printcol, strct[gd].ion, strct[gd].Ncolm, strct[gd].sigNcolm, strct[gd].flg
-  endfor
+  endfor                        ;end current *.clm (abs_fil[nn])
 
   close, /all
       

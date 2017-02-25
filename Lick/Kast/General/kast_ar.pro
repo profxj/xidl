@@ -1,10 +1,11 @@
 ;+ 
 ; NAME:
 ; kast_ar   
-;     Version 1.0
+;     Version 1.1
 ;
 ; PURPOSE:
-;   Reads in the first file in the directory with 'kast*fits'
+;   Reads the Kast IDL structure from fits file into memory.  The
+;  program grabs the first file in the directory with kast_*fits
 ;
 ; CALLING SEQUENCE:
 ;   
@@ -14,7 +15,7 @@
 ;    [file] - Filename (default: first file in list ./kast_*fits*)
 ;
 ; RETURNS:
-;    kast -  ESI structure
+;    kast -  Kast IDL structure
 ;
 ; OUTPUTS:
 ;
@@ -34,8 +35,6 @@
 ;   01-Mar-2003 Written by JXP
 ;-
 ;------------------------------------------------------------------------------
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 function kast_ar, file

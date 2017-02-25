@@ -1,46 +1,50 @@
 ;+ 
 ; NAME:
 ; kast_pltobj
-;    Version 1.0
+;    Version 1.1
 ;
 ; PURPOSE:
 ;   Calls x_pltobj after gathering the relevant data
 ;
 ; CALLING SEQUENCE:
-;   
-;   kast_pltobj, kast, objid, expsr, /COMB, XSIZE=, YSIZE=
+;  kast_pltobj, kast, [setup, side, obj_id, obj_nm], EXPSR=, XSIZE=, $
+;                 YSIZE=, /FLUX, /FSPEC, XMAX=, /NOIMG, /NOWV, /COMB
 ;
 ; INPUTS:
+;   kast  --  Kast IDL structure
+;  [setup]  --  Setup value
+;   [side]  --  Specific camera [blue (1) vs. red (2)]
+; [obj_id]  --  Object value
 ;
 ; RETURNS:
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
-;   XSIZE      - Size of gui in screen x-pixels (default = 1000)
-;   YSIZE      - Size of gui in screen y-pixels (default = 600)
+;  /NOIMG  -- Do not display 2D image of spectrum
+;  /COMB   -- Show the combined 1D spectra
+;  EXPSR   -- Index of spectrum
+;  /FLUX   -- Show the fluxed spectra
+;  XMAX    -- Max height of spectrum [default: 7e-17]
 ;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   kast_pltobj, kast, objid, expsr
-;
+;   kast_pltobj, kast, /noimg
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
 ;
 ; REVISION HISTORY:
 ;   30-Jul-2002 Written by JXP
+;   ??  Major revisions by GEP
 ;-
 ;------------------------------------------------------------------------------
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 pro kast_pltobj, kast, setup, side, obj_id, obj_nm, EXPSR=expsr, XSIZE=xsize, $
                   YSIZE=ysize, FLUX=flux, FSPEC=fspec, XMAX=xmax, NOIMG=noimg, $
-                 NOWV=nowv, COMB=comb
+                 NOWV=nowv, COMB=comb, STD=std
 
 ;
   if  N_params() LT 1 AND not keyword_set( FSPEC )  then begin 
@@ -53,7 +57,6 @@ pro kast_pltobj, kast, setup, side, obj_id, obj_nm, EXPSR=expsr, XSIZE=xsize, $
 
 ;  Optional Keywords
 
-  if not keyword_set( XSIZE ) then xsize = 1200
   if not keyword_set( XMAX ) and $
     (keyword_set(FSPEC) OR keyword_set(FLUX)) then xmax = 7.e-17
 
@@ -115,18 +118,26 @@ pro kast_pltobj, kast, setup, side, obj_id, obj_nm, EXPSR=expsr, XSIZE=xsize, $
       if N_params() LT 4 then begin
           print,'Syntax - ' + $
             'kast_pltobj, kast, setup, side, obj_id, obj_nm, expsr, XSIZE=, '
-          print, '        /FLUX, /FSPEC  [v1.0]'
+          print, '        /FLUX, /FSPEC, /COMB  [v1.0]'
           return
       endif
-      allexp = where(kast.flg_anly NE 0 AND kast.mode EQ 1 AND $
-                   kast.side EQ side AND kast.setup EQ setup AND $
-                   kast.obj_id EQ obj_id AND kast.type EQ 'OBJ', nexp)
-      if not keyword_set( EXPSR ) then expsr = 0L
-      exp = allexp[expsr]
+      
+      if not keyword_set(std) then begin
+          allexp = where(kast.flg_anly NE 0 AND kast.mode EQ 1 AND $
+                         kast.side EQ side AND kast.setup EQ setup AND $
+                         kast.obj_id EQ obj_id AND kast.type EQ 'OBJ', nexp)
+          if not keyword_set( EXPSR ) then expsr = 0L
+          exp = allexp[expsr]
+      endif else begin
+          allexp = where(kast.flg_anly NE 0 AND kast.mode EQ 1 AND $
+                         kast.side EQ side AND kast.setup EQ setup AND $
+                         kast.type EQ 'STD', nexp)
+          exp = allexp[obj_id]
+      endelse 
 
       ; Obj Structure
       if not keyword_set(COMB) then begin 
-        kastobj = xmrdfits(kast[exp].obj_fil, 1, STRUCTYP='specobjstrct', /silent)
+        kastobj = xmrdfits(strtrim(kast[exp].obj_fil,2), 1, STRUCTYP='specobjstrct', /silent)
 
         ; Check for objnm
         if not keyword_set(obj_nm) then begin
@@ -160,14 +171,14 @@ pro kast_pltobj, kast, setup, side, obj_id, obj_nm, EXPSR=expsr, XSIZE=xsize, $
       endif else begin
         ; it's a combined spectrum!
         infil = 'Extract/Fspec_'+kast[exp].img_root
-        kastobj = {kastspecstrct}
+;        kastobj = {kastspecstrct}
         kast_wrspec, kastobj, infil, /READ
         npix = kastobj.npix
         if not keyword_set( NOWV ) then spec_wv = kastobj.wave[0:npix-1] $
         else spec_wv = dindgen(npix)
         if keyword_set( FLUX ) then begin
-            spec_fx = kastobj.fx[0:npix-1] 
-            spec_sig = sqrt(kastobj.var[0:npix-1])
+            spec_fx = kastobj.flux[0:npix-1] 
+            spec_sig = sqrt(kastobj.sig[0:npix-1])
         endif else begin
             spec_fx = kastobj.fx[0:npix-1]
             spec_sig = kastobj.var[0:npix-1]

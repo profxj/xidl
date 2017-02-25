@@ -46,13 +46,13 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-pro esi_strct, struct, LIST=list, MKDIR=mkdir, NOFILE=nofile, $
+pro esi_strct, struct, LIST=list, NOMKDIR=nomkdir, NOFILE=nofile, $
                    OUTFIL=outfil, NOEDIT=noedit, IMG=img
 
 ;
   if  N_params() LT 1  then begin 
       print,'Syntax - ' + $
-        'esi_strct, struct, LIST=, MKDIR=, NOFILE=, NOLIST=, /NOEDIT (v1.1)'
+        'esi_strct, struct, LIST=, /NOMKDIR, NOFILE=, NOLIST=, /NOEDIT (v1.1)'
       return
   endif 
   
@@ -65,10 +65,14 @@ pro esi_strct, struct, LIST=list, MKDIR=mkdir, NOFILE=nofile, $
 ; List
   if not keyword_set( IMG ) then begin
       if not keyword_set( LIST ) then begin
-          img = findfile('Raw/esi*.fits*',count=nimg) 
+          img = findfile('Raw/e*.fits*',count=nimg) 
           if nimg EQ 0 then begin
-              print, 'esi_strct: No images in Raw!'
-              return
+             img = findfile('Raw/E*.fits*',count=nimg)  ;; Archival format
+             if nimg EQ 0 then begin
+                print, 'esi_strct: No images in Raw!'
+                stop
+                return
+             endif
           endif
       endif else begin
           if x_chkfil(list[0]) NE 1 then begin
@@ -82,7 +86,7 @@ pro esi_strct, struct, LIST=list, MKDIR=mkdir, NOFILE=nofile, $
 
 
 ; Make directories
-  if keyword_set( MKDIR ) then begin
+  if not keyword_set( NOMKDIR ) then begin
       a = findfile('Maps/..', count=count)
       if count EQ 0 then file_mkdir, 'Maps'
       a = findfile('OV/..', count=count)
@@ -99,9 +103,9 @@ pro esi_strct, struct, LIST=list, MKDIR=mkdir, NOFILE=nofile, $
       if count EQ 0 then file_mkdir, 'Arcs/TRC'
       a = findfile('Logs/..', count=count)
       if count EQ 0 then file_mkdir, 'Logs'
-      a = findfile('pro/..', count=count)
-      if count EQ 0 then file_mkdir, 'pro'
-      a = findfile('Sky/..', count=count)
+      ;;a = findfile('pro/..', count=count)
+      ;;if count EQ 0 then file_mkdir, 'pro'
+      a = findfile('Sky/..', count = count)
       if count EQ 0 then file_mkdir, 'Sky'
       a = findfile('Extract/..', count=count)
       if count EQ 0 then file_mkdir, 'Extract'
@@ -109,6 +113,8 @@ pro esi_strct, struct, LIST=list, MKDIR=mkdir, NOFILE=nofile, $
       if count EQ 0 then file_mkdir, 'FSpec'
       a = findfile('FSpec/txt/..', count=count)
       if count EQ 0 then file_mkdir, 'FSpec/txt'
+;      a = findfile('Profile/..', count = count)
+;      if count EQ 0 then file_mkdir, 'Profile'
   endif
 
 ;  Header Keywords
@@ -117,7 +123,7 @@ pro esi_strct, struct, LIST=list, MKDIR=mkdir, NOFILE=nofile, $
       'KeckII': begin
           case ccd of 
               'MIT-LL' : begin
-                  expcrd = 'EXPOSURE'
+                  expcrd = 'ELAPTIME'
                   frmcrd = 'FRAMENO'
                   utcrd = 'UT'
                   gaincrd = 'CCDGAIN'
@@ -128,7 +134,7 @@ pro esi_strct, struct, LIST=list, MKDIR=mkdir, NOFILE=nofile, $
                   rotmode = 'ROTMODE'
                   nampcrd = 'NUMAMPS'
                   slitnm = 'SLMSKNAM'
-                  objcrd = 'OBJECT'
+                  objcrd = 'TARGNAME'
                   binning = 'BINNING'
                   amcrd = 'AIRMASS'
                   datecrd = 'DATE-OBS'
@@ -172,10 +178,21 @@ pro esi_strct, struct, LIST=list, MKDIR=mkdir, NOFILE=nofile, $
       if keyword_set( expcrd ) then struct[q].exp = sxpar(head, expcrd)
       if keyword_set( frmcrd ) then struct[q].frame = sxpar(head, frmcrd)
       if keyword_set( gaincrd ) then ccdgain = sxpar(head, gaincrd)
-      if keyword_set( racrd ) then struct[q].RA = sxpar(head, racrd)
-      if keyword_set( deccrd ) then struct[q].DEC = sxpar(head, deccrd)
       if keyword_set( eqxcrd ) then struct[q].equinox = sxpar(head, eqxcrd)
       if keyword_set( utcrd ) then struct[q].UT = sxpar(head, utcrd)
+
+      ;; RA and DEC (with offsets)
+      if keyword_set( racrd ) then struct[q].RA = sxpar(head, racrd)
+      if keyword_set( deccrd ) then struct[q].DEC = sxpar(head, deccrd)
+      x_radec, struct[q].ra, struct[q].dec, rad, decd
+      raoff = sxpar(head, 'RAOFF')
+      decoff = sxpar(head, 'DECOFF')
+      rad = rad - raoff / 3600.
+      decd = decd - decoff / 3600.
+      x_radec, ras, decs, rad, decd, /flip
+      struct[q].ra = ras
+      struct[q].dec = decs
+      
       ;; Name
       if keyword_set( objcrd ) then begin
           struct[q].Obj = sxpar(head, objcrd)
@@ -187,6 +204,14 @@ pro esi_strct, struct, LIST=list, MKDIR=mkdir, NOFILE=nofile, $
       if keyword_set( ccdspeed ) then struct[q].ccdspeed = sxpar(head, ccdspeed)
       if keyword_set( datecrd ) then begin
           date = sxpar(head, datecrd)
+          if strlen(strtrim(date,2)) LT 8 then begin
+              print, 'esi_strct: No date in header.  Telescope not talking to you..'
+              print, 'esi_strct: Hopefully this is a calibration file'
+              print, 'esi_strct: Continue if it is or fix the header otherwise'
+              stop
+              date = '1999-01-01'
+              struct[q].UT = '00:00:00.1'
+          endif
           struct[q].date = x_setjdate(date, struct[q].UT)
       endif
       ;; MODE
@@ -201,13 +226,33 @@ pro esi_strct, struct, LIST=list, MKDIR=mkdir, NOFILE=nofile, $
       if keyword_set( bincrd ) then begin
           binc = sxpar(head, bincrd)
           case strtrim(binc, 2) of 
-              '1, 1': begin
-                  struct[q].cbin = 4
+              '1,1': begin
+                  struct[q].cbin = 1
                   struct[q].rbin = 1
+              end
+              '1, 1': begin
+                  struct[q].cbin = 1
+                  struct[q].rbin = 1
+              end
+              '1, 2': begin
+                  struct[q].cbin = 1
+                  struct[q].rbin = 2
               end
               '2, 2': begin
                   struct[q].cbin = 2
                   struct[q].rbin = 2
+              end
+              '2, 1': begin
+                  struct[q].cbin = 2
+                  struct[q].rbin = 1
+              end
+              '2,1': begin
+                  struct[q].cbin = 2
+                  struct[q].rbin = 1
+              end
+              '2, 4': begin
+                  struct[q].cbin = 2
+                  struct[q].rbin = 4
               end
               '4, 4': begin
                   struct[q].cbin = 4
@@ -344,6 +389,7 @@ pro esi_strct, struct, LIST=list, MKDIR=mkdir, NOFILE=nofile, $
       struct[q].arc_fil = ' '
       struct[q].map_fil = ' '
       struct[q].flat_fil = ' '
+      struct[q].twiflat_fil = ' '
       struct[q].obj_id = -1L
       struct[q].obj_fil = ' '
   endfor

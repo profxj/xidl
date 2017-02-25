@@ -7,18 +7,18 @@
 ;    Reads and writes the lwdfspec structure
 ;
 ; CALLING SEQUENCE:
-;   
 ;   x_wrlwdfspec, lwdfspec, outfil, /READ
 ;
 ; INPUTS:
-;   wfstrct     - WFCCD structure
+;   lwdfspec -- IDL structure
+;   outfil -- Name of FITS file
 ;
 ; RETURNS:
 ;
 ; OUTPUTS:
-;   wfarc      -  WFCCD arc structure (fits file)
 ;
 ; OPTIONAL KEYWORDS:
+;  /READ -- Read instead of write the structure
 ;
 ; OPTIONAL OUTPUTS:
 ;

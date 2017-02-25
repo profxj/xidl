@@ -1,3 +1,37 @@
+;+ 
+; NAME:
+; lco_targets
+;   Version 1.1
+;
+; PURPOSE:
+;    Turns a Sextractor output file into an IDL structure
+;
+; CALLING SEQUENCE:
+;   lco_targets, name, galstr
+;
+; INPUTS:
+;   name -- Name of Sextractor file
+;
+; RETURNS:
+;   galstr -- IDL galaxy structure
+;
+; OUTPUTS:
+;
+; OPTIONAL KEYWORDS:
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;
+; EXAMPLES:
+;
+; PROCEDURES/FUNCTIONS CALLED:
+;
+; REVISION HISTORY:
+;   ?? Written by JXP
+;-
+;------------------------------------------------------------------------------
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 pro lco_targets, name, galstr
 
   if  N_params() LT 2  then begin 
@@ -6,7 +40,8 @@ pro lco_targets, name, galstr
     return
   endif 
 
- readcol, name,idg,ragal,decgal,Rgal,xgal,ygal,sgal,kgal,algal
+ readcol, name,idg,ragal,decgal,Rgal,xgal,ygal,sgal,kgal,algal, $
+   FORMAT='I,F,F,F,F,F,F,F,F,F'
 
  tmp = { $
          idg: 0L, $

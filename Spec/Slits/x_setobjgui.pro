@@ -1,23 +1,26 @@
 ;+
 ; NAME:
 ;       x_setobjgui
+;   Version 1.1
 ; 
 ; PURPOSE: 
-;       Interactive display of 2-D images.
+;       Interactive display of slit mask and slit positions and object
+;       traces to allow verificaiton of the identificaitons and
+;       traces.  Largely based on ATV
 ;
 ; CATEGORY: 
 ;       Image display.
 ;
 ; CALLING SEQUENCE:
-;       x_setobjgui [,array_name OR fits_file] [,min = min_value] 
+;       x_setobjgui img, slitstr, objstr, [,min = min_value] 
 ;           [,max=max_value] 
 ;           [,/linear] [,/log] [,/histeq] [,/block]
 ;           [,/align] [,/stretch] [,header = header]
 ;
 ; REQUIRED INPUTS:
-;       None.  If x_setobjgui is run with no inputs, the window widgets
-;       are realized and images can subsequently be passed to x_setobjgui
-;       from the command line or from the pull-down file menu.
+;   img  -- FITS file
+;   slitstr -- Slit structure
+;   objstr  -- Object sturcture
 ;
 ; OPTIONAL INPUTS:
 ;       array_name: a 2-D data array to display

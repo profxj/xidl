@@ -4,14 +4,14 @@
 ;   Version 1.0
 ;
 ; PURPOSE:
-;    Launches a cw_field and grabs input from the user
+;    Launches a cw_field and grabs a number from the user
 ;
 ; CALLING SEQUENCE:
 ;   
 ;   num = x_guinum(flg)
 ;
 ; INPUTS:
-;   flg = 0: float, 1: double, 2: Long
+;   flg = Return (0: float, 1: double, 2: Long)
 ;
 ; RETURNS:
 ;   num - Number
@@ -19,6 +19,7 @@
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
+;  TITLE= -- Title for the GUI [default: 'Num']
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -40,11 +41,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 function x_guinum, flg, TITLE=title
 
 ;common x_slctline_ans
@@ -52,13 +48,14 @@ function x_guinum, flg, TITLE=title
 ;
   if  N_params() LT 1  then begin 
     print,'Syntax - ' + $
-             'line = x_guinum(flg, TITLE=) [v1.0]'
+             'line = x_guinum(flg, TITLE=) [v1.1]'
     return, -1
   endif 
 
 ;  Optional Keywords
-  if not keyword_set( XOFFSET ) then xoffset = 500
-  if not keyword_set( YOFFSET ) then yoffset = 500
+  device, get_screen_size=ssz
+  if not keyword_set( XOFFSET ) then    xOFFSET = round(ssz[0]*0.5)
+  if not keyword_set( YOFFSET ) then    yOFFSET = round(ssz[1]*0.5)
   if not keyword_set( TITLE ) then title = 'Num'
 
 ;    

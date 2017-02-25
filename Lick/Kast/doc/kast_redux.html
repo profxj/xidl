@@ -1,0 +1,116 @@
+<html>
+<head>
+<title>The KastRedux Page</title>
+</head>
+<body TEXT="Black" bgcolor="#DEDED3" link="Blue" vlink="Brown" alink="Pink">
+<b>
+<center><hr>
+<h2>
+<font color="#0F75FF">
+The KastRedux Page</font></h2>
+<hr></center></b>
+
+<center>
+<h4> Brought to you by <a href="http://www.ucolick.org/~xavier"> Jason X.
+Prochaska</a> and Gabe Prochter (UCO/Lick Observatory)
+<hr> </h4>
+
+<table border = "0" cellspacing="10" cellpadding="3"><tr>
+<td  width="110" align="left" valign="top" bgcolor="LightGreen" >
+<center>
+<img src="kastpath.gif" width="200" alt="Kast">
+<hr> <h3>Quick Links</h3>
+<hr>
+<h4><a href="http://www.ucolick.org/~xavier/IDL/xidl.tar.gz">XIDL Code</a> </h4>
+<br>
+<h4><a href="kast_qckrdx.html">Quick Reduction</a></h4>
+<br>
+<h4><a href="kast_cookbook.pdf">Kast cookbook (v0.1)</a></h4>
+<br>
+<h4><a href="kast_install.pdf">Kast Install (v0.4)</a></h4>
+<br>
+</font>
+<br>
+</center>
+<br></td>
+
+<td width="500" valign="top">
+<b>
+<H3><font color="Red"> I. Overview of the Code</font></h3>
+The KastRedux code was built with the IDL software pacakge, originally
+to reduce the data from our ongoing survey of z~2.5 LLS.
+Keep this in mind.  While the code was designed for single object, 
+point-source observations, it can be used for extended and/or multiple
+objects within the slit.  The code can work with users that have little
+IDL experience, but you will struggle at first.  I highly recommend you
+read the Intro to IDL book or some other resource before diving in.
+
+<br>
+
+The general approach of the code is as follows: 
+<ul>
+  <li> Construct a normalized flat image
+  <li> Identify the science (and other) objects within the slit.
+  <li> Sky subtract and extract (boxcar or optimal). 
+  <li> Create a wavelength solution.
+  <li> Combine, flux and coadd into 1D spectra
+</ul>
+
+
+<p>
+
+
+</p>
+<H3><font color="Red"> II. Installing the Software</font></h3>
+
+The code relies on several IDL packages in addition to the routines
+that were designed specifically for Kast.  These include:
+
+<ul>
+
+ <li> The <a href="http://spectro.Princeton.EDU/tarballs">SDSS pipeline</a>
+      (both IDLUTILS and idlspec2d), 
+ <li> The <a href="Code/xidl.tar.gz">XIDL</a> pacakge built and maintained by me.
+</ul>
+
+
+
+<br> 
+
+More detailed notes for obtaining and installing these packages can
+be found here: <a href="kast_install.pdf">install notes</a>.  I wish
+to emphasize that the code expects the most up-to-date versions of
+the Goddard, Sloan, and Coyote codes.  Users with old versions of any
+of these packages beware!
+
+<H3><font color="Red"> III. Using the Code</font></h3>
+
+There is a <a href="kast_qckrdx.html">quick reduction</a> version of the
+code.
+
+Moderately detailed descriptions of running the code are given in
+this reduction <a href="kast_cookbook.pdf">cookbook</a>.  We
+include a lot of detail here, but it is still insufficient.  
+Savvy IDL users
+should be able to dig into my codes and follow along.
+
+<br>
+
+Hopefully, I will include an example session of running the code in
+this space before long.
+
+<H3><font color="Red"> III. Developing the Code + Bug Fixing</font></h3>
+
+I do encourage all users to consier ways to improve the code
+and to suggest them to me.  Of course, I'd also like to hear about
+bugs.  Please do make an effort to verify it is a bug in the code
+as opposed to 'user error'.  Along those lines, if you are a novice
+to IDL, I suspect you will have many more 'user errors' than bugs 
+to find.
+
+<hr>
+
+e-mail: <a href="mailto:xavier@ucolick.org">xavier@ucolick.org</a><br >
+<i>last modified 03/18/04</i></font></td></tr></table>
+</body>
+</html>

@@ -1,17 +1,17 @@
 ;+ 
 ; NAME:
 ; xdimg_updstr   
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
-;    Looks around for OV and other images and updates the structure
+;    Looks around for OV and other images and resets the appropriate
+;   flags.
 ;
 ; CALLING SEQUENCE:
-;   
-;  xdimg_strct, struct
+;  xdimg_updstr, strct, /REDOMED
 ;
 ; INPUTS:
-;   struct -- Image strcure DISTRUCT
+;   strct -- Direct Image strcure DISTRUCT
 ;
 ; RETURNS:
 ;
@@ -42,7 +42,7 @@ pro xdimg_updstr, struct, REDOMED=redomed
 ;
   if  N_params() LT 1  then begin 
       print,'Syntax - ' + $
-        'xdimg_updstr, struct (v1.0)'
+        'xdimg_updstr, struct, /REDOMED (v1.1)'
       return
   endif 
   
@@ -52,7 +52,7 @@ pro xdimg_updstr, struct, REDOMED=redomed
 
   for q=0,nimg-1 do begin
 
-      ; OV
+      ;; OV
       ovfil = 'OV/ov_'+struct[q].img_root
       a = findfile(ovfil, count=cnt)
       if cnt NE 0 then begin
@@ -65,7 +65,7 @@ pro xdimg_updstr, struct, REDOMED=redomed
           endif
       endif else struct[q].flg_ov = 0
      
-      ; Mask
+      ;; Mask
       mskfil = 'Masks/mk_'+struct[q].img_root+'.gz'
       a = findfile(mskfil, count=cnt)
       if cnt NE 0 then begin
@@ -73,7 +73,7 @@ pro xdimg_updstr, struct, REDOMED=redomed
           struct[q].img_msk = mskfil
       endif else struct[q].flg_msk = 0
 
-      ; SkyMask
+      ;; SkyMask
       skyfil = 'Masks/Sky/sm_'+struct[q].img_root+'.gz'
       a = findfile(skyfil, count=cnt)
       if cnt NE 0 then begin
@@ -81,7 +81,7 @@ pro xdimg_updstr, struct, REDOMED=redomed
           struct[q].img_skymsk = skyfil
       endif else struct[q].flg_skymsk = 0
       
-      ; FINAL
+      ;; FINAL
       finfil = 'Final/f_'+struct[q].img_root
       a = findfile(finfil, count=cnt)
       if cnt NE 0 then begin

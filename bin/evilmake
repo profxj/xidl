@@ -1,51 +1,159 @@
 #!/bin/sh
-echo "OS type detected: "`uname`
-case `uname` in
-	"SunOS") if [  -d /proc ]; then
-			SO_EXT=so
-			X_CFLAGS="-O -KPIC"
-			X_LD_FLAGS=-G
-		fi
-	;;
-	"HP-UX")
-		SO_EXT=sl
-		X_CFLAGS="+z -Aa -D_HPUX_SOURCE"
-		X_LD_FLAGS=-b;;
-	"IRIX" )
-		SO_EXT=so
-		X_CFLAGS="-32 -KPIC"
-		X_LD_FLAGS="-shared -32";;
-	"IRIX64" )
-		SO_EXT=so
-		X_CFLAGS="-32 -KPIC"
-		X_LD_FLAGS="-shared -32";;
-	"OSF1" )
-		SO_EXT=so
-		X_LD_FLAGS="-S -shared";;
-        "Darwin" )
-                F77=g77
-                SO_EXT=so
-                X_LD_FLAGS="-bundle /usr/lib/bundle1.o -L/usr/lib -lc -lcc_dynamic"
-# The following two lines should be equivalent to the above line
-#               LD=libtool
-#               X_LD_FLAGS="-dynamic -L/usr/lib -lc -lcc_dynamic"
-                X_CFLAGS="-g -Wall -dynamic";;
-	"Linux" )
-		SO_EXT=so
-	        "LD=g77"
-		X_CFLAGS="-O -Wall"
-#		X_CFLAGS="-fPIC -g -Wall"
-		X_LD_FLAGS="-shared" ;;
-	*) echo "This system is not supported" >&2
-		exit 1;;
-esac
-
-# Always optimize when building with "evilmake"
+#
+# Do not use optimization for the IRIX platforms, since that
+# seems to fail at the build step.
 # Our Makefile's always build with $(SDSS_CFLAGS), so we can use that
 # variable to set optimization.
-# Comment this out since it seems to fail on an SGI platform...
-# SDSS_CFLAGS=-O3
-
-export SO_EXT X_CFLAGS X_LD_FLAGS SDSS_CFLAGS
-
+#
+# $Id: evilmake 130264 2012-02-10 19:06:45Z weaver $
+#
+UNAME=`uname`
+echo "OS type detected: ${UNAME}"
+case ${UNAME} in
+    "SunOS")
+        #
+        # Try to use Sun compiler if it exists.
+        # which doesn't set useful exit value...
+        #
+        haveF77=`which f77 | grep -q -v 'no f77' && echo yes`
+        if test ${haveF77}; then
+            echo "Using Sun f77 compiler (better not be g77 named f77)"
+            X_FFLAGS="-e"
+            X_CFLAGS="-KPIC"
+            LDF77=f77
+        else
+            echo "Using GNU g77 compiler"
+            F77=g77
+            X_CFLAGS="-fPIC"
+            LDF77=g77
+        fi
+        X_LD_FLAGS=-G
+        SO_EXT=so
+        SDSS_CFLAGS=-O3
+        ;;
+    "HP-UX")
+        LDF77=g77
+        SO_EXT=sl
+        X_CFLAGS="+z -Aa -D_HPUX_SOURCE"
+        X_FFLAGS="-extend_source"
+        X_LD_FLAGS=-b
+        ;;
+    "IRIX")
+        LDF77=g77
+        SO_EXT=so
+        X_CFLAGS="-32 -KPIC"
+        X_FFLAGS="-32 -extend_source"
+        MAKE_FTNLIB="-lftn"
+        X_LD_FLAGS="-shared -32"
+        ;;
+    "IRIX64")
+        SO_EXT=so
+        LDF77=g77
+        X_CFLAGS="-64 -KPIC -mips4"
+        CC=cc
+        LD=ld
+        LDF77=ld
+        X_FFLAGS="-64 -extend_source -KPIC"
+        MAKE_FTNLIB="-lftn"
+        X_LD_FLAGS="-shared -64 -mips4"
+        ;;
+    "OSF1")
+        LDF77=g77
+        SO_EXT=so
+        X_FFLAGS="-extend_source"
+        X_LD_FLAGS="-S -shared"
+        SDSS_CFLAGS=-O3
+        ;;
+    "Darwin")
+        SO_EXT=dylib
+        unamearch=`uname -m`
+        if [ "${unamearch}" == 'i386' -o "${unamearch}" == 'x86_64' ]; then
+            echo "Darwin/${unamearch}; requires a native (x86) IDL and gfortran"
+            #
+            # Note that "uname" on (some?) 64-bit capable Macs (10.5, at least), do not indicate
+            # that they are 64-bit. So have idl tell us.
+            #
+            which idl > /dev/null 2>&1
+            if [ $? = 0 ]; then
+                idlarch=`idl -e 'PRINT, !VERSION.ARCH'`
+            else
+                idlarch=${unamearch}
+            fi
+            F77=gfortran
+            LDF77=gcc
+            LD=gcc
+            #
+            # This changes how undefined lookups happen.
+            # With recent (3.1?) Xcodes, there is a
+            # MAC_OS_X_VERSION_MIN_REQUIRED
+            #
+            export MACOSX_DEPLOYMENT_TARGET=10.5
+            if [ "${idlarch}" = "x86_64" ]; then
+                BITS_FLAGS="-arch x86_64"
+                F_BITS_FLAGS="-m64"
+            elif [ "${idlarch}" = "i386" ]; then
+                BITS_FLAGS="-arch i386"
+                F_BITS_FLAGS="-m32"
+            else
+                echo "Unsupported architecture for Darwin/Intel: ${idlarch}" >&2
+                exit 1
+            fi
+            echo "   trying for a ${BITS_FLAGS} build... "
+            #
+            # These flags are copied from the values in the !MAKE_DLL structure.
+            #
+            SDSS_CFLAGS="${BITS_FLAGS} -O2 -fPIC -no-cpp-precomp -dynamic -fno-common -D_REENTRANT"
+            X_CFLAGS=${SDSS_CFLAGS}
+            #
+            # gfortran only understands a subset of the cc options.
+            #
+            X_FFLAGS="${F_BITS_FLAGS} -ffixed-line-length-none -O2 -fPIC -dynamic -fno-common -D_REENTRANT"
+            X_LD_FLAGS="${BITS_FLAGS} -bundle -flat_namespace -undefined suppress"
+        else
+            echo "Darwin/ppc"
+            LDF77=ld
+            F77=g77
+            X_LD_FLAGS="-bundle /usr/lib/bundle1.o -L/usr/lib  -L/usr/lib/gcc/powerpc-apple-darwin8/4.0.0 -lc -lgcc -flat_namespace -undefined suppress"
+            if [ `uname -r | cut -c 1` \< 8 ]; then
+                X_LD_FLAGS="-bundle /usr/lib/bundle1.o -L/usr/lib -lc -lcc_dynamic -flat_namespace -undefined suppress"
+            fi
+            SDSS_CFLAGS=-O2
+        fi
+        ;;
+    "Linux")
+        SO_EXT=so
+        HAVEG77=`which g77 2>&1 | grep -v 'no g77'`
+        if test ${HAVEG77} ; then
+            echo Using the g77 Fortran compiler
+            F77=g77
+            LDF77=g77
+            MAKE_FTNLIB="-lg2c"
+            # MAKE_FTNLIB="-lg2c  -L/usr/lib/gcc-lib/i386-redhat-linux/`gcc -dumpversion`"
+            X_LD_FLAGS=-shared
+            SDSS_CFLAGS="-O3 -DSDSS_LITTLE_ENDIAN -D_REENTRANT"
+            X_CFLAGS="-fPIC"
+            X_FFLAGS="-ffixed-line-length-none"
+        else
+            echo Using the gfortran Fortran compiler
+            F77=gfortran
+            LDF77=gfortran
+            MAKE_FTNLIB="-lgfortran"
+            X_LD_FLAGS="-shared -g"
+            SDSS_CFLAGS="-g -O2 -DSDSS_LITTLE_ENDIAN -D_REENTRANT"
+            X_CFLAGS="-fPIC ${SDSS_CFLAGS}"
+            X_FFLAGS="-ffixed-line-length-none ${SDSS_CFLAGS}"
+        fi
+        ;;
+    *)
+        echo "This system is not supported" >&2
+        exit 1
+        ;;
+esac
+#
+# export environment variables.
+#
+export SO_EXT X_CFLAGS X_FFLAGS X_LD_FLAGS SDSS_CFLAGS LD F77 MAKE_FTNLIB UNAME LDF77
+#
+# Run make
+#
 make "$@"

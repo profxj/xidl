@@ -18,7 +18,8 @@
 ;
 ; OUTPUTS:
 ;
-; OPTIONAL KEYWORDS:
+; OPTIONAL INPUTS:
+;   w0off      - half-range of lambda zeropoint to check on initial guess
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -36,7 +37,8 @@
 ;------------------------------------------------------------------------------
 
 
-pro wfccd_allarcsol, wfccd, mask_id, NOFITS=nofits, CLOBBER=clobber
+pro wfccd_allarcsol, wfccd, mask_id, NOFITS=nofits, CLOBBER=clobber, $
+                     W0off=w0off, W2OFF=w2off
 
 ;
   if  N_params() LT 2  then begin 
@@ -51,13 +53,11 @@ pro wfccd_allarcsol, wfccd, mask_id, NOFITS=nofits, CLOBBER=clobber
   obj = where(wfccd.type EQ 'OBJ' AND wfccd.flg_anly NE 0 AND $
               wfccd.mask_id EQ mask_id, nobj)
   arcfil = wfccd[obj].arc_fil
-  ;; Grab the unique files
-  if nobj GT 1 then $
-    unobj = uniq(arcfil, sort(arcfil)) else unobj = [0L]
 
 ;  LOOP ON Unique Arc Files
-  for q=0L,n_elements(unobj)-1 do $
-    wfccd_arcsol, wfccd, obj[unobj[q]], NOFITS=nofits, CLOBBER=clobber
+  for q=0L,nobj-1 do $
+    wfccd_arcsol, wfccd, obj[q], NOFITS=nofits, CLOBBER=clobber, W0OFF=w0off, $
+    W2OFF=w2off
 
   return
 end

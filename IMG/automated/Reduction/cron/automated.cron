@@ -1,0 +1,5 @@
+MAILTO=""
+40 12 * * * bash $XIDL_DIR/IMG/automated/Reduction/cron/automated_transfer.sh > /c/Blazars/data/testbed/log/`date "+%Y%m%d_%H:%M:%S"`_transfer.txt
+0 13 * * * tcsh $XIDL_DIR/IMG/automated/Reduction/cron/automated_runcron.csh > /c/Blazars/data/testbed/log/`date "+%Y%m%d_%H:%M:%S"`_runcron.txt
+#0 15 * * * tcsh $XIDL_DIR/IMG/automated/Reduction/cron/automated_updateweb.csh > /c/Blazars/data/testbed/log/`date 
+#"+%Y%m%d_%H:%M:%S"`_updateweb.txt

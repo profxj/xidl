@@ -1,0 +1,18 @@
+; IDL commands for building HTML documentation
+
+cd, '..'
+;make_html_help, 'Cloudy/', 'doc/tst.html', $
+; /strict, title='IDL Help for XIDL'
+;make_html_help, 'Color/', 'doc/tst2.html', $
+; /strict, title='IDL Help for XIDL'
+x_makehtml, ['Cloudy/', 'Color/', 'Cosm/', 'DLA/', 'Dust/', 'FIT/', $
+	'FUSE/*/', 'GRB/', 'Galaxies/', 'General/', 'IDLA/', 'IMG/Dispay/', $
+	'IMG/General/', 'IMG/Photometry/', 'IMG/Reduction/', $
+	'Iraf/', 'Keck/HIRES/', 'Keck/LRIS/*/', 'LLS/', 'Lick/Kast/*/', $
+	'MOSA/', 'Magellan/IMACS/*/', 'OVI/', 'Obs/', 'SDSS/*/', $
+	'Spec/Analysis/',$
+	'Spec/Arcs/', 'Spec/Display/', 'Spec/Extraction/', 'Spec/Flux/', $
+	'Spec/General/', 'Spec/Lines/', 'Spec/Rectify/', 'Spec/Slits/', $
+	'Spec/Voigt/', 'lcoovi/'], 'doc/xidl_doc.html', $
+ /strict, title='IDL Help for XIDL'
+exit

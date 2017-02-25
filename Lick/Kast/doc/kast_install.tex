@@ -1,0 +1,130 @@
+\documentclass[11pt,letterpaper,dvips]{article}
+ 
+ 
+\usepackage{latexsym}
+\usepackage{fancybox}
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{color}
+%\usepackage{amstex}
+\usepackage{ulem}
+\usepackage{float}
+ 
+\pretolerance=10000
+\textwidth=7.0in
+\textheight=9.8in
+\voffset = -0.3in
+\topmargin=0.0in
+\headheight=0.00in
+\hoffset = -0.3in
+\headsep=0.00in
+\oddsidemargin=0in
+\evensidemargin=0in
+\parindent=2em
+\parskip=1.5ex
+ 
+\input{/u/xavier/bin/defs}
+\input{/u/xavier/bin/latex}
+
+\newcommand{\nnn}{ccd\#\#\#}
+ 
+\special{papersize=8.5in,11in}
+
+\renewcommand{\theenumi}{\Roman{enumi}}
+
+\begin{document}
+%\pagestyle{empty}
+ 
+
+\begin{center}
+{{\huge \bf Installing the Kast Data Reduction Package [v0.4]}}
+\end{center}
+
+\begin{enumerate}
+
+{\Large   \item SETUP}
+   \begin{itemize}
+	\item IDLUTILS\_DIR
+	\begin{itemize}
+	  \item One tends to keep all IDL codes together in their home directory
+		with a top level directory like $\sim$/idl/.  All of the codes
+		are then placed underneath this directory.  I will refer to 
+		this directory as HOMEIDL\_DIR.
+	  \item You will need to set three environment variables 
+	  named IDLSPEC2D\_DIR, IDLUTILS\_DIR and 
+  	  XIDL\_DIR which point to the directories
+	  for the Sloan code and xavier's code.  I suggest you add them
+	  right into your .cshrc file. \\
+	  \quad Examples: \\
+	  \quad $>$ setenv IDLUTILS\_DIR $\sim$/idl/idlutils \\
+	  \quad $>$ setenv IDLSPEC2D\_DIR $\sim$/idl/idlspec2d \\
+	  \quad $>$ setenv XIDL\_DIR $\sim$/idl/xidl 
+	\end{itemize}
+   \end{itemize}
+	
+
+{\Large   \item IDLUTILS (djs) IDL package}
+   \begin{itemize}
+	\item Built and distributed by David J. Schlegel
+	\item Public version located here: \\
+	http://spectro.Princeton.EDU/tarballs/
+	\item Alternate version:
+	http:://www.ucolick.org/$\sim$xavier/IDL/djs.tar.gz
+	\item Installing...
+	\begin{enumerate}
+	  \item Copy the package into $\$$HOMEIDL\_DIR
+	  \item Unpack the distribution (my version unpacks into djs/)
+	  \item $>$ cd idlutils/
+	  \item Clean the directories \\
+	  $>$ bin/evilmake clean
+	  \item Run the make file (this should detect your operating system):  \\
+	  $>$ bin/evilmake
+	\end{enumerate}
+   \end{itemize}
+
+{\Large   \item idlspec2d IDL package}
+   \begin{itemize}
+	\item Built and distributed by David J. Schlegel + Scott Burles
+	\item Public version located here: 
+	http://spectro.Princeton.EDU/tarballs/
+	\item Alternate version: 
+	http:://www.ucolick.org/$\sim$xavier/IDL/idlspec2d.tar.gz
+	\item Installing...
+	\begin{enumerate}
+	  \item Copy the package into $\$$HOMEIDL\_DIR
+	  \item Unpack the distribution (my version unpacks into idlspec2d/)
+	  \item $>$ cd idlspec2d/
+	  \item Create an environment variable IDLSPEC2D\_DIR\\
+	  $>$ setenv IDLSPEC2D\_DIR $\sim$/idl/idlutils/idlspec2d
+	  \item Clean the directories (use the evilmake from IDLUTILS) \\
+	  $>$ $\sim$/idl/idlutils/bin/evilmake clean
+	  \item Run the make file (this should detect your operating system):  \\
+	  $>$ $\sim$/idl/idlutils/bin/evilmake  
+	\end{enumerate}
+   \end{itemize}
+
+{\Large   \item xidl IDL package}
+   \begin{itemize}
+	\item Built and distributed by Jason X. Prochaska
+	\item Public version located here:  
+	http:://www.ucolick.org/$\sim$xavier/IDL/xidl.tar.gz
+	\item Installing...
+	\begin{enumerate}
+	  \item Copy the package into $\$$HOMEIDL\_DIR
+	  \item Unpack the distribution (unpacks into xidl/)
+	  \item $>$ cd xidl/
+	  \item Create an environment variable XIDL\\
+	  $>$ setenv XIDL $\sim$/idl/idlutils/xidl
+	  \item Clean the directories \\
+	  $>$ bin/evilmake clean
+	  \item Run the make file (this should detect your operating system):  \\
+	  $>$ bin/evilmake
+	\end{enumerate}
+   \end{itemize}
+
+
+\end{enumerate}
+
+\end{document}
+	
+

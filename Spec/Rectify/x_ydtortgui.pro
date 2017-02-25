@@ -1,11 +1,11 @@
 ;+ 
 ; NAME:
 ; x_ydtortgui   
-;    Version 1.0
+;    Version 1.1
 ;
 ; PURPOSE:
 ;    Allows the user to interactively examine the trace to slit
-;     edges used to trace the y-distortion
+;     edges used to trace the y-distortion.
 ;
 ; CALLING SEQUENCE:
 ;   
@@ -22,8 +22,8 @@
 ;  newmnx      - The new min and max values
 ;
 ; OPTIONAL KEYWORDS:
-;   XSIZE      - Size of gui in screen x-pixels (default = 1000)
-;   YSIZE      - Size of gui in screen y-pixels (default = 600)
+;   XSIZE      - Size of gui in screen x-pixels (Default = 1000)
+;   YSIZE      - Size of gui in screen y-pixels (Default = 500)
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -563,14 +563,14 @@ common x_ydtortgui_images
   if  N_params() LT 2  then begin 
     print,'Syntax - ' + $
       'x_ydtortgui, img, tracestr, [newmnx], XSIZE=, YSIZE=,'
-    print, '      (v1.0)'
+    print, '      (v1.1)'
     return
   endif 
 
 ;  Optional Keywords
 
   if not keyword_set( XSIZE ) then    xsize = 1000
-  if not keyword_set( YSIZE ) then    ysize = 300
+  if not keyword_set( YSIZE ) then    ysize = 500
 
 ;    STATE
 

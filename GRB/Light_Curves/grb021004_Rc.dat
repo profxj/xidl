@@ -1,0 +1,31 @@
+#   source , t_burst(d) , filter , mag , emag, uplim , refsys #   
+    uemura    0.026568  Rc   16.86   0.53    no
+    uemura    0.031431  Rc   16.45   0.35    no
+    uemura    0.037184  Rc   16.36   0.38    no
+    uemura    0.043990  Rc   16.60   0.38    no
+    uemura    0.072837  Rc   16.37   0.19    no
+    uemura    0.086169  Rc   16.50   0.07    no
+    uemura    0.101942  Rc   16.69   0.06    no
+    uemura    0.120601  Rc   16.56   0.10    no
+    uemura    0.142676  Rc   16.76   0.07    no
+    uemura    0.168792  Rc   16.91   0.08    no
+    uemura    0.199688  Rc   17.17   0.13    no
+    uemura    0.236239  Rc   17.26   0.23    no
+    GCN1606   0.28610   Rc   17.89   0.05    no   A.Henden and U.Munari
+    GCN1606   0.30944   Rc   17.88   0.05    no   A.Henden and U.Munari
+    GCN1606   0.33281   Rc   18.06   0.05    no   A.Henden and U.Munari
+    GCN1606   0.35787   Rc   18.09   0.05    no   A.Henden and U.Munari
+    GCN1606   0.38847   Rc   18.17   0.05    no   A.Henden and U.Munari
+    GCN1606   0.41154   Rc   18.35   0.05    no   A.Henden and U.Munari
+    GCN1606   0.45964   Rc   18.39   0.05    no   A.Henden and U.Munari
+    GCN1606   0.48271   Rc   18.54   0.05    no   A.Henden and U.Munari
+    GCN1606   0.49782   Rc   18.57   0.05    no   A.Henden and U.Munari
+    GCN1585   1.34635   Rc   19.54   0.04    no                GCN 1583
+    GCN1585   1.35434   Rc   19.53   0.04    no                GCN 1583
+    GCN1585   1.42799   Rc   19.62   0.05    no                GCN 1583
+    GCN1585   1.50310   Rc   19.66   0.04    no                GCN 1583
+    GCN1597   2.32701   Rc   20.12    0.1    no                GCN 1564
+    GCN1597   2.35501   Rc   20.08   0.01    no                GCN 1564
+    GCN1597   2.41001   Rc   20.16   0.03    no                GCN 1564
+    GCN1597   2.41801   Rc   20.15   0.03    no                GCN 1564
+    GCN1654   4.36369   Rc    20.9    0.3    no                GCN 1630

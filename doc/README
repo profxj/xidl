@@ -1,0 +1,23 @@
+pre-2009
+  ;; Not well recorded
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+v3.0.0  [June, 2010]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+ Testing...
+  December 2009
+    ;; Testing
+       HIRESb -- Ran through but data is over-subtracted in many places
+       ;; See the notes in doc/improvements.txt of HIRedux for more
+  June 2010
+   $RAID/Keck/LRIS/data/TST_RDX/blue/B600
+      gv QSO_Long/Science/sci-b090917_0119.ps
+      ;; Fine
+
+   $RAID/Keck/LRIS/data/TST_RDX/red/600_7500
+      gv Blazar_Long/Science/sci-r090917_0160.ps
+      ;; Fine
+
+   $RAID/Keck/ESI/data/TST_RDX
+     IDL> esi_tstrdx

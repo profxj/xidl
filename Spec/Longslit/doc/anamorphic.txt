@@ -1,0 +1,29 @@
+
+Anamorphic correction:
+
+In GMOS-N, the unbinned CCD scale is 0.072" per pixel.
+For the B1200 l/mm grating, inverse dispersion is 0.23 Ang/pix
+and a 0.5" slit would give R=3744, FWHM(pix) = R/(lambda)*dispersion
+projected slit width: FWHM(0.5" slit) = 4.06 unbinned pix * (4000 Ang/lambda)
+
+The Anamorphic correction at the central wavelength is given by:
+
+A = Cos(alpha)/Cos(beta)   ; see alpha, beta definition below
+
+GRATING = 'B1200+_G5301'       / Grating name                                   
+GRWLEN  =                 440. / Grating central wavelength (nm)                
+GRORDER =                    1 / Grating order                                  
+GRTILT  =              48.0647 / Grating tilt angle (degrees)          
+
+for the example above this is:  A = 0.67 
+so this would predict a 0.5" projected width of 0.67/(0.5"/0.072") = 4.65
+
+To find the wavelength dependence, we can use:
+
+\alpha = (90 - GRTILT)
+\beta  = (alpha - 50) 
+lambda_central = d*(sin(\alpha) + sin(\beta))  where d=1/(1200) mm
+               =  439.99 nm, for the example above.
+
+
+

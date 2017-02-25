@@ -1,0 +1,22 @@
+Data Reduction with the MIKE Spectrometer
+
+Rebecca A. Bernstein(1), Scott M. Burles(2), J. Xavier Prochaska(3)
+ ((1) Observatories of the Carnegie Institution for Science, 
+  (2) Cutler Group, (3) UCO/Lick; University of California, Santa Cruz)
+
+This manuscript describes the design, usage, and data-reduction
+pipeline developed for the Magellan Inamori Kyocera Echelle (MIKE)
+spectrometer used with the Magellan telescope at the Las Campanas
+Observatory.  We summarize the basic characteristics of the
+instrument and discuss observational procedures recommended 
+for calibrating the standard data products.  We detail the design
+and implementation of an IDL based data-reduction pipeline for
+MIKE data (since generalized to other echelle spectrometers, e.g. 
+Keck/HIRES, VLT/UVES). This includes novel techniques for flat-fielding, 
+wavelength calibration, and the extraction of echelle spectroscopy.
+Sufficient detail is provided in this manuscript to enable
+inexperienced observers to understand the strengths and weaknesses
+of the instrument and software package and an assessment of the
+related systematics.
+
+In press at PASP.  Code is available at http://www.ucolick.org/~xavier/IDL/

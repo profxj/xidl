@@ -32,7 +32,9 @@ SccsId = '@(#)display.pro 3.9 95/08/31 14:42:48 '
 ;	the plotting window.  It handles scale, annotations, X and PostScript
 ;	devices, aspect ratios, logarithmic scaling, and interpolation.  
 ;	Masked values and values below <MIN> are mapped to !P.BACKGROUND.
-;	Values above <MAX> are mapped to !P.COLOR.
+;	Values above <MAX> are mapped to !P.COLOR.  
+;
+;       I have bastarized this version.  Not sure why.
 ;
 ; CATEGORY:
 ;	Image display.

@@ -1,3 +1,34 @@
+;+ 
+; NAME:
+; abslinstrct__define
+;   Version 1.1
+;
+; PURPOSE:
+;  Structure for a simple absorption line. 
+;
+; CALLING SEQUENCE:
+;   tmp = {abslinstrct}
+;
+; INPUTS:
+;
+; RETURNS:
+;
+; OUTPUTS:
+;
+; OPTIONAL KEYWORDS:
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;
+; EXAMPLES:
+;
+; PROCEDURES/FUNCTIONS CALLED:
+;
+; REVISION HISTORY:
+;  Written by JXP
+;-
+;------------------------------------------------------------------------------
 pro abslinstrct__define
 
 ;  This routine defines the line list structure

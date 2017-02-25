@@ -4,19 +4,17 @@
 ;    Version 1.1
 ;
 ; PURPOSE:
-;    Finds the center of peak
+;    Finds the center of a peak
 ;
 ; CALLING SEQUENCE:
-;   
-;   center = x_centerpk(xdat ydat, FUNC=, NORD=, HSIG=, LSIG=,
-;   FFIT=, /INTER)
+;   center = x_centerpk(xdat, ydat, [fracpk], VAR=, FUNC=, NORD=, HSIG=, LSIG=,
+;   IPX=, MINVAL=, FFIT=, /INTER)
 ;
 ; INPUTS:
 ;   xdat       - x Values 
 ;   ydat       - y Values 
-;   fracpk     - Fraction of peak relative to the minimum 
+;   [fracpk]     - Fraction of peak relative to the minimum 
 ;                      (default=1/3 max + min)
-;                
 ;
 ; RETURNS:
 ;   center     - center of the peak
@@ -59,8 +57,8 @@ function x_centerpk, xdat, ydat, fracpk, VAR=var, FUNC=func, $
 ;  Error catching
   if  N_params() LT 2  then begin 
     print,'Syntax - ' + $
-             'center = x_centerpk(xdat, ydat, FUNC=, NORD=, HSIG=, LSIG='
-    print, '          FFIT=, /INTER) [V1.1]'
+             'center = x_centerpk(xdat, ydat, [fracpk], FUNC=, NORD=, HSIG=, LSIG='
+    print, '          FFIT=, IPX=, MINVAL=, /INTER) [V1.1]'
     return, -1
   endif 
 

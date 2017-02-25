@@ -9,7 +9,8 @@
 ;
 ; CALLING SEQUENCE:
 ;   
-;   xdimg_photcal, struct, LNDTFIL=, SETAM=
+;   xdimg_photcal, struct, LNDTFIL=, SETAM=, XSIZE=, YSIZE=, MIN_NOBS=
+;     MIN_MOBS=, SETAM=, OUTROOT=, MAGROOT=, /NCLR
 ;
 ; INPUTS:
 ;   struct -- dimg_strct defining the images of interest.  This
@@ -20,13 +21,13 @@
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
-;  LNDTFIL  = Filename of landolt fits file (default:
-;        '/home/xavier/idl/idlutils/xidl/IMG/Photometry/Lists/nlandolt.fits'
+;  LNDTFIL  = Filename of landolt fits file [default:
+;        $XIDL_DIR/IMG/Photometry/Lists/nlandolt.fits ]
 ;  SETAM    = AM terms (one per filter: UBVRI)
 ;  MIN_MOBS = Minimum number of nights observed by Landolt (default=2)
 ;  MIN_NOBS = Minimum number of observations by Landolt (default=4)
-;  XSIZE    - Size of gui in screen x-pixels (default = 1000)
-;  YSIZE    - Size of gui in screen y-pixels (default = 600)
+;  XSIZE=   - Size of gui in screen x-pixels (default = 1000)
+;  YSIZE=   - Size of gui in screen y-pixels (default = 600)
 ;  OUTROOT  - Root name of Twilight flats (default is 'Photo/soln_')
 ;
 ; OPTIONAL OUTPUTS:
@@ -55,7 +56,7 @@ pro xdimg_photcal, struct, LNDTFIL=lndtfil, XSIZE=xsize, YSIZE=ysize, $
   if  N_params() LT 1  then begin 
       print, 'Syntax - ' +$
         'xdimg_photcal, struct, LNDTFIL=, XSIZE=, YSIZE=, MIN_NOBS= '
-      print, '      MIN_MOBS=, SETAM=, OUTROOT= (v1.1)'
+      print, '      MIN_MOBS=, SETAM=, OUTROOT=, /NCLR, MAGROOT= (v1.1)'
       return
   endif 
 
@@ -68,11 +69,12 @@ pro xdimg_photcal, struct, LNDTFIL=lndtfil, XSIZE=xsize, YSIZE=ysize, $
 
   if n_elements( MIN_NOBS ) EQ 0 then min_nobs = 4
   if n_elements( MIN_MOBS ) EQ 0 then min_mobs = 2
-  if not keyword_set( XSIZE ) then xsize = 1000
-  if not keyword_set( YSIZE ) then ysize = 600
+  device, get_screen_size=ssz
+  if not keyword_set( XSIZE ) then    xsize = ssz[0]-200
+  if not keyword_set( YSIZE ) then    ysize = ssz[1]-200
 
   if not keyword_set( OUTROOT ) then outroot = 'Photo/soln_'
-  if not keyword_set( MAGROOT ) then magroot = 'Photo/soln_'
+  if not keyword_set( MAGROOT ) then magroot = 'Photo/mag_'
   outroot = strtrim(outroot,2)
 
 ;  Temp arrarys
@@ -106,7 +108,7 @@ pro xdimg_photcal, struct, LNDTFIL=lndtfil, XSIZE=xsize, YSIZE=ysize, $
 
   for q=0,nfilt-1 do begin
       
-      wfilt = where(struct[stds].filter EQ filt[q], numi)
+      wfilt = where(strtrim(struct[stds].filter, 2) EQ filt[q], numi)
 
       
 ;  Read in the Mag data
@@ -114,9 +116,9 @@ pro xdimg_photcal, struct, LNDTFIL=lndtfil, XSIZE=xsize, YSIZE=ysize, $
       nstrs = 0
       for w=0,numi-1 do begin
           jj = stds[wfilt[w]]
-          magfil = strjoin([magroot, $
-                            strmid(struct[jj].img_root,0, $
-                                   strlen(struct[jj].img_root)-5), '.dat'])
+          magfil = strjoin([strtrim(magroot,2), 'f_', $
+                            strmid(strtrim(struct[jj].img_root,2),0, $
+                                   strlen(strtrim(struct[jj].img_root,2))-5), '.dat'])
           nlin = numlines(magfil)
           
 
@@ -160,6 +162,7 @@ pro xdimg_photcal, struct, LNDTFIL=lndtfil, XSIZE=xsize, YSIZE=ysize, $
       if not keyword_set(NCLR) then begin
           if nfilt GT 1 then nclr=0 else nclr=1
       endif
+
       x_intphotcal, obs, landolt, outfil, XSIZE=xsize, YSIZE=ysize,  $
         MIN_NOBS=min_nobs, MIN_MOBS=min_mobs, SETAM=int_setam, NCLR=nclr
 

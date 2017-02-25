@@ -9,8 +9,7 @@
 ;
 ; CALLING SEQUENCE:
 ;   
-;   xmkmask, img, IMSK=initmsk, OUTDIR=outdir, XSIZE=xsize,
-;   YSIZE=ysize, /SKYMSK
+;   xmkmask, img, IMSK=, OUTDIR=, XSIZE=, YSIZE=, /SKYMSK
 ;
 ; INPUTS:
 ;   img        - Image(s) for Masking
@@ -61,6 +60,9 @@ common xmkmask_images, $
   display_image, $
   mask_img, $
   init_msk, $
+  cmmn_regions, $
+  cmmn_nreg, $
+  cmmn_regtype, $
   header
 	
 end
@@ -155,6 +157,9 @@ pro xmkmask_event, ev
           xmkmask_UpdDisplay, state, /MASK
           xmkmask_Output, state
           if(state.curimg EQ state.nimg-1) then begin 
+              cmmn_regions = state.reg
+              cmmn_regtype = state.reg_typ
+              cmmn_nreg = state.nreg
               widget_control, ev.top, /destroy 
               return
           endif else begin      ; Next image
@@ -164,6 +169,9 @@ pro xmkmask_event, ev
           endelse
       end
       'DONE' : begin
+          cmmn_regions = state.reg
+          cmmn_regtype = state.reg_typ
+          cmmn_nreg = state.nreg
           widget_control, ev.top, /destroy 
           return
       end
@@ -221,7 +229,7 @@ common xmkmask_images
 
 ; Read Fits
   delvarx, main_image
-  main_image = mrdfits( state.img[state.curimg], 0, header, /fscale, /silent)
+  main_image = xmrdfits( state.img[state.curimg], 0, header, /fscale, /silent)
   sz = size(main_image)
   img_size = lonarr(2)
   img_size[0] = sz[1]
@@ -821,7 +829,7 @@ end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 pro xmkmask, img, IMSK=imsk, OUTDIR=outdir, XSIZE=xsize, YSIZE=ysize, $
-             SKYMSK=skymsk
+             SKYMSK=skymsk, REGSTR=regstr
 
 common xmkmask_color
 common xmkmask_images
@@ -1035,6 +1043,12 @@ if  N_params() LT 1  then begin
 ; Output
 ;  ffit = *pnt_ffit
 ;  PTR_FREE, pnt_ffit
+  REGSTR = { $
+           nreg: cmmn_nreg, $
+           regions: cmmn_regions, $
+           reg_type: cmmn_regtype $
+           }
+            
   
   return
 end

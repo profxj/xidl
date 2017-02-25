@@ -1,7 +1,38 @@
+;+ 
+; NAME:
+; kaststrct__define   
+;     Version 1.1
+;
+; PURPOSE:
+;   Kast IDL structure
+;
+; CALLING SEQUENCE:
+;  tmp = {kaststrct}
+;
+; INPUTS:
+;
+; RETURNS:
+;
+; OUTPUTS:
+;
+; OPTIONAL KEYWORDS:
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;
+; EXAMPLES:
+;
+; PROCEDURES/FUNCTIONS CALLED:
+;
+; REVISION HISTORY:
+;   01-Mar-2003 Written by JXP
+;-
+;------------------------------------------------------------------------------
 pro kaststrct__define
 
 ;  This routine defines the structure for Kast images
-;  [v1.0]
+;  [v1.1]
 
   tmp = {kaststrct, $
          frame: 0,   $          ; FRAME Number

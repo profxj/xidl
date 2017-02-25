@@ -1,0 +1,52 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<title> Basics of Spectroscopy: Funding</title>
+
+<!-- Input junk.html here -->
+<!-- End junk.html here -->
+<!--#include virtual="./class.html"-->
+<!--#include virtual="./noboard.html"-->
+<!--#include virtual="./header.html"-->
+
+<div id="content_panel">  
+
+<table width="930" border="0" cellspacing="0" cellpadding="0">
+        <tr><td colspan="5" class="title"><font color="red"><img src="images/nsf_logo.gif" height="240" border="2"/></font>
+        <img src="images/spacer_10x30.gif" width="50" />
+        <img src="images/spacer_10x30.gif" width="50" />
+        <img src="images/lick.jpg" height="240" border="2"/></font> 
+        </tr>
+ </table>
+
+<center>
+<table width="730" border="0" cellspacing="0" cellpadding="0">
+        <tr><td colspan="5"><img src="images/spacer_10x30.gif" width="10" height="10" /></td>
+        </tr>
+        <tr>                <td height="5" colspan="2">&nbsp;</td>
+        </tr>   
+        <tr><td colspan="5" class="title">Funding</tr></td>
+        <tr>                <td height="5" colspan="2">&nbsp;</td> </tr>   
+    <tr>
+      <td height="40" colspan="5" align="center" valign="middle" class="non_p">
+The development of these web pages and the educational materials are primarily
+funded through an NSF CAREER grant AST-0548180 awarded to Professor Prochaska.
+These funds support his salary, computing resources, and the salary of PhD student
+Kathy Cooksey.<br><br>
+We also wish to acknowledge support from the University of California 
+Lick Observatory which also funds Dr. Prochaska and provides the staff which
+enable these activies.
+       </td>
+    </tr>
+        <tr>                <td height="5" colspan="2">&nbsp;</td> </tr>   
+ </table>
+</center>
+
+
+</div>
+
+
+</body>
+</html>

@@ -1,14 +1,15 @@
 ;+ 
 ; NAME:
 ; xdimg_over   
-;        Version 1.0
+;        Version 1.1
 ;
 ; PURPOSE:
-;    Overscan subtracts a list of images of a structure
+;    Overscan subtracts a list of images of a structure.  Calls
+;  routine xoverscan extensively.
 ;
 ; CALLING SEQUENCE:
 ;   
-;   xdimg_over, struct, imgs
+;   xdimg_over, struct, imgs, ORDR=, /ERASE, /INTER, /NOSV
 ;
 ; INPUTS:
 ;   struct -- dimg_strct defining the images of interest
@@ -20,8 +21,10 @@
 ;   ovimg - fits files in the dir OV
 ;
 ; OPTIONAL KEYWORDS:
-;   erase - Erase pre-existing ov files
-;   inter - Interactive OV fitting
+;   /erase - Erase pre-existing ov files
+;   /inter - Interactive OV fitting (uses x1dfit)
+;   /nosv  -- Dont save the OV image!
+;   ORDR=  -- Order to fit the overscan
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -46,7 +49,7 @@ pro xdimg_over, struct, ovimg, ORDR=ordr, ERASE=erase, INTER=inter, NOSV=nosv
 ;
   if  N_params() LT 2  then begin 
       print,'Syntax - ' + $
-        'xdimg_over, struct, ovimg, ORDR=, /ERASE, /INTER, /NOSV (v1.0)'
+        'xdimg_over, struct, ovimg, ORDR=, /ERASE, /INTER, /NOSV (v1.1)'
       return
   endif 
   

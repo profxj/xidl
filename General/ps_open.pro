@@ -1,7 +1,3 @@
-PRO ps_open, portrait = orient, filename = fn, font = font,  $
-             square=square_plot,  encapsulated = eps, $
-             color = cps, xsize = xs, ysize = ys, $
-             bpp = nbpp, ledger = ldgr, MAXS=maxs
 ;
 ;+
 ; Name:
@@ -52,6 +48,10 @@ PRO ps_open, portrait = orient, filename = fn, font = font,  $
 ;
 ;   YSIZE - the y size in inches of the plotting region
 ;
+;   MAXS -- Maximize the plot on a standard 8.5 x 11 page (JXP)
+;
+;   CMYK -- generate colors in CMYK for publication
+;
 ; See also:
 ;    PS_Close
 ;
@@ -65,8 +65,14 @@ PRO ps_open, portrait = orient, filename = fn, font = font,  $
 ;   28-Apr-94: added SQUARE, and fixed color portrait offset
 ;    5-May-94: got /SQUARE to actually work
 ;   25-Jun-94: added xsize and ysize keywords
+;    3-Dec-07  added CMYK, KLC
 ;-
 ;
+PRO ps_open, portrait = orient, filename = fn, font = font,  $
+             square=square_plot,  encapsulated = eps, $
+             color = cps, xsize = xs, ysize = ys, $
+             bpp = nbpp, ledger = ldgr, MAXS=maxs, CMYK=cmyk, silent=silent
+
   COMMON ps_common, old_dname, old_pfont, file_name, opened, color, ledger
 ;
   if keyword_set( MAXS ) then begin
@@ -103,10 +109,10 @@ PRO ps_open, portrait = orient, filename = fn, font = font,  $
   ENDCASE
 ;
   IF opened EQ 1 THEN BEGIN
-    message, /info, $
-    'WARNING: device already opened to PS, closing it first.' 
-    message, /info, $
-    '         any plot in progress will be lost.'
+     if ~keyword_set(silent) then message, /info, $
+                                           'WARNING: device already opened to PS, closing it first.' 
+     if ~keyword_set(silent) then message, /info, $
+                                           '         any plot in progress will be lost.'
   ENDIF ELSE BEGIN
     old_dname = !D.name
     old_pfont = !P.font
@@ -115,8 +121,8 @@ PRO ps_open, portrait = orient, filename = fn, font = font,  $
   device, /close
   opened = 1
   IF NOT keyword_set(fn) THEN fn = '/tmp/idl-'+getenv('USER')+'.ps'
-  IF keyword_set(eps) THEN device, /encapsulated, filename = fn ELSE $
-    device, filename = fn
+  IF keyword_set(eps) THEN device, /encapsulated, filename = fn, cmyk = cmyk ELSE $
+    device, filename = fn, cmyk = cmyk
 ;
   file_name = fn
 ;
@@ -157,9 +163,10 @@ PRO ps_open, portrait = orient, filename = fn, font = font,  $
 ;
   IF keyword_set(font) THEN !p.font = font
 ;    
-  message, /info, 'output redirect to PostScript file ' + fn
-  IF keyword_set(square_plot) THEN $
-    message, /info, 'using a square area'
+  if ~keyword_set(silent) then message, /info, 'output redirect to PostScript file ' + fn
+  IF keyword_set(square_plot) THEN begin
+     if ~keyword_set(silent) then message, /info, 'using a square area'
+  endif
 ;
   return
 END

@@ -19,7 +19,7 @@
 ;  Image with trcobjered light removed
 ;
 ; OPTIONAL KEYWORDS:
-;   DFLAT      - Use Dome flats where possible
+;   
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -40,7 +40,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 pro esi_lwdtrcobj, esi, obj_id, STD=std, CHK=chk, NCOLL=ncoll, FAINT=FAINT, $
-                   NMED=nmed
+                   NMED=nmed, FILSTD=filstd
 
 
 ;
@@ -79,7 +79,10 @@ pro esi_lwdtrcobj, esi, obj_id, STD=std, CHK=chk, NCOLL=ncoll, FAINT=FAINT, $
               print, 'esi_lwdtrcobj: Using first one -- ', esi[istd].img_root
           end
       endcase
-  endif
+  endif else begin
+      if not keyword_set( FILSTD ) then stop
+      stdfil = filstd
+  endelse
           
 ;;;;;;;;;
 ; Open Stuff
@@ -93,13 +96,14 @@ pro esi_lwdtrcobj, esi, obj_id, STD=std, CHK=chk, NCOLL=ncoll, FAINT=FAINT, $
   if strtrim(objstr[0].obj_id,2) NE 'a' then stop
   
   ;; STD OBJ
-  stdfil = esi[istd].obj_fil
+  if not keyword_set( STDFIL ) then stdfil = esi[istd].obj_fil
   stdstr = xmrdfits(stdfil, 1, STRUCTYP='specobjstrct', /silent)
   if strtrim(stdstr[0].obj_id,2) NE 'a' then stop
 
   ;; Open Image, Variance
   print, 'esi_lwdtrcobj: Opening [combining] images...'
   nimg = n_elements(indx)
+
   ;; COMBINE as needed
   img = esi_lwdcombimg(esi, indx, VAR=var, IMGINDX=2L, /SKY) 
   sz_img = size(img, /dimensions)
@@ -121,7 +125,7 @@ pro esi_lwdtrcobj, esi, obj_id, STD=std, CHK=chk, NCOLL=ncoll, FAINT=FAINT, $
   svoff = 0.
 
   ;; Trace
-  if keyword_set( STD ) then begin ; STANDARD STAR AS GUIDE
+  if keyword_set( STD ) or keyword_set( FILSTD) then begin ; STANDARD STAR AS GUIDE
       yoff = objstr[0].ycen - stdstr[0].ycen
       std_trc = stdstr[0].trace[0:sz_img[0]-1] + yoff
       rnd_trc = round(std_trc)
@@ -230,7 +234,7 @@ pro esi_lwdtrcobj, esi, obj_id, STD=std, CHK=chk, NCOLL=ncoll, FAINT=FAINT, $
   objstr[0].trace[0:sz_img[0]-1] = x_calcfit(findgen(sz_img[0]-1+1), FITSTR=trc_fit)
   if keyword_set( CHK ) then begin
       x_splot, xfit[0:gdfit-1], yfit[0:gdfit-1], PSYM1=1, $
-        YTWO=new_trc, YTHR=ysig, PSYM_Y3=2, /block
+        YTWO=new_trc, YTHR=ysig, PSYM3=2, /block
   endif
 
   ;; CHK

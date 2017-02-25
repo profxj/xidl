@@ -19,7 +19,8 @@
 ; OUTPUTS:
 ;   wfarc      -  WFCCD arc structure (fits file)
 ;
-; OPTIONAL KEYWORDS:
+; OPTIONAL INPUTS:
+;   w0off      - half-range of lambda zeropoint to check on initial guess
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -77,7 +78,7 @@ end
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;  Setups the Guess for a Slit given the x position (in pixels)
-pro wfccd_arcsol_setup, xslit, guess, nguess
+pro wfccd_arcsol_setup, xslit, guess, nguess, W0OFF=w0off, W2OFF=w2off
 
   common wfccd_arcsol_common
 
@@ -90,7 +91,7 @@ pro wfccd_arcsol_setup, xslit, guess, nguess
 
   ; Zero term
   nguess[0] = round(2.*w0off/3.)  ; Loop over as many pixels as spread
-  guess[0,0] = 4874.3883 + 3.1626093*xslit - w0off
+  guess[0,0] = (4874.3883 + 3.1626093*xslit - w0off) 
   guess[1,0] = guess[0,0] + 2*w0off
 
   ; First term --  No fit for now
@@ -101,10 +102,10 @@ pro wfccd_arcsol_setup, xslit, guess, nguess
   ; 2nd term
   val = x_calcfit(xslit, FITSTR=w2fit)
 
-  nguess[2] = 20
+  nguess[2] = 80
   guess[0,2] = val - w2off
-  guess[1,2] = val + w2off
-
+  guess[1,2] = guess[0,2]+2.*w2off
+  
   ; 3rd term
   guess[0,3] = x_calcfit(xslit, FITSTR=w3fit)
 
@@ -118,7 +119,8 @@ end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;  MAIN DRIVER
 pro wfccd_arcsol, wfccd, obj_id, ARC=arc, WFARC=wfarc, SLITSTR=slitstr, $
-                  OUTFIL=outfil, NOFITS=nofits, CLOBBER=clobber
+                  OUTFIL=outfil, NOFITS=nofits, CLOBBER=clobber, W0OFF=w0off, $
+                  W2OFF=w2off
 
 ;
   if  N_params() LT 2  then begin 
@@ -153,15 +155,8 @@ pro wfccd_arcsol, wfccd, obj_id, ARC=arc, WFARC=wfarc, SLITSTR=slitstr, $
   x_arclist, linelist, lines
 
 ;  Set slit structure
-  if not keyword_set( SLITSTR ) then begin
-      slit_fil = wfccd[obj_id].slit_fil
-      if strlen(slit_fil) LE 1 then begin
-          print, 'wfccd_arcsol: Need to set the slit file name!'
-          stop
-      endif
-      slitstr = xmrdfits(wfccd[obj_id].slit_fil,1, $
-                         STRUCTYP='mslitstrct', /silent)
-  endif
+  if not keyword_set( SLITSTR ) then $
+    slitstr = xmrdfits(wfccd[obj_id].slit_fil,1, STRUCTYP='mslitstrct', /silent)
 
 ;  Read the Arc
   if not keyword_set( ARC ) then arc = xmrdfits(wfccd[obj_id].arc_fil, /silent)
@@ -182,12 +177,13 @@ pro wfccd_arcsol, wfccd, obj_id, ARC=arc, WFARC=wfarc, SLITSTR=slitstr, $
     print, 'wfccd_arcsol: Looping on the slits...'
   for i=0L,ngd-1 do begin
       if not keyword_set( SILENT ) then $
-        print, 'wfccd_arcsol: Silt ', strtrim(i,2), ' of ', strtrim(ngd-1,2)
+        print, 'wfccd_arcsol: Slit ', strtrim(i,2), ' of ', strtrim(ngd-1,2), $
+        ' ( '+strtrim(string(gd[i]),2)+' )'
       ;; Center of slit
       cent = total(slitstr[gd[i]].yedg_flt)/2.
-          ;; 0 Slit kludge
-      if i EQ 0 AND cent GT 1850L then cent = slitstr[gd[i]].yedg_flt[0]+5
-      if i EQ (ngd-1) AND cent LT 100L then cent = slitstr[gd[i]].yedg_flt[1]-5
+;; 0 Slit kludge -- slits should be right
+; if i EQ 0 AND cent GT 1850L then cent = slitstr[gd[i]].yedg_flt[0]+5
+; if i EQ (ngd-1) AND cent LT 100L then cent = slitstr[gd[i]].yedg_flt[1]-5
       wfarc[gd[i]].cent = cent
 
       ;; Take center 5 rows
@@ -195,7 +191,8 @@ pro wfccd_arcsol, wfccd, obj_id, ARC=arc, WFARC=wfarc, SLITSTR=slitstr, $
       npix = n_elements(spec)
 
       ;; Setup autoid
-      wfccd_arcsol_setup, slitstr[gd[i]].xpos, guess, nguess
+      wfccd_arcsol_setup, slitstr[gd[i]].xpos, guess, nguess, w0off=w0off, $
+        w2off=w2off
       
       ; Kill RHS if GUESS < 7000A (KLUDGE)
       if guess[0,0] LT 7000. then spec[1800:npix-1] = spec[1799]
@@ -210,12 +207,28 @@ pro wfccd_arcsol, wfccd, obj_id, ARC=arc, WFARC=wfarc, SLITSTR=slitstr, $
       fitstr.minpt = 5
       fitstr.maxrej = 5
 
-      ;; Order
-      if guess[0,0] GT 5800 then fitstr.nord = 6 else fitstr.nord = 4
+      ;; Order (hacked to put limit on how far the right it can go)
+      if (guess[0,0] GT 5800 AND guess[0,0] LT 10000.) then $
+        fitstr.nord = 6 else fitstr.nord = 4
 
       ;; Run x_autoid
       x_autoid, spec, GUESS=guess, NGUESS=nguess, LINES=lines, /cprog, $
-        /silent, FINFIT=fitstr, FLG_AID=flg_aid
+        /silent, FINFIT=fitstr, FLG_AID=flg_aid, STATUS=status
+      if(status eq 5) then begin
+          splog, 'x_autoid failed, trying again with LBUFFER=100'
+          x_autoid, spec, GUESS=guess, NGUESS=nguess, LINES=lines, /cprog, $
+            /silent, FINFIT=fitstr, FLG_AID=flg_aid, LBUFFER=100., $
+            STATUS=status
+          if(status eq 5) then begin
+              splog, 'x_autoid failed, trying again with LBUFFER=150'
+              x_autoid, spec, GUESS=guess, NGUESS=nguess, LINES=lines, $
+                /cprog, /silent, FINFIT=fitstr, FLG_AID=flg_aid, $
+                LBUFFER=150., STATUS=status
+          endif
+      endif 
+      if(status ne 0) then begin
+          message, 'x_autoid returned failure!'
+      endif
 
       ;; Check Flag
       if flg_aid EQ 0 then begin

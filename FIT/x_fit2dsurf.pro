@@ -4,11 +4,14 @@
 ;   Version 1.1
 ;
 ; PURPOSE:
-;    Fits a 2d surface to a set of x,y data with errors 
+;    Fits a 2d surface to a set of x,y data with errors (optional).
+;    It is recommended to set the FIT parameters with the structure
+;    FITSTR. 
 ;
 ; CALLING SEQUENCE:
 ;   
-;   fit = x_fit2dsurf(xy, z,[sig], nx=, ny=, MSK=)
+;   fit = x_fit2dsurf(xy, z,[sig], nx=, ny=, MSK=, FITSTR=, REJPT=,
+;   NRM=, /NONRM, /SVDFT, LSIG=, HSIG=, NITER=, MAXREJ=, FUNC= )
 ;
 ; INPUTS:
 ;   xy         - 2d array of xy pairs: [N,2]
@@ -26,9 +29,15 @@
 ;   nx         - Order in x
 ;   ny         - Order in y
 ;   NONRM      - Don't normalize data before fitting
+;   MINPT      - Minimum number of points to keep in fit
+;   LSIG,HSIG  - Lower and upper sigma rejection
+;   /SVDFT     - Use the IDL routine SVDFT for the fitting.   
+;                Otherwise use CHOLDC (recommended for speed)
 ;
 ; OPTIONAL OUTPUTS:
 ;   ffit     - Functional form
+;   NRM      - [2,2] array of Normalization coefficients
+;   REJPT    - Points rejected in the fit
 ;
 ; COMMENTS:
 ;
@@ -38,6 +47,9 @@
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
 ;  f2dpoly
+;  CHOLDC
+;  SVDFT
+;  x_calc2dfit
 ;
 	; REVISION HISTORY:
 ;   31-Jan-2002 Written by JXP
@@ -128,9 +140,10 @@ function x_fit2dsurf, xydat, zval, sig, NX=nx, NY=ny, MSK=msk, FUNC=func, $
   if (LSIG GT 0.) OR (HSIG GT 0.) then begin
       tmpniter = niter+1
       flg_rej = 1 
-  endif else flg_rej = 0
-
-
+  endif else begin
+     flg_rej = 0
+     tmpniter = niter
+  endelse
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Initialize Function

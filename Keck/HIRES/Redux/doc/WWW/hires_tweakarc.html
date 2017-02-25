@@ -1,0 +1,178 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.70)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>hires_tweakarc</TITLE>
+<META NAME="description" CONTENT="hires_tweakarc">
+<META NAME="keywords" CONTENT="hires_tweakarc">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+</HEAD>
+
+<BODY >
+
+<P>
+<DIV ALIGN="CENTER">
+<FONT SIZE="+3"><B>HIRedux TweakArc</B></FONT>
+
+</DIV>
+
+<FONT SIZE="+2">HIRES Wavelength Issues</FONT>
+</DIV>
+
+<FONT SIZE="+1">
+<UL>  
+ <LI>  While a high quality pipeline would provide a non-fail 
+wavelength solution, I fear that is not yet the case.  At present
+I am quite confident about data taken with ECHANGL=0 with HIRESb.
+Aside from that, I consider the code to be a work in progress.
+It is improving rapidly however.
+<LI>  The source of all the trouble is that the resolution actually
+changes with ECHANGL.  This is well understood and expected, but a
+pain to deal with nevertheless.  Basically, it amounts to a 
+stretching or compression of the spectrum relative to the ECHANGL=0
+case.
+<LI>  With HIRESb, I'd say one has very little reason to use
+an ECHANGL value other than 0 with the 3 CCD mosaic.  With HIRESr,
+however, there is still plenty of reason to do so.
+<LI>  Anyhow, the obvious source of trouble is that the code
+yields an RMS for the fit in a given order that exceeds 0.2 pixels.
+I wouldn't worry for the reddest orders where there are very few
+lines, but for anywhere else this is a likely problem.  I generally
+check the <a href="hires_afitqa.pdf">QA plots</a> for at least one
+arc in each of my setups.  I suggest the same for now.
+</UL>
+
+
+</DIV>
+<hr>
+<P>
+<FONT SIZE="+2">Running hires_tweakarc</font>
+	
+<UL>
+<LI>Minor change :: Most of the problems will be quite minor and 
+hires_tweakarc should be used in this fashion.  The code will 
+launch x_identify and the current line identifications.  You will
+then re-identify and re-fit.
+<BR>	 &nbsp;&nbsp;&nbsp;&nbsp;IDL> <B>hires_tweakarc</B>, 'Arcs/Fits/Arc_C####)fit.idl', orders <br>
+--> Here, C is the chip (B,G,R), #### is the frame number, and <b>orders</b>
+is an array of the echelle order(s) you wish to tweak.  
+<br> I now detail the steps to take.
+
+ <OL>
+ <LI> Delete outliers and re-fit
+  <OL>
+ <LI> Type 'F'  -- This will launch a fitting window and the default will 
+	    be a 2nd order polynomial.  In most cases, there will be a
+	    few lines misidentified at the edges of the CCD.  
+ <LI> Delete outliers with the RMB (right mouse button)
+ <LI> Type 'R'  -- This will show the residuals of the fit
+ <LI> Type 'u'  -- This will increase the fit to 3rd order (go no higher)
+ <LI> Type 'q'  -- This will quit the fit and apply it
+ </OL>
+ <LI> Option 1:  The fit was good
+   <OL>
+   <LI> Type 'L' -- This will identify all good lines according to the new fit
+   <LI> Type 'F' -- This will launch the Fit window again, but to fit the 
+		new set.
+	<OL>
+	<LI> Type 'R' -- Examine the residuals
+	<LI> Delete outliers (RMB) -- For now, delete the pink triangles too
+	<LI> Keep the order# at 3 unless you think 4 is much better 
+		    (toggle with 'u' and 'd')
+	<LI> Type 'q' -- Quit and apply the fit
+	</OL>
+   <LI> Type 'q' -- This will quit the re-identify process, save the info
+		to your file and proceed to the next order to tweak as
+		desired.
+   </OL>
+ <LI> Option 2: The fit was no good.  For now, I suggest you type 'D' to
+	    delete all of the lines and start from scratch.  Alternatively,
+	    read how to do the tweak process below.
+ </OL>
+<LI>Major change :: If it appears that most of the lines identified 
+	are bad, you should reidentify them all.  A quick way of doing this
+	is to use one of the archived solutions as guidance.  Here is the
+	call to hires_tweakarc
+<BR>	 &nbsp;&nbsp;&nbsp;&nbsp;IDL> <B>hires_tweakarc</B>, 'Arcs/Fits/Arc_C####)fit.idl', orders, 'templatefile' <br>
+--> Here, C is the chip (B,G,R), #### is the frame number, <b>orders</b>
+is an array of the echelle order(s) you wish to tweak, and 'templatefile'
+is the name of a good archived solution that includes the echelle orders
+you wish to tweak.  Here is a 
+<a href="hires_templ.dat">list of the filenames</a>  and info on the
+orders they cover. 
+<br> I now detail the steps to take.
+
+ <OL>
+ <LI> Stretch and shift
+  <OL>
+    <LI> The black plot is your arc and the green is the archived arc.
+    <LI> In the top/center you can type in values to shift and stretch the
+		archived data.
+    <LI> When the two overlap closely (within 2-3 pixels everywhere), click
+		on Apply.
+  </OL>
+ <LI> Identify and Fit
+  <OL>
+   <LI> Type 'L' -- This will identify the arc lines using the archived
+		wavelength solution
+   <LI> Type 'F' -- This will launch a Fit window
+	<OL>
+	<LI> Type 'R' -- Examine the residuals
+	<LI> Type 'u' -- Increase the order number to 3 if necessary
+	<LI> Delete outliers (RMB) -- For now, delete the pink triangles too
+		    (toggle with 'u' and 'd')
+	<LI> Type 'q' -- Quit and apply the fit
+	</OL>
+   <LI> Type 'q' -- This will quit the re-identify process, save the info
+		to your file and proceed to the next order to tweak as
+		desired.
+  </OL>
+
+</UL>
+
+</DIV>
+<hr>
+<P>
+<FONT SIZE="+2">Continuing and Reprocessing</font>
+ <UL>
+ <LI> It is quite likely that you have only noticed the problem to
+	your arcs after running through most or all of the steps.
+ <LI> WARNING: If you try to restart after tweaking (e.g. buy using the
+	/CLOBBER flag), you will overwrite your tweaked fits.
+ <LI> To avoid this, run as follows (which will skip the <b>hires_fitarc</b>
+	file: 
+  <UL>
+  <LI> One file
+<BR>	 &nbsp;&nbsp;&nbsp;&nbsp;IDL> print, 
+<B>hires_allarc_sngl</b>('Raw/file.fits', hires, setup, chip, /NOONED, /CLOBBER)
+  <LI> All files
+<BR>	 &nbsp;&nbsp;&nbsp;&nbsp;IDL> 
+<B>hires_allarc</b>, hires, setup, [chip], /NOONED, /CLOBBER)
+ </UL>
+ </UL>
+
+</DIV>
+<hr>
+<P>
+<FONT SIZE="+2">Reporting</font>
+ <UL>
+ <LI> Finally, I'd like to know which orders went wrong and with what
+	setup.  I'd also like your fit solution and QA file.   Please
+	send me this info.
+ <LI> It is quite possible I will add your solution to the archive.
+ </UL>
+
+
+<P>
+<BR><HR>
+<ADDRESS> Last modified 2005-10-10 </ADDRESS>
+</BODY>
+</HTML>

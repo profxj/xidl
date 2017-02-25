@@ -1,18 +1,18 @@
 ;+ 
 ; NAME:
 ; x_stdmag   
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
-;    Does aperture photometry on the objects in the std_* lists
+;    Does aperture photometry on the objects in the std_* list files
 ;
 ; CALLING SEQUENCE:
-;   
 ;   xdimg_stdmag, struct, SKYR=
 ;
 ; INPUTS:
-;   struct -- dimg_strct defining the images of interest.  This
-;             program focuses on the STD frames only.
+;   img   -- Image
+;  strfil -- Star list file
+;  outfil -- Output file
 ;
 ; RETURNS:
 ;
@@ -21,14 +21,15 @@
 ; OPTIONAL KEYWORDS:
 ;  SKYR =  2 float array describing sky annulus in arcsec
 ;            (default=15,30)
+;  ARCPIX= Arcseconds per pixel
+;  SATUR=  Saturation level
 ;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   xdimg_stdmag, dimg
-;
+;   x_stdmag, 'Final/f_ccd003.fits', 'Photometry/star.list', 'outfil'
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
 ;  X_APER
@@ -38,8 +39,6 @@
 ;   03-Apr-2003 Written by JXP
 ;-
 ;------------------------------------------------------------------------------
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 pro x_stdmag, img, strfil, outfil, MSK=msk, SKYR=skyr, ARCPIX=arcpix, $
@@ -48,7 +47,7 @@ pro x_stdmag, img, strfil, outfil, MSK=msk, SKYR=skyr, ARCPIX=arcpix, $
 ;
   if  N_params() LT 1  then begin 
       print, 'Syntax - ' +$
-        'xstdmag, img, dat, outfil, MSK= (v1.0)'
+        'x_stdmag, img, strfil, outfil, MSK=, SKYR=, ARCPIX=, SATUR= (v1.1)'
       return
   endif 
 

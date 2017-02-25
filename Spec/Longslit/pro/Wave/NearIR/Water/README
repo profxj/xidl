@@ -1,0 +1,12 @@
+Here is info from Rob Simcoe on using H2O
+lines to calibrate in K-band.  And this
+directory includes some files from him.
+
+==========
+Nice to hear from you.  It seems like there is a flurry of activity leading up to your conference as I'm seeing an uptick in email activity from all IGM collaborator directions.  I hope this means the workshop will be interesting and productive!  I wish I could be there but am truthfully glad for the rest.  I think it should provide the opportunity to dig in and get some actual work done, which has been lacking for quite some time.
+
+The far-K wavelength calibration is really a bear when those OH lines crap out.  I searched high and low for good line lists and couldn't come up with anything that seemed good at all.  What's more, FIRE's reddest order only has 2 ThAr lines (way in the blue half of the FSR) so that is no good.  There were clearly more lines out there so first I had to figure out that they were mostly water.  Then, to generate the lines in that table, I made a HITRAN run to get the radiance spectrum of water out at those wavenumbers, then ran a peak finder on that model spectrum, and used the resulting peaks to generate the wavelengths you correctly identified in the line list.
+
+I attach my HITRAN run and the snippet of code used to generate the lines.  You'll see that I haven't done the thing where you convolve to the right resolution, etc, but at FIRE's echelle resolution I think blends aren't too bad out there.  The wavelengths (at least according to the HITRAN website) are in vacuum, just like the OH line list.  The atrans.txt file is extraneous, I think.  I believe I had it in there to try and understand that the outputs from HITRAN meant, and I've included it to you just because the little IDL script asks for it.
+
+If you come up with a better way to do this, I'm all ears.  I've never been happy with the wavelengths in that last order.

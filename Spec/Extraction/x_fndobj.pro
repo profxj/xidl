@@ -1,14 +1,15 @@
-;+ 
+ ;+ 
 ; NAME:
 ; x_fndobj   
-;    Version 1.0
+;    Version 1.1
 ;
 ; PURPOSE:
-;    Finds a set of obj in a spectrum
+;    Finds a set of obj in a spectrum.  I think this is a precursor
+;  to x_fndpeaks.  I doubt this routine is worth using.
 ;
 ; CALLING SEQUENCE:
-;   
-;   x_fndobj, spec, center, NSIG=, PEAK=
+;  x_fndobj, spec, center, NSIG=, /SILENT, /FORCE, $
+;             PKWDTH=, EDGES=, NORDB=, NEDG=, AFUNC=, PEAK=, /NOSMOOTH
 ;
 ; INPUTS:
 ;   spec       - Input spectrum (1D)
@@ -39,15 +40,17 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-pro x_fndobj, spec, center, NSIG=nsig, SILENT=silent, FORCE=force, $
-              PKWDTH=pkwdth, EDGES=edges, NORDB=nordb, NEDG=nedg, $
-              AFUNC=afunc, PEAK=peak, NOSMOOTH=nosmooth
+pro x_fndobj, spec, center, NSIG=nsig, SILENT=silent, FORCE=force $
+              , PKWDTH = pkwdth, EDGES = edges, NORDB = nordb, NEDG = nedg $
+              , AFUNC = afunc, PEAK = peak, NOSMOOTH = nosmooth $
+              , FRACPK = FRACPK
 
 
 ;  Error catching
   if  N_params() LT 2  then begin 
     print,'Syntax - ' + $
-             'x_fndobj, spec, center, NSIG=, /THIN, /NORECENT [v1.0]'
+             'x_fndobj, spec, center, NSIG=, /NORECENT, /FORCE, PKWDTH=, EDGES='
+     print, '   NORDB=, NEDG=, AFUNC=, PEAK=, /NOSMOOTH [v1.1]'
     return
   endif 
 
@@ -104,7 +107,6 @@ pro x_fndobj, spec, center, NSIG=nsig, SILENT=silent, FORCE=force, $
 
 ; EDGES
   if arg_present(EDGES) then edges = fltarr(npk,2)
-
 ; Center?
   if keyword_set( NORECENT ) then begin
       center = double(npk)

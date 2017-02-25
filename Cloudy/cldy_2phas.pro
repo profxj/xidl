@@ -5,35 +5,35 @@
 ;
 ; PURPOSE:
 ;    Finds the best 2-phase solution for a series of ratio
-;    constraints
+;    constraints.  This is not a well devloped or tested routine.
 ;
 ; CALLING SEQUENCE:
 ;   
-; cldy_2phas, ratio, sig, ion, chisq, min
+; cldy_2phas, grid, ratio, sig, ion1, ion2, restrct, NHILMT=, FEHLMT=, /UONLY
 ;
 ; INPUTS:
 ;   grid  - CLOUDY grid
 ;   ratio -  Observed ionic ratios
 ;   sig  -  Error on the ratios
-;   ion1 - Z, i for ion1
-;   ion2 - Z, i for ion2 
+;   ion1 - Z, i for ion1  (can be an array of Z,i pairs)
+;   ion2 - Z, i for ion2  (can be an array of Z,i pairs)
 ;
 ; RETURNS:
-;   retstrct - Returns a structure of the output
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
 ;   NHILMT - 2-element array giving NHI min,max
 ;   FEHLMT - 2-element array giving FeH min,max
+;   UONLY  - Value of nH to use
 ;
 ; OPTIONAL OUTPUTS:
-;  CHISQ - chisq
+;   retstrct - Returns a structure of the output
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   cldy_2phas, grid, rto, sig, ion1, ion2, soltn
+;   cldy_2phas, grid, [0.3], [0.1], [14,4], [14,2], soltn
 ;
 ;
 ; PROCEDURES/FUNCTIONS CALLED:

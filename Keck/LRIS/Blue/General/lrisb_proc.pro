@@ -1,30 +1,29 @@
 ;+ 
 ; NAME:
-; lrisb_subbias   
+; lrisb_proc
 ;     Version 1.1
 ;
 ; PURPOSE:
-;    Median combine all ZRO frames (darks)
-;      WARNING!  Assumes images are all of 1 mode (e.g. IMG, ECH, LWD)!!
+;    Process the image (bias subtract, flatten and multiply by gain)
 ;
 ; CALLING SEQUENCE:
-;   
-;  lrisb_subbias, lris, indx
+;  lrisb_proc, img, flat, finimg, /LONG, FITS=, /FULL
 ;
 ; INPUTS:
-;   lrisb   -  ESI structure
-;   indx  -  Index numbers of frame to subtract (default output is OV)
+;   img  -- Name of file to process
+;   flat -- Name of flat
 ;
 ; RETURNS:
+;  finimg -- Processed image file
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
-;  BIASFIL= - Name of bias file (default: Bias/BiasS[I].fits)
-;  OVROOT=  - Root name of OV file (default: OV/ov_ )
-;  /FORCE   - Overwrite existing OV files 
+;  /LONG  -- Long slit mode
+;  /FULL  -- Keyword for lrisb_subbias
 ;
 ; OPTIONAL OUTPUTS:
+;  FITS  -- Name of fits file to write finimg to
 ;
 ; COMMENTS:
 ;  Currently only good for 1x1 binning
@@ -42,13 +41,13 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-pro lrisb_proc, img, flat, finimg, LONG=long, FITS=fits
+pro lrisb_proc, img, flat, finimg, LONG=long, FITS=fits, FULL=full, $
+                NOFLAT=noflat
 
 
   if  N_params() LT 3  then begin 
       print,'Syntax - ' + $
-        'lrisb_subbias, img, flat, finimg '
+        'lrisb_proc, img, flat, finimg, /LONG, FITS=, /FULL [v1.1]'
       return
   endif 
   
@@ -67,16 +66,17 @@ pro lrisb_proc, img, flat, finimg, LONG=long, FITS=fits
   
 ; Bias subtract
   print, 'lrisb_proc: Bias subtracting'
-  lrisb_subbias, raw, ovimg, LONG=long
+  lrisb_subbias, raw, ovimg, LONG=long, FULL=full
 
 ; Add in the gain
   ovimg = ovimg * gain
 
 ; Flatten
   print, 'lrisb_proc: Flattening'
-  fdat = xmrdfits(flat, /silent)
-
-  finimg = ovimg / fdat
+  if not keyword_set( NOFLAT ) then begin
+      fdat = xmrdfits(flat, /silent)
+      finimg = ovimg / fdat
+  endif else finimg = ovimg
 
 ; Output
   if keyword_set( FITS ) then mwrfits, finimg, fits, /create

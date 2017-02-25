@@ -1,0 +1,58 @@
+SMB:  Need to put in real gains, header is wrong
+        Need to try the difference method for the gain.
+
+SMB:  Try to shift ordr_str to each Arc.
+
+SMB:  Use Kelson's method to find order centers.
+
+SMB:  Take out slope in TFLAT, not sure why there is such a huge
+        slope in the internal Quartz lamp. 
+      Fit for a slope in the first call to bspline_extract
+
+   
+
+
+JXP: 8/?? --
+1. Remove OV files from Bias step
+
+JXP: 9/23/03 --
+7.  Allow combining of files prior to object finding and tracing
+
+SMB:  2/19/04
+9.  Match skyspectra to UVES line list to check for pixel shifts.
+   
+10. Measure Arc line widths and centroids, after intial tracearc.
+11. Deal with Partial Orders reasonably
+
+SMB:  2/24/04
+12. Improve milky flat fitting to produce better pixel flats
+
+13. Attempt to automate look-up of standard star calibration
+    --Add a check during autoid to see if a cataloged standard was observed.
+
+14. Merge trcflat and fittflat to always get matching edges
+15. Find a better way to skip orders with no lines found
+
+JXP: 4/07/04
+
+16.  Add a GROW option to mike_objcr
+17.  Improve box car extraction post-optimal
+
+
+----------------------------
+COMPLETED
+
+2. Add order guessing for Blue side to mike_trcflat (considerd necessary)
+  JXP 4/4/04
+3. Update Arc names in setup
+  Completed 8/18/03 JXP
+4. Update Arc routines to take an index value instead of just obj_id
+  Completed 8/18/03 JXP
+5. Add CR procedure
+  Completed 8/19/03 JXP
+
+JXP:  8/20/03 --  done, at least first iteration
+6. Understand and remove the residual count on the blue side.  Probably
+   an issue of incorrect variance estimation.   
+
+8.  Make sure the vacuum vs air wavelengths are all done 'right'

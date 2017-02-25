@@ -4,11 +4,15 @@
 ;  Version 1.2
 ;
 ; PURPOSE:
-;    Allows the user to interactively perform a photometric solution
+;    Allows the user to interactively perform a photometric solution.
+;   At its fullest, the code will calculate a zeropoint, an airmass
+;   term and a color term.
+;   The routine launches a GUI which allows the deletion 
+;   of specific stars.
 ;
 ; CALLING SEQUENCE:
-;   
-;   x_intphotcal, obs, landolt, XSIZE=, YSIZE=
+;   x_intphotcal, obs, landolt, outfil, XSIZE=, YSIZE=, /NCLR,
+;    MIN_NOBS=, MIN_MOBS=, SETAM=
 ;
 ; INPUTS:
 ;   obs - Standard star observations  (stdstruct)
@@ -17,13 +21,14 @@
 ; RETURNS:
 ;
 ; OUTPUTS:
+;   OUTFIL -- ASCII file summary of the photometric solution.
 ;
 ; OPTIONAL KEYWORDS:
 ;   XSIZE = size of gui
 ;   YSIZE = size of gui
 ;   MIN_NOBS= Min n value for Landolt star
 ;   MIN_MOBS= Min m value for Landolt star
-;   NCLR = Solve without color terms
+;   /NCLR = Solve without color terms
 ;   SETAM = Value taken for AM term 
 ;        (Note: You cannot choose a value of 0. exactly!)
 ;
@@ -32,7 +37,7 @@
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   x_intphotcal, obs, landolt
+;   x_intphotcal, obs, landolt, outfil
 ;
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
@@ -43,8 +48,6 @@
 ;   14-Oct-2002 Revised by JXP [setup no AM, no CLR terms]
 ;-
 ;------------------------------------------------------------------------------
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;
@@ -66,7 +69,7 @@ pro x_iphotcal_event, ev
                       1 : begin ; Delete/Undelete a star
                           x_iphotcal_DelStr, state, state.tag_Mag 
                           x_iphotcal_Solve, state
-                          x_iphotcal_Reset, state
+;                          x_iphotcal_Reset, state
                       end
                       2 : state.tv_Mag.xymnx = state.tv_Mag.svxymnx    ; Zoom out
                       4 : x_iphotcal_SetZoom, state, 1, state.tag_Mag  ; Zoom 
@@ -161,6 +164,7 @@ end
 
 pro x_iphotcal_Reset, state
 
+
 ; Plotting
 
   ; Mag
@@ -199,6 +203,7 @@ pro x_iphotcal_Solve, state
 
   if state.flg_CLR EQ 0 then tmpflg = tmpflg + 1
   if state.flg_AM EQ 0 then tmpflg = tmpflg + 2
+
 
   ; Call photcal
   case tmpflg of

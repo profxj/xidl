@@ -57,9 +57,13 @@ pro wfccd_wrfspec, wffspec, outfil, READ=read
               obj_id: ' ',        $ ; ID value (a=primary, b-z=serendip, x=NG)
               flg_anly: 0,      $ ;  0=No analy, 1=Extracted, 2=Fluxed 
               obj_type: 0, $
+              xcen: 0L,$
+              ycen: 0.,$
               xyimg: fltarr(2), $ ; xy pix of original image
+              trace:fltarr(5000),$
               mag: 0., $        ; Usually R mag
               phot_fil: ' ', $
+              spec2d_fil: strarr(5), $
               img_fil: ' ', $
               nexp: 0L, $
               wvmnx: fltarr(100,2), $ ; Wave min/max for each exposure
@@ -70,6 +74,16 @@ pro wfccd_wrfspec, wffspec, outfil, READ=read
               wave: fltarr(4000), $
               fx: fltarr(4000), $
               var: dblarr(4000), $ ; <=0 :: rejected pix
+              sdssname: ' ',$   ; INFO FROM SDSS FILES
+              ra: 0.0d,$
+              dec: 0.0d,$
+              rmag: 0.,$
+              gr: 0.,$
+              psfmodel: 0., $
+              wfccd_pri:0.,$
+              zsdss:0.0,$        ; SDSS REDSHIFT, =0 if no info
+              berlind:0L, $      ; =1 if in Berlind group sample
+              vgroup: 0.0,$      ; group redshift
               class:  '', $     ; ALL ZANS BELOW HERE
               subclass: '', $
               z: 0.0, $
@@ -104,10 +118,14 @@ pro wfccd_wrfspec, wffspec, outfil, READ=read
       if na NE 0 then anon[a].obj_fil[0] = ' '
       a = where(strlen(anon.phot_fil) EQ 0, na)
       if na NE 0 then anon[a].phot_fil = ' '
+      a = where(strlen(anon.sdssname[0]) EQ 0, na)
+      if na NE 0 then anon[a].sdssname[0] = ' '
+      a = where(strlen(anon.spec2d_fil) EQ 0, na)
+      if na NE 0 then anon[a].spec2d_fil = ' '
       a = where(strlen(anon.img_fil) EQ 0, na)
       if na NE 0 then anon[a].img_fil = ' '
 
-      ; Write
+      ;; Write
       mwrfits, anon, outfil, /create
       ;; COMPRESS
       spawn, 'gzip -f '+outfil

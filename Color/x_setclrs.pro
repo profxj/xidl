@@ -3,15 +3,15 @@
 ; x_setclrs
 ;
 ; PURPOSE:
-;    Creates an array of colors useful for loops of undetermined
-;    length
+;    Creates an array of colors useful for converting index
+;    numbers into color
 ;
 ; CALLING SEQUENCE:
 ;   
-;   xcolors = x_setclrs, [nclr]
+;   xcolors = x_setclrs()
 ;
 ; INPUTS:
-;   [nclr]  - Optional input setting the array size (Default is 10)
+;   [nclr]  - Optional input setting the array size (Default is 12)
 ;
 ; RETURNS:
 ;   xcolors - String Array of colors
@@ -19,34 +19,30 @@
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
+;  /WHITE  - Assumes a black background 
 ;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;  xcolors = x_setclrs
+;  xcolors = x_setclrs()
 ;
 ; PROCEDURES CALLED:
-;   getcolor (coyote)
+;   getcolor (Coyote package)
 ;
 ; REVISION HISTORY:
 ;   25-Nov-2001 Written by JXP
 ;-
 ;------------------------------------------------------------------------------
 
-function x_setclrs, nclr, WHITE=white
-
-;  if (N_params() LT 3) then begin 
-;    print,'Syntax - ' + $
-;             'getabnd, nam, Zval, abnd, [flag=]'
-;    return
-;  endif 
+function x_setclrs, nclr, WHITE=white, DARK=dark
 
 ;
-  if not keyword_set( nclr ) then    nclr = 12
+  if not keyword_set( nclr ) then    nclr = 20
+  if not keyword_set( init ) then    init = 0L
 
-  if nclr GT 12 then message, 'x_setclrs: Not set for nclr > 10'
+  if nclr GT 20 then message, 'x_setclrs: Not set for nclr > 20'
 
 ;  Get one color
 
@@ -62,7 +58,10 @@ function x_setclrs, nclr, WHITE=white
           end
           1: allclr[q] = clr.blue
           2: allclr[q] = clr.red
-          3: allclr[q] = clr.green
+          3: begin
+             if not keyword_set(DARK) then allclr[q] = clr.green $
+              else allclr[q] = clr.darkgreen 
+          end
           4: allclr[q] = clr.orange
           5: allclr[q] = clr.purple
           6: allclr[q] = clr.cyan
@@ -71,6 +70,15 @@ function x_setclrs, nclr, WHITE=white
           9: allclr[q] = clr.yellow
           10: allclr[q] = clr.skyblue
           11: allclr[q] = clr.brown
+          12: allclr[q] = clr.pink
+          13: allclr[q] = clr.maroon
+          14: allclr[q] = clr.tan
+          15: allclr[q] = clr.lightgray
+          16: allclr[q] = clr.firebrick
+          17: allclr[q] = clr.gray
+          18: allclr[q] = clr.cornsilk
+          19: allclr[q] = clr.seagreen
+          20: allclr[q] = clr.orangered
           else : stop
       endcase
   endfor

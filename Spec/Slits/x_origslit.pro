@@ -5,11 +5,10 @@
 ;
 ; PURPOSE:
 ;    Given the slitstr and the map, find slit positions in the
-;    original image
+;    original image.  The values are filled into the slit structure.
 ;
 ; CALLING SEQUENCE:
-;   
-;   x_origslit, slitstr, map
+;   x_origslit, slitstr, map, /INVERSE
 ;
 ; INPUTS:
 ;   slitstr     - Slit structure
@@ -21,6 +20,7 @@
 ;   Updates slitstr for original positions
 ;
 ; OPTIONAL KEYWORDS:
+;  /INVERSE  -- The map is the inverse!
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -45,7 +45,7 @@ pro x_origslit, slitstr, map, INVERSE=inverse
 ;  Error catching
   if  N_params() LT 2  then begin 
     print,'Syntax - ' + $
-             'x_origslit, slitstr, map, /INVERSE [v1.0]'
+             'x_origslit, slitstr, map, /INVERSE [v1.1]'
     return
   endif 
 

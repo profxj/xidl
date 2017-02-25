@@ -1,0 +1,124 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<title> Spectroscopic Inquiry from UC Santa Cruz</title>
+
+<!-- Input junk.html here -->
+<!-- End junk.html here -->
+<!--#include virtual="./class.html"-->
+<!--#include virtual="./board.html"-->
+<!--#include virtual="./header.html"-->
+
+<div id="left_menu">
+  <table width="196" border="0" cellpadding="0" cellspacing="0">
+    <tr>
+      <td height="40">&nbsp;</td>
+    </tr>
+    <tr>
+      <td class="menu"><span class="menu_title">Inquiry Tools</span></td>
+    </tr>
+    <tr>
+      <td class="menu">&nbsp;</td>
+    </tr>
+    <tr>
+      <td class="menu"><span class="menu_title">Light</span></td>
+    </tr>
+      <td class="menu"><a href="#light:wavelength" class="menu_text">Wavelength</a></td>
+    <tr>
+      <td height="10">&nbsp;</td>
+    </tr>
+    <tr>
+      <td class="menu"><span class="menu_title">Spectroscopy</span></td>
+    </tr>
+    <tr>
+      <td class="menu"><a href="#spectra:basics" class="menu_text">Basics</a></td>
+      <td class="menu"><a href="#spectra:spectrometer" class="menu_text">Spectrometer</a></td>
+      <td class="menu"><a href="#spectra:line" class="menu_text">Spectral Lines</a></td>
+    </tr>
+    <tr>
+      <td height="10">&nbsp;</td>
+    </tr>
+  </table>
+
+</div>
+
+<div id="content_panel">
+  <table width="720" border="0" cellspacing="0" cellpadding="5">
+	<tr>
+		<td height="5" colspan="2">&nbsp;</td>
+	</tr>
+	<tr>
+		<td colspan="2" class="title"></td>
+	</tr>
+
+	<tr>
+		<td colspan="2"><p><span color="p_lead_in style2">The following tools were developed using the 
+IDL software package.  They are freely disseminated to anyone.  They have been
+tested extensively on Macintosh, Linux, and PC computers (workstations and laptops). 
+  </span></p></td>
+	</tr>
+	<tr>
+		<td colspan="2" class="title"></td>
+	</tr>
+    <tr>
+
+    <tr>
+      <td width="300" valign="top"><img src="images/screen_wavelength.gif" alt="MassLoss" width="280" /></td>
+      <td width="418"><p><a name="light:wavelength" id="light:wavelength"></a></p>
+        <p><span class="p_lead_in style2">Light: Wavelength</span> 
+This tool introduces the concept of wavelength by allowing students to interactively 
+'shape' their own light wave.  By stretching/compressing the wave they can convert 
+the light from radio waves to gamma-rays.
+Secondary content includes energy, photons, wave/particle duality, 
+luminosity, and XXX. <br>
+<a href="tools_wavelength.shtml" class="red_link">Click here</a> for more info
+        </p>
+    </tr>
+
+    <tr>
+      <td width="300" valign="top"><img src="images/screen_basicquasar.gif" alt="MassLoss" width="280" /></td>
+      <td width="418"><p><a name="spectra:basics" id="spectra:basics"></a></p>
+        <p><span class="p_lead_in style2">Spectroscopy: Basics</span> 
+This tool introduces the student to the concept of a spectrum.  It begins
+by showing the 'experimental design' of dispersing a light source (the Sun).
+The spectrum is then plotted as a colored histogram and/or its exact curve.
+
+<a href="tools_basicspec.shtml" class="red_link">Click here</a> for more info
+        </p>
+    </tr>
+
+    <tr>
+      <td width="300" valign="top"><img src="images/screen_spectra.gif" alt="MassLoss" width="280" /></td>
+      <td width="418"><p><a name="spectra:spectrometer" id="spectra:spectrometer"></a></p>
+        <p><span class="p_lead_in style2">Spectroscopy: Spectrometer</span> 
+This tool is a very generic inquiry tool that inputs a spectrum (flux and wavelength)
+and enables the student to explore its properties.
+The input spectrum can be compared against a range of overlays including a Ne lamp, 
+a star with user-specified temperature, a quasar, etc.
+Secondary content includes photons, velocity, redshift, temperature, chemical 
+composition.
+<a href="notyet.shtml" class="red_link">Click here</a> for more info
+        </p>
+    </tr>
+
+    <tr>
+      <td width="300" valign="top"><img src="images/screen_specline.gif" alt="MassLoss" width="280" /></td>
+      <td width="418"><p><a name="spectra:line" id="spectra:line"></a></p>
+        <p><span class="p_lead_in style2">Spectroscopy: Spectral Lines</span> 
+This tool depicts the inner few orbital levels of the Hydrogen atom and allows
+the student to choose the starting and end orbitals for the electron.  The tool
+then displays the spectral line associated with this transition.  The student
+can choose to display the spectral line in emission or absorption.
+Secondary content includes velocity and redshift.
+<a href="tools_spectrallines.shtml" class="red_link">Click here</a> for more info
+        </p>
+    </tr>
+
+  </table>
+</div>
+
+
+</body>
+</html>

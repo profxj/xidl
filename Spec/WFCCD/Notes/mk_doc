@@ -1,0 +1,6 @@
+; IDL commands for building HTML documentation
+
+cd, '../..'
+x_makehtml, ['WFCCD/*/'], 'WFCCD/Notes/WWW/wfccd_doc.html', $
+ /strict, title='IDL Help for WFCCD'
+exit

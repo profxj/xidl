@@ -1,0 +1,199 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.70)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>hires_setup</TITLE>
+<META NAME="description" CONTENT="hires_setup">
+<META NAME="keywords" CONTENT="hires_setup">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+</HEAD>
+
+<BODY >
+
+<P>
+<DIV ALIGN="CENTER">
+<FONT SIZE="+3"><B>HIRedux Setup </B></FONT>
+</DIV>
+
+<P>
+<FONT SIZE="+2">Organize and Compress the Data</FONT>
+
+
+<P>
+
+<OL>
+<LI>Create a new directory for the night (e.g. 08sep04) and enter it
+<LI>Create a 'Raw/' directory and put all the raw data in it.  
+<LI>gzip the data as necessary <br>
+   unix> gzip *.fits
+<LI>Launch idl in the directory above Raw/  <br>
+   unix>  idl -32  (or idlde -32)
+</OL>
+
+<P>
+<FONT SIZE="+2">Create/Edit the Structure</FONT>
+
+<OL>
+<LI><B><a href="HIRES_doc.html#HIRES_STRCT">hires_strct</a></B> :: Create the HIRES structure.  
+	
+<UL>
+<LI>This structure organizes
+	the entire night of data and is the most important file created.  
+</LI>
+<LI>The routine creates a few things: 
+  <ol>
+   <LI> An IDL structure in memory with whatever name you choose (e.g. hires).  
+	<br><a href="hiresstrct__define.txt">Here</a> is a copy of the file which
+        defines the structure and lists the tags.
+	<LI> The file 'hiresstrct.fits' which is a fits
+	version of the structure; 
+   <LI> The file 'hires.list' which is an ASCII
+	version of the fits file which lists the values of some of the tags.
+   </ol>
+</LI>
+<LI>If you run with /EDIT the program will launch a
+	gui which allows some editing of the hires structure 
+	(see next step).   <br> We recommend you use an IDL script to do the 
+	    editing.  It will save time if you have to start over from scratch
+	    and <br> it gives a permanent record of what you changed.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>hires_strct</B>, hires, [/EDIT]
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : <1s per image
+	
+</LI>
+<li> <I>You know the code is working</I> &nbsp; properly when:
+ <ol> 
+    <li> It runs through the completion after checking each Raw file
+    <li> The majority of files are correctly identified by type.  Note the
+    code will not get them all right all of the time.  We typically create
+    a script like this <a href="set_crds.pro">one</a> to set a number of the tags.
+ </ol>
+</UL>
+
+<P>
+
+<LI><b>Recommended:</b> Edit the structure with a script <br>
+	<b>hires_strct</b> creates the structure and takes a guess at the 
+	initial values of many of the tags based on the header card info.  It
+	is difficult, however, to automate all of the values for the tags and
+	therefore the user should carefully check the structure.  Also, the
+	user should set flg_anly = 0 for all of images which should
+	be ignored during data reduction (bad flats, tests, etc.).  For most of
+	the important tags, one can use <B>hires_editstrct</B>.  The rest must
+	be done from the command line by hand or through a simple
+	IDL script (recommended). The obvious tags to modify are: 
+
+<P>
+
+<LI><B> <a href="HIRES_doc.html#HIRES_EDITSTRCT"> hires_editstrct</a> </B> 
+        :: Modify the HIRES structure.  See above
+	 
+<UL>
+<LI>Obj :: Object name (this propagates into the final spectra 
+		and <B>should have no spaces!</B>)
+</LI>
+<LI>flg_anly :: Include in analysis (defaulted to 1 for yes)
+</LI>
+<LI>type :: ARC, TFLT, MFLT, TWI, OBJ, STD, ZRO, etc.  
+</LI>
+<LI>setup :: 1L, 2L, etc.  (unique integer for each instrument
+			setup including slit width)
+	 
+</LI>
+         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>hires_editstrct</B>, hires 
+<BR>     &nbsp;&nbsp;&nbsp;&nbsp;Time   : User interaction
+<BR>     &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> set_crds, hires  
+                 &nbsp;&nbsp; (see doc/set_crds.pro for an example)
+  <LI> <I>You know the code is working</I> &nbsp; right when the GUI appears.
+</UL>
+
+<P>
+</LI>
+<LI><B> <a href="HIRES_doc.html#HIRES_UPDSTRCT"> hires_updstrct</a> </B> 
+        :: Append new files to the current structure. 
+	This is mainly useful at the telescope as you are taking new data.
+	The code simply searches the Raw directory, notes any new files,
+	and adds them to the structure.
+</LI>
+         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>hires_updstrct</B>, hires 
+<BR>     &nbsp;&nbsp;&nbsp;&nbsp;Time   : Fast
+  <LI> <I>You know the code is working</I> &nbsp; right when it finds the files.
+</UL>
+
+<P>
+</LI>
+<LI><B><a href="HIRES_doc.html#HIRES_WRSTRCT">hires_wrstrct</a></B> :: 
+	Write the HIRES structure to disk. In IDL you can modify the values
+	of any of the tags.  You can then save the structure in fits form and 
+	rewrite the ASCII file  with the routine <B>hires_wrstrct</B>. 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>hires_wrstrct</B>, hires, FITS='hires_name.fits' 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : fast
+
+<P>
+</LI>
+<LI> If you exit (or crash) IDL, you will need to read the structure back in.
+      <BR>  <B><a href="HIRES_doc.html#HIRES_AR">hires_ar</a></B> ::
+        Read the HIRES structure from disk. 
+	If no name is given, the file looks for the first fits 
+	file starting 'hires' that contains a '_'.  
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> hires = <B>hires_ar()</B> 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> hires = <B>hires_ar('hires_name.fits')</B> 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : fast
+  <LI> <I>You know the code is working</I> &nbsp; right when 
+	<br> IDL> help, hires, /str ---- lists the structure.
+
+<P>
+</LI>
+</OL>
+
+<P>
+<FONT SIZE="+2">Setup </FONT>
+	
+<UL>
+<LI> A unique setup is defined by the slit width, the binning, the
+ angles of the echelle and cross-disperser, the blocking filter, and the
+ cross-dispersor (UV or RED).
+ Obviously, each setup requires its own set of calibration files. 
+<LI> It is important to make sure the objects are properly named 
+	at this point.  At the least, multiple exposures of the same object
+	should have identical object name (tag: hires.obj).
+</LI>
+<LI><B><a href="HIRES_doc.html#HIRES_SETUP">hires_setup</a></B> ::
+	This routine examines the hires structure and looks for calibration
+	files associated with the various setups.
+	It groups together exposures with identical Obj name (hires.obj) and 
+	sets the obj_id tags accordingly.
+	A list of the setups and the corresponding files is put 
+	  in 'hires_summ.txt'.   See 'setup_summ.txt' for a very brief
+        listing.
+<LI> <b>Note:</b> With v2.0 it is highly recommended that you only run this
+program once.    The calibration files produced by the pipeline have the
+setup# as a tag and rerunning <b>hires_setup</b> could compromise things.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>hires_setup</B>, hires 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : Fast
+<LI> <I>You know the code is working right when you</I> 
+&nbsp; check the output file 'hires_summ.txt' and everything is
+properly setup. Modify the obj_id and other tags and rerun &nbsp;
+<B>hires_setup</B> as necessary.
+<LI> Perhaps the main failure mode of this routine is when the cross-disperser 
+angle floats between exposures.  Right now the default tolerance is 0.0015
+for the angle.  So if your exposures differ by more than this, the code will
+assign unique setup values.  You can override this limit by increasing the
+XTOLER parameter.
+	
+</LI>
+</UL>
+
+
+<P>
+<BR><HR>
+<ADDRESS> Last modified 2005-10-10 </ADDRESS>
+</BODY>
+</HTML>

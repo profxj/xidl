@@ -59,6 +59,7 @@
 ;   12-Aug-2002 Written by JXP
 ;   21-Aug-2002 Streamlined + Added ps output
 ;   01-Feb-2003 Polished (JXP)
+;   16-Sep-2004 Modified to fit alog10 wavelengths by JXP
 ;-
 ;------------------------------------------------------------------------------
 
@@ -82,7 +83,7 @@ pro esi_echfitarc_ps, flg, svdecomp, filnm, WV=wv, FIT=fit, REJPT=rejpt,$
             charsize=1.8, $
             background=clr.white, color=clr.black, $
             xtitle='Wave', ytitle='Residual (Ang)', $
-            xmargin=[12,2], ymargin=[6,2]
+            xmargin=[12,2], ymargin=[6,2], yrange=[-0.2, 0.2]
           ;; MASK 
           if rejpt[0] NE -1 then $
             oplot, wv[rejpt], fit[rejpt]-wv[rejpt], psym=2, color=clr.red
@@ -110,14 +111,16 @@ end
 pro esi_echfitarc, esi, slit, INTER=inter, LINLIST=linlist, $
                    CHK=chk, CLOBBER=clobber, SIGREJ=sigrej, DEBUG=debug,$
                    ORDRS=ordrs, PIXSHFT=pixshft, PINTER=pinter, CUAR=cuar,$
-                   GUESSARC=guessarc, NORD=nord
+                   GUESSARC=guessarc, NORD=nord, CBIN=cbin, RBIN=rbin, $
+                   PKSIG=pksig, MAXORD=maxord, GLOG=glog, $
+                   SEDG_FIL=sedg_fil
 
 
 ;
   if  N_params() LT 2  then begin 
       print,'Syntax - ' + $
         'esi_echfitarc, esi, slit, /INTER, ORDRS=, /DEBUG, /CHK '
-      print, '     PIXSHIFT=, /CUAR [v1.1]'
+      print, '     PIXSHIFT=, /CUAR, CBIN=, RBIN=, /GLOG [v1.1]'
       return
   endif 
   
@@ -127,6 +130,9 @@ pro esi_echfitarc, esi, slit, INTER=inter, LINLIST=linlist, $
       flg_ordr = 0
   endif else flg_ordr = 1
 
+  if not keyword_set(MXSHFT) then mxshft = 25
+  if not keyword_set( MAXORD ) then maxord = 4
+  if not keyword_set( PKSIG ) then pksig = 7.
   if not keyword_set( SIGREJ ) then sigrej = 2.
   if not keyword_set( TRCNSIG ) then trcnsig = 3.
   if not keyword_set(MEDWID) then medwid = 5L
@@ -138,15 +144,18 @@ pro esi_echfitarc, esi, slit, INTER=inter, LINLIST=linlist, $
   endif
   if not keyword_set( GUESSARC ) then begin
       if keyword_set( CUAR ) then $
-        guessarc = getenv('XIDL_DIR')+'/ESI/CALIBS/ECH_CuArarcfit.idl' $
-      else guessarc = getenv('XIDL_DIR')+'/ESI/CALIBS/ECH_arcfit.idl' 
+        guessarc = getenv('ESI_CALIBS')+'/ECH_CuArarcfit.idl' $
+      else guessarc = getenv('ESI_CALIBS')+'/ECH_arcfit.idl' 
   endif
+  if not keyword_set( CBIN ) then cbin = 1
+  if not keyword_set( RBIN ) then rbin = 1
 
 ; Slit name
-  c_s = esi_slitnm(slit)
+;  c_s = esi_slitnm(slit)
 
 ; Set Peak Width
   case slit of
+      0.3: pkwdth = 4L
       0.5: pkwdth = 5L
       0.75: pkwdth = 6L
       1.0: pkwdth = 7L
@@ -154,7 +163,7 @@ pro esi_echfitarc, esi, slit, INTER=inter, LINLIST=linlist, $
   endcase
 
 ; Check for outfil
-  outfil = 'Arcs/ArcECH_'+c_s+'fit.idl'
+  outfil = esi_getfil('arc_fit', SLIT=slit, cbin=cbin, rbin=rbin, /name)
   if flg_ordr EQ 0 then begin
       a = findfile(outfil, count=na)
       if na NE 0 AND not keyword_set( CLOBBER ) then begin
@@ -170,14 +179,14 @@ pro esi_echfitarc, esi, slit, INTER=inter, LINLIST=linlist, $
   ;; CLOSE first
   esi_echfitarc_ps, 9, svdevice, psfil
   if not keyword_set( CHK ) AND not keyword_set( PINTER ) then begin
-      psfil = 'Arcs/ArcECH_'+c_s+'fit.ps'
+      psfil = esi_getfil('arc_psfil', SLIT=slit, cbin=cbin, rbin=rbin, /name)
       esi_echfitarc_ps, 0, svdevice, psfil
   endif
   
 ; Grab Arc IMG
 
-  arc_fil = 'Arcs/ArcECH_'+c_s+'.fits'
-  a = findfile(arc_fil, count=na)
+  arc_fil = esi_getfil('arc_fil', SLIT=slit, cbin=cbin, rbin=rbin, /name)
+  a = findfile(arc_fil+'*', count=na)
   if na EQ 0 then begin
       print, 'esi_echfitarc: Arc ', arc_fil, ' does not exist. Run esi_echmkarc!'
       return
@@ -187,19 +196,19 @@ pro esi_echfitarc, esi, slit, INTER=inter, LINLIST=linlist, $
   sz_arc = size(arc_img, /dimensions)
 
 ; Open Slit file
-  sedg_fil = 'Flats/SEdg_ECH'+c_s+'.fits'
-  if x_chkfil(sedg_fil) EQ 0 then begin
-      print, 'esi_echfitarc: Slit edge file ', sedg_fil, ' does not exist!'
-      return
-  endif
-  print, 'esi_echfitarc: Grabbing slit edges from: ', sedg_fil
-  slit_edg = xmrdfits(sedg_fil, /silent)
+  if not keyword_set(SEDG_FIL) then $
+    slit_edg = esi_getfil('sedg_fil', SLIT=slit, cbin=cbin, rbin=rbin) $
+  else slit_edg = xmrdfits(sedg_fil, 0, /silent)
   slit_cen = round((slit_edg[*,*,0] + slit_edg[*,*,1])/2.)
 
   rnd_edg = round(slit_edg)
 
 ; Open Guess (If not interactive)
   if not keyword_set( INTER ) then begin
+      if x_chkfil(guessarc+'*') EQ 0 then begin
+          print, 'esi_echfitarc:  Put ', guessarc, 'in the CALIBS file!!'
+          stop
+      endif
       restore, guessarc
       guess_spec = temporary(sv_aspec)
       guess_fit = temporary(all_arcfit)
@@ -225,6 +234,12 @@ pro esi_echfitarc, esi, slit, INTER=inter, LINLIST=linlist, $
       sv_aspec = fltarr(sz_arc[1], 10)
       fittmp = { fitstrct }
       all_arcfit = replicate(fittmp, 10)
+      lintmp = { $
+                 pix: dblarr(90), $
+                 wv: dblarr(90), $
+                 nlin: 0 $
+               }
+      sv_lines = replicate(lintmp, 50)
   endif
       
 ; LOOP
@@ -240,14 +255,14 @@ pro esi_echfitarc, esi, slit, INTER=inter, LINLIST=linlist, $
           j = gd[q]
           tmp[*,j] = arc_img[slit_cen[j,qq]-MEDWID:slit_cen[j,qq]+MEDWID,j]
       endfor
-      sv_aspec[*,qq] = djs_median(tmp,1)
+      sv_aspec[*, qq] = djs_median(tmp > (-10.0), 1) 
 
       ;; CuAr
       if keyword_set( CUAR ) AND qq EQ 9L then begin
           all_arcfit[qq] = guess_fit[qq]
           ;; Output
           print, 'esi_echfitarc: Writing fit to ', outfil, ' and returning'
-          save, sv_aspec, all_arcfit, filename=outfil
+          save, sv_aspec, all_arcfit, sv_lines, filename=outfil
           break
       endif
           
@@ -292,17 +307,18 @@ pro esi_echfitarc, esi, slit, INTER=inter, LINLIST=linlist, $
           if not keyword_set(PIXSHFT) then begin
               x_templarc, sv_aspec[*,qq], lines, guess_fit[qq], /FFT, MSK=msk, $
                 MOCK_FFT=fft(guess_spec[*,qq]), SHFT=shft, ALL_PK=all_pk, $
-                PKWDTH=pkwdth, /THIN, FORDR=9
+                PKWDTH=pkwdth, /THIN, FORDR=9, LOG=GLOG, MXSHFT=MXSHFT
           endif else begin
               shft = pixshft[0]
               x_templarc, sv_aspec[*,qq], lines, guess_fit[qq], MSK=msk, $
-                SHFT=shft, ALL_PK=all_pk, PKWDTH=pkwdth, /THIN, FORDR=9
+                SHFT=shft, ALL_PK=all_pk, PKWDTH=pkwdth, /THIN, FORDR=9, LOG=GLOG
           endelse
           print, 'esi_echfitarc: Shifted ', shft, ' pixels'
 
           ;; Good lines
-          gdfit = where(lines.flg_plt EQ 1, ngd)
-          if ngd LE 5 then begin
+          gdfit = where(lines.flg_plt EQ 1, ngd)  
+        if ngd LE 5 then begin
+;          if ngd LT 5 then begin
               print, 'esi_echfitarc: Insufficient lines for AUTO!!'
               stop
           endif
@@ -316,24 +332,28 @@ pro esi_echfitarc, esi, slit, INTER=inter, LINLIST=linlist, $
           tmp_fit.minpt = 5 
           tmp_fit.hsig = sigrej
           tmp_fit.lsig = sigrej
-;          case qq of 
-;              3: tmp_fit.nord = 9L
-;              6: tmp_fit.nord = 6L
-;              else:
-;          endcase
+          if keyword_set(MAXORD) then tmp_fit.nord = tmp_fit.nord < MAXORD
+
+          ;;
           fin_fit = tmp_fit
           if not keyword_set( NORD ) then begin
-              case slit of
-                  1.0: fin_fit.nord = 5L
-                  else:
-              endcase
+             fin_fit.nord = 5L
+             ;; added by JFH Sep 07, 2015
+             ;; there was higher order structure in the fits for 0.75 slit, and
+             ;; increasing the order reduced the RMS
+             ;; Not sure why we were only doing this for the
+             ;; 1.0" slit, as I suspect it helps the fits for all slits
+             ;;case slit of
+             ;;   1.0: fin_fit.nord = 5L
+             ;;   else:
+             ;;endcase
           endif else begin
               fin_fit.nord = nord[qq]
           endelse
 
           ;; TMP fit 
-          fit = x_fitrej(lines[gdfit].pix, lines[gdfit].wave, FITSTR=tmp_fit, $
-                        REJPT=rejpt)
+          fit = x_fitrej(lines[gdfit].pix, alog10(lines[gdfit].wave), $
+                         FITSTR=tmp_fit, REJPT=rejpt)
           if fit[0] EQ -1 then begin
               print, 'esi_echfitarc: AUTO Failed!!'
               stop
@@ -343,7 +363,7 @@ pro esi_echfitarc, esi, slit, INTER=inter, LINLIST=linlist, $
           ;; Grab new lines
           lines.flg_plt = 0
           x_templarc, sv_aspec[*,qq], lines, tmp_fit, MSK=msk, PKWDTH=pkwdth, $
-            /THIN, FORDR=9
+            /THIN, FORDR=9, /LOG, PKSIG=pksig
           
           ;; ADD SOME LINES BY HAND!
           case qq of 
@@ -368,33 +388,49 @@ pro esi_echfitarc, esi, slit, INTER=inter, LINLIST=linlist, $
 
           ;; FIT
           if not keyword_set( PINTER ) then begin ;; AUTO FIT
-              fit = x_fitrej(lines[gdfit].pix, lines[gdfit].wave, $
-                             FITSTR=fin_fit, REJPT=rejpt)
+              fit = x_fitrej(lines[gdfit].pix, alog10(lines[gdfit].wave), $
+                             FITSTR=fin_fit, REJPT=rejpt, GDPT=gdpt)
               if fit[0] EQ -1 then begin
                   print, 'esi_echfitarc: Lowering order by 1'
                   fin_fit.nord = fin_fit.nord - 1
-                  fit = x_fitrej(lines[gdfit].pix, lines[gdfit].wave, $
-                                 FITSTR=fin_fit, REJPT=rejpt)
+                  fit = x_fitrej(lines[gdfit].pix, alog10(lines[gdfit].wave), $
+                                 FITSTR=fin_fit, REJPT=rejpt, GDPT=gdpt)
                   if fit[0] EQ -1 then stop
               endif
+              ;; Save lines
+              ngd = n_elements(gdpt)
+              sv_lines[qq].nlin = ngd
+              sv_lines[qq].pix[0:ngd-1] = lines[gdfit[gdpt]].pix
+              sv_lines[qq].wv[0:ngd-1] = lines[gdfit[gdpt]].wave
           endif else begin ;; INTER FIT in x_identify
-              x_identify, sv_aspec[*,qq], fin_fit, LINELIST=linlist, $
-                INLIN=lines
+              x_identify, sv_aspec[*,qq], id_fit, LINELIST=linlist, $
+                INLIN=lines, OUTLIN=outlin
+              ngd = n_elements(outlin)
+              sv_lines[qq].nlin = ngd
+              sv_lines[qq].pix[0:ngd-1] = outlin.pix
+              sv_lines[qq].wv[0:ngd-1] = outlin.wave
+              ;; Final auto fitting in log10 space!
+              fin_fit.nord = id_fit.nord
+              fit = x_fitrej(outlin.pix, alog10(outlin.wave), FITSTR=fin_fit)
           endelse
 
-          print, 'esi_echfitarc: RMS = ', fin_fit.rms
+          wv = 10^(x_calcfit(findgen(sz_arc[1]),FITSTR=fin_fit))
+          dwv = median(wv-shift(wv,1))
+          print, 'esi_echfitarc: RMS(pix) = ', $
+            fin_fit.rms*sv_lines[qq].wv[0]*alog(10.)/dwv, ' for ', $
+            strtrim(n_elements(gdfit),2), ' good lines'
           all_arcfit[qq] = temporary(fin_fit)
 
           ;; Plot to ps file  (this does not include edited lines)
           if not keyword_set( CHK ) AND not keyword_set( PINTER ) then $
-            esi_echfitarc_ps, 1, WV=lines[gdfit].wave, FIT=fit, REJ=rejpt, $
+            esi_echfitarc_ps, 1, WV=lines[gdfit].wave, FIT=10^fit, REJ=rejpt, $
             gswv=x_calcfit(lines[gdfit].pix, FITSTR=guess_fit[qq]), ORDR=qq, $
-            RMS=all_arcfit[qq].rms
+            RMS=all_arcfit[qq].rms*sv_lines[qq].wv[0]*alog(10.)
           
       endelse
       ;; Output
       print, 'esi_echfitarc: Writing fit to ', outfil
-      save, sv_aspec, all_arcfit, filename=outfil
+      save, sv_aspec, all_arcfit, sv_lines, filename=outfil
   endfor
 
 

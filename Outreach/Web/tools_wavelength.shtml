@@ -1,0 +1,98 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<title> Wavelength Tool</title>
+
+<!-- Input junk.html here -->
+<!--#include virtual="./class.html"-->
+<!--#include virtual="./noboard.html"-->
+<!--#include virtual="./header.html"-->
+<!-- End junk.html here -->
+
+<div id="content_panel">  
+<table width="930" border="0" cellspacing="0" cellpadding="0">
+        <tr><td colspan="5">
+<img src="images/spacer_10x30.gif" width="10" height="10" /></td>
+        </tr>
+        <tr><td colspan="5" class="title">
+The Wavelength Tool
+</td>
+        </tr>
+        <tr><td colspan="5">
+<img src="images/spacer_10x30.gif" width="10" height="20" /></td>
+        </tr>
+        <tr><td colspan="5">
+<img src="images/screen_wavelength.gif" width="900" /></td>
+        </tr>
+ </table>
+
+<table width="930" border="0" cellspacing="0" cellpadding="0">
+<tr><td colspan="5">
+<img src="images/spacer_10x30.gif" width="10" height="20" /></td>
+</tr>
+<tr>
+<td width="900" align=left colspan="9" class="more_non_p" align="center">
+The concept of wavelength is a subtle yet profound concept
+for the nature of light.  While we understand the difference
+between colors at a very young age, 
+it is a much higher concept to appreciate that 
+the only quantity that distinguishes radio waves from blue light
+and X-rays is the wavelength of the light. <br><br>
+
+To promote an understanding of wavelength, 
+we have designed a tool that enables students to produce
+light with an arbitrary wavelength.  The easiest
+approach is to stretch/compress the wave with the mouse, which
+increases/decreases the wavelength.  Altenatively, one can input
+a value (and a unit). <br>
+        <tr><td colspan="5">
+<img src="images/spacer_10x30.gif" width="10" height="20" /></td>
+        </tr>
+</td>
+</tr>
+</table>
+
+<table width="930" border="0" cellspacing="0" cellpadding="5">
+<tr>
+<td width="150" colspan="5" valign="middle" class="more_non_p">
+As the wavelength is modified,
+several aspects of the presentation change.  In the upper right
+corner is a graphic which sets a reference point for the size
+of the current wavelength.  The example at the top of the page
+shows the flu virus which has a diameter of roughly 1000 Angstroms.
+The example to the right shows an example of submm light.
+</td>
+<td width="10" colspan="5" class="non_p">
+<img src="images/spacer_10x30.gif" width="5" height="10" /> </td>
+<td width="750" align="center" colspan="5" class="non_p">
+<img src="images/screen_mm.gif" width="750" alt="Submm"/></td>
+</tr>
+</table>
+
+<table width="930" border="0" cellspacing="0" cellpadding="5">
+        <tr><td colspan="5">
+<img src="images/spacer_10x30.gif" width="10" height="20" /></td>
+        </tr>
+<tr>
+<td width="750" align="center" colspan="5" class="non_p">
+<img src="images/screen_xray.gif" width="750" alt="Submm"/></td>
+<td width="10" colspan="5" class="non_p">
+<img src="images/spacer_10x30.gif" width="5" height="10" /> </td>
+<td width="150" colspan="5" valign="middle" class="more_non_p">
+There is also a graphic showing a modern telescope 
+that is used to study the light that the student has created.
+Included with the graphic is a brief description of the telescope
+and its key science areas.
+The example to the left shows X-ray light and the Chandra telescope.
+</td>
+</tr>
+</table>
+
+</div>
+<hr>
+
+</body>
+</html>
+

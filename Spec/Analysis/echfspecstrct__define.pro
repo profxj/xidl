@@ -1,3 +1,40 @@
+;+ 
+; NAME:
+; echfspecstrct__define
+;   Version 1.1
+;
+; PURPOSE:
+;  Creates a structure for echelle spectroscopy that will hold the
+;  wavelength, flux and error arrays.  Also includes the ZANS
+;  structure which is useful for using SDSS redshift identification.
+; 
+;
+; CALLING SEQUENCE:
+;   tmp = {echfspecstrct}
+;
+; INPUTS:
+;
+; RETURNS:
+;
+; OUTPUTS:
+;
+; OPTIONAL KEYWORDS:
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;
+; EXAMPLES:
+;
+;
+; PROCEDURES/FUNCTIONS CALLED:
+;
+; REVISION HISTORY:
+;   Written by JXP
+;-
+;------------------------------------------------------------------------------
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 pro echfspecstrct__define
 
 ;  This routine defines the structure for individual object spectra
@@ -38,7 +75,9 @@ pro echfspecstrct__define
          npix: lonarr(50), $     ; ORDERS
          wave: dblarr(5000,50), $
          fx: fltarr(5000,50), $
-         var: dblarr(5000,50) $     ; <=0 :: rejected pix
+         var: dblarr(5000,50), $     ; <=0 :: rejected pix
+         novar:dblarr(5000, 50), $
+         sky: dblarr(5000, 50) $
          }
 
 end

@@ -1,11 +1,12 @@
 ;+ 
 ; NAME:
 ; dla_indx
-;  V1.0
+;  V1.1
 ;
 ; PURPOSE:
 ;    Returns the index for a DLA given the name and z (if necessary)
-;     Defaults to the first entry if multiple
+;     Defaults to the first entry if multiple.  This is a simple and
+;     rather uninteresting program.
 ;
 ; CALLING SEQUENCE:
 ;   
@@ -13,8 +14,8 @@
 ;
 ; INPUTS:
 ;   struct - dla structure
-;   name - string
-;   z - redshift (optional)
+;   name - Name of the quasar (string; need not be complete)
+;   [z] - redshift (optional)
 ;
 ; RETURNS:
 ;   index
@@ -24,7 +25,6 @@
 ; OPTIONAL KEYWORDS:
 ;
 ; OPTIONAL OUTPUTS:
-;   IDX - the same index
 ;
 ; COMMENTS:
 ;
@@ -38,11 +38,11 @@
 ;   24-Nov-2001 Written by JXP
 ;-
 ;------------------------------------------------------------------------------
-function dla_indx, sdla, name, z, IDX=idx
+function dla_indx, sdla, name, z
 
   if (N_params() LT 2) then begin 
     print,'Syntax - ' + $
-             'idx = dla_indx(sdla, name, [z], IDX=) [v1.0]'
+             'idx = dla_indx(sdla, name, [z]) [v1.1]'
     return, -1
   endif 
 ;
@@ -58,8 +58,6 @@ function dla_indx, sdla, name, z, IDX=idx
       print, 'DLA '+name+' not found'
       return, -1
   endif
-
-  if arg_present( IDX ) then idx = all[0]
 
   return, all[0]
 

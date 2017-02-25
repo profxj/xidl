@@ -1,14 +1,12 @@
 ;+ 
 ; NAME:
 ; x_fndflux   
-;    Version 1.0
+;    Version 1.1
 ;
 ; PURPOSE:
-;    Given a specphoto spectrum and a star name, returns
-;      fluxing function
+;  OBSOLETE:  Use x_calibstd
 ;
 ; CALLING SEQUENCE:
-;   
 ;   x_fndflux, wv, fx, star, fitstr
 ;
 ; INPUTS:
@@ -53,7 +51,7 @@ pro x_fndflux, wv, fx, star, fitstr, INTER=inter, LSTROOT=lstroot, EXTRAP=extrap
 ;  Optional Keywords
 
   if not keyword_set( LSTROOT ) then $
-    lstroot = getenv('IDLUTILS_DIR')+'/xidl/Spec/Flux/Lists/'
+    lstroot = getenv('XIDL_DIR')+'/Spec/Flux/Lists/'
 
 ; Read in Star file
 

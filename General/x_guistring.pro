@@ -4,17 +4,16 @@
 ;   Version 1.0
 ;
 ; PURPOSE:
-;    Launches a cw_field and grabs input from the user
+;    Launches a cw_field and grabs a string from the user
 ;
 ; CALLING SEQUENCE:
-;   
-;   string = x_guistring(title)
+;   value = x_guistring(title)
 ;
 ; INPUTS:
 ;   title - Title
 ;
 ; RETURNS:
-;   string - String
+;   value - String
 ;
 ; OUTPUTS:
 ;
@@ -39,26 +38,20 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 function x_guistring, title
 
 ;
   if  N_params() LT 1  then begin 
     print,'Syntax - ' + $
-             'value = x_guistring(title) [v1.0]'
+             'value = x_guistring(title) [v1.1]'
     return, -1
   endif 
 
 ;  Optional Keywords
-  if not keyword_set( XOFFSET ) then xoffset = 500
-  if not keyword_set( YOFFSET ) then yoffset = 500
-
-;    
+  device, get_screen_size=ssz
+  if not keyword_set( XOFFSET ) then    xOFFSET = ssz[0]*0.3
+  if not keyword_set( YOFFSET ) then    yOFFSET = ssz[1]*0.2
 
 ;    WIDGET
   base = WIDGET_BASE( title = 'x_guistring', /column, $

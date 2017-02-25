@@ -160,7 +160,7 @@ pro wfccd_chkfspec_Plot, state
 
       ; Zfind
       if state.flg_zfind EQ 1 AND state.obj[i].zans.z_err NE 0. then begin
-          synth = synthspec(state.obj[i].zans, $
+          synth = x_synthspec(state.obj[i].zans, $
                             loglam=alog10(state.obj[i].wave[0:npix-1]))
           oplot, state.obj[i].wave[0:npix-1], synth, color=clr.red
           xyouts, 0.13*(state.xymnx[2]-state.xymnx[0])+state.xymnx[0], $
@@ -343,7 +343,7 @@ pro wfccd_chkfspec, fspec_fil, ZFIND=zfind, XSIZE=xsize, YSIZE=ysize, $
   state.size[0] = xsize
   state.size[1] = ysize
   state.draw_id = widget_draw(state.drawbase_id, xsize=state.size[0], $
-                              ysize=state.size[1], /frame, retain=2, $
+                              ysize=state.size[1], /frame, $
                               /button_events, /motion_events, uvalue='DRAW')
 
 ; XY position

@@ -1,23 +1,25 @@
 ;+ 
 ; NAME:
 ; ximgd_setzoom
-;    Version 1.0
+;    Version 1.1
 ;
 ; PURPOSE:
-; Sets up zooming
+;  Sets up zooming for either Image viewing or a standard Plot
+;  window
 ;
 ; CALLING SEQUENCE:
-;   
-;   ximgd_setzoom, state, flg
+;   ximgd_setzoom, state, [flg], /PLOT
 ;
 ; INPUTS:
-;   state       - Structure with tv dependent info
+;   state   -- Structure with tv dependent info or Plot info
+;   [FLG]    --  If 1, set the intital values, otherwise do the zoom
 ;
 ; RETURNS:
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
+;  /PLOT -- Zooming in plot window not image window
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -39,7 +41,7 @@ pro ximgd_setzoom, state, flg, PLOT=plot
 
   if  N_params() LT 1  then begin 
     print,'Syntax - ' + $
-             'ximgd_setzoom, state, [flg], /plot  [v1.0]'
+             'ximgd_setzoom, state, [flg], /plot  [v1.1]'
     return
   endif 
 

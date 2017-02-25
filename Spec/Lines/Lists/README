@@ -1,0 +1,15 @@
+This directory contains a number of line lists for 
+ISM and Galaxy and QSO's.
+
+
+all_dla.lst  -- DLA lines (probably the same as qal.lst)
+atom.dat     -- VPFIT atomic data file (contains GAMMA values)
+esi_dla.lst  -- Excludes some of the very weak DLA lines
+esi_dla_sub.lst  -- a smaller subset of the above for CII measurement
+gal.lst      -- Vacuum galaxy list (same as gal_vac.lst)
+gal_air.lst  -- Air galaxy list 
+gal_vac.lst  -- Vacuum galaxy list 
+lls.lst      -- Even smaller subset of qal.lst
+qal.lst      -- All standard ISM lines
+qso.lst      -- QSO emission features
+mol.lst      -- molecular lines (in mm)

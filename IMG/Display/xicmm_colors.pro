@@ -1,17 +1,16 @@
 ;+ 
 ; NAME:
 ; xicmm_colors    
-;  Version 1.0
+;  Version 1.1
 ;
 ; PURPOSE:
-; Sets up zooming
+;   Initializes the common block for Image colors.
+;   For some reason the colors are deleted.
 ;
 ; CALLING SEQUENCE:
-;   
-;   ximgd_initcolors, state, flg
+;   xicmm_colors
 ;
 ; INPUTS:
-;   state       - Structure with tv dependent info
 ;
 ; RETURNS:
 ;
@@ -24,8 +23,7 @@
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   xicmm_colors, state, flg
-;
+;   xicmm_colors
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
 ;
@@ -39,6 +37,9 @@ pro xicmm_colors
 
 common xcommon_color, r_vector, g_vector, b_vector
 
-  delvarx, r_vector, g_vector, b_vector
+;  delvarx, r_vector, g_vector, b_vector
+  r_vector=0 
+  g_vector=0 
+  b_vector=0
 
 end

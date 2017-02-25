@@ -4,21 +4,21 @@
 ;    Version 1.0
 ;
 ; PURPOSE:
-;    Writes kastspectrct to file
+;    Writes kastspectrct to a FITS file
 ;
 ; CALLING SEQUENCE:
-;   
-;   kast_wrspec, kastspecstrct, outfil
+;   kast_wrspec, kastspecstrct, outfil, /READ
 ;
 ; INPUTS:
 ;   kastspecstrct     - Kast Combined Spectrum structure
-;   outfil            - Outfile
 ;
 ; RETURNS:
 ;
 ; OUTPUTS:
+;   outfil            - FITS file for the structure
 ;
 ; OPTIONAL KEYWORDS:
+;   /READ   -- Reverse the operation (read from the FITS file)
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -26,7 +26,6 @@
 ;
 ; EXAMPLES:
 ;   kast_wrspec, kastspecstrct, outfil
-;
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
 ;
@@ -68,6 +67,8 @@ pro kast_wrspec, kastspec, outfil, READ=read
               npix: 0L, $
               flg_flux: 0, $    ; 1=fnu
               wave: fltarr(2000), $
+              flux: fltarr(2000), $
+              sig: fltarr(2000), $
               fx: fltarr(2000), $
               var: dblarr(2000), $ ; <=0 :: rejected pix
               class:  '', $     ; ALL ZANS BELOW HERE

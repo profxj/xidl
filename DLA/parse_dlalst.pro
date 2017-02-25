@@ -1,182 +1,134 @@
 ;+ 
 ; NAME:
 ; parse_dlalst
-;  V1.1
+;  V1.2
 ;
 ; PURPOSE:
-;    Given a list of DLA base files, fill up the structure ;
+;    Given a list of DLA base files, fill up the DLA structure.  THis
+;    program also defines the DLA structure {sDLA}.
+;
 ; CALLING SEQUENCE:
 ;   
-;   parse_DLAlst, stucture, filename
+;   parse_DLAlst, dla, [list]
 ;
 ; INPUTS:
+;  [list] -- List of DLA base files.  [default:
+;            '/u/xavier/DLA/Lists/tot_dla.lst']
 ;
 ; RETURNS:
-;   structure      - IDL structure
 ;
 ; OUTPUTS:
+;  dla  -- IDL DLA structure
 ;
 ; OPTIONAL KEYWORDS:
-;  LIST - File
-;  ION - Input ionic column densities
-;  NOELM - Supress inputting Elemental values
+;  /ION - Input ionic column densities
+;  /NOELM - Supress elemental and ion structures (saves memory)
+;  /NORELM - Supress inputting Elemental [X/H] values
+;  FILE=  -- The input is the dat filename not a list of dat files
+;  /NOHIS -- Suppress HI error in [X/H] values
+;  /EW    -- Fill up the ion arrays with EW values instead of column
+;            densities.  This reads the .EW files instead of .ion
+;  /FINE  -- This fills up arrays for fine-structure states
+;            (e.g. SiII*).  By default CII* is already considered 
+;  ROOT=  Path to the DLA tree
 ;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   parse_dlalst, struct, '/u/xavier/DLA/Lists/tot_dla.lst'
+;   parse_dlalst, dla, '/u/xavier/DLA/Lists/tot_dla.lst'
+;   parse_dlalst, dla, '/u/xavier/DLA/Data/GRB051111.z154.dat', /FILE, /ION
 ;
 ;
 ; PROCEDURES CALLED:
 ;
 ; REVISION HISTORY:
 ;   31-May-2001 Written by JXP
-;   02-Jan-2003 Added metallicity sturcture
+;   02-Jan-2003 Added metallicity structure
 ;-
 ;------------------------------------------------------------------------------
-pro parse_dlalst, supstrc, list, NOELM=noelm, ION=ion
+pro parse_dlalst, supstrc, list, NOELM=noelm, ION=ion, NOHIS=nohis, FILE=file,$
+                  NORELM=norelm, ROOT=root, FINE=fine, EW=ew
 
 ; parse_dlalst -- Reads in DLA data to a structure
 
   if (N_params() LT 1) then begin 
     print,'Syntax - ' + $
-             'parse_dlalst, struct, [filename], /NOELM/, /ION, /MTL (v1.2)' 
+          'parse_dlalst, struct, [list], /NOELM/, /ION, ' + $
+          '/NOHIS, /FILE, ROOT=, /EW [v1.2]' 
     return
   endif 
 
 ;
 
+  if not keyword_set(ROOT) then root = ''
 
-  if not keyword_set( list ) then begin
-      print, 'Using tot_dla.lst as the list'
-      list = '/u/xavier/DLA/Lists/tot_dla.lst'
+  if not keyword_set( list ) and not keyword_set(FILE) then begin
+     print, 'Using all_mtl.lst as the list'
+     if strlen(getenv('DLA')) GT 0 then begin
+        print, 'Using getnev(DLA)'
+        list = getenv('DLA')+'/Lists/all_mtl.lst'
+        root = getenv('DLA')
+     endif else begin
+        list = '~/DLA/Lists/all_mtl.lst'
+        root = '~/DLA/'
+     endelse
   endif
 
   fil=''
   dumc = ''
-  dumr = 0.0
+  dumr = 0.0d
   dumd = double(0.0)
-  dumr2 = 0.0
+  dumr2 = 0.0d
   dumi = 0
-
-;  strctcolm = {strctclm, flgclm: intarr(100),$
-;	clm: fltarr(100),$
-;	sigclm: fltarr(100) }
+  dumi2 = 0
+  dumi3 = 0L
 
 
-;  Structure for Elements
-  dumelm = {strctelm, $ 
-               flgclm: 0,$
-               clm: 0.0,$
-               sigclm: 0.0 }
-
-;  Structure for Ions
-  dumion  = {strction, $
-             state: replicate(dumelm,8) $
-            }
-
-;  Structure for Metallicity
-;  dummtl  = {strctmtl, $
-;             flg: 0, $   ; 1 = non-refract; 2=refract + 0.3
-;             val: 0., $  ; 
-;             sig: 0. $
-;            }
-	
-  strctnm = {sDLA, qso: '',$
-             qso_ra: '',$
-             qso_dec: '',$
-             qso_zem: 0.0,$
-             flg_QSOmag: 0,$
-             qso_mag: 0.0,$
-             zabs: 0.0,$
-             NHI: 0.0,$
-             sigNHI: fltarr(2),$
-             abndfil: '',$
-             flgFe: 0,$
-             FeH: 0.0,$
-             sigFeH: 0.0,$
-             flgZn: 0,$
-             ZnH: 0.0,$
-             sigZnH: 0.0,$
-             flgAlpha: 0,$
-             Alpha: 0.0,$
-             sigAlpha: 0.0,$
-             flglw: 0,$
-             lwfil: '',$
-             lwwav: 0.0d,$
-             lwvmn: 0.0,$
-             lwvmx: 0.0,$
-             lwfvel: 0.0,$
-             lwfmm: 0.0,$
-             lwfedg: 0.0,$
-             lwftpk: 0.0,$
-             flgCII: 0,$
-             CII: 0.0,$
-             sigCII: 0.0,$
-             flgciv: 0.0,$
-             civfil: '',$ 
-             civwav: 0.0d,$
-             civvmn: 0.0,$
-             civvmx: 0.0,$
-             civfvel: 0.0,$
-             civfmm: 0.0,$
-             civfedg: 0.0,$
-             civftpk: 0.0,$
-             civlwfdv: 0.0,$
-             civlwfrto: 0.0,$
-             civlwfnmm: 0.0,$
-             civlwftvm: 0.0,$
-             qso_ebv: 0.0,$
-             ffilt: 0,$
-             fslit: 0,$
-             srvy: 0, $
-             srvy_mag: 0., $
-             ref: '', $
-             flgmtl: 0, $
-             mtl: 0., $
-             sigmtl: 0., $
-             ndfil: 0,$
-             Hfil: '',$
-             Efil: '',$
-             Ufil: '',$
-             Xfil: '',$
-             elm: replicate(dumelm,90),$
-             XH: replicate(dumelm,90), $
-             ion: replicate(dumion,90) $
-            }
+  if not keyword_set( NOELM ) then dlas = {dlastruct} $
+  else dlas = {dlanoestruct} 
 
 ; Parse the Base File
-  readcol, list, listnms, format='A'
+  if not keyword_set( FILE ) then begin
+      readcol, list, listnms, format='A', /silent
+  endif else begin
+      listnms = list
+  endelse
   ndla = n_elements(listnms)
-  supstrc = replicate(strctnm,ndla)
+
+  ;; Create Big struct
+  supstrc = replicate(dlas,ndla)
 ;
   close, 1
   for i=0,ndla-1 do begin
-      fil = listnms[i]
+      fil = ROOT+listnms[i]
+      nlin = file_lines(fil)
       openr, 1, fil
 ;		openr, 1, strmid(fil,0,xlc(fil))
-      readf, 1,  format='(a15)', dumc
-      supstrc[i].qso = dumc
-      readf, 1,  format='(a15)', dumc
-      supstrc[i].qso_ra = dumc
-      readf, 1,  format='(a15)', dumc
-      supstrc[i].qso_dec = dumc
+      supstrc[i].dlafil = strtrim(fil,2)
+      readf, 1,  format='(a60)', dumc
+      supstrc[i].qso = strtrim(dumc,2)
+      readf, 1,  format='(a19)', dumc
+      supstrc[i].qso_ra = strtrim(dumc,2)
+      readf, 1,  format='(a19)', dumc
+      supstrc[i].qso_dec = strtrim(dumc,2)
       readf, 1,  format='(f9.6)', dumr
       supstrc[i].qso_zem = dumr
       readf, 1,  format='(i2)', dumi
       supstrc[i].flg_QSOmag = dumi
       readf, 1,  format='(f9.6)', dumr
       supstrc[i].qso_mag = dumr
-      readf, 1,  format='(f9.6)', dumr
+      readf, 1,  format='(f12.9)', dumr
       supstrc[i].zabs = dumr
       readf, 1,  format='(f6.3)', dumr
       supstrc[i].NHI = dumr
       readf, 1,  format='(2f6.3)', dumr, dumr2
       supstrc[i].sigNHI[*] = [dumr,dumr2]
       readf, 1,  format='(a60)', dumc
-      supstrc[i].abndfil = dumc
+      ;; Dont put the ROOT here.  It will get added to the output!
+      ;supstrc[i].abndfil = ROOT+strtrim(dumc,2)
+      supstrc[i].abndfil = strtrim(dumc,2)
       readf, 1,  format='(i3)', dumi
       supstrc[i].flgFe = dumi   ; Fe
       readf, 1,  format='(f7.3)', dumr
@@ -196,9 +148,10 @@ pro parse_dlalst, supstrc, list, NOELM=noelm, ION=ion
       readf, 1,  format='(f7.3)', dumr
       supstrc[i].sigAlpha = dumr
       readf, 1,  format='(i2)', dumi
+      ;; Low ions
       supstrc[i].flglw = dumi
       readf, 1,  format='(a60)', dumc
-      supstrc[i].lwfil = dumc
+      supstrc[i].lwfil = strtrim(dumc,2)
       readf, 1,  format='(f9.4)', dumd
       supstrc[i].lwwav = dumd
       readf, 1,  format='(2f7.1)', dumr, dumr2
@@ -253,21 +206,53 @@ pro parse_dlalst, supstrc, list, NOELM=noelm, ION=ion
       supstrc[i].srvy = dumi
       readf, 1,  format='(f5.2)', dumr
       supstrc[i].srvy_mag = dumr
-      readf, 1,  format='(a15)', dumc ; Ref
-      supstrc[i].ref = dumc
-      readf, 1,  format='(i4)', dumi ; metallicity
+      readf, 1,  format='(a60)', dumc ; Ref
+      supstrc[i].ref = strtrim(dumc,2)
+      readf, 1,  format='(i6)', dumi ; metallicity
       supstrc[i].flgmtl = dumi   
       readf, 1,  format='(f7.3)', dumr
       supstrc[i].mtl = dumr
       readf, 1,  format='(f7.3)', dumr
       supstrc[i].sigmtl = dumr
+      readf, 1,  format='(i5,1x,i5,1x,i6)', dumi, dumi2, dumi3 ; plate, fibid,MJD
+      supstrc[i].sdss_plate = dumi
+      supstrc[i].sdss_fibid = dumi2
+      supstrc[i].sdss_mjd = dumi3
+      ;; H2 and CI
+      if nlin GT 52 then begin  ;; Should eventually make this automatic
+         ;; VPFIT file
+         readf, 1,  format='(a60)', dumc
+         supstrc[i].vpfit_fil = strtrim(dumc,2)
+         ;; CI
+         readf, 1,  format='(i2)', dumi
+         supstrc[i].flg_CI = dumi
+         readf, 1,  format='(f6.3)', dumr
+         supstrc[i].CI = dumr
+         readf, 1,  format='(f5.3)', dumr
+         supstrc[i].sig_CI = dumr
+         ;; H2
+         readf, 1,  format='(i2)', dumi
+         supstrc[i].flg_H2 = dumi
+         readf, 1,  format='(f6.3)', dumr
+         supstrc[i].H2 = dumr
+         readf, 1,  format='(f5.3)', dumr
+         supstrc[i].sig_H2 = dumr
+      endif  
       close, 1
   endfor
 
   ;;  Read in Element Info
-  if not keyword_set ( NOELM ) then fill_elmxh, supstrc
+  if not keyword_set ( NOELM ) AND not keyword_set(NORELM) then $
+    fill_elmxh, supstrc, NOHIS=nohis, ROOT=root
+
   ;;  Read in Ion info
-  if keyword_set ( ION ) then fill_ion, supstrc
-  
+  if keyword_set ( ION ) then fill_ion, supstrc, ROOT=root
+
+  ;;  Read in EW info
+  if keyword_set ( EW ) then dla_fillew, supstrc, ROOT=root
+
+  ;; Fine structure
+  if keyword_set ( FINE ) then x_fineabnd, supstrc
+
   return
 end

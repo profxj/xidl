@@ -1,0 +1,426 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<title> Spectroscopic Inquiry from UC Santa Cruz</title>
+
+<!-- Input junk.html here -->
+<!-- End junk.html here -->
+<!--#include virtual="./class.html"-->
+<!--#include virtual="./noboard.html"-->
+<!--#include virtual="./header.html"-->
+
+
+<div id="content_panel">
+  <table width="920" border="0" cellspacing="0" cellpadding="5">
+	<tr>
+		<td height="5" colspan="2">&nbsp;</td>
+	</tr>
+	<tr>
+		<td colspan="3" class="title">Experiments: Introduction to Spectroscpy</td>
+	</tr>
+
+	<tr>
+		<td colspan="3"><p><span color="p_lead_in style2">
+This 'laboratory experiment' is designed for secondary students, most likely
+physics/chemistry students at the Junior or Senior level although it
+might fit within an advanced 9th grade physical science class.
+The students are guided through a series of smaller experiments where
+they explore one or two concepts of spectroscopy.
+Toward the end of the lab, the students will have the choice to 
+investigate temperature and the nature of spectral lines.
+Below, we detail the primary content of the lab, give an outline,
+and then describe the content and structure of each sub-experiment.
+  </span></p></td>
+	</tr>
+
+      <tr>  
+        <td width="150" valign="top">&nbsp;</td>
+        <td width="200" class="p_lead_in style2">Primary Content</td>
+	<td width="550" class="more_non_p">
+             A. Introduce the concepts of spectroscopy -- experimental design, 
+	         wavelength, color, brightness <br>
+             B. Explore the relation between temperature, wavelength, and color<br>
+             C. Introduce the concepts of spectral lines
+        </td> 
+      </tr>
+
+	<tr> <td height="5" colspan="2">&nbsp;</td> </tr>
+
+	<tr> 
+          <td valign="top">&nbsp;</td>
+          <td class="p_lead_in style2">Lesson Plan</td>
+          <td class="more_non_p">  
+             I. Introduction (5min) <br> 
+               &nbsp;&nbsp;&nbsp;  Establish goals for the laboratory, split into
+                  teams of 2-3 persons <br>
+             II. Solar spectrum (15min) <br> 
+               &nbsp;&nbsp;&nbsp; Explore the solar spectrum<br>
+             III. Wavelength (10min) <br> 
+               &nbsp;&nbsp;&nbsp; Build an understanding wavelength<br>
+             IV. Directed investigation (15min) <br> 
+               &nbsp;&nbsp;&nbsp; Explore the spectrum of a chosen 
+                     astronomical object <br>
+             V.  Student-led investigation (20min) <br> 
+               &nbsp;&nbsp;&nbsp; Explore temperature and/or spectral lines
+           </td> 
+        </tr>
+
+
+  </table>
+
+<hr>
+
+  <table width="920" border="0" cellspacing="0" cellpadding="5">
+        <tr><td colspan="5" class="title"><font color="red"><img src="images/screen_basicexper.gif" width="400" border="2"/></font>
+        <img src="images/spacer_10x30.gif" width="50" />
+        <img src="images/screen_basicsun.gif" width="400" border="2"/></font> 
+        </tr>
+ </table>
+
+  <table width="920" border="0" cellspacing="0" cellpadding="5">
+	<tr> <td colspan="3" class="title">I. Introduction to a Spectrum</td> </tr>
+
+        <tr>
+           <td width="100" valign="top">&nbsp;</td>
+           <td width="200" valign="top" class="p_lead_in style2">Overview</td>
+           <td width="550" valign="top" class="more_non_p">In this portion of the
+            lab, the students get their first experience with the software tools.
+            In addition to this, the students are introduced to the experimental
+            design of producing a spectrum and then the basics of a spectrum.
+           </td>
+        </tr>
+
+        <tr>
+           <td valign="top">&nbsp;</td>
+           <td valign="top" class="p_lead_in style2">Primary Content</td>
+           <td valign="top" class="more_non_p">
+             A. Demonstrate the means of producing a spectrum <br>
+             B. Build the relationship between color and wavelength <br>
+             C. Introduce the concept of a spectrum <br>
+           </td>
+        </tr>
+
+        <tr>
+           <td valign="top">&nbsp;</td>
+           <td valign="top" class="p_lead_in style2">Secondary Content</td>
+           <td valign="top" class="more_non_p">
+             a. Introduce the Inquiry Tools (i.e. familiarity with the software)<br>
+             b. Continuous spectrum vs. spectral lines<br>
+             c. Explore the Sun's light<br>
+           </td>
+        </tr>
+
+        <tr>
+           <td valign="top">&nbsp;</td>
+           <td valign="top" class="p_lead_in style2">Experimental Design</td>
+           <td valign="top" class="more_non_p">
+	      This experiment has two parts.  In the first stage, the students are
+	      challenged to produce a spectrum.  The initial setup is the Sun
+	      and an empty position where one aims to produce a spectrum.  The 
+	      student controls the placement of two optical elements: (1) a mirror
+	      which they can tilt; and (2) a prism.  Once they have properly configured
+	      the experiment, a 2D spectrum (color) will appear (see screen shot 
+	      above, left),
+	      and they will able to enter the spectroscopic mode of the tool. <br>
+	      In this second stage, the students view a spectrum of the Sun and several
+	      other objects of their choosing.  The spectrum is first displayed as a 
+	      set of color histograms (see screen shot above, right) where the height
+	      of the bar indicates the relative amount of light emitted at that color.
+	      The student can also view the 'exact' spectrum as a solid, gray curve.
+		The wavelengths of the light are also indicated which draws the 
+		connection between color and wavelength.
+           </td>
+        </tr>
+
+        <tr>
+           <td valign="top">&nbsp;</td>
+           <td valign="top" class="p_lead_in style2">Exercises</td>
+           <td valign="top" class="more_non_p">
+	      1.  Produce a spectrum by placing a mirror and prism in their proper
+	      positions to direct light from the Sun to the 'screen' where a spectrum
+	      will appear.   Sketch the correct configuration in your labbook. <br>
+	      2.  Examine the spectrum of the Sun.  Sketch the colored historgram
+	      into your labbook.  At what color does the Sun emit the most light?
+              Produce a table that orders that gives the relative height of each color,
+              in descending order. <br>
+	      3.  What is the wavelength of the peak in the spectrum of the Sun? <br>
+	      4.  Turn off the histogram mode and choose another source (e.g. the 
+	      Sodium lamp).  What color do you predict this object is emitting at? 
+              Try another source. <br>
+              5.  Choose the Spiral Galaxy as the source and enable the 
+             "Exact Spectrum".  Estimate the wavlength of the bright, red lines.  
+              What do you think may be causing these?
+           </td>
+        </tr>
+
+ </table>
+
+<!--  Wavelength -->
+
+<hr>
+
+  <table width="920" border="0" cellspacing="0" cellpadding="5">
+        <tr><td colspan="5" class="title"><font color="red"><img src="images/screen_submm.gif" width="400" border="2"/></font>
+        <img src="images/spacer_10x30.gif" width="50" />
+        <img src="images/screen_xray.gif" width="400" border="2"/></font> 
+        </tr>
+ </table>
+
+  <table width="920" border="0" cellspacing="0" cellpadding="5">
+	<tr> <td colspan="3" class="title">II. Wavelength</td> </tr>
+
+        <tr>
+           <td width="100" valign="top">&nbsp;</td>
+           <td width="200" valign="top" class="p_lead_in style2">Overview</td>
+           <td width="550" valign="top" class="more_non_p">The students utilize
+	the <a href="tools_wavelength.shtml">Wavelength Inquiry tool</a> 
+	to construct various types of light with differing wavelength.  
+        In particular they can stretch and
+	compress the wavelength of the light and explore the results.
+           </td>
+        </tr>
+
+        <tr>
+           <td valign="top">&nbsp;</td>
+           <td valign="top" class="p_lead_in style2">Primary Content</td>
+           <td valign="top" class="more_non_p">
+             A. Understand the concept of wavelength<br>
+             B. Understand that the various types of light are a contiuous spectrum<br>
+           </td>
+        </tr>
+
+        <tr>
+           <td valign="top">&nbsp;</td>
+           <td valign="top" class="p_lead_in style2">Secondary Content</td>
+           <td valign="top" class="more_non_p">
+             a. Introduce the various telescopes used to perform astronomy.<br>
+             b. Relate the wavelength (a size) to various 'real world' objects<br>
+             c. Photons
+           </td>
+        </tr>
+
+        <tr>
+           <td valign="top">&nbsp;</td>
+           <td valign="top" class="p_lead_in style2">Experimental Design</td>
+           <td valign="top" class="more_non_p">
+            This experiment depicts a 'ray' of light whose wavelength can be 
+	modified in a number of ways.  The student can stretch/compress
+	the light with the mouse in the plot window or using one of the zoom buttons.
+	They can also 'jump around' from type to type with the pull down window.
+	As they produce light with significantly different wavelength, two displays are
+	modified: (10 the telescope window is updated to show the modern facility that
+	observes light with this wavelength and (2) the upper-right window shows 
+	an object whose size roughly matches the light's wavelength.
+           </td>
+        </tr>
+
+        <tr>
+           <td valign="top">&nbsp;</td>
+           <td valign="top" class="p_lead_in style2">Exercises</td>
+           <td valign="top" class="more_non_p">
+	      1.  Draw a cartoon of light in your labbook.  Indicate the distance
+		that corresponds to the wavelength of your light.   <br>
+	      2.  Use the tool to produce an X-ray.  How does this light differ
+		from the light that we see with our eyes?
+           </td>
+        </tr>
+
+ </table>
+
+<!--  Astronomical Spectrum -->
+
+<hr>
+
+  <table width="920" border="0" cellspacing="0" cellpadding="5">
+        <tr><td colspan="5" class="title"><font color="red"><img src="images/spectool_spiral.gif" width="400" border="2"/></font>
+        <img src="images/spacer_10x30.gif" width="50" />
+        <img src="images/screen_specline.gif" width="400" border="2"/></font> 
+        </tr>
+ </table>
+
+  <table width="920" border="0" cellspacing="0" cellpadding="5">
+	<tr> <td colspan="3" class="title">III. Directed Investigation</td> </tr>
+
+        <tr>
+           <td width="100" valign="top">&nbsp;</td>
+           <td width="200" valign="top" class="p_lead_in style2">Overview</td>
+           <td width="550" valign="top" class="more_non_p">The lab teams are 
+	directed to choose an astronomical object whose spectrum they will explore.
+	The choices are:  (i) a cool, red star; (ii) a hot, blue star, (iii) a blue,
+	spiral galaxy, and (iv) a red, elliptical galaxy.  They will explore the
+	spectrum in tandem with a true spectrum of the Sun (one that includes 
+	absorption line features) using the 
+	an <a href="tools_spectrometer.shtml">Spectrometer Inquiry Tool</a>.
+        The students are also directed to use the 
+        <a href="tools_spectrallines.shtml">Spectral Lines Inquiry Tool</a> to 
+        explore the physical origin of spectral lines.
+           </td>
+        </tr>
+
+        <tr>
+           <td valign="top">&nbsp;</td>
+           <td valign="top" class="p_lead_in style2">Primary Content</td>
+           <td valign="top" class="more_non_p">
+             A. The connection between color and wavelength<br>
+             B. Introduction to spectral lines <br>
+             B. Physical origin of spectral lines
+           </td>
+        </tr>
+
+        <tr>
+           <td valign="top">&nbsp;</td>
+           <td valign="top" class="p_lead_in style2">Secondary Content</td>
+           <td valign="top" class="more_non_p">
+             a. Temperature <br>
+             b. Galaxies are made of blue/red stars <br>
+             c. Atomic structure
+           </td>
+        </tr>
+
+        <tr>
+           <td valign="top">&nbsp;</td>
+           <td valign="top" class="p_lead_in style2">Experimental Design</td>
+           <td valign="top" class="more_non_p">
+            This experiment enables the students to compare/contrast the spectrum
+	of an astronomical object against that of the Sun.  The students are directed
+	to make both qualitative and quantitative comparisons.  The students are also
+	prompted to explore several spectral lines associated with their astronomical
+	object and contemplate the origin of these features. Finally, they explore
+        the physical origin of spectral lines using an additional Inquiry Tool.
+           </td>
+        </tr>
+
+        <tr>
+           <td valign="top">&nbsp;</td>
+           <td valign="top" class="p_lead_in style2">Exercises</td>
+           <td valign="top" class="more_non_p">
+	      1.  Compare and contrast the spectrum of your astronomical object with
+		  that of the Sun.  How are the spectra different or the same? 
+		  What might be the origin of the differences/similarities? <br>
+	      2.  Note that the spectrum of your object (and the Sun) is not a simple
+		  smooth curve.  While there is an overall shape to the spectrum, there
+		  are additional sharp and narrow features (termed spectral lines)
+                  in the spectrum.  Zoom in on
+		  one of these features and measure its wavelength.  What do you think
+		  may be causing these spectral lines? <br>
+	      3.  Using the "Spectral Lines" pull-down, turn on the labelling for a
+		  few of the different elements.  The arrows that appear indicate the
+		  wavelengths where the various elements may emit/absorb light.  
+		  Record which of these spectral lines match features in your
+		  spectrum. <br>
+              4.  Now launch the "Spectral Lines Tool".  Explore the origin of 
+                  emission and absorption lines as a function of the movement of an
+                  electron in a Hydrogen atom.
+           </td>
+        </tr>
+
+ </table>
+
+<hr>
+
+<!--  Wavelength 
+  <table width="920" border="0" cellspacing="0" cellpadding="5">
+        <tr><td colspan="5" class="title"><font color="red"><img src="images/screen_submm.gif" width="400" border="2"/></font>
+        <img src="images/spacer_10x30.gif" width="50" />
+        <img src="images/screen_xray.gif" width="400" border="2"/></font> 
+        </tr>
+ </table>
+-->
+
+  <table width="920" border="0" cellspacing="0" cellpadding="5">
+	<tr> <td colspan="3" class="title">IV. Further Investigation</td> </tr>
+
+        <tr>
+           <td width="100" valign="top">&nbsp;</td>
+           <td width="200" valign="top" class="p_lead_in style2">Overview</td>
+           <td width="550" valign="top" class="more_non_p">The lab teams now
+           choose one of several areas for further investigation.  These are:
+           (i) the quantiative relation between temperature and wavelength; 
+           (ii) the utility of spectral lines.
+           </td>
+        </tr>
+
+        <tr>
+           <td valign="top">&nbsp;</td>
+           <td valign="top" class="p_lead_in style2">Primary Content</td>
+           <td valign="top" class="more_non_p">
+             A. Temperature:  Wien's Law <br>
+             B. Spectral Lines:  Doppler shift
+           </td>
+        </tr>
+
+        <tr>
+           <td valign="top">&nbsp;</td>
+           <td valign="top" class="p_lead_in style2">Secondary Content</td>
+           <td valign="top" class="more_non_p">
+             a. Color <br>
+             b. Atomic structure <br>
+             c. Photons
+           </td>
+        </tr>
+
+        <tr>
+           <td valign="top">&nbsp;</td>
+           <td valign="top" class="p_lead_in style2">Experimental Design</td>
+           <td valign="top" class="more_non_p">
+           Path 1: Temperature -- If students select this route, they explore
+           the quanatitive relationship between temperature and wavelength using
+           the <a href="tools_wiens.shtml">Wien's Law Inquiry tool</a>.
+           The students are directed to explore the spectra of several stars with 
+           a range of temperature, record the wavelength of the peak of each 
+           spectrum, and then infer Wien's Law. 
+           <br><br>
+           Path 2: Spectral Lines -- The students select an astronomical object
+           and then focus on a single spectral feature, measuring its wavelength
+           and identifying the element that produces it.  The students than vary
+           the velocity of the source and explore how the spectrum changes.
+           Finally, they are led to derive an expression for the Doppler shift.
+           </td>
+        </tr>
+
+        <tr>
+           <td valign="top">&nbsp;</td>
+           <td valign="top" class="p_lead_in style2">Exercises</td>
+           <td valign="top" class="more_non_p">
+              Part 1: Temperature -- <br>
+	      a.  Examine the spectrum of the Sun again.  At what wavelength does
+	      the spectrum peak?  Record this value and also record the 'surface'
+              temperature of the Sun.  <br>
+	      b.  Create a new star with a temperature different from the Sun.  How
+              is its spectrum different/same?  Record the wavelength of the peak in its
+              spectrum and also the temperature.  Repeat this for 4 other stars with 
+              different temperatures. <br>
+	      c.  Produce a plot of tempearture vs wavelength for your stars.  What
+              is the shape of the curve that connects the points?  <br>
+              d.  Now plot the temperature (y-axis) against the inverse of the 
+              wavelength (1 / wavelength).  What is the shape of this curve?
+              Can you intuit an equation that relates temperature and wavelength? <br>
+              e.  Wien's Law
+	      f.  Why do you think temperature and wavelength are physically related? 
+	      <br><br>
+              Part 2: Spectral lines -- <br>
+	      a.  Choose an astronomical source for analysis. <br>
+	      b.  Choose a spectral line to analyze.  What is its wavelength?  What
+              is the element that produces it? <br>	
+	      c.  Modify the velocity of your source.  What happens to the spectrum?
+              Measure the new wavelength of the spectral line you chose.<br>
+              d.  Now choose the same speed but in the opposite direction (negative is 
+              toward you and positive is away from you).  What happened to the spectrum
+              now? <br>
+              e.  Repeat for a range of velocities.  Plot the observed wavelength
+              against the velocity.  How would you describe the shape of this curve?<br>
+              f.  Doppler shift
+           </td>
+        </tr>
+
+ </table>
+
+<hr>
+
+</div>
+
+
+</body>
+</html>

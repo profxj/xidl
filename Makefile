@@ -5,6 +5,8 @@
 # S. Burles & D. Schlegel
 ###############################################################################
 
+# For Macs with Tiger, copy libcc_dynamic.a into /usr/lib
+# Then, do:  sudo ranlib libcc_dynamic.a
 #
 # IDL support utilities for spectro2d and the fibermapper
 #
@@ -13,7 +15,7 @@ SHELL = /bin/sh
 .c.o :
 	$(CC) -c $(CCCHK) $(CFLAGS) $*.c
 #
-CFLAGS  = $(SDSS_CFLAGS) -DCHECK_LEAKS -I../include
+CFLAGS  = $(SDSS_CFLAGS) -DCHECK_LEAKS -I../include -DDARWIN
 
 SUBDIRS = src
 

@@ -1,0 +1,11 @@
+Wish list for new functionality:
+
+  i.  CR rejection using the standard algorithm
+       esi_echobjcr
+     -- Need to allow forlooping in esi_echqckrdx
+
+ ii.  Flux  (using archive)
+     -- Need to create a set of archvied standards
+
+iii.  Coadd and combine
+     -- Will need to group multiple exposures

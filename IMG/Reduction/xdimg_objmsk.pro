@@ -8,8 +8,7 @@
 ;      IDL gui built for this procedure.
 ;
 ; CALLING SEQUENCE:
-;   
-;   xdimg_skymask, struct, objimg, /ERASE, /DOOV
+;   xdimg_skymask, struct, objimg, XSIZE=, YSIZE=, IMSK=
 ;
 ; INPUTS:
 ;   struct -- dimg_strct defining the images of interest
@@ -21,10 +20,10 @@
 ;   skymasks --  Builds sky masks and puts them into 'Masks/Sky/'
 ;
 ; OPTIONAL KEYWORDS:
-;   erase - Erase pre-existing sky masks
-;   doov - Make OV files as necessary
+;   XSIZE, YSIZE -- Size of GUI
 ;
 ; OPTIONAL OUTPUTS:
+;  IMSK -- Image of mask
 ;
 ; COMMENTS:
 ;

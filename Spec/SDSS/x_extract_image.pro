@@ -3,7 +3,8 @@
 ;   extract_image
 ;
 ; PURPOSE:
-;   Extract the fiber profile flux for an entire image
+;   Extract the fiber profile flux for an entire image.  Grabbed by
+;   JXP to save a version.
 ;
 ; CALLING SEQUENCE:
 ;   extract_image(fimage, invvar, xcen, sigma, flux, [finv, yrow=,

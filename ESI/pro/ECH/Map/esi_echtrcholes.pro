@@ -26,7 +26,8 @@
 ; OPTIONAL KEYWORDS:
 ;  IMG -- Name of pinhole image file  (default is to combine all
 ;         pinhole frames)
-;  CLOBBER -- Overwrite existing map file
+;  /CLOBBER -- Overwrite existing map file
+;  /CHK  -  Plot some stages of the process
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -43,6 +44,7 @@
 ; REVISION HISTORY:
 ;   07-Aug-2002 Written by JXP
 ;   01-Feb-2003 Polished by JXP
+;   15-Sep-2004 Significant update (JXP)
 ;-
 ;------------------------------------------------------------------------------
 
@@ -50,18 +52,18 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 pro esi_echtrcholes, esi, IMG=img, FITFIL=fitfil, HOLEFIL=holefil, $
-                     CLOBBER=clobber
+                     CLOBBER=clobber, CHK=chk, XCEN_FIL=xcen_fil
 
 ;
   if  N_params() LT 1  then begin 
       print,'Syntax - ' + $
         'esi_echtrcholes, esi, [xcen_mid], IMG=, XERR=, GDENDS=, FITFIL=  [v1.0]'
-      return
+     return
   endif 
   
 ;  Optional Keywords
-  if not keyword_set(REFMID) then refmid = 2048L
-  if not keyword_set(REFTOP) then reftop = 4040L
+  if not keyword_set(REFMID) then refmid = 2380L
+  if not keyword_set(REFTOP) then reftop = 4030L
   if not keyword_set(REFBOT) then refbot = 55L
   if not keyword_set( FITFIL ) then fitfil = 'Maps/hole_fit.idl'
   if not keyword_set( HOLEFIL ) then holefil = 'Maps/img_hole.fits'
@@ -69,81 +71,125 @@ pro esi_echtrcholes, esi, IMG=img, FITFIL=fitfil, HOLEFIL=holefil, $
 ; Check for fitfil
   a = findfile(fitfil, count=na)
   if na NE 0 and not keyword_set( CLOBBER) then begin
-      print, 'esi_echtrcholes: Hole fit file exists! Returning... ', fitfil
+      print, 'esi_echtrcholes: Hole fit file exists! Returning... '
       return
   endif
 ;;;;;; GET HOLE IMG ;;;;;;;;;;
   if not keyword_set( IMG ) then begin
-      ;; Hole frames
-      holes = where(esi.slit EQ 9.99 AND esi.mode EQ 2 AND $
-                    esi.flg_anly NE 0, nhole)
-      if nhole EQ 0 then begin
-          print, 'esi_echtrcholes: No Hole images!'
-          return
-      endif
-
-      ;; Bias Subtract
-      esi_subbias, esi, holes, /force
-
-      ;; Combine
-      if nhole GT 1 then begin
-          print, 'esi_echtrcholes: Combining hole images'
-          xcombine, 'OV/ov_'+esi[holes].img_root, img_hole, head, $
-            FCOMB=2, SCALE=esi[holes].exp, $
-            GAIN=esi[holes[0]].gain, RN=esi[holes[0]].readno
-      endif else img_hole = mrdfits('OV/ov_'+esi[holes[0]].img_root,/silent)
-      ;; WRITE
-      mwrfits, img_hole, holefil, /create, /silent
-      esi_delov, esi, holes
+      if x_chkfil(holefil+'*') EQ 0 or keyword_set( CLOBBER ) then begin
+          ;; Hole frames
+          holes = where(esi.slit EQ 9.99 AND esi.mode EQ 2 AND $
+                        esi.flg_anly NE 0, nhole)
+          if nhole EQ 0 then begin
+              print, 'esi_echtrcholes: No Hole images!'
+              return
+          endif
+          
+          ;; Bias Subtract
+          esi_subbias, esi, holes, /force
+          
+          ;; Combine
+          if nhole GT 1 then begin
+              print, 'esi_echtrcholes: Combining hole images'
+              xcombine, 'OV/ov_'+esi[holes].img_root, img_hole, head, $
+                FCOMB=2, SCALE=esi[holes].exp, $
+                GAIN=esi[holes[0]].gain, RN=esi[holes[0]].readno
+          endif else img_hole = mrdfits('OV/ov_'+esi[holes[0]].img_root,/silent)
+          ;; WRITE
+          mwrfits, img_hole, holefil, /create, /silent
+          esi_delov, esi, holes
+      endif else begin
+          print, 'esi_echtrcholes:  Reading ', holefil, ' -- Use /CLOBBER ' + $
+            'to overwrite.'
+          img_hole = xmrdfits(holefil, /silent)
+      endelse
   endif else img_hole = x_readimg(img)
 
 ; IVAR
-  ivar = 1./ (img_hole > 1)
+  saw = img_hole - shift(img_hole,1)
+  ivar = 1./ (img_hole + shift(img_hole,1) + 10.)
+  saw = saw > 0.
   ;; Avoid bad columns
   ivar[422:423,2651:4095] = -1.
   ivar[425,2648:4095] = -1.
   ivar[432:437,2648:4095] = -1.
   ;; Set flux to 0.
-  img_hole[422:423,2651:4095] = 0.
-  img_hole[425,2648:4095] = 0.
-  img_hole[432:437,2648:4095] = 0.
+  saw[422:423,2651:4095] = 0.
+  saw[425,2648:4095] = 0.
+  saw[432:437,2648:4095] = 0.
+
+  if not keyword_set( XCEN_FIL ) then begin
 
 ; Choose lines to trace
   smsh = djs_median(img_hole[*,refmid-3:refmid+3],2)
   x_fndpeaks, smsh, center, NSIG=10.
-  xstart = center
+  if n_elements(center) NE 90 then stop
+
+  ;; Tweak the center
+  xstart = center - 1.
   ystrt = replicate(refmid, n_elements(xstart))
   for j=0L,9 do $
-    xstart = trace_fweight(img_hole, xstart, ystrt, radius=3.5, $
+    xstart = trace_fweight(saw, xstart, ystrt, radius=2, $
                            INVVAR=ivar)
 
   ;; CHK
-  if keyword_set( CHK ) then $
-    x_splot, smsh, XTWO=xstart, YTWO=smsh[round(xstart)], PSYM_Y2=1, /block
+  if keyword_set( TCHK ) then begin
+      smsh2 = djs_median(saw[*,refmid-3:refmid+3],2)
+      x_splot, smsh2, XTWO=xstart, YTWO=smsh2[round(xstart)], PSYM2=1, /block
+  endif
 
 ; Trace
   print, 'esi_echtrcholes: Tracing mid with trace_crude...'
 ;  restore, 'tmp.idl'
-  xcen_mid = trace_crude(img_hole, ivar, yset=ycen_pos, XSTART=xstart, $
-                         radius=3.5, ystart=refmid, xerr=xerr_mid, $
-                         MAXSHIFTE=0.8, NMED=5, NAVE=5)
+  xcen_mid = trace_crude(saw, ivar, yset=ycen_pos, XSTART=xstart, $
+                         radius=1.5, ystart=refmid, xerr=xerr_mid, $
+                         MAXSHIFTE=0.5, NMED=5, NAVE=5)
 
+  if keyword_set( TCHK ) then begin
+      tmp = saw
+      sz_img = size(saw,/dimensions)
+      sz = size(xcen_mid, /dimensions)
+      for qq=0L,sz[1]-1 do begin
+          rnd_trc = round(xcen_mid[*,qq])
+          trc_msk = rnd_trc + lindgen(sz_img[1])*sz_img[0]
+          tmp[trc_msk] = -10000
+      endfor
+      xatv, tmp, /block, min=-100, max=5000
+  endif
+  
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Edit top
   smsh = djs_median(img_hole[*,reftop-2:reftop+2],2)
-  x_fndpeaks, smsh, center, NSIG=7.
-  lft = where(center LT 419)
-  xstart = center[lft]
+  x_fndpeaks, smsh[0:419], center, NSIG=7.
+  xstart = center-1.
+  ystrt = replicate(refmid, n_elements(xstart))
+  for j=0L,9 do $
+    xstart = trace_fweight(saw, xstart, ystrt, radius=2, $
+                           INVVAR=ivar)
 
   ;; CHK
-  if keyword_set( CHK ) then $
-    x_splot, smsh, XTWO=xstart, YTWO=smsh[round(xstart)], PSYM_Y2=1, /block
+  if keyword_set( TCHK ) then begin
+      smsh2 = djs_median(saw[*,reftop-3:reftop+3],2)
+      x_splot, smsh2, XTWO=xstart, YTWO=smsh2[round(xstart)], PSYM2=1, /block
+  endif
 
 ; Trace
   print, 'esi_echtrcholes: Tracing top with trace_crude...'
-  xcen_top = trace_crude(img_hole, ivar, yset=ytop_pos, XSTART=xstart, $
-                         radius=3.5, ystart=reftop, xerr=xerr_top, $
-                         MAXSHIFTE=0.8, NMED=5, NAVE=5)
+  xcen_top = trace_crude(saw, ivar, yset=ytop_pos, XSTART=xstart, $
+                         radius=1.5, ystart=reftop, xerr=xerr_top, $
+                         MAXSHIFTE=0.5, NMED=5, NAVE=5)
+  if keyword_set( TCHK ) then begin
+      tmp = saw
+      sz_img = size(saw,/dimensions)
+      sz = size(xcen_top, /dimensions)
+      for qq=0L,sz[1]-1 do begin
+          rnd_trc = round(xcen_top[*,qq])
+          trc_msk = rnd_trc + lindgen(sz_img[1])*sz_img[0]
+          tmp[trc_msk] = -10000
+      endfor
+      xatv, tmp, /block, min=-100, max=5000
+  endif
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; PATCH Top
@@ -152,20 +198,24 @@ pro esi_echtrcholes, esi, IMG=img, FITFIL=fitfil, HOLEFIL=holefil, $
   print, 'esi_echtrcholes: Patching'
 
   ;; Defect
-  for i=0L,2 do xcen_mid[3775:4095,7+i] = xcen_top[3775:4095,i]
+  for i=0L,2 do xcen_mid[3775:4095,9+i] = xcen_top[3775:4095,i]
   xerr_mid[3860:3920,7:9] = 99.99
   
   ;; Bad column(s)
-  for i=6L,16 do begin
-      for j=4095L,0,-1 do begin
+  sz_top = size(xcen_top,/dimen)
+  for i=3,sz_top[1]-1 do begin
+      for j=sz_top[0]-1,0,-1 do begin
           if(xcen_top[j,i] GT 417.) then begin
-              xcen_mid[j:4095,7+i] = xcen_top[j:4095,i]
-              xerr_mid[j:4095,7+i] = xerr_top[j:4095,i]
-              xerr_mid[j-250:j-1,7+i] = 99.99
+              xcen_mid[j:4095,9+i] = xcen_top[j:4095,i]
+              xerr_mid[j:4095,9+i] = xerr_top[j:4095,i]
+              xerr_mid[j-250:j-1,9+i] = 99.99
               break
           endif
       endfor
   endfor
+
+  save, xcen_mid, xerr_mid, filename='xcen_mid.idl'
+endif  else restore, xcen_fil
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Parse out bad lines!
@@ -263,6 +313,18 @@ pro esi_echtrcholes, esi, IMG=img, FITFIL=fitfil, HOLEFIL=holefil, $
                                        frac*xcen_mid[y_end+1:sz_xcen[0]-1,indx+2])/$
     (1.-frac)
 
+  if keyword_set( CHK ) then begin
+      tmp = saw
+      sz_img = size(saw,/dimensions)
+      sz = size(xcen_mid, /dimensions)
+      for qq=0L,sz[1]-1 do begin
+          rnd_trc = round(xcen_mid[*,qq])
+          trc_msk = rnd_trc + lindgen(sz_img[1])*sz_img[0]
+          tmp[trc_msk] = -10000
+      endfor
+      xatv, tmp, /block, min=-100, max=5000
+  endif
+  
 ;;;;;;;;;;;;;
 ;  FIT
 
@@ -278,7 +340,6 @@ pro esi_echtrcholes, esi, IMG=img, FITFIL=fitfil, HOLEFIL=holefil, $
   fin_fit = replicate(tmp_fit, ntrc)
   msk = lindgen(sz_xcen[0])
 
-  clr = getcolor(/load)
   for q=0,ntrc-1 do begin
       ;; Create mask
       msk[*] = 0L
@@ -297,6 +358,20 @@ pro esi_echtrcholes, esi, IMG=img, FITFIL=fitfil, HOLEFIL=holefil, $
       ;; Save
       fin_fit[q] = tmp_fit
   endfor
+  !p.multi=[0,2,3]
+  clr = getcolor(/load)
+
+  for i=0L,5 do begin
+      gd = where(fin_fit.nord GT (i-1),ngd)
+      if ngd NE 0 then begin
+          dumarr = fltarr(ngd)
+          for q=0L,ngd-1 do dumarr[q] = (*fin_fit[gd[q]].ffit)[i]
+          plot, gd, dumarr, color=clr.black, background=clr.white, $
+            xstyle=1, ystyle=1, psym=1, charsize=4.5, xmargin=[5,1],$
+            ymargin=[3,1], xtitle='Order '+strtrim(i,2), xr=[0., ntrc]
+      endif
+  endfor
+  !p.multi=[0,1,1]
 
   ;; WRITE
   save, fin_fit, xcen_mid, filename=fitfil

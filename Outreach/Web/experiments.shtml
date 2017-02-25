@@ -1,0 +1,59 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<title> Spectroscopic Inquiry from UC Santa Cruz</title>
+
+<!-- Input junk.html here -->
+<!-- End junk.html here -->
+<!--#include virtual="./class.html"-->
+<!--#include virtual="./noboard.html"-->
+<!--#include virtual="./header.html"-->
+
+
+<div id="content_panel">
+  <table width="920" border="0" cellspacing="0" cellpadding="5">
+	<tr>
+		<td height="5" colspan="2">&nbsp;</td>
+	</tr>
+	<tr>
+		<td colspan="2" class="title">Experiments:</td>
+	</tr>
+
+	<tr>
+		<td colspan="2"><p><span color="p_lead_in style2">
+We are developing laboratory experiments for secondary education using
+the principles of <a href="glossary.shmtl#inquiry" class="glossary_link">inquiry</a> learning.  It is our goal to design ~10 of these
+in the coming year and we encourage input/guidance from the community
+for new designs, curricula, etc.  In general, we aim for a lesson 
+of ~1hr duration to be performed by teams of 2-3 students on a 
+single computer.
+  </span></p></td>
+	</tr>
+	<tr>
+		<td colspan="2" class="title"></td>
+	</tr>
+    <tr>
+
+    <tr>
+      <td width="330" valign="top"><img src="images/screen_basicexper.gif" alt="MassLoss" width="310" /></td>
+      <td width="418"><p><a name="experiment:lst" id="experiment:lst"></a></p>
+        <p><span class="p_lead_in style2">An Introduction to 
+Light, Spectroscopy, and Temperature</span> 
+This experiment introduces the basics of spectroscopy (wavelength vs brightness),
+enables the students to explore the spectral properties of several astronmical
+sources to investigate temperature and spectral lines.  Secondary content
+includes color, electromagnetic spectrum, atomic structure.
+<a href="experiment_introspec.shtml" class="red_link">Click here for 
+a full description.</a>
+        </p>
+    </tr>
+
+
+  </table>
+</div>
+
+
+</body>
+</html>

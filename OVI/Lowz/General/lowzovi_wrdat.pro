@@ -2,17 +2,17 @@
 ; NAME:
 ; lowzovi_wrdat
 ;  V1.1
-;
+;  
 ; PURPOSE:
-;    Given a list of DLA base files, fill up the structure ;
+;  Writes to an ASCII file a summary of the galaxy data for a
+;  list of fields.
+;
 ; CALLING SEQUENCE:
-;   
-;   lowzovi_wrdat, stucture, filename
+;   lowzovi_wrdat, stucture, LIST=
 ;
 ; INPUTS:
 ;
 ; RETURNS:
-;   structure      - IDL structure
 ;
 ; OUTPUTS:
 ;
@@ -32,17 +32,16 @@
 ; PROCEDURES CALLED:
 ;
 ; REVISION HISTORY:
-;   31-May-2001 Written by JXP
-;   02-Jan-2003 Added metallicity sturcture
+;   Oct-2003 Added metallicity sturcture
 ;-
 ;------------------------------------------------------------------------------
-pro lowzovi_wrdat, supstrc, LIST=list, NAMES=names
+pro lowzovi_wrdat, supstrc, list
 
 ; lowzovi_wrdat -- Writes OVI data to files from a structure
 
-  if (N_params() LT 1) then begin 
+  if (N_params() LT 2) then begin 
     print,'Syntax - ' + $
-             'lowzovi_wrdat, struct, LIST= (v1.0)' 
+             'lowzovi_wrdat, struct, list [v1.1]' 
     return
   endif 
 
@@ -56,10 +55,8 @@ pro lowzovi_wrdat, supstrc, LIST=list, NAMES=names
   dumi = 0
 
 ; Parse the Base File
-  if keyword_set( LIST ) then begin
-      readcol, list, listnms, format='A'
-      nfield = n_elements(listnms)
-  endif else stop
+  readcol, list, listnms, format='A'
+  nfield = n_elements(listnms)
 ;
   close, 1
   for i=0,nfield-1 do begin

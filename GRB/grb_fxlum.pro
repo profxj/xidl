@@ -1,34 +1,43 @@
 ;+ 
 ; NAME:
 ;  grb_fxlum
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
-;    Fits a continuum to spectroscopic data interactively
+;    Calculates GRB flux as a function of time given the flux at
+;    one point in time.  The solution is based on the paper by
+;    Sari, Piran, & Narayan 1998.
 ;
 ; CALLING SEQUENCE:
 ;   
-;   dla_sdssrich, fil
+;   grb_fxlum, fini, tini, freq, RAD=, FLUX=, LUM=, Z=, $
+;              tEarth=,  TEXP=, TSTART=, NSTP=
 ;
 ; INPUTS:
-;
 ;     fini -- Flux measured at tini in muJy
 ;     tini -- Time at Earth when fini was measured (seconds)
+;     freq -- Frequency of the radiation
 ; RETURNS:
+;   flux= -- Array of flux values computed as function of time
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
+;    /RAD   -- Radiative expansion [Default: adiabatic]
+;    z=     -- Redshift [default: 1.]
+;  tstart=  -- Starting time of observation [default: 3600.]
+;  tend=    -- Starting time of observation [default: 7200.]
+;  nstp=    -- Number of time steps [default: 1000L]
 ;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   parse_sdss, fil
-;
+;   grb_fxlum, 1., 7200., 1e15
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
+;
 ; REVISION HISTORY:
 ;   29-Oct-2003 Written by JXP (based on Sari, Piran, Narayan 1998)
 ;-
@@ -42,7 +51,8 @@ pro grb_fxlum, fini, tini, freq, RAD=rad, FLUX=flux, LUM=lum, Z=z, $
 ;
   if  N_params() LT 3  then begin 
     print,'Syntax - ' + $
-             'grb_fxlum, fini, tini, freq, /RAD [v1.0]'
+             'grb_fxlum, fini, tini, freq, /RAD, FLUX=, z=, tEarth=, texp='
+    print, '    TSTART=, NSTP= [v1.1]'
     return
   endif 
 

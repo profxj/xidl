@@ -1,0 +1,64 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>ESIRedux Quick Reduction</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+</head>
+
+<body>
+<h1 align="center">Quick Reduction of ESI Data Using ESIRedux</h1>
+<p>As part of the ESIRedux package, there is a routine designed to 
+quickly reduce echellette data using archived calibrations. A 
+fully reduced<br> 1D spectrum is produced in ~8 min of time on the 
+Keck machines. Assuming all of the paths have been properly setup 
+on the esi account<br>
+(specifically IDL_PATH, XIDL_DIR, IDLUTILS_DIR, IDLSPEC2D_DIR, ESI_CALIBS), 
+one takes the following steps:</p>
+<ol>
+  <li> Choose a machine with ~1G of RAM</li>
+  <li> Set these paths<br>
+    <br>
+    <ul>
+    <li><kbd>prompt&gt; setenv IDL_DIR /sol/apps/idl_54/idl
+    <li><kbd>prompt&gt; setenv IDL_PATH +$IDL_DIR\/lib:+$IDL_DIR\/examples:+/sol/apps2/kroot/instr/esiredux/idl/:+pro
+    </ul>
+  <li> Launch IDL 5.4
+    <ul>
+    <li> <kbd>prompt&gt; /sol/apps/idl_54/idl/bin/idlde -32
+    <li>  You may turn the change directory option off (under preferences)
+    </ul>
+    </kbd></li>
+  <br><li>Run esi_echqckrdx:<br>
+    <br>
+    <kbd>esi_echqckrdx, 'filename'</kbd> </li>
+    <br>
+</ol>
+<h3>Options:</h3>
+<ol>
+  <li type="a"> /CHK will give some graphical output along the way</li>
+  <li type="a">ARCFIL= will specify the arc</li>
+  <li type="a">FLATFIL= will specify the flat</li>
+  <li type="a">REFORDR= will choose the order to find the object in</li>
+  <li type="a">REFWV= (2 element array specifying wavelength range to identify 
+  <li type="a">SCICLM= Offset of Object from Slit center.  If the program
+   stops in esi_echfndobj, the chances are your object is more than 20 pixels
+   away from the defined slit center.  Try rerunning with SCICLM=20
+    the object in)</li>
+</ol>
+<h3>Test:</h3>
+<ul>
+  <li>Test the code by grabbing <a href="esi0068.fits.gz>this file</a>. 
+  <li>Launch IDL
+  <li> Type IDL> esi_echqckrdx, 'esi0068.fits'
+  <li> Program should run in about 10min on a fast Sun
+</ul>
+<h3>Limitations:</h3>
+<ul>
+  <li>Only works on 1x1 binning right now.</li>
+  <li>Not sure if it will work on the 6&quot; slit</li>
+  <li>Mainly tested on point sources</li>
+  <li>Requires a continuum for tracing [easily modified to take a standard star 
+    as the trace]</li>
+</ul>
+</body>
+</html>

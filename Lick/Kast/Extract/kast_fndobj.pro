@@ -4,23 +4,31 @@
 ;     Version 1.0
 ;
 ; PURPOSE:
-;    Finds all objects and traces them
+;    Find object on the image and then trace using x_trace.
+;  The code can look automatically or the user can look interactively.
 ;
 ; CALLING SEQUENCE:
-;   
-;  kast_fndobj, kast, obj_id
-;
+; kast_fndobj, kast, setup, side, obj_id, [exp], $
+;                /CHK, /NOCLOBBER, SCICLM=, /STD, /AUTO, SCIROW=
+; 
 ; INPUTS:
-;   kast   -  ESI structure
-;   indx  -  Indices of objects to process
+;   kast  --  Kast IDL structure
+;  setup  --  Setup value
+;   side  --  Specific camera [blue (1) vs. red (2)]
+; obj_id  --  Object value
+;  [exp]  --  Exposure indices
 ;
 ; RETURNS:
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
-;   FLAT  - Flat file
-;   BIAS  - Bias frame
+;  SCICLM     -- Column to look for object in
+;  SCIROW     -- Approximate row expected for the object
+;  /AUTO      -- Look for the object automatically
+;  /NOCLOBBER -- Do not overwrite the object structure
+;  /STD       -- Standard star
+;  /CHK       -- Plot the image and the trace
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -34,28 +42,23 @@
 ;
 ; REVISION HISTORY:
 ;   01-Mar-2003 Written by JXP
-;-
+;   12-Nov-2005 Added SCICLM defaults for d55, blue G2 (600/4310) and
+;               red 600/7500, KLC
 ;------------------------------------------------------------------------------
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 pro kast_fndobj, kast, setup, side, obj_id, exp, $
-                 CHK=chk, NOCLOBBER=noclobber, SCICLM=sciclm, STD=std, AUTO=auto, $
-                 SCIROW=scirow
+                 CHK=chk, NOCLOBBER=noclobber, SCICLM=sciclm, $
+                 STD=std, AUTO=auto, SCIROW=scirow
 
 ;
-  if  N_params() LT 1  then begin 
+  if  N_params() LT 4  then begin 
       print,'Syntax - ' + $
-        'kast_fndobj, kast, setup, side, obj_id, [exp], SCICLM=  [v1.0]'
+        'kast_fndobj, kast, setup, side, obj_id, [exp], SCICLM=  [v1.1]'
       return
   endif 
   
 ;  Optional Keywords
   if not keyword_set( SCIROW ) then scirow = 89L
-  if not keyword_set( SETUP ) then setup = 0
-  if not keyword_set( SIDE ) then side = 1
-  if not keyword_set( OBJ_ID ) then obj_id = 0
 
 ;  Find all relevant obj
   if not keyword_set( STD ) then begin
@@ -88,7 +91,7 @@ pro kast_fndobj, kast, setup, side, obj_id, exp, $
       ;; Flag
       flg_objstr = 0
       ;; Look for obj file
-      objfil = kast[indx[exp[q]]].obj_fil
+      objfil = strtrim(kast[indx[exp[q]]].obj_fil,2)
       if x_chkfil(objfil+'*') NE 0 and keyword_set(NOCLOBBER) then begin
           print, 'kast_fndobj: Using Obj structure -- ', objfil
           objstr = xmrdfits(objfil, 1, STRUCTYP='specobjstrct', /silent)
@@ -121,7 +124,7 @@ pro kast_fndobj, kast, setup, side, obj_id, exp, $
                                   else: stop
                               endcase
                           end
-                          2: begin ;; blue
+                          2: begin ;; red
                               case strtrim(kast[indx[exp[q]]].grising,2) of
                                   '300/7500': SCICLM = 515L
                                   else: stop
@@ -142,6 +145,23 @@ pro kast_fndobj, kast, setup, side, obj_id, exp, $
                           else: stop
                       endcase
                   end
+                  'd55': begin
+                      case side of
+                          1: begin ;; blue
+                              case strtrim(kast[indx[exp[q]]].grising,2) of
+                                  '600/4310': SCICLM = 720L
+                                  else: stop
+                              endcase
+                          end
+                          2: begin ;; red
+                              case strtrim(kast[indx[exp[q]]].grising,2) of
+                                  '600/7500': SCICLM = 100L
+                                  else: stop
+                              endcase
+                          end
+                          else: stop
+                      endcase 
+                  end 
                   else: stop
               endcase
           endif
@@ -168,6 +188,7 @@ pro kast_fndobj, kast, setup, side, obj_id, exp, $
       ;; Peaks
       print, 'kast_fndobj: Finding obj'
       gdsmsh = where(smsh GT 0.)
+      peak = 1.
       x_fndobj, smsh[gdsmsh], center, NSIG=3., PEAK=peak, $
         PKWDTH=4L, EDGES=edges 
       gdpeak = gdsmsh[peak]

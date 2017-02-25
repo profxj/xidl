@@ -1,0 +1,7 @@
+1.  Update Cookbook and keyword in code
+2.  Data Organization
+3.  Wavelength: Whole section
+4.  Tracing and Extraction: 
+5.  VI.  Coadding
+6.  Coadd figure
+7.  Skysub fig

@@ -4,35 +4,29 @@
 ;  V1.1
 ;
 ; PURPOSE:
-;    Given a list of DLA base files, fill up the structure ;
+;    Structure summarizing the observations for a given field
+;
 ; CALLING SEQUENCE:
-;   
-;   lowzovi_prsdat, stucture, filename
+;   tmp = {lowzovidat}
 ;
 ; INPUTS:
 ;
 ; RETURNS:
-;   structure      - IDL structure
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
-;  LIST - File
-;  ION - Input ionic column densities
-;  NOELM - Supress inputting Elemental values
 ;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   lowzovi_prsdat, struct, '/u/xavier/DLA/Lists/tot_dla.lst'
-;
 ;
 ; PROCEDURES CALLED:
 ;
 ; REVISION HISTORY:
-;   26-Aug-2003 Written by JXP
+;   Oct-2003 Written by JXP
 ;-
 ;------------------------------------------------------------------------------
 pro lowzovidat__define

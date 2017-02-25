@@ -4,7 +4,10 @@
 ;
 ; PURPOSE:
 ;   Find possible redshift matches for a set of spectra using a set of
-;   eigen-templates.
+;   eigen-templates.  This is just a version I grabbed and slightly
+;   modified from the SDSS distribution.  The main modification was to
+;   allow for more free paramters in fitting the continuum of the
+;   galaxies due to poor fluxing with the WFCCD.
 ;
 ; CALLING SEQUENCE:
 ;   result = x_zfind( objflux, objivar, hdr=hdr, $

@@ -1,0 +1,432 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.70)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>KAST Redux Cookbook</TITLE>
+<META NAME="description" CONTENT="kast_cook">
+<META NAME="keywords" CONTENT="kast_cook">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+</HEAD>
+
+<BODY >
+
+<P>
+<DIV ALIGN="CENTER">
+<FONT SIZE="+3"><B>Cookbook for Lick/KAST Reductions</B></FONT>
+</DIV>
+
+<br>
+<br>
+
+<FONT SIZE="+2"> <a href="index.html">BACK</a>
+<br>
+<br>
+
+<FONT SIZE="+1">
+This page describes the types of calibrations recommended
+(or required) to use the Low-Redux pipeline to reduce data 
+acquired with the longslit Kast spectrometer.
+
+
+</DIV>
+<hr>
+<P>
+<FONT SIZE="+2">Calibrations:</FONT>
+<br>
+<br>
+
+<FONT SIZE="+1">
+AFTERNOON: The following table summarizes the recommended calibration
+exposures for the grisms+gratings supported within the Low-Redux pipeline.
+</font>
+
+<br>
+<br>
+
+<center>
+<table style="font-size: 24px; line-height: 140%;" width="450"
+border="1" cellpadding="1" cellspacing="1"><tbody><tr bgcolor="#ddddff">
+<td align="center">Blue Side Calibrations</td>
+</tr></tbody></table>
+<table style="font-size: 13px; line-height: 140%;" width="450"
+border="1" cellpadding="1" cellspacing="1"><tbody><tr bgcolor="#ddddff">
+<th width="5%">Type</th>
+<th width="15%">Lamps</th>
+<th width="5%">Slit</th>
+<th width="5%">Exp</th>
+<th width="3%">NExp</th>
+<th width="68%">Notes</th>
+
+<tr bgcolor="Lightgreen">
+<td align="center">Arc</td>
+<td align="center">All</td>
+<td align="center">46000</td>
+<td align="center">20s</td>
+<td align="center">2</td>
+<td align="left">IMPORTANT:  One should wait ~5min for Cd lamps to warm up.
+</td>
+</tr>
+<tr></tr>
+<tr></tr>
+<tr bgcolor="Lightgreen">
+<td align="center">DomeFlat</td>
+<td align="center">Blue</td>
+<td align="center">46000</td>
+<td align="center">50s</td>
+<td align="center">5</td>
+<td align="left">Avoid saturation</td>
+</tr>
+</tbody></table><br><br>
+</td>
+</center>
+
+
+<center>
+<table style="font-size: 24px; line-height: 140%;" width="450"
+border="1" cellpadding="1" cellspacing="1"><tbody><tr bgcolor="Pink">
+<td align="center">Red Side Calibrations</td>
+</tr></tbody></table>
+<table style="font-size: 13px; line-height: 140%;" width="450"
+border="1" cellpadding="1" cellspacing="1"><tbody><tr bgcolor="Pink">
+<th width="5%">Type</th>
+<th width="15%">Lamps</th>
+<th width="5%">Slit</th>
+<th width="5%">Exp</th>
+<th width="3%">NExp</th>
+<th width="68%">Notes</th>
+
+<tr bgcolor="Lightgreen">
+<td align="center">Arc</td>
+<td align="center">Ne,He,Hg</td>
+<td align="center">46000</td>
+<td align="center">30s</td>
+<td align="center">2</td>
+<td align="left">
+The Red chip QE fluctuates A LOT.  Modify your exposure times accordingly.
+</td>
+</tr>
+<tr></tr>
+<tr></tr>
+<tr bgcolor="Lightgreen">
+<td align="center">DomeFlat</td>
+<td align="center">Red</td>
+<td align="center">46000</td>
+<td align="center">5s</td>
+<td align="center">5</td>
+<td align="left">
+The Red chip QE fluctuates A LOT.  Modify your exposure times accordingly.
+</td>
+</tr>
+</tbody></table><br><br>
+</td>
+</center>
+
+TWILIGHT+NIGHTTIME:  In addition to these calibrations, if one wishes to flux the
+spectra it is necessary to observe a spectrophotometric standard
+with the same instrument configuration.  Furthremore, it is
+best if one chooses from the CALSPEC list of standards which can
+be found here: $XIDL_DIR/Spec/Longslit/calib/standards/calspec
+	
+<hr>
+<FONT SIZE="+2">Organizing the Data</FONT>
+<br>
+<br>
+
+<FONT SIZE="+1">
+The first steps are to organize your data, create a plan file,
+and edit it as necessary.
+</font>
+
+	
+<UL>
+<LI> Organize the data
+  <ol>
+    <li> Create a 'Raw' directory --  mkdir Raw
+    <li> Place all of the Raw frames in the Raw directory
+    <li> gzip the files (optional)
+  </ol>
+<LI> Create the plan file
+  <ol>
+    <li> Launch IDL from above the Raw directory
+    <li> Run <a href="lowredux_doc.html#LONG_PLAN">long_plan</a> :: This
+	code parses the headers of each raw file and creates an ASCII file
+	which summarizes the data.  The attempts a guess at the 'type' of
+	each frame (e.g. arc, domeflat, science).  
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>long_plan</B>, '*.ccd*', 'Raw/'
+  </ol>
+<LI> Edit the plan file (default: plan.par)
+  <ol>
+    <li> Consider copying plan.par to a new file
+    <li> Edit slitthresh to be 0.10 
+    <li> Remove unwanted images from the .par file
+    <li> Insure that there are both arc and domeflat files for each
+	    grating/grism/slit combination.
+    <li> Inspect+Edit the image types for the various exposures.  
+	    For the KAST spectrometer there are 3 types of interest:
+<br>
+<br>
+
+<table style="font-size: 24px; line-height: 140%;" width="650"
+border="1" cellpadding="1" cellspacing="1"><tbody><tr bgcolor="Tan">
+<td align="center">Image Types</td>
+</tr></tbody></table>
+<table style="font-size: 13px; line-height: 140%;" width="650"
+border="1" cellpadding="1" cellspacing="1"><tbody><tr bgcolor="Tan">
+<th width="5%">Type</th>
+<th width="45%">Description</th>
+
+<tr bgcolor="Lightgreen">
+<td align="center">arc</td>
+<td align="left"> Exposure of the arc lamps taken with the instrument
+configured for spectroscopy (slit + dispersing elements).  
+</td>
+</tr>
+<tr bgcolor="Lightgreen">
+<td align="center">domeflat</td>
+<td align="left">Spectrum of a quartz lamp shined onto the dome of the 3m.  
+The instrument is configured for spectroscopy (slit+disperser element).
+</td>
+</tr>
+<tr bgcolor="Lightgreen">
+<td align="center">science</td>
+<td align="left">Spectrum of an astronomical object.  
+This includes 'standard stars'.
+</td>
+</tr>
+</tbody></table><br><br>
+</td>
+
+</UL>
+
+<hr>
+<FONT SIZE="+2">Reduce!</FONT>
+
+ <p> 
+<FONT SIZE="+1">
+All of the reduction steps are run by the code
+<a href="lowredux_doc.html#LONG_REDUCE">long_reduce</a> :: This
+routine 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>long_reduce</B>, 'plan.par'
+
+  <ol> 
+    <li> Stacks and process the flats 
+    <li> Identifies the edges of the longslit
+    <li> Calibrates the various arc images
+    <li> Processes the science frame (flattens)
+    <li> Finds/traces objcets within the slit
+    <li> Extracts using a non-parameteric optimal extraction algorithm
+  </ol>
+
+The pipeline outputs the following calibration files:
+<br>
+<br>
+
+<table style="font-size: 24px; line-height: 140%;" width="650"
+border="1" cellpadding="1" cellspacing="1"><tbody><tr bgcolor="Tan">
+<td align="center">Reduction Products</td>
+</tr></tbody></table>
+<table style="font-size: 13px; line-height: 140%;" width="650"
+border="1" cellpadding="1" cellspacing="1"><tbody><tr bgcolor="Tan">
+<th width="15%">Name</th>
+<th width="45%">Description</th>
+
+<tr bgcolor="Lightgreen">
+<td align="center">pixflat-xxx</td>
+<td align="left"> FITS file generated from the domeflats which corrects for
+pixel-to-pixel variations in the CCD.
+</td>
+</tr>
+
+<tr bgcolor="Lightgreen">
+<td align="center">profile-xxx</td>
+<td align="left">Binary FITS table containing the object profile used
+for optimal extraction.  In particular, the tag .profile contains an
+image of the profile.
+</td>
+</tr>
+
+<tr bgcolor="Lightgreen">
+<td align="center">slits-xxx</td>
+<td align="left">Binary FITS table containing the parameters which 
+describe the slit edges.
+</td>
+</tr>
+
+<tr bgcolor="Lightgreen">
+<td align="center">wave-xxx.fits</td>
+<td align="left">FITS image of the wavelength array created by the code.
+</td>
+</tr>
+
+<tr bgcolor="Lightgreen">
+<td align="center">wave-xxx.ps</td>
+<td align="left">Postscript file showing the results from the 1D arc
+solution.  
+</td>
+</tr>
+
+</tbody></table><br><br>
+</td>
+
+<hr>
+<FONT SIZE="+2">Primary Science Product</FONT>
+<br>
+
+<br>
+The primary science products are written a multi-extension
+FITS file in the Science/ directory.  One file is written
+per exposure.  This table describes the various extensions:
+<br>
+<br>
+
+<table style="font-size: 24px; line-height: 140%;" width="650"
+border="1" cellpadding="1" cellspacing="1"><tbody><tr bgcolor="Cyan">
+<td align="center">Science Products</td>
+</tr></tbody></table>
+<table style="font-size: 13px; line-height: 140%;" width="650"
+border="1" cellpadding="1" cellspacing="1"><tbody><tr bgcolor="Cyan">
+<th width="5%">Extension</th>
+<th width="85%">Description</th>
+
+<tr bgcolor="Lightgreen">
+<td align="center">0</td>
+<td align="left"> Processed 2D image of the data.
+</td>
+</tr>
+
+<tr bgcolor="Lightgreen">
+<td align="center">1</td>
+<td align="left">Inverse variance </td>
+</tr>
+
+<tr bgcolor="Lightgreen">
+<td align="center">2</td>
+<td align="left">Sky model</td>
+</tr>
+
+<tr bgcolor="Lightgreen">
+<td align="center">3</td>
+<td align="left">Model of the object flux</td>
+</tr>
+
+<tr bgcolor="Lightgreen">
+<td align="center">4</td>
+<td align="left">Mask of good/bad pixels</td>
+</tr>
+
+<tr bgcolor="Lightgreen">
+<td align="center">5</td>
+<td align="left">Structure array (one per object identified in the 
+slit).  The key tags are: wave_opt, flux_opt, ivar_opt, wave_box, 
+flux_box, ivar_box.
+</td>
+</tr>
+
+</td>
+</tr>
+</tbody></table><br><br>
+</td>
+
+One can examine the 1 and 2D spectra extracted from each
+data frame using the following steps: <br>
+
+<ul>
+ <LI> cd Science
+ <LI> UNIX> idl
+ <LI> IDL> .run long_look <br>
+   This will launch a GUI list of all the sci-*.fits.gz files in the
+  current directory.  
+ <LI> Choose the sci-* file that you want from the GUI list <br>
+   This will launch a view of the 2D image (using the IDL task <B>atv</b>).
+   After completing the step described below, you can use this Image display
+   GUI to examine the 2D spectrum.  
+   A postscript file summarizing the S/N of the various extracted spectra is shown
+   and also a GUI list of the objects in the frame indexed slit-object
+   (e.g. 1-2 for slit 1 and object #2 in the slit).
+ <LI> Choose an object from the GUI list <br>
+   This will launch an <b>x_specplot</b> GUI that the user can use 
+   to examine the 1D spectrum.  At this point the <b>xatv</b> window will now
+   be active.
+ <LI> Play with the two GUI's.
+</ul>
+
+
+
+<hr>
+<FONT SIZE="+2">Coadd</FONT>
+<br>
+<br>
+As you will note, the multi-extension FITS file that contains
+the spectra are not especially easy to handle.  Furthermore, it
+is common that a user will wish to coadd multiple exposures of
+a given object.  This is accomplished with the task  
+<a href="lowredux_doc.html#LONG_COADD">long_coadd</a> :: This
+routine takes as input a list of sci- files, chooses a 
+wavelength array for registration, and coadds weighting by the
+square of the median S/N ratio (or exposure time).
+<br>
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Call: IDL> <B>long_coadd</B>, files, objid, OUTFIL=name
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>long_coadd</B>, ['sci-b263.ccd.gz', 'sci-b265.ccd.gz'], 1, OUTFIL='FSpec/J0905+1014_b.fits'
+
+<br>
+<br>
+In the above example, we have set objid=1 to indicate that we 
+wish to coadd the first object identified in the slit.  
+The output file (e.g. FSpec/J0905+1014_b.fits) is a multi-extension
+FITS array containing three extension:
+0=flux array; 1=sigma array; 2=wavelength array.
+
+<br>
+<br>
+One can inspect the data using the XIDL routine <b>x_specplot</b>.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> x_specplot, filename, inflg=2
+
+<hr>
+<FONT SIZE="+2">Flux</FONT>
+<br>
+<br>
+Fluxing is relatively straightforward.  One includes a calibration
+standard in the plan.par file and the code will reduce the data
+in a similar fashion as the science exposures.  One does NOT apply
+the COADD algorithm, but skips to this task
+<a href="lowredux_doc.html#LONG_SENSFUNC">long_sensfunc</a> :: This
+algorithm requires that one use one of the standards included
+in the Longslit package (contact JH or JXP to add a new file).
+These files are found here: $XIDL_DIR/Spec/Longslit/calib/standards/calspec.
+
+<br>
+<br>             Call: IDL&gt; sens = <b>long_sensfunc</b>( sci_file, sens_file, std_name=std_name)
+<br>             Example: IDL&gt; bsens = <b>long_sensfunc</b>(&#39;Science/std-b257.ccd.fits&#39;, &#39;Flux/feige34_bsens.fits&#39;, std_name=&#39;feige34_005&#39;,/MSK_BALM)
+
+<br>
+<br>
+With a sensitivity function in hand, the final step is to apply
+it to the science spectra.  This is accomplished with
+<a href="lowredux_doc.html#LONG_FLUXCAL">long_fluxcal</a> :: This
+code simply notes the exposure time and applies the sensitivity 
+function. It also corrects for differences in the airmass of the
+two exposures assuming an extinction function appropriate for KPNO.
+
+<br>
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Call: IDL> <b>long_fluxcal</b>,
+data_file, sens_file, OUTFIL=fluxed_data
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <b>long_fluxcal</b>, 'FSpec/J0905+1014_xb.fits', 'Flux/feige34_bsens.fits', OUTFIL='FSpec/J0905+1014b_XF.fits'
+<br>
+<br>
+
+One can inspect the data using the XIDL routine <b>x_specplot</b>.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> x_specplot, filename, inflg=2
+
+<P>
+<BR><HR>
+<ADDRESS> Last modified 2007-5-11 </ADDRESS>
+</BODY>
+</HTML>

@@ -1,0 +1,986 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.70)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>mike_cookbook</TITLE>
+<META NAME="description" CONTENT="mike_cookbook">
+<META NAME="keywords" CONTENT="mike_cookbook">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+</HEAD>
+
+<BODY >
+
+<P>
+<DIV ALIGN="CENTER">
+<FONT SIZE="+3"><B>MIKE Data Reduction [v1.7; June 2006]</B></FONT>
+
+</DIV>
+
+<P>
+
+<FONT SIZE="+2">MIKE Suggested Calibrations </FONT>
+   
+<UL>
+
+<OL>
+<LI>10 Bias (0s) frames
+</LI>
+<LI>10 trace flat images (per setup and side) 
+<BR><B>Note - It is ideal to
+	take a set of Arcs right before and/or after 
+<BR>
+creating the trace flat images!!</B>
+</LI>
+<LI>10 Milky Flats  (per setup and side)
+</LI>
+<LI>Arc Calib:  
+	
+<UL>
+<LI>One pair taken at the same time as the trace flat
+</LI>
+<LI>One image taken before (or after) each science exposure
+	
+</LI>
+</UL>
+</LI>
+<LI>One Standard star &nbsp;&nbsp;&nbsp;&nbsp;(<I>each slit size</I>)
+   
+</LI>
+</UL>
+
+<P>
+<FONT SIZE="+2">Pre-Reduction Setup </FONT>
+   
+<UL>
+<LI>Computer Resources
+	
+<UL>
+<LI> >300 MHz processor
+</LI>
+<LI>5G disk space / night
+</LI>
+<LI>750M RAM (1G on Solaris)
+</LI>
+<LI>Linux or Solaris
+	
+</LI>
+</UL>
+</LI>
+<LI>Solaris WARNINGS (These do not apply to Linux)
+	
+<UL>
+<LI>Solaris+IDL does not release memory until IDL is exited
+</LI>
+<LI>Consider exiting IDL occasionally and monitor memory usage
+</LI>
+<LI>IDL+Solaris freezes up on the CPU intermittently
+	  
+<UL>
+<LI>Possibly bug in licensing software
+</LI>
+<LI>Forced to kill IDL process and restart
+	  
+</LI>
+</UL>
+</LI>
+</UL>
+</LI>
+<LI>Software
+	
+<UL>
+<LI>gcc or cc
+</LI>
+<LI>IDL v5.4 or higher
+</LI>
+<LI>IDL packages
+		
+<OL>
+<LI><B>idlutils</B> SDSS IDL package  (Burles/Schlegel/Sloan)
+</LI>
+<LI><B>idlspec2d</B> SDSS IDL package  (Sloan public)
+</LI>
+<LI><B>xidl</B> XIDL package   (JXP)
+</LI>
+<LI><B>MIKE</B> MIKE package   (Burles)
+		
+</LI>
+</OL>
+<LI> Environmental variables -- Be sure you have the falling
+set as noted in &nbsp;&nbsp; <a href="mike_install.html">mike_install</a>
+<UL>
+  <LI> MIKE_DIR, IDLUTILS_DIR, XIDL_DIR, IDLSPEC2D_DIR, IDL_PATH
+</LI>
+</UL>
+</LI>
+<LI>Log sheets [somewhat optional]
+</LI>
+<LI>This cookbook
+   
+</LI>
+</UL>
+
+<P>
+<DIV ALIGN="CENTER">
+<FONT SIZE="+3"><B>&nbsp;&nbsp;&nbsp;&nbsp; Setup</B></FONT>
+
+</DIV>
+<P>
+<FONT SIZE="+2">Initial Setup (Repeat for each night) </FONT>
+
+<P>
+
+<OL>
+<LI>Create a new directory for the night (e.g. 06aug02) and enter it
+</LI>
+<LI>Create a 'Raw/' directory and put all the raw data in it.  
+</LI>
+<LI>If the filenames do not read mb(r)####.fits or b(r)####.fits
+	it is quite likely the code will be unhappy
+</LI>
+<LI>gzip the data (gzip *.fits)
+</LI>
+<LI>Launch idl in the directory above Raw/  :: (e.g. idl -32 or idlde -32)
+</LI>
+<LI><B><a href="MIKE_doc.html#MIKE_STRCT">mike_strct</a></B> :: Create the MIKE structure.  
+	
+<UL>
+<LI>This structure organizes
+	the entire night of data and is the most important file created.  
+</LI>
+<LI>The routine creates a few things: 
+  <ol>
+   <LI> An IDL structure in memory with whatever name you choose (e.g. mike).  
+	<br><a href="../../pro/General/mikestrct__define.pro">Here</a> is the pro file which
+        defines the structure and lists the tags.
+	<LI> The file 'mikestrct.fits' which is a fits
+	version of the structure; 
+   <LI> The file 'mike.list' which is an ASCII
+	version of the fits file which lists the values of some of the tags.
+   </ol>
+	To view the fits structure outside of IDL, I 
+	recommend the program 'fv' which I think stands for fitsview.  It allows
+	you to examine binary fits tables.  
+</LI>
+<LI>By default, this program will launch a
+	gui which allows some editing of the mike structure 
+	(see next step). 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>mike_strct</B>, mike 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 2s per image
+	
+</LI>
+<li> <I>You know the code is working</I> &nbsp; properly when:
+ <ol> 
+    <li> It runs through the completion after checking each Raw file
+    <li> It launches the edit structure GUI (unless suppressed)
+    <li> The majority of files are correctly identified by type.  Note the
+    code will not get them all right all of the time.  We typically create
+    a script like this <a href="../set_crds.pro">one</a> to set a number of the tags.
+ </ol>
+</UL>
+
+<P>
+</LI>
+<LI><B> <a href="MIKE_doc.html#MIKE_EDITSTRCT"> mike_editstrct</a> </B> 
+        :: Modify the MIKE structure.
+	The previous step creates the structure and takes a guess at the 
+	initial values of many of the tags based on the header card info.  It
+	is difficult, however, to automate all of the values for the tags and
+	therefore the user should carefully check the structure.  Also, the
+	user should set flg_anly = 0 for all of images which should
+	be ignored during data reduction (bad flats, etc.).  For most of
+	the important tags, one can use <B>mike_editstrct</B>.  The rest must
+	be done from the command line by hand or through a simple
+	IDL script (recommended). The obvious tags to modify are: 
+	 
+<UL>
+<LI>Obj :: Object name (this propagates into the final spectra 
+		and <B>should have no spaces!</B>)
+</LI>
+<LI>flg_anly :: Include in analysis (defaulted to 1 for yes)
+</LI>
+<LI>type :: 
+  <UL>
+   <LI> ARC == ThAr exposure
+   <li> TFLT == Trace flat (ideally with twilight light NOT internal)
+   <li> MFLT == Milky flat (i.e. with the diffuser)
+   <LI> TWI == Twilight exposure (not used) 
+   <LI> OBJ ==  Object exposure
+   <LI> STD == Standard star 
+   <LI> ZRO == Bias frame
+  </UL>
+</LI>
+<LI>setup :: 1L, 2L, etc.  (unique integer for each instrument
+			setup including slit width)
+	 
+</LI>
+         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>mike_editstrct</B>, mike 
+<BR>     &nbsp;&nbsp;&nbsp;&nbsp;Time   : User interaction
+<BR>     &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> set_crds, mike  
+                 &nbsp;&nbsp; (see doc/set_crds.pro for an example)
+  <LI> <I>You know the code is working</I> &nbsp; right when the GUI appears.
+</UL>
+
+<P>
+</LI>
+<LI><B> <a href="MIKE_doc.html#MIKE_UPDSTRCT"> mike_updstrct</a> </B> 
+        :: Append new files to the current structure. 
+	This is mainly useful at the telescope as you are taking new data.
+	The code simply searches the Raw directory, notes any new files,
+	and adds them to the structure.
+</LI>
+         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>mike_updstrct</B>, mike 
+<BR>     &nbsp;&nbsp;&nbsp;&nbsp;Time   : Fast
+  <LI> <I>You know the code is working</I> &nbsp; right when it finds the files.
+</UL>
+
+<P>
+</LI>
+<LI><B><a href="MIKE_doc.html#MIKE_WRSTRCT">mike_wrstrct</a></B> :: 
+	Write the MIKE structure to disk. In IDL you can modify the values
+	of any of the tags.  You can then save the structure in fits form and 
+	rewrite the ASCII file  with the routine <B>mike_wrstrct</B>. 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>mike_wrstrct</B>, mike, FITS='mike_name.fits' 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : fast
+
+<P>
+</LI>
+<LI> If you exit (or crash) IDL, you will need to read the structure back in.
+      <BR>  <B><a href="MIKE_doc.html#MIKE_AR">mike_ar</a></B> ::
+        Read the MIKE structure from disk. 
+	If no name is given, the file looks for the first fits 
+	file starting 'mike' that contains a '_'.  
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> mike = <B>mike_ar()</B> 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> mike = <B>mike_ar('mike_name.fits')</B> 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : fast
+  <LI> <I>You know the code is working</I> &nbsp; right when IDL> help, mike, /str<br>
+    lists the structure.
+
+<P>
+</LI>
+</OL>
+
+<P>
+<FONT SIZE="+2">Setup </FONT>
+	
+<UL>
+<LI> A unique setup is defined by the slit width, the binning, and the
+ angles of the echelle and prism.  Obviously, each setup requires its own
+ set of calibration files (including Milky and Trace flats).
+<LI><B>The user must specify a setup number (>0) for each
+	file to be analyzed.  If you have observed with only one setup
+	during the night, you may just do:  IDL> mike.setup = 1 </B>
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Or you can specify ranges in the mike structure:  
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; IDL> 
+   mike[20:30].setup = 2  (sets the 11 frames 0-indexed from 20-30 to setup 2)
+<LI> It is also important to make sure the objects are properly named 
+	at this point.  At the least, multiple exposures of the same object
+	should have identical object name (tag: mike.obj).
+</LI>
+<LI><B><a href="MIKE_doc.html#MIKE_SETUP">mike_setup</a></B> ::
+	This routine examines the mike structure and looks for calibration
+	files associated with the various setups.
+	It groups together exposures with identical Obj name (mike.obj) and 
+	sets the obj_id tags accordingly.
+	A summary of the MIKE exposures is put in 'mike_summ.txt'. 
+<LI>
+Note, this program is useful to run if you happen to crash IDL 
+  before saving the MIKE structure.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>mike_setup</B>, mike 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : Fast
+<LI> <I>You know the code is working right when you</I> 
+&nbsp; check the output file 'mike_summ.txt' and everything is
+properly setup. Modify the setup and obj_id tags and rerun <B>mike_setup</B>
+as necessary.
+	
+</LI>
+</UL>
+
+<P>
+<DIV ALIGN="CENTER">
+<FONT SIZE="+3"><B>&nbsp;&nbsp;&nbsp;&nbsp; Calibrations</B></FONT>
+
+</DIV>
+
+<P>
+<FONT SIZE="+2">Create Bias (Zero) frames [Optional and <b>NOT</b> 
+recommended]</FONT>
+	
+<UL>
+<LI>The default method of bias subtraction is to use the overscan
+	region and the bias row.  If the user prefers, one can also subtract
+	off a combined bias frame.  This routine creates that combined frame
+	from a series of Bias frames. This routine
+	will create 1 bias frame per side per binning mode.  
+<BR>
+Alternatively, one may perform this step as a test of the bias
+	subtraction algorithm.  The resulting images should have 0 counts
+	with no gross structure.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B><a href="MIKE_doc.html#MIKE_MKBIAS">mike_mkbias</a></B>, mike 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 3-5min 
+</LI>
+<LI> <I>You know the code is working right when you</I> 
+&nbsp; check the Bias frame : IDL> <B>xatv</B>, 'Bias/name.fits'<br>
+and it shows a generally blank image with no counts.  Of course, there
+is the possibility that you have bad bias frames and the code is still
+working fine.
+	
+</LI>
+</UL>
+
+<P>
+<FONT SIZE="+2">Set Gain</FONT>
+	
+<UL>
+<LI> We have found for the early years of MIKE (at least) that the 
+  published gain values may not be appropriate for a given set of 
+  observations.  Therefore, we recommend resetting the gain according
+  to the value determined from a series of Milky flats.
+<LI><a href="MIKE_doc.html#MIKE_SETGAIN">mike_setgain</a> :: Loops on the Milky Flats and performs statistics (in <a href="MIKE_doc.html#MIKE_GAIN">mike_gain</a>) to determine the gain and apply it to the gain TAG.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>mike_setgain</B>, mike, setup, [side]
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 3-5min 
+</LI>
+<LI> <I>You know the code is working right when you</I> &nbsp; see it looping
+through all of the milky flat files and reporting gain values within
+the ballpark of the published values.  You might also print out the gain
+tags after completion:  IDL> print, mike.gain
+	
+</UL>
+
+<P>
+<FONT SIZE="+2">Process Flats </FONT>
+  
+<UL>
+<LI>These routines process the Milky and Trace flats to create a 
+	response image (pixel by pixel variations) and to determine the 
+	curvature of the orders on the CCD.  These files are essential to
+	run the MIKE pipeline.  Note that the next three steps can be run
+	together using the routine 
+	    <a href="MIKE_doc.html#MIKE_ALLFLAT">mike_allflat</a>.
+	Before calling mike_allflat, however, you sould read the documentation
+	below and consider using several of the options.
+
+<P>
+</LI>
+<LI><a href="MIKE_doc.html#MIKE_MKMFLAT">mike_mkmflat</a> :: Creates a stacked, normalized milky flat 
+	to correct pixel response variations. 
+	The routine performs a running median normalization to each milky flat 
+	and then stacks (averages) them together with rejection.  This is a very 
+	expensive routine.  It is quite likely that one could use an archived
+	flat which nearly matches the setup in lieu of this step.   
+  If one's milky flats have many absorption features in them (not recommended),
+then one should call this routine with the /SMOOTH keyword.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>mike_mkmflat</B>, mike, setup, [side], [/SMOOTH]
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 5min per flat image 
+<UL>
+<LI> <I>You know the code is working right when you</I> see it looping
+on the various milky flats.  You can then check the flat with
+<BR>	IDL> <B>xatv</B>, 'Flats/Flat_B_01_M.fits'
+</UL>
+
+<P>
+</LI>
+<LI><a href="MIKE_doc.html#MIKE_MKTFLAT">mike_mktflat</a> :: Combines the 
+series of trace flats (currently
+	twilight flats) to create one high S/N image for order and slit tracing. 
+	Because of the thermal gradients, <I>it is highly recommended that one use 
+	only a coeval set of trace flats</I>.  
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>mike_mktflat</B>, mike, setup, [side]
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 1min  
+<UL>
+<LI> <I>You know the code is working right when you</I> &nbsp; see it process and 
+stack the various trace flat files.  You should then
+check the Trace Flat: <br> IDL> <B>xatv</B>, 'Flats/Flat_B_01_T.fits'
+</ul>
+
+<P>
+</LI>
+<LI><a href="MIKE_doc.html#MIKE_EDGEFLAT">mike_edgeflat</a> :: Routine to trace the trace flat created above to determine the order curvature, and return a smooth fit
+<UL>
+<LI> The main driver is using
+	trace_crude on a 'sawtooth' image of the trace flat.  At present
+	this is one of the weaker spots in the automated pipeline.  This is 
+	especially true given that there is no 'standard' prescription for
+	creating trace flats with MIKE.  The main failing is that the code may 
+	miss or misidentify the slit edges. As such, we highly recommend that you
+	run this routine with /INTER and (or) /CHK to interactively check the
+	order edges.  It is particularly important that the code has the first 
+	few orders correct before making an automatic attempt.  
+<LI> We have recently (Mar 2005) turned the PCA fitting back on for the red 
+  side.  I suspect we turned it off for a reason initially, so this may 
+  cause problems.  You can turn off the PCA by using the /NOBASIS switch.
+<LI> The code also makes a first guess (usually incorrect) to the physical 
+	order numbers for the orders.  
+<LI>         Example: IDL> <B>mike_edgeflat</B>, mike, setup, [side], /INTER, /CHK
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 1min 
+<LI> <I>You know the code is working right when</I> &nbsp; the reduced_chi^2 
+for the fits are small (<0.005).  
+You can also check the QA plots in (e.g. 'QA/Flats01/qa_trcflt_01B.ps').  
+The X0 and PCA0 values should vary significantly but be well fit while 
+the PCA1-4 values should have minor variations.
+<LI> You can also check the tracing with
+<a href="MIKE_doc.html#MIKE_CHKTRCFLAT">mike_chktrcflat</a>.  Along with 
+	<B>xatv</B>, this routine is used to check the results from <B>mike_trcflat</B>.
+<BR>	 &nbsp;&nbsp;&nbsp;&nbsp;IDL> <B>xatv</B>, 'Flats/Flat_B_01_T.fits' 
+<BR>	 &nbsp;&nbsp;&nbsp;&nbsp;IDL> <B>mike_chktrcflat</B>, mike, setup, 1, /NOSTOP, /FIT
+	 
+</LI>
+</UL>
+
+<P>
+</LI>
+
+
+<LI><a href="MIKE_doc.html#MIKE_ALLFLAT">mike_allflat</a> 
+        :: The previous 4 routines have been bundled into
+	one simple script.  We recommend using this routine once you are 
+	comfortable that the code is working well with your setup, etc.  We
+	recommend you 
+	run <B>mike_chktrcflat</B> after the procedure is through to examine
+	the solutions.  
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>mike_allflat</B>, mike, setup, [side, /INTER]
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : <20min per side
+<UL>
+<LI> <I>You know the code is working right when</I> &nbsp; you go through all of the
+checking steps listed above.
+</UL>
+
+<P>
+</LI>
+</UL> 
+ 
+<P>
+<FONT SIZE="+2">Arc Images </FONT>
+  
+<UL>
+<LI><B>General</B> :: 
+	The arcs are processed through a series of steps which:
+	<OL>
+	  <LI> Process the raw frame (<B>mike_procarc</b>) 
+	  <LI> Determine the offset between the trace flat and the position of the arcs due to thermal expansion (<B>mike_arcalign</b>)
+	  <LI> Derive a 1D solution down the center of each order (<B>mike_fitarc</b>)
+	  <LI> Create a 2D solution (<B>mike_fit2darc</b>)
+	  <LI> Traces the individual arc lines (<B>mike_tracearc</b>)
+	  <LI> Fits the changing slope of the arc lines (<B>mike_fittrcarc</b>)
+	  <LI> Create a 2D wavelength image (<B>mike_mkaimg</b>)
+	</OL>
+	
+	Because of shifts in the arc lines during the night (expected to
+	be due to thermal expansion), the arcs require special care.  In
+	particular, one wants to associate each science frame with the 
+	temporally closest arc image.  This bookkeeping is done in <B>mike_setup</B>
+	and is repeated in the first step below.
+<P>
+
+<LI>
+<a href="MIKE_doc.html#MIKE_ALLARC">mike_allarc</a>: There are two modes of processing the arcs.  
+We strongly recommend against running the arc steps individually unless you 
+are debugging.  In fact, it is possible that some procedures will not run
+on their own at the present time.  
+<OL>
+	<LI> Process individually.  This is generally only recommended 
+	    for redoing specific arcs.  It is also useful for testing the code
+            on non-standard setups before running on all of the arcs.  
+            The user inputs the indice(s) of the arc(s) to process.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>mike_allarc</B>, mike, [indx], /INDX
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 5min per arc
+
+	<LI> Process all together.  This is recommended 
+	If you are reducing a full night
+	of data, I suggest the latter. 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>mike_allarc</B>, mike, setup, [side]
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 5min per arc
+
+</OL>
+
+<P>
+</LI>
+	  
+<P>
+</LI>
+<LI><B>Procedures</B> 
+
+<P>
+
+<UL>
+<LI>  <a href="MIKE_doc.html#MIKE_SETARCM">mike_setarcm</a>:  
+For the processing to work, the code must first measure
+the curvature of the arc lines.  This involves processing one arc to near
+completion using the code <B>mike_setarcm</b>.  This procedure is called
+automatically by <b>mike_allarc</b> and we recommend against calling
+<B>mike_setarcm</b> directly.  In any case, here is the calling sequence 
+(raw_fil is the name of an Arc file, e.g. 'Raw/mb0428.fits'):
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>mike_setarcm</B>, raw_fil, setup, side
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : <10min 
+<UL>
+<LI> <I>You know the code is working right when</I> 
+&nbsp; it runs to completion.  Actually, if this code runs successfully then it
+is very likely the rest of the arcs will process fine.  This
+code calls <B>mike_procarc, mike_fitarc, mike_fit2darc, mike_trcarc</b> and you should review
+these codes (below) to see how to check for success.
+</UL>
+<BR>
+
+<LI><a href="MIKE_doc.html#MIKE_PROCARC">mike_procarc</a> :: Process the Arcs.  
+	This step bias subtracts (blue side only due to leakage in overscan
+	region on the red side) and flat fields the arc images.  It chooses
+	the arc image closest in UT time to the science exposure.  This routine
+	will also calculate the x,y shifts between the arcs being processed
+	and a 'template' arc.  The `template' arc should be the arc taken
+	most closely in time to the trace flats.  By default, the first Arc
+	of the night is taken as the template.  Output
+	are fits files in the 'Arcs/' directory.  
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>mike_procarc</B>, mike, setup, obj_id, [side] 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> 
+		rslt = <B>mike_procarc_sngl</B>('raw.fits', setup, side)
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 1min per image
+<UL>
+<LI> <I>You know the code is working right when</I> &nbsp; it finishes.  It would
+be quite unusual for this procedure to fail.
+</UL>
+<BR>
+
+<LI> <a href="MIKE_doc.html#MIKE_ARCALIGN">mike_arcalign</a> :: This routine
+ compares the Arc line profiles against the trace flat profiles to determine 
+ an offset between the two.  The offset is calcualte for a series of orders and 
+ a 1st order polynomial fit is written to the arc_xyoff tag.
+<BR>	 &nbsp;&nbsp;&nbsp;&nbsp;IDL> <B>mike_arcalign</B>, mike, setup, side, /CHK
+<UL>
+<LI> <I>You know the code is working right when</I> &nbsp; the output to the screen
+shows a reasonable boxcar profile and the fractional shifts (indicated by the vertical
+blue line) are smaller than 0.2 or so.  Also, the total shifts should by on the
+order of 2 unbinned pixels for the blue and less than 1 unbinned pixel for the
+red.
+</ul>
+</LI>
+
+
+<LI><a href="MIKE_doc.html#MIKE_FITARC">mike_fitarc</a> :: This routine extracts a 1D spectrum down the
+	center of each order and determines the wavelength solution.  
+ <UL>
+  <LI>
+	There are two levels of interaction with this routine.  The most
+	interaction (not recommended) is to use /INTER which prompts the
+	user to identify and fit the Arc lines.  One can also use the option
+	/PINTER which has the program attempt to identify a set of
+	lines in each order.  The user than interactively fits the lines
+	using the routine <B>x_identify</B> which calls <B>x1dfit</B>.
+	As long as your arc lines are within several 
+	pixels of my solution, things ought to run smoothly in the non-interactive
+	mode.  
+
+<LI> At this point, we recommend using the full AUTO mode.  If it fails,
+	we would hope to fix it.
+	The output is an IDL file containing the arc lines identified and 
+	their pixel centroids: 'Arcs/Fits/Arc_<I>name</I>_fit.idl'.  
+	The program can also create a ps file to examine the quality of fits.  
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>mike_fitarc</B>, mike, setup, obj_id, 
+		[side, /INTER, /PINTER, /PSOUT]
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> result = <B>mike_fitarc_work</B>('arc_file', 
+	setup,  side) 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 5min per side per arc image
+<LI> <I>You know the code is working right when</I> &nbsp; the RMS of the fits to
+each order are generally less than 0.1 pixel.  There will be several exceptions
+per full exposure.  Also, it is common for the code to fail for the very bluest
+orders of the blue side (at least with the original blue CCD).
+<br>
+The code produces a QA file (e.g. 'QA/Arcs01/qa_arcfit_mb0038.ps.gz')
+which shows the residuals to the order by order fits including the RMS
+(in pixels).
+</ul>
+</LI>
+
+<BR>
+<LI><a href="MIKE_doc.html#MIKE_FIT2DARC">mike_fit2darc</a> :: This routine fits a 2D solution to the
+	wavelengths as a function of their y pixel value and their order number.  
+	It is rather straightforward. 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>mike_fit2darc</B>, mike, setup, obj_id, [side]  
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> result = <B>mike_fit2darc_work</B>('arc_file', 
+	  setup, side) 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : fast
+<UL>
+<LI> <I>You know the code is working right when</I> &nbsp; the RMS of the 2D fit
+is less than 0.1 pix or so.
+The code produces a QA file (e.g. 'QA/Arcs01/qa_arc2dfit_mb0038.ps.gz')
+which shows the 2D solution and lists the RMS.
+</ul>
+
+<P>
+</LI>
+<LI><a href="MIKE_doc.html#MIKE_TRACEARC">mike_tracearc</a> :: This routine traces arc lines in each
+	order.  It traces the lines in the curved order frame of the original
+	image and then fits a straight line to each arc line.  The slope
+	and centroid of the arc line is recorded to a file for later use. 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>mike_tracearc</B>, mike, setup, obj_id, [side]
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> result = <B>mike_tracearc_work</B>('arc_file', setup, 
+ 	side) 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 2min per side per arc image
+<UL>
+<LI> <I>You know the code is working right </I> &nbsp; by reviewing the QA file
+it produces (e.g. 'QA/Arcs01/qa_tracearc_mb0034.ps.gz').  So long as the
+arc lines and the fits look reasonably straight, everything should be fine.
+<LI> You can check the output by using &nbsp;
+<a href="MIKE_doc.html#MIKE_CHKARCTRC">mike_chkarctrc</a>
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>xatv</B>, arc_img
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>mike_chkarctrc</B>, mike, indx  
+</ul>
+
+<P>
+</LI>
+<LI><a href="MIKE_doc.html#MIKE_FITTRCARC">mike_fittrcarc</a> :: Using the slopes derived in the previous step,
+	this routine fits for the slope throughout the 2D arc image.  That is
+	the slope as a function of order and vertical height in the image.  Uses
+	the usual least-squares algorithm.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>mike_fittrcarc</B>, mike, setup, 
+		obj_id, [side], /CLOBBER, /CHK 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> result = <B>mike_fittrcarc_work</B>('arc_file', 
+		setup, side) 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : Fast
+<UL>
+<LI> <I>You know the code is working right when</I> &nbsp; RMS3 is less than 0.01.
+The code produces a QA file (e.g. 'QA/Arcs01/qa_fittrcarc_mb0038.ps.gz'). 
+</UL>
+
+<P>
+</LI>
+<LI><a href="MIKE_doc.html#MIKE_MKAIMG">mike_mkaimg</a> :: Using the 2D slope solution and the 1D arc
+	solution from step 2, this routine calculates a wavelength value for
+	every science pixel in the image.
+	The final wavelength image has air wavelengths and are saved as alog10 
+	double values.
+	Output is : 'Arcs/Arc_<I>name</I>I.fits'
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>mike_mkaimg</B>, mike, setup, obj_id, [side],
+		/CHK 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> result = <B>mike_mkaimg_work</B>('arc_file', 
+		setup, side, XOFF=) 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 1min  
+<UL>
+<LI> <I>You know the code is working right provided </I> it does not
+complain about an order not being single-valued in wavelength.  Also
+one can examine the BAD_ANLY parameter (it should be 0 upon completion).
+</UL>
+
+<P>
+</LI>
+</UL>
+</UL>
+
+<P>
+<FONT SIZE="+2">Slit Profile</FONT>
+  
+<UL>
+<LI><a href="MIKE_doc.html#MIKE_SLITFLAT">mike_slitflat</a> :: 
+This routine determines the slit profile
+for each order.  This is crucial for optimal sky subtraction, particularly
+given the short slit length used in MIKE.   The profile is used to correct
+the illumination pattern of the science frames.  The procedure is also important
+for optimal extraction.  It must be run after the arc calibrations as the
+slope of the arc lines is a necessary input.
+<LI> A very important aspect of this routine is that the default mode is
+to flatten the counts along the slit.  That is, for an internal flat
+we have found that there is a slope to the slit profile due to the non-uniform
+illumination.  Therefore, the default mode is to fit for this and divide
+it out.  If, however, you have observed the twilight sky, you will probably
+want to turn the /NODETILT switch on.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>mike_slitflat</B>, mike, setup, [side], [/chk], [/nodetilt]
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 10min per setup per side 
+<UL>
+<LI> <I>You know the code is working right when </I> you check the QA
+file (e.g. 'QA/Flats01/qa_slitflat_01B.ps.gz') and the slit profiles
+look reasonably well behaved and the chi^2 values are around 0.5.
+</LI>
+<LI> If you want to see the fits in real-time, use /chk </LI>
+</UL>
+</UL>
+
+
+<hr>
+<P>
+
+<P>
+<DIV ALIGN="CENTER">
+<FONT SIZE="+3"><B>&nbsp;&nbsp;&nbsp;&nbsp; Extraction</B></FONT>
+
+</DIV>
+
+<P>
+<FONT SIZE="+1">  </FONT>
+<UL>
+<LI>The following routines all apply to a single object, i.e. 	multiple exposures of that object will be reduced together.
+</LI>
+<LI>Most of the following routines take the <I>mike</I> structure,
+	and the <I>setup, side</I> and <I>obj_id</I> tags. 
+</LI>  
+<LI><a href="MIKE_doc.html#MIKE_ALLOBJ">mike_allobj</a> :: Run all extraction routines described below.  Currently, it is preferable to run mike_allobj with these options:  <BR> IDL> <B> mike_allobj </B>, mike, 1, /procall, /nocr
+
+</LI>
+</UL>
+
+<P>
+
+<FONT SIZE="+2">Process the Image</FONT>
+
+<UL>
+
+<OL>
+<LI><a href="MIKE_doc.html#MIKE_PROC">mike_proc</a> :: Bias subtract and flat field the Raw image.
+	This routine takes the index number of the mike structure as input
+	or keywords setup and obj.
+	The index number is the integer in the first 
+	column of the file 'mike.list'.
+	The resulting image is output in 'Final/' and is a 
+	flattened flux and inverse variance fits file
+	(one gzipped fits image with two extensions per file).
+        Output is 'Final/f_<I>name</I>.fits' 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>mike_proc</B>, mike, SETUP=setup, OBJ=obj_id  
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> rslt = <B>mike_proc_sngl</B>('rawfil', [side]) 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 1min per image 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Check  : <B>xatv</B>, 'Final/f_<I>name</I>.fits'
+ <UL>
+  <LI> <I> You know the code is working right when</I> you check the image
+   and it looks reasonable.  
+ </UL>
+
+<P>
+</LI>
+<LI><a href="MIKE_doc.html#MIKE_OBJCR">mike_objcr</a> (Optional, recommended with caution) :: 
+	Compares two or more images to identify
+	cosmic rays.  For two images, it uses the
+	difference of the two images scaled to the exposure times and
+	is quite conservative.  One should <B>NOT</B> use this on 
+	    multiple exposures
+	of the same object if the object has moved along the slit or
+	if thermal expansion has resulted in a large shift in the data. 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>mike_objcr</B>, mike, setup, obj_id, side, [exp], [/NOCHK]
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 3min per pair
+
+ <UL>
+  <LI> <I> You know the code is working right when</I> you run with the
+/CHK keyword and the code is not identifiying excessive CR's along the
+object profile.  This will happen (in particular) if the object has moved
+significantly along the slit in between exposures.
+ </UL>
+</UL>
+
+<P>
+<FONT SIZE="+2">Identify and Trace the Object</FONT>
+
+<P>
+
+<UL>
+<LI><a href="MIKE_doc.html#MIKE_FNTOBJ">mike_fntobj</a> :: This code automatically identifies the object
+	in each order (rectify+collapse) and then traces using trace_crude.
+	A PCA analysis is then performed on the coefficients of each trace to
+	determine a smoothed (quasi-2D) solution that is useful for interpolation
+	and extrapolation.  The code then creates and Object structure
+	<B>mikeobstrct</B> that contains the trace and will contain the 1D 
+	extractions. Output: 'Extract/Obj_<I>name</I>.fits' 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>mike_fntobj</B>, mike, setup, obj_id, side, 
+	/CHK 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : fast 
+  
+  <LI> This code creates an object structure in the Extract/ directory
+(e.g. 'Extract/Obj_mb0033.fits.gz') which holds information relating
+to the trace and extraction of the spectra.  
+<a href="../../pro/Object/mikeobjstrct__define.pro">Here is a 
+link</a> to the code which lists the tags used.
+  <LI> <I> You know the code is working right when</I> you run with the
+/CHK keyword and the fit to the position in the slit fraction is nearly
+constant and well fit as a function of trace number.  Also, the image
+with the trace overplotted should look sensible.  Alternatively (or
+in addition), check the QA output (e.g. 'QA/Obj01/qa_fntobj_mr0022.ps.gz').
+The X0 and PCA0 coefficients should be well fit and the remaining PCA
+coefficients should show small variation.  Finally, the reduced_chi2 should
+be < 0.1 (blue) or <0.01 (red).
+</LI>
+</UL>
+
+<P>
+<FONT SIZE="+2">Sky Subtraction</FONT>
+  
+<UL>
+<LI><a href="MIKE_doc.html#MIKE_SKYSUB">mike_skysub</a> :: Performs sky subtraction on an order by order
+	basis using a bspline fitting algorithm to all sky pixels in a given
+	order (the object is masked).  The sky spectrum is also cross-correlated
+	with the UVES sky line list to investigate a shift.  At the moment, 
+	  while it calculates the shift, it does nothing with the value.
+</LI>
+<LI>Output: Sky subtracted 2D image appended to the unsubtracted
+	flux and the variance 2D images (e.g. 'Final/f_<I>name</I>.fits'). Also
+	the bspline coefficients are written to 'Sky/sky_<I>name</I>.fits' 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>mike_skysub</B>, mike, setup, obj_id, side, [/CHK, /FCHK]
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 10min per exposure 
+</LI>
+<LI>Examine the final product (and get wavelength info) by:
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;IDL> <B>xatv</B>, 'Final/f_<I>name</I>.fits', getsky=2, 
+		WVIMG='Arcs/Arc_<I>name</I>I.fits'
+  <LI> <I> You know the code is working right when</I> you run with /FCHK
+and the final image shows 'random' noise in places where sky lines
+used to be.  You can also run with /CHK to examine the order by order fits.
+Finally, the QA file (e.g. 'QA/Obj01/qa_skysub_mr0022.ps.gz') shows
+a zoom in on key sky lines in the red or several small patches in the
+blue.
+  
+</LI>
+</UL>
+
+<P>
+<FONT SIZE="+2">Extraction</FONT>
+  
+<UL>
+<LI><a href="MIKE_doc.html#MIKE_BOX">mike_box</a> ::
+	This procedure first performs a boxcar extraction of all orders and
+	uses this result to gauge the SNR in each order.  The routine than
+	loops on each order in decreasing SNR and fits a unique profile within
+	each order.  This profile and a uniform sky is fit to the entire
+	order and the object flux is optimally extracted.  
+</LI>
+<LI>Output:  The tags .box_fx, .box_var, .box_wv, .fx, 
+	.var, .wave are all filled 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>mike_box</B>, mike, setup, obj_id, 
+		side, /RESCHK
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 15min per exposure (longer for high SNR data) 
+</LI>
+<LI>Examine the final product: 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;IDL> <B>mike_specplt</B>, [/BOX]
+  
+  <LI> <I> You know the code is working right when</I> the reduced chi^2
+values are 1.2 or lower (a bit higher for very bright objects).
+</UL>
+
+<P>
+<FONT SIZE="+2">Standard Star (Optional, and recommended)</FONT>
+  
+<UL>
+<LI>At this step it is recommended to process a standard star to 
+	'test' the performance of extraction and to create a sensitivity 
+	function used to flux the data (currently set to only use the calibration
+	files archived on the ESO web site).  This is not required, however.  The
+	user can used an archived sensitivity function or forgo fluxing 
+	altogether.  The next sequence of steps are roughly the same as what
+	will be performed on individual science objects.  Greater detail
+	is given on these procedures below.  Note that the variable <I>index</I>
+	below refers to the index number of the standard in the mike structure.
+	Also, you will need to use the /STD keyword for most of the routines.
+
+<P>
+</LI>
+<LI><B>mike_proc</B> :: Process the raw image (bias sub, flatten).
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>mike_proc</B>, mike, index
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 1min 
+</LI>
+<LI><B>mike_fntobj</B> :: Identify the object in the slit and trace it.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>mike_fntobj</B>, mike, setup, obj_id, side, /STD
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 2min 
+</LI>
+<LI><B>mike_skysub</B> :: NOT RECOMMENDED. Sky subtract the image. 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>mike_skysub</B>, mike, setup, index, side,
+		/STD, /CHK
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 2min 
+</LI>
+<LI><B>mike_box</B> :: Extract the standard star (boxcar and optimal). 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>mike_box</B>, mike, setup, obj_id, side, /STD, /CHK, /SKIPSKYSUB
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 15min 
+
+<P>
+
+</UL>
+
+<P>
+</LI>
+</OL>
+
+<P>
+<FONT SIZE="+2">Flux Calibration</FONT>
+<UL>
+
+<LI> Flux calibration with MIKE is fairly straightforward, but requires some interaction to be done properly.  In particular, the reference flux files for various standard stars are at significantly lower resolution than MIKE, so care must be taken to mask out strong absorption features in the MIKE standard star exposure, such as the Balmer lines, and the atmospheric A and B band absorption.
+<P>
+</LI>
+<LI><B>mike_calibstd</B> :: Calibrate the extracted 1D standard star 
+	spectrum.  This will launch a GUI which shows each echelle order, and allows for interactive masking of each order as needed.
+At present, this step requires a calibration file from the
+<a href="http://www.eso.org/observing/standards/spectra/">ESO web site</a>, of which a number have been added to the MIKE repository.  Look in (In the MIKE directory) pro/Std/ESOFIL or pro/Std/HSTFIL for
+the relevant file.  If it doesnt exist, check the ESO page, and download the file, placing it in the ESOFIL directory. 
+<BR>
+<BR>
+The calling sequence is (using the standard star EG274 as an example) 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;
+IDL> <B>mike_calibstd</B>, mike, index,ESOFIL='feg274.dat' 
+<BR>
+<BR>
+Where 'index' is a unique number for the exposure for that star, and is found by looking at 'mike_summ.txt'.  By way of example, for
+the exposure of EG274, mike_summ.txt gives
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;
+  47 b0048.f        EG274   1  200 Arcs/Arc_mb0047
+<BR><BR>
+For this exposure, index=47.  Note that the value for index will be different for the red side exposure which matches this blue side exposure, i.e., you have to run mike_calibstd separately for each side.
+<BR>
+<BR>
+After issuing the command, a GUI will pop up which shows each echelle order.  By default, we use all the information from each order to derive a sensitivity function, so if one quits without masking, a sensitivity file will be created in the Extract directory (in our example, this would be Extract/Sens_mb0048.idl).  As stated above though, you will want to do some masking.  for an echelle order with a strong absortion feature, select the order by right-clicking on it near the center of the order.  This will change the color of the selected order to black (from either red or blue).  To mask out a region of the selected order, left-click on the left edge of the area to be masked, and again on the right edge.  The masked region will appear in green.  You can have multiple masked regions per order, and right-clicking a different order allows you to edit that new order.
+There will be a number of datapoints set to green at launch because they have been sigma rejected already
+<BR>
+<BR>
+Below the main window, you will see two windows, one which shows the residuals, and one which shows the effect of fluxing the star using the sensitivity function overlayed on the low resolution ESO/HST flux file.  Note that in this window, the order edges will be poor, but when the orders are coadded, they are done so weighted by signal to noise, so this effect is minimized.
+<BR>
+<BR>
+It's helpful to zoom in on orders before selecting regions, and this is accomplished with the 'i' button.  Conversely, 'o' zooms out, and 'W' resets the window to the full range.  You can trim the tob and bottom of the viewing area with 't' and 'b'.  The routine will re-calculate the sensitivity function with each change in window state.  Press 'H' for a full list of commands.  When you are done masking regions, simply hit 'q' to quit and the sensitivity function will be written to the 'Extract' directory.  This file is used in the next routine, and is refered to as 'FLUXFIL' by mike_flux (e.g. FLUXFIL='Extract/Sens_mb0048.idl' in our example).
+
+<P>
+</LI>
+<LI><a href="MIKE_doc.html#MIKE_FLUX">mike_flux</a> :: This routine fluxes the data using a sensitivity
+	function.  Use either the one you have created for that given night (set
+	using the FLUXFIL keyword) or an archived solution (if it exists for
+	the binning and orders of interest).  
+</LI>
+<LI>Output: The tags .flux and .sig are filled in the Object 
+	structure. 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>mike_flux</B>, mike, setup, obj_id, 
+		side, FLUXFIL=, /STD 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 1min  
+</LI>
+<LI>Examine the final product: 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;IDL> <B>mike_specplt</B>, /FLUX
+  
+</LI>
+</UL>
+
+<P>
+</LI>
+</OL>
+
+<P>
+<BR><HR>
+<ADDRESS> Last modified 2005-05-18 </ADDRESS>
+</BODY>
+</HTML>
+<P>
+<FONT SIZE="+2">Older code</FONT>
+ <LI><a href="MIKE_doc.html#MIKE_FITTFLAT">mike_fittflat</a> :: Performs a 2D fit to the traces created
+	in the previous step.  This gives the full 2D optical model for each
+	side of the instrument.  The relevant information is written
+	in the order structure in the Flats/ directory (e.g. OStr_B_01.fits). 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>mike_fittflat</B>, mike, setup, [side]
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 1min 
+
+<UL>
+<LI> <I>You know the code is working right when</I> &nbsp; the RMS for the edges 
+are less than 0.1 (blue) and 0.01 (red).  The code produces a QA file
+(e.g. 'QA/Flats01/qa_fittflt_01B.ps') which also lists the RMS values.
+<LI> You can also check the fits as above but with the /FIT keyword
+enabled.  
+<BR>	 &nbsp;&nbsp;&nbsp;&nbsp;IDL> <B>xatv</B>, 'Flats/Flat_B_01_T.fits' 
+<BR>	 &nbsp;&nbsp;&nbsp;&nbsp;IDL> <B>mike_chktrcflat</B>, mike, setup, 1, /NOSTOP, /FIT
+	 
+</LI>
+</UL>
+
+<P>
+</LI>

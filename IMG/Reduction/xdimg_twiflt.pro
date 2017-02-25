@@ -4,7 +4,8 @@
 ;  Version 1.1
 ;
 ; PURPOSE:
-;    Creates twilight flats given the image list structure
+;    Creates twilight flats given the image list structure (assuming
+;     twilight flats were taken!)
 ;
 ; CALLING SEQUENCE:
 ;   
@@ -81,10 +82,10 @@ pro xdimg_twiflt, struct, SVOV=svov, OUTROOT=outroot
 ;  Loop on separate filters
   
   for q=0,nfilt-1 do begin
-      wfilt = where(struct[tflts].filter EQ filt[q], dumi)
+      wfilt = where(strtrim(struct[tflts].filter,2) EQ filt[q], dumi)
 
-      outfil = strjoin([outroot, filt[q], '.fits'])
-      outfilN = strjoin([outroot, 'N', filt[q], '.fits'])
+      outfil = strjoin([outroot, strtrim(filt[q],2), '.fits'])
+      outfilN = strjoin([outroot, 'N', strtrim(filt[q],2), '.fits'])
 
       ; Status
       print, 'Combining images: '
@@ -114,8 +115,12 @@ pro xdimg_twiflt, struct, SVOV=svov, OUTROOT=outroot
       mwrfits, combN, outfilN, headN, /create
 
   endfor
-  
+
+; Delete images  
   if not keyword_set( SVOV ) then xdimg_delov, struct, tflts
+
+; Resave the updated structure so that you can pick up where you left off easily.
+  mwrfits, struct, 'struct.fits', /create
 
   print, 'xdimg_twiflt: All done with Twilight Flats!'
 

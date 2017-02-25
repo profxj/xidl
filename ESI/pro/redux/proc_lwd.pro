@@ -1,6 +1,6 @@
 ;+ 
 ; NAME:
-; proclwd_05aug02   
+; proclwd_11sep04   
 ;     Version 1.0
 ;
 ; PURPOSE:
@@ -27,7 +27,7 @@
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   proclwd_05aug02
+;   proclwd_11sep04
 ;
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
@@ -40,7 +40,7 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-pro proclwd_05aug02, esi, slit, obj_id, MKBIAS=mkbias, MKFLAT=mkflat, $
+pro proc_lwd, esi, slit, obj_id, MKBIAS=mkbias, MKFLAT=mkflat, $
                      SETUP=setup, INTER=inter, MMEM=mmem, $
                      MKAIMG=mkaimg, STDCHK=stdchk, TRCSTD=trcstd, CLOBBER=clobber,$
                      STD_NOFND=std_nofnd, ARC_CHK=arc_chk, FLT_CHK=flt_chk
@@ -48,7 +48,7 @@ pro proclwd_05aug02, esi, slit, obj_id, MKBIAS=mkbias, MKFLAT=mkflat, $
 ;;
   if  N_params() LT 1  then begin 
       print,'Syntax - ' + $
-        'proclwd_05aug02, esi, slit, [obj_id], /MKBIAS, /MKFLAT, /SETUP'
+        'proclwd_11sep04, esi, slit, [obj_id], /MKBIAS, /MKFLAT, /SETUP'
       print, '     /INTER, MMEM=, /MKAIMG, /STDCHK, /TRCSTD [v1.0]'
       return
   endif 
@@ -62,13 +62,13 @@ pro proclwd_05aug02, esi, slit, obj_id, MKBIAS=mkbias, MKFLAT=mkflat, $
   if keyword_set( SETUP ) then begin
       esi_lwdsetup, esi
       ;; Write
-      esi_wrstrct, esi, FITS='esi_05aug02.fits'
+      esi_wrstrct, esi, FITS='esi_11sep04.fits'
   endif
 
   ;; Make Arc Image
   if keyword_set( MKAIMG ) then begin
       if not keyword_set(SLIT) then begin
-          print, 'proclwd_05aug02: Slit not set!!'
+          print, 'proclwd_11sep04: Slit not set!!'
           return
       endif
       esi_lwdmkarc, esi, slit, CLOBBER=clobber
@@ -76,21 +76,21 @@ pro proclwd_05aug02, esi, slit, obj_id, MKBIAS=mkbias, MKFLAT=mkflat, $
       esi_lwdtrcarc, esi, slit
       esi_lwdmkaimg, esi, slit, CHK=arc_chk
       ;; Write
-      esi_wrstrct, esi, FITS='esi_05aug02.fits'
+      esi_wrstrct, esi, FITS='esi_11sep04.fits'
   endif
       
   ;; Process Flat
   if keyword_set( MKFLAT ) then begin
       esi_lwdmkflat, esi, slit, CHK=flt_chk, INTER=inter
       ;; Write
-      esi_wrstrct, esi, FITS='esi_05aug02.fits'
+      esi_wrstrct, esi, FITS='esi_11sep04.fits'
   endif
 
   ;; Process Standard
   if keyword_set( TRCSTD ) then begin
       esi_lwdtrcstd, esi, slit, CHK=stdchk, NOFND=std_nofnd
       ;; Write
-      esi_wrstrct, esi, FITS='esi_05aug02.fits'
+      esi_wrstrct, esi, FITS='esi_11sep04.fits'
   endif
 
   return

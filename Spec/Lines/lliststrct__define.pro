@@ -1,3 +1,34 @@
+;+ 
+; NAME:
+; lliststrct__define
+;   Version 1.1
+;
+; PURPOSE:
+;  Structure for the line lists
+;
+; CALLING SEQUENCE:
+;   tmp = {lliststrct}
+;
+; INPUTS:
+;
+; RETURNS:
+;
+; OUTPUTS:
+;
+; OPTIONAL KEYWORDS:
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;
+; EXAMPLES:
+;
+; PROCEDURES/FUNCTIONS CALLED:
+;
+; REVISION HISTORY:
+;  Written by JXP
+;-
+;----------------------------------------------------------------------
 pro lliststrct__define
 
 ;  This routine defines the line list structure

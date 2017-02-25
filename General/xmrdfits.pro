@@ -1,71 +1,81 @@
 ;+ 
 ; NAME:
 ; xmrdfits
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
-;    Convert input to data whether it is a fits file or not
+;    Uses mrdfits to read the header of a fits file.  The only
+;   advantage of xheadfits is that the file can be compressed and
+;   yet the filename may be named without the gz extension.
 ;
 ; CALLING SEQUENCE:
 ;   
-;   dat = x_readimg(img)
+;   dat = xmrdfits(fil, [extension, header], _EXTRA)
 ;
 ; INPUTS:
-;   img       - Fits file or data
+;   fil -- FITS Filename
+;   [extension] -- Extension of the data array
 ;
 ; RETURNS:
-;   dat       - Data in fits file or the input data
+;   dat  - Data array
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
-;  FSCALE      - Data is float
 ;
 ; OPTIONAL OUTPUTS:
-;  HEAD        - Header
+;  header -- Header of the FITS extension
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
 ;   dat = xmrdfits('spec.fits')
 ;
-;
 ; PROCEDURES/FUNCTIONS CALLED:
 ;
 ; REVISION HISTORY:
 ;   17-Sep-2002 Written by JXP
+;   08-Jun-2011 Use IDL's file_search() instead of findfile()
+;               to be MUCH faster, KLC
 ;-
 ;------------------------------------------------------------------------------
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-function xmrdfits, fil, extension, header, _EXTRA=extra
+function xmrdfits, fil, extension, header, _EXTRA=extra, FLG_FIL=FLG_FIL
 
 ;
   if  N_params() LT 1  then begin 
     print,'Syntax - ' + $
-             'dat = xmrdfits(img, _EXTRA=) [V1.0]'
+             'dat = xmrdfits(fil, extension, header, _EXTRA=, FLG_FIL=) [V1.1]'
     return, -1
   endif 
 
 ;  Optional Keywords
   if not keyword_set( extension ) then extension = 0L
 
+  FLG_FIL = 1L
+
 ; Filename
   if strlen(fil) EQ 0 then begin
       print, 'xmrdfits: File not set!'
+      FLG_FIL = 0L
       stop
       return, -1
   endif
   
 
-  a = findfile(fil, count=na)
+  a = file_search(fil, count=na)
   if na EQ 0 then begin
-      gz_fil = fil+'.gz'
-      b = findfile(gz_fil, count=nb)
+      gz_fil = strtrim(fil,2)+'.gz'
+      b = file_search(gz_fil, count=nb)
       if nb EQ 0 then begin
           print, 'xmrdfits: Files ', fil, gz_fil, ' do not exist!'
-          return, -1
+          FLG_FIL = 0L
+          ;; Quicker to do 2nd search only as needed
+          z_fil = strtrim(fil,2)+'.Z'
+          c = file_search(z_fil, count=nc)
+          if nc NE 0 then datfil = z_fil else return, -1
       endif else datfil = gz_fil
   endif else datfil = fil
 

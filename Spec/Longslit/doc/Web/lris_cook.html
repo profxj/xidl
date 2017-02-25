@@ -1,0 +1,754 @@
+
+<div>
+
+<p>
+</p><div align="center">
+<font size="+3"><b>Cookbook for Keck/LRIS Reductions</b></font>
+</div>
+
+<br>
+<br>
+
+<font size="+2"> <a href="http://www.ucolick.org/~xavier/LowRedux/index.html" target="_blank">BACK</a>
+<br>
+<br>
+
+<font size="+1">
+This page describes the types of calibrations recommended
+(or required) to use the Low-Redux pipeline to reduce data 
+acquired with the longslit Kast spectrometer.
+
+
+</font></font></div>
+<hr>
+<p>
+<font size="+2">Calibrations:</font>
+<br>
+<br>
+
+<font size="+1">
+AFTERNOON+TWILIGHT: The following table summarizes the recommended calibration
+exposures for the grisms+gratings supported within the Low-Redux pipeline.
+</font>
+
+<br>
+<br>
+
+
+<b>Binning:</b> For the blue-side observations, we
+present values assuming binning 2x2 (spatialxspectral).  We recommend
+this level of binning when using the 1200 grism to reduce the readnoise
+by a factor of sqrt(4)=2.  For a 1&quot; slit, binning by 2 in the spectral
+dimension implies a sample of 4 pixels.
+The spatial plate-scale on the blue-side is 0.135&quot; per native pixel.
+Therefore, 2x binning will lead to Nyquist sampled seeing only for
+FWHM ~ 0.6&quot;.
+
+<br>
+<br>
+
+<b>Flat fielding:</b> Our approach for flat fielding these
+spectroscopic observations is to divide up the flat fielding 
+into a pixel-flat which represents the intrinsic pixel-to-pixel 
+response variations of the CCD (i.e. the 
+response to a smooth source), and an illumination flat, 
+which represents the larger scale illumination variations due 
+to non-uniformities in the width of the slit, vignetting, etc. 
+This separation is clearly not perfect, but our experience is 
+that the illumination flats significantly improve sky subtraction. <br>
+<br>
+
+The pixel-flat for the blue-side is constructed in a novel manner
+for the high resolution grisms.  
+One observes the twilight sky
+with the grism in place but without a slitmask (i.e. &quot;direct&quot;).
+This smears the solar spectral features sufficiently that the
+flat can be properly normalized before applying a
+pixel-to-pixel correction.  We use the twilight sky because
+the internal and dome lamps both emit too little UV light.
+Although one might record a few thousand counts with these lamps,
+we have confirmed that this is dominated by scattered red
+light (e.g. one observes fringing!).<br><br>
+
+For the red side,  dome flats are better than internal flats for
+correcting the pixel-to-pixel variations because they reduce the
+level of scattered light.  However, one may desire to take internal
+flats on the sky during the night (or twilight) to remove fringing.
+The same dome flats can be used for the illumination correction 
+although observations at twilight may be preferable.
+
+
+
+</p><center>
+<table style="font-size: 24px; line-height: 140%;" border="1" cellpadding="1" cellspacing="1" width="650"><tbody><tr bgcolor="#ddddff">
+<td align="center">Blue Side Calibrations (2x2 Binning)</td>
+</tr></tbody></table>
+<table style="font-size: 13px; line-height: 140%;" border="1" cellpadding="1" cellspacing="1" width="650"><tbody><tr bgcolor="#ddddff">
+<th width="5%">Type</th>
+<th width="5%">Grism</th>
+<th width="15%">Lamp(s)</th>
+<th width="5%">Slit</th>
+<th width="5%">Exp</th>
+<th width="3%">NExp</th>
+<th width="68%">Notes</th>
+
+</tr><tr bgcolor="Lightgreen">
+<td align="center">Arc</td>
+<td align="center">Any</td>
+<td align="center">All</td>
+<td align="center">1&quot;</td>
+<td align="center">3</td>
+<td align="center">2</td>
+<td align="left">IMPORTANT:  One should wait ~5min for the Zn+Cd lamps to warm up.
+</td>
+</tr>
+<tr bgcolor="Lightgreen">
+<td align="center">Illum+PixelFlat</td>
+<td align="center">300/5000</td>
+<td align="center">Twilight</td>
+<td align="center">1&quot;</td>
+<td align="center">10</td>
+<td align="center">5</td>
+<td align="left">Keep peak under 40,000 DN.  This set of exposures is 
+used for both pixel-to-pixel and illumination calibration. 
+WARNING: This procedure is not well tested.</td>
+</tr>
+<tr bgcolor="Lightgreen">
+<td align="center">IllumFlat</td>
+<td align="center">600/4000</td>
+<td align="center">Twilight</td>
+<td align="center">1&quot;</td>
+<td align="center">XX</td>
+<td align="center">3</td>
+<td align="left">Take very near sunset (or sunrise).
+Aim for peak counts of ~30,000 DN</td>
+</tr>
+<tr bgcolor="Lightgreen">
+<td align="center">IllumFlat</td>
+<td align="center">1200/3400</td>
+<td align="center">Twilight</td>
+<td align="center">1&quot;</td>
+<td align="center">XX</td>
+<td align="center">3</td>
+<td align="left">Take very near sunset (or sunrise).
+Aim for peak counts of ~30,000 DN</td>
+</tr>
+<tr bgcolor="Lightgreen">
+<td align="center">PixelFlat</td>
+<td align="center">600/4000</td>
+<td align="center">Twilight</td>
+<td align="center">None!</td>
+<td align="center">XX</td>
+<td align="center">3</td>
+<td align="left">Slitless.  Take very near sunset (or sunrise).
+Aim for peak counts of ~30,000 DN</td>
+</tr>
+<tr bgcolor="Lightgreen">
+<td align="center">PixelFlat</td>
+<td align="center">1200/3400</td>
+<td align="center">Twilight</td>
+<td align="center">None!</td>
+<td align="center">XX</td>
+<td align="center">3</td>
+<td align="left">Slitless.  Take very near sunset (or sunrise).
+Aim for peak counts of ~30,000 DN</td>
+</tr>
+</tbody></table><br><br>
+
+</center>
+
+
+<center>
+<table style="font-size: 24px; line-height: 140%;" border="1" cellpadding="1" cellspacing="1" width="650"><tbody><tr bgcolor="Pink">
+<td align="center">Red Side Calibrations (1x1 Binning)</td>
+</tr></tbody></table>
+<table style="font-size: 13px; line-height: 140%;" border="1" cellpadding="1" cellspacing="1" width="650"><tbody><tr bgcolor="Pink">
+<th width="5%">Type</th>
+<th width="5%">Grating</th>
+<th width="15%">Lamp(s)</th>
+<th width="5%">Slit</th>
+<th width="5%">Exp</th>
+<th width="3%">NExp</th>
+<th width="68%">Notes</th>
+
+</tr><tr bgcolor="Lightgreen">
+<td align="center">Arc</td>
+<td align="center">Any</td>
+<td align="center">All</td>
+<td align="center">1&quot;</td>
+<td align="center">1s</td>
+<td align="center">2</td>
+<td align="left">
+</td>
+</tr>
+<tr bgcolor="Lightgreen">
+<td align="center">Illum+PixelFlat</td>
+<td align="center">300/7500</td>
+<td align="center">Dome/Spec</td>
+<td align="center">1&quot;</td>
+<td align="center">8</td>
+<td align="center">7</td>
+<td align="left">Keep peak under 40,000 DN.  This set of exposures is also
+fine for pixel-to-pixel calibration.</td>
+</tr>
+<tr bgcolor="Lightgreen">
+<td align="center">Illum+PixelFlat</td>
+<td align="center">600/7500</td>
+<td align="center">Dome/Spec</td>
+<td align="center">1&quot;</td>
+<td align="center">30</td>
+<td align="center">7</td>
+<td align="left">Keep peak under 40,000 DN.  This set of exposures is also
+fine for pixel-to-pixel calibration.</td>
+</tr>
+<tr bgcolor="Lightgreen">
+<td align="center">Illum+PixelFlat</td>
+<td align="center">600/10000</td>
+<td align="center">Dome/Spec</td>
+<td align="center">1&quot;</td>
+<td align="center">240</td>
+<td align="center">7</td>
+<td align="left">Keep peak under 40,000 DN.  This set of exposures is also
+fine for pixel-to-pixel calibration.</td>
+</tr>
+<tr bgcolor="Lightgreen">
+<td align="center">Illum+PixelFlat</td>
+<td align="center">1200/7500</td>
+<td align="center">Dome/Spec</td>
+<td align="center">1&quot;</td>
+<td align="center">50</td>
+<td align="center">7</td>
+<td align="left">Keep peak under 40,000 DN.  This set of exposures is also
+fine for pixel-to-pixel calibration.</td>
+</tr>
+</tbody></table><br><br>
+
+</center>
+
+TWILIGHT+NIGHTTIME:  In addition to these calibrations, if one wishes to flux the
+spectra it is necessary to observe a spectrophotometric standard
+with the same instrument configuration.  Furthermore, it is
+best if one chooses from the CALSPEC list of standards which can
+be found here: $XIDL_DIR/Spec/Longslit/calib/standards/calspec
+	
+<hr>
+<font size="+2">Organizing the Data</font>
+<br>
+<br>
+
+<font size="+1">
+The first steps are to organize your data, create a plan file,
+and edit it as necessary.
+</font>
+
+	
+<ul>
+<li> Organize the data
+  <ol>
+    <li> Create a &#39;Raw&#39; directory --  mkdir Raw
+    </li><li> Place all of the Raw frames in the Raw directory
+    </li><li> gzip the files (optional)
+  </li></ol>
+</li><li> Create the plan file
+  <ol>
+    <li> Launch IDL from above the Raw directory
+    </li><li> Run <a href="http://lowredux_doc.html#LONG_PLAN" target="_blank">long_plan</a> :: This
+	code parses the headers of each raw file and creates an ASCII file
+	which summarizes the data.  It attempts to guess the &#39;type&#39; of
+	each frame (e.g. arc, domeflat, science).  
+<br>             Example: IDL&gt; <b>long_plan</b>, &#39;*.fits*&#39;, &#39;Raw/&#39;
+  </li></ol>
+</li><li> Edit the plan file (default: plan.par)
+  <ol>
+    <li> Consider copying plan.par to a new file
+    </li><li> For longslit observations, &#39;slitthresh&#39; is automatically
+    set in the code to be 0.10.  For multislit observations you may
+    specify your own value of &#39;slitthresh&#39; by including this parameter
+    in the plan file.  The default for multislit observations is
+    currently 0.02.  For short slits, lower &#39;slitthresh&#39; as necessary.
+    </li><li> Edit &#39;maxobj&#39; as needed.  This sets the maximum number of
+    objects found per slit.  For multislit observations, change to 2
+    to prevent lots of spurious objects from begin found.
+    </li><li> Edit &#39;reduxthresh&#39; as needed.  This is another parameter which is useful for controlling the identification of spurious objects.  The code will only keep objects as bright as (reduxthresh)*(brightness of brightest object) in each slit.
+    </li><li> Remove unwanted images from the .par file.
+    </li><li> Inspect and edit the image types for the various exposures. (Listed in column 3 in the plan file) 
+	    For the LRIS spectrometer there are 5 types of interest:
+<br>
+<br>
+
+<table style="font-size: 24px; line-height: 140%;" border="1" cellpadding="1" cellspacing="1" width="650"><tbody><tr bgcolor="Tan">
+<td align="center">Image Types</td>
+</tr></tbody></table>
+<table style="font-size: 13px; line-height: 140%;" border="1" cellpadding="1" cellspacing="1" width="650"><tbody><tr bgcolor="Tan">
+<th width="5%">Type</th>
+<th width="45%">Description</th>
+
+</tr><tr bgcolor="Lightgreen">
+<td align="center">arc</td>
+<td align="left"> Exposure of the arc lamps taken with the instrument
+configured for spectroscopy (slit + dispersing elements).  
+</td>
+</tr>
+<tr bgcolor="Lightgreen">
+<td align="center">domeflat</td>
+<td align="left">Flats used to calibrate the pixel-to-pixel variations
+in the CCD.  Blue side: At high dispersion (600 or 1200 grism), one
+should observe the twilight sky without a slit.  This is the only means
+of getting enough blue counts in a spectrum that does not have sharp
+features.  At lower dispersion (300 grism), one can acquire a dome flat.
+Red Side:  One obtains &#39;standard&#39; dome flats.
+<br>
+<br>
+Note: The code currently attempts to distinguish between domeflats and twilight flats by considering the time the exposures were taken and the position of the dome slit relative to the pointing.  There is no header keyword that specifies the dome lamps being on or off.  Therefore, pay extra attention to these files to make sure they are labelled correctly.
+</td>
+</tr>
+<tr bgcolor="Lightgreen">
+<td align="center">twiflat</td>
+<td align="left">Flats used to calibrate the larger scale variations
+(i.e. greater than 5 pixels) in the illumination pattern of the CCD.
+Spectrum of the twilight sky through the longslit or slitmask.
+</td>
+</tr>
+<tr bgcolor="Lightgreen">
+<td align="center">iflat</td>
+<td align="left">Flats used to calibrate the pixel-to-pixel variations in the CCD.  Domeflats are always preferred to minimize scattered light, but internal flats can be used if necessary.
+</td>
+</tr>
+<tr bgcolor="Lightgreen">
+<td align="center">bothflat</td>
+<td align="left">If the user specifies this designation, 
+the flat image will used for both pixel and illumionation corrections
+(i.e. it will be treated as a domeflat and a twiflat simultaneously).
+This is useful in cases where twiflats were not taken and the user
+wishes to make an illumination correction.  One should ALWAYS use this
+  option when reducing red side data taken with the 600/7500 grating--
+  replace &#39;domeflat&#39; with &#39;bothflat&#39; in the plan file.
+</td>
+</tr>
+<tr bgcolor="Lightgreen">
+<td align="center">science</td>
+<td align="left">Spectrum of an astronomical object.  
+This includes &#39;standard stars&#39;.
+</td>
+</tr>
+<tr bgcolor="Lightgreen">
+<td align="center">std</td>
+<td align="left">If the user specifies this designation, 
+this frame will be used as a crutch for tracing other objects.
+The frame should be reduced BEFORE it is included as a crutch.
+</td>
+</tr>
+</tbody></table><br><br>
+
+
+    </li><li> Insure that the necessary calibration files exist.
+    Files of &#39;arc&#39; type are always needed.  In addition, it is
+    ideal to have both domeflat (or iflat) and twiflat files for each
+    grating/grism/slit combination; this gives the best calibration of
+    pixel-to-pixel variations in the CCD and illumination function.
+    One exception is in the case of Red Side 600/7500 data-- here only
+    the domeflat should be used, and the label should be changed to
+    &#39;bothflat&#39;.  Additionally, in general if only domeflats are available, these may be used for both the pixel-to-pixel calibs and the illumination calibs by changing the &#39;domeflat&#39; type to &#39;bothflat&#39; in the plan file.
+
+</li></ol></li></ul>
+
+<hr>
+<font size="+2">Reduce!</font>
+
+ <p> 
+<font size="+1">
+All of the reduction steps are run by the code
+<a href="http://lowredux_doc.html#LONG_REDUCE" target="_blank">long_reduce</a>
+<br>             Example: IDL&gt; <b>long_reduce</b>, &#39;plan.par&#39;
+
+  <ol> This routine:
+    <li> Stacks and process the flats 
+    </li><li> Identifies the edges of the longslit
+    </li><li> Calibrates the various arc images
+    </li><li> Processes the science frame (flattens)
+    </li><li> Finds/traces objcets within the slit
+    </li><li> Extracts using a non-parameteric optimal extraction algorithm
+  </li></ol>
+
+The correct sequence for setting up the reductions is as follows:
+<br>
+<ul>
+<li>The blue-side calibration takes a bit more work than the red side.
+<ol>
+<li> First you need to make a separate .par file that includes all images of the sky without a slit mask (name this file slitless.par).
+</li><li> Edit the image types of these observations to all be &quot;domeflat&quot;
+</li><li> Run long_reduce with your slitless.par file
+</li><li> In your plan.par file insure that you include one of the files that you used in your slitless.par file, again insuring that its image type is changed to &quot;domeflat&quot;.
+</li><li> Run long_reduce with your plan.par file. Be sure to include your twilight flats that were taken with the slit in labelled as "twiflat".
+</li></ol>
+</li><li>The Redside is much simpler, you only need to use the dome flats. Be sure to change the file types in your plan.par file to &quot;bothflat&quot;
+</li></ul>
+<p>
+The pipeline outputs the following calibration files:
+<br>
+<br>
+
+</p><table style="font-size: 24px; line-height: 140%;" border="1" cellpadding="1" cellspacing="1" width="650"><tbody><tr bgcolor="Tan">
+<td align="center">Reduction Products</td>
+</tr></tbody></table>
+<table style="font-size: 13px; line-height: 140%;" border="1" cellpadding="1" cellspacing="1" width="650"><tbody><tr bgcolor="Tan">
+<th width="15%">Name</th>
+<th width="45%">Description</th>
+
+</tr><tr bgcolor="Lightgreen">
+<td align="center">pixflat-xxx</td>
+<td align="left"> FITS file generated from the domeflats which corrects for
+pixel-to-pixel variations in the CCD.
+</td>
+</tr>
+
+<tr bgcolor="Lightgreen">
+<td align="center">illumflat-xxx</td>
+<td align="left"> Flat frame used to correct for imperfections in the slit
+width along the slit-length.
+</td>
+</tr>
+
+<tr bgcolor="Lightgreen">
+<td align="center">profile-xxx</td>
+<td align="left">Binary FITS table containing the object profile used
+for optimal extraction.  In particular, the tag .profile contains an
+image of the profile.
+</td>
+</tr>
+
+<tr bgcolor="Lightgreen">
+<td align="center">slits-xxx</td>
+<td align="left">Binary FITS table containing the parameters which 
+describe the slit edges.
+</td>
+</tr>
+
+<tr bgcolor="Lightgreen">
+<td align="center">wave-xxx.fits</td>
+<td align="left">FITS image of the wavelength array created by the code.
+</td>
+</tr>
+
+<tr bgcolor="Lightgreen">
+<td align="center"><a href="http://wave-xxx.ps" target="_blank">wave-xxx.ps</a></td>
+<td align="left">Postscript file showing the results from the 1D arc
+solution.  
+</td>
+</tr>
+
+</tbody></table><br><br>
+
+
+Tip: If you have longslit science frames with no bright objects in the
+slit AND if you have standard star data, it is a good idea to re-run
+long_reduce after deleting the science frames and keeping the reduced
+standard frames.  You can also do this if you are working with
+multislit data.  Re-run like this:
+<br>             Example: IDL&gt; <b>long_reduce</b>, &#39;plan.par&#39;, filestd=&#39;Science/std-lred0044.fits.gz&#39;
+<br>
+This will use the standard star frames as a first guess at the trace when extracting faint objects from your science data.
+
+</li></ol></li></ul>
+
+
+<hr>
+<font size="+2">IMPORTANT: Check the reduction.</font>
+
+ <p> 
+<font size="+1">Check the reduction as the pipeline progresses. 
+</font>
+
+	
+<ul>
+<li> As soon as the slits-XXX file is produced, check the following:
+  <ol>
+    <li> Were all the slits found?  If not, the code may have combined
+    two slits into one, for example.  This can cause many problems
+    (e.g., a wavelength solution failure).  To discourage the code
+    from doing this, you can reduce the &#39;slitthresh&#39; parameter
+    in the plan file; the default value for multislit masks is 0.02.
+    </li><li> If one particular slit is causing trouble that cannot be
+    fixed by changing slitthresh, you can use the code
+    &#39;long_fiddleslit&#39; to completely remove it:
+    <br> Example: IDL&gt; <b>long_fiddleslits</b>, &#39;slits-XXX.fits&#39;,
+    REMOVE=(slit number to remove), WAVE_FIL= &#39;wave-XXX.fits&#39;
+    </li><li> Sometimes, no matter what you do with
+    &#39;slitthresh&#39;, the pipeline still fails to find all the
+    slits.  (This is rare.)  If you need to add a slit into your
+    slitmask, you can use the ADD_SLITS keyword.  Just make a file
+    with two columns, where the first contains the x value at the
+    start of the new slit, and the second contains the x value at the
+    end of the slit.  
+    <br> Example: IDL&gt; <b>long_reduce</b>, &#39;plan.par&#39;,
+    ADD_SLITS= &#39;add_slits.txt&#39;
+    </li><li> Yet another slit-adjustment keyword is COMBINE_SLITS.
+    This allows you to combine two adjacent slits into one:
+    <br> Example: IDL&gt; <b>long_reduce</b>, &#39;plan.par&#39;,
+    COMBINE_SLITS=[slitnum]
+    Here, &#39;slitnum&#39; has the lower slit ID number of the two
+    you want to combine.
+    </li><li>At this point, you may also check for overlapping
+    slits.  This will be easier to see in the final science images,
+    however.  See below for options for dealing with this problem.
+  </li></ol>
+  </li></li> <b> Remember that the slit edges affect every part of the
+  data reduction, so make sure that if you remake the slit file, have
+  the code remake everything else as well!</b>  (You can use the /CLOBBER
+  flag for this with &#39;long_reduce&#39;, but use with caution-- if you have a standard star
+  frame in your plan file, it will get re-reduced with the slitmask
+  calibration files-- and you don't want that!)
+</li><li> As soon as the wave-XXX.ps file is produced, check the
+wavelength solution!  For each slit, check that there aren't large numbers of lines
+    that weren't identified, and check that a few lines are not
+    significantly affecting the fit.  If they are, you can:
+<ol>
+    <li>Remove (or comment out) individual lines from your lris_red[or
+  blue]_XXX.lst file.
+    </li><li>Re-run long_reduce to tweak the solution for a particular
+    slit:
+    <br> Example: IDL&gt; <b>long_reduce</b>, &#39;plan.par&#39;,
+    TWEAK_ARC=[slitnum]
+    <br> This will launch a fun GUI, and rewrite your wave-XXX.* files
+    after you re-fit:
+  </li>
+  <ol><li> Put in values for a &#39;SHIFT&#39;, and a
+    &#39;STRETCH&#39; if needed.
+    </li><li> Click &#39;APPLY&#39;
+    </li><li> Hit &#39;L&#39; to see all the lines labelled
+    </li><li> Hit &#39;F&#39; to perform the fit
+    </li><li> Hit &#39;R&#39; to see the fit residuals
+    </li><li> &#39;q&#39; saves the new fit and quits
+    </li>
+
+</ol></ol></ul>
+
+
+<hr>
+<font size="+2">Primary Science Product</font>
+<br>
+
+<br>
+The primary science products are written a multi-extension
+FITS file in the Science/ directory.  One file is written
+per exposure.  This table describes the various extensions:
+<br>
+<br>
+
+<table style="font-size: 24px; line-height: 140%;" border="1" cellpadding="1" cellspacing="1" width="650"><tbody><tr bgcolor="Cyan">
+<td align="center">Science Products</td>
+</tr></tbody></table>
+<table style="font-size: 13px; line-height: 140%;" border="1" cellpadding="1" cellspacing="1" width="650"><tbody><tr bgcolor="Cyan">
+<th width="5%">Extension</th>
+<th width="85%">Description</th>
+
+</tr><tr bgcolor="Lightgreen">
+<td align="center">0</td>
+<td align="left"> Processed 2D image of the data.
+</td>
+</tr>
+
+<tr bgcolor="Lightgreen">
+<td align="center">1</td>
+<td align="left">Inverse variance </td>
+</tr>
+
+<tr bgcolor="Lightgreen">
+<td align="center">2</td>
+<td align="left">Sky model</td>
+</tr>
+
+<tr bgcolor="Lightgreen">
+<td align="center">3</td>
+<td align="left">Model of the object flux</td>
+</tr>
+
+<tr bgcolor="Lightgreen">
+<td align="center">4</td>
+<td align="left">Mask of good/bad pixels</td>
+</tr>
+
+<tr bgcolor="Lightgreen">
+<td align="center">5</td>
+<td align="left">Structure array (one per object identified in the 
+slit).  The key tags are: wave_opt, flux_opt, ivar_opt, wave_box, 
+flux_box, ivar_box.
+</td>
+</tr>
+
+
+
+</tbody></table><br><br>
+
+
+One can examine the 1 and 2D spectra extracted from each
+data frame using the following steps: <br>
+
+<ul>
+ <li> cd Science
+ </li><li> UNIX&gt; idl
+ </li><li> IDL&gt; .run long_look <br>
+   This will launch a GUI list of all the sci-*.fits.gz files in the
+  current directory.  
+ </li><li> Choose the sci-* file that you want from the GUI list <br>
+   This will launch a view of the 2D image (using the IDL task <b>atv</b>).
+   After completing the step described below, you can use this Image display
+   GUI to examine the 2D spectrum.  
+   A postscript file summarizing the S/N of the various extracted spectra is shown
+   and also a GUI list of the objects in the frame indexed slit-object
+   (e.g. 1-2 for slit 1 and object #2 in the slit).
+ </li><li> Choose an object from the GUI list <br>
+   This will launch an <b>x_specplot</b> GUI that the user can use 
+   to examine the 1D spectrum.  At this point the <b>xatv</b> window will now
+   be active.  The wavelength of the cursor position is printed in the 
+   xatv window next to the pixel number.
+ </li><li> Play with the two GUI&#39;s.
+</li></ul>
+
+<hr>
+<font size="+2">IMPORTANT: Check your science frames.</font>
+
+ <p> 
+<font size="+1">Here are some problems/issues you may encounter when checking out your final reductions. 
+</font>
+
+	
+<ul>
+<li> Overlapping slits or funny slit edges-- you have a couple of options:
+  <ol>
+    <li> Re-run the full reduction, trimming all of your slit edges
+    <br> Example: IDL&gt; <b>long_reduce</b>, &#39;plan.par&#39;,
+    TRIM_SEDGE=npix (where npix = the number of pixels to trim from
+    each edge)
+    <br> Note: if you use this keyword concurrently with ADD_SLITS, the new
+    slits that you add in will not be trimmed.
+    </li>
+    <li> If you feel you must be more aggressive about removing slit overlap, you can try:
+    <br> Example: IDL&gt; <b>long_reduce</b>, &#39;plan.par&#39;,
+    EDIT_SEDGE_FIL=filename
+    <br> Here, EDIT_SEDGE_FIL is a text file with 5 columns:
+    <ol><li> The x value near the middle of the problem slit
+      </li><li> &#39;1&#39; for the left edge of the slit, or
+      &#39;2&#39; for the right edge
+      </li><li> The number of pixels to trim from that particular edge
+      </li><li> Pixel number (in y direction) where you want to start
+      the adjustment
+      </li><li> Pixel number (in y direction) where you want to end
+      the adjustment
+      </li>
+      </ol>
+      This file must be made by hand while examining the science
+      reduction.  You may also run &#39;long_reduce&#39; including
+      both the TRIM_SEDGE and the EDIT_SEDGE_FIL flags at once.
+      TRIM_SEDGE will only affect slit edges which are NOT being
+      modified by the EDIT_SEDGE_FIL.
+     </li>
+  </li></ol>
+  </li></li> 
+
+<li> If you notice horizontal stripes across some slits: 
+<ol>
+    This is likely because a particular slit contains a very wide object but is itself quite narrow.  This means that to fit the sky, the code is being forced to use pixels very close to the slit edges.  This can cause ringing in the bspline fit to the sky. Our best fix so far is as follows:
+    <li>Turn off local sky subtraction for particular problem slits:
+    <br> Example: IDL&gt; <b>long_reduce</b>, &#39;plan.par&#39;,
+  ISLIT=slitnum, /NOLOCAL, ONLYSCI=exposure  ( &#39;exposure &#39; is
+  something like  &#39;lred0072.fits &#39;)
+    <br> This will make a new sci-XXX.fits file, retaining the previous reduction of all the other slits but replacing the reduction of the problem slit with the new version.  
+    </li>
+</ol>
+
+<li> You may also want to re-run your reduction, including a standard
+frame for the code to use as a crutch:
+<ol>
+    <li> Make sure the standard frame has been reduced (with its own
+  plan file)
+    </li><li> Include the frame in the science plan file, making sure
+    that it's labelled a &#39;std&#39;
+    </li>
+    <br> CAUTION: One can do this for only one slit using the ISLIT
+    flag, but make sure you include the /ONLYSCI flag as well, or the
+    standard frame will get re-reduced!
+    <br> Example: IDL&gt; <b>long_reduce</b>, &#39;plan.par&#39;, ISLIT=slitnum, ONLYSCI=exposure
+</ol>
+</ul>
+
+
+<hr>
+<font size="+2">Coadd</font>
+<br>
+<br>
+As you will note, the multi-extension FITS file that contains
+the spectra are not especially easy to handle.  Furthermore, it
+is common that a user will wish to coadd multiple exposures of
+a given object.  This is accomplished with the task  
+<a href="http://lowredux_doc.html#LONG_COADD" target="_blank">long_coadd</a> :: This
+routine takes as input a list of sci- files and a corresponding list of object ID numbers, chooses a 
+wavelength array for registration, and coadds weighting by the
+square of the median S/N ratio (or exposure time).
+<br>
+<br>             Call: IDL&gt; <b>long_coadd</b>, files, objid, OUTFIL=name
+<br>             Example: IDL&gt; <b>long_coadd</b>, [&#39;sci-b263.ccd.gz&#39;, &#39;sci-b265.ccd.gz&#39;], 1, OUTFIL=&#39;FSpec/J0905+1014_b.fits&#39;
+
+<br>
+<br>
+In the above example, we have set objid=1 to indicate that we wish to
+coadd the first object identified in the slit.  But we could have set
+objid to [3,4] if we wanted to coadd the 3rd object from the first
+science frame and the 4th object from the second science frame.  The
+output file (e.g. FSpec/J0905+1014_b.fits) is a multi-extension FITS
+array containing three extension: 0=flux array; 1=sigma array;
+2=wavelength array.
+<br>
+<br>
+One can inspect the data using the XIDL routine <b>x_specplot</b>.
+<br>             Example: IDL&gt; x_specplot, filename, inflg=2
+
+<hr>
+<font size="+2">Flux</font>
+<br>
+<br>
+Fluxing is relatively straightforward.  One includes a calibration
+standard in the plan.par file and the code will reduce the data
+in a similar fashion as the science exposures.  One does NOT apply
+the COADD algorithm, but skips to this task
+<a href="http://lowredux_doc.html#LONG_SENSFUNC" target="_blank">long_sensfunc</a> :: This
+algorithm requires that one use one of the standards included
+in the Longslit package (contact JH or JXP to add a new file).
+These files are found here: $XIDL_DIR/Spec/Longslit/calib/standards/calspec.
+WARNING:  Most of these standards are only calibrated to 9200A and the
+code will truncate the data at larger wavelength.  
+
+<br>
+<br>             Call: IDL&gt; sens = <b>long_sensfunc</b>( sci_file, sens_file, std_name=std_name)
+<br>             Example: IDL&gt; bsens =
+<b>long_sensfunc</b>(&#39;Science/std-lblue1022.fits&#39;, &#39;Flux/feige34_bsens.fits&#39;, std_name=&#39;feige34_005&#39;,/MSK_BALM)
+
+<br>
+<br>
+Note that you are recommended to mask the balmer lines.  With a sensitivity function in hand, the final step is to apply
+it to the science spectra.  This is accomplished with
+<a href="http://lowredux_doc.html#LONG_FLUXCAL" target="_blank">long_fluxcal</a> :: This
+code simply notes the exposure time and applies the sensitivity 
+function. It also corrects for differences in the airmass of the
+two exposures assuming an extinction function appropriate for KPNO.
+
+<br>
+<br>             Call: IDL&gt; <b>long_fluxcal</b>,
+coadded_data_file, SENSFUNCFILE=sens_file, OUTFIL=fluxed_data
+<br>             Example: IDL&gt; <b>long_fluxcal</b>, &#39;FSpec/J0905+1014_b.fits&#39;, SENSFUNCFILE=&#39;Flux/feige34_bsens.fits&#39;, OUTFIL=&#39;FSpec/J0905+1014b_XF.fits&#39;
+<br>
+<br>
+
+One can inspect the data using the XIDL routine <b>x_specplot</b>.
+<br>             Example: IDL&gt; x_specplot, filename, inflg=2
+
+<br>
+<br>
+Note that the fluxed spectrum is in units of F_lambda, and needs to be multiplied by a scaling factor of 10^17.
+
+<p>
+<br></p><hr>
+<address> Last modified 2010-04-02 </address>
+
+
+</font></p><font size="+1"></font><br></div><br>

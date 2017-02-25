@@ -1,31 +1,45 @@
+
 ;+ 
 ; NAME:
 ; x_identify   
 ;   Version 1.1
 ;
 ; PURPOSE:
-;    Interactively identifies and fits reference lines
+;    GUI used to create a wavelength solution to an arc line
+;    spectrum.  Similar to IRAFs identify
 ;
 ; CALLING SEQUENCE:
 ;   
-;   x_identify, spec, calib, LINELIST=, XSIZE=, YSIZE=, REJ=, AUTO=,
-;                 DISP=, LINEROOT=
+;  x_identify, spec, calib, XSIZE=, YSIZE=, LINELIST=, $
+;               DISP=, LINEROOT=, INCALIB=,
+;               /DEBUG, MSK=, OUTLIN=, /REDBLUE=, WAVE=, FLUX=, INLIN=
 ;
 ; INPUTS:
-;   spec       - 1D Spectrum
+;   spec       - 1D flux spectrum (array)
 ;
 ; RETURNS:
+;   calib      - FIT Structure describing the wavelength solution
 ;
 ; OUTPUTS:
-;   calib      - Structure describing the wavelength solution
 ;
 ; OPTIONAL KEYWORDS:
-;   LINELIST   - Reference list
+;   LINELIST   - Reference list (user can set interactively)
+;   LINEROOT   - Path to a set of line lists [default:
+;                /Spec/Arcs/Lists]
 ;   DISP       - Guess at dispersion (A or km/s per pix [pos/neg
 ;                value])
-;   FLUX       - Assumes wide slit and therefore wide arc lines
-;
+;   /FLUX       - Assumes wide slit and therefore wide arc lines
+;  XSIZE,YSIZE -- Size of GUI in pixels
+;  /REDBLUE    - Spectrum runs from red to blue (not blue to red)
+;  INCALIB     - A input fit structure that can be used to identify lines.  
+;  MSPEC       - An input arc that can be used to shift and stretch arc
+;  MFITSTR     - A structure that goes along with mspec which is the fit
+;                for that arc. Note that incalib will be set with this as the 
+;                fit. 
 ; OPTIONAL OUTPUTS:
+;   WAVE= -- Wavelength array for the arc line spectrum
+;  MSK=  -- ??
+;  OUTLIN= -- Lines structure which shows the lines used in the fit
 ;
 ; COMMENTS:
 ;
@@ -39,6 +53,7 @@
 ;   08-Dec-2001 Written by JXP
 ;   19-Dec-2001 Added fitting
 ;   01-Feb-2003 Added input
+;   01-Nov-2006 JFH added incalib option
 ;-
 ;------------------------------------------------------------------------------
 
@@ -46,21 +61,33 @@
 ; Common
 ;;;;
 
-pro x_identify_initcommon
+pro x_identify_initcommon, incalib = incalib
 
 ;
 
 common x_identify_fit, svffit, fin_fit, tcalib, flg_calib, $
-  xid_pdmenu, spec_msk, gd_lines
+  xid_pdmenu, spec_msk, gd_lines, mtch_spec, mtch_fitstr, mtch_npix, $
+  mtch_sspec, mtch_wav, out_shift, out_stretch
 
+IF NOT KEYWORD_SET(INCALIB) THEN BEGIN
   ; Wavelength solution
   tcalib = { fitstrct }
   tcalib.func = 'POLY'
   tcalib.nord = 2
   tcalib.niter = 3
+  tcalib.flg_rej = 1
+  tcalib.maxrej = 10
+  tcalib.hsig = 3.
+  tcalib.lsig = 3.
   flg_calib=0
   xid_pdmenu = 0
   gd_lines = 0
+ENDIF ELSE BEGIN
+    tcalib = incalib
+    flg_calib = 0
+    xid_pdmenu = 0
+    gd_lines = 0
+ENDELSE
 
 end
 
@@ -72,7 +99,7 @@ pro x_identify_event, ev
 
 common x_identify_fit
 
-  WIDGET_CONTROL, ev.top, get_uvalue = state, /no_copy
+  WIDGET_CONTROL, ev.top, get_uvalue = state;, /no_copy
   WIDGET_CONTROL, ev.id, get_uvalue = uval
 
   case uval of
@@ -99,6 +126,7 @@ common x_identify_fit
                               return
                           endif
                       end
+		      else: return
                   endcase
               end
               1 : begin ; Button release
@@ -145,6 +173,7 @@ common x_identify_fit
               'f': x_identify_Flip, state ; Flip the x-axis
               ; LINES
               'm': x_identify_SetLine, state        ; Mark one line
+              'M': x_identify_SetLine, state, /text ; Mark one line (type in)
               'd': x_identify_DelLine, state        ; Delete one line 
               'D': x_identify_DelLine, state, /all  ; Delete all lines
               'F': x_identify_FitLines, state       ; Fit current lines
@@ -196,12 +225,31 @@ common x_identify_fit
           state.listid = ev.index
           x_identify_PrsList, state
       end
+      'STRETCH': begin
+          widget_control, state.stretch_id, get_value=tmp
+          state.mtch_stretch = tmp
+          out_stretch = state.mtch_stretch
+          if state.flg_mtch EQ 1 then x_identify_match, state
+      end
+      'SHIFT': begin
+          widget_control, state.shift_id, get_value=tmp
+          state.mtch_shift = tmp
+          out_shift = state.mtch_shift
+          if state.flg_mtch EQ 1 then x_identify_match, state
+      end
+      'MTCHB': begin
+          widget_control, state.mtchb_id, get_value=tmp
+          state.flg_mtch = tmp[0]
+          if tmp[0] EQ 1 then x_identify_match, state
+          if tmp[1] EQ 1 then x_identify_mapply, state
+      end
       'DONE' : begin
-          ;; Save good lines
-          gdlin = where(state.lines.flg_plt MOD 2 EQ 1, nlin)
-          gd_lines = state.lines[gdlin]
-          widget_control, ev.top, /destroy
-          return
+         ;; Save good lines
+         out_shift = state.mtch_shift
+         gdlin = where(state.lines.flg_plt MOD 2 EQ 1, nlin)
+         if nlin NE 0 then gd_lines = state.lines[gdlin]
+         widget_control, ev.top, /destroy
+         return
       end
       else:
   endcase
@@ -233,11 +281,15 @@ common x_identify_fit
 
   if state.flg_plot MOD 2 EQ 0 then begin  ; PIXELS
 
-      ;  Arc spectrum
+      if keyword_set(state.ylog) then yrg = [1, max(state.fx)] else $
+        yrg = [state.xymnx[1],state.xymnx[3]]
+
+                                ;  Arc spectrum
       plot, [state.xymnx[0],state.xymnx[2]], [state.xymnx[1],state.xymnx[3]], $
-        /nodata, xstyle=1, ystyle=1, $
-        xrange=[state.xymnx[0], state.xymnx[2]], $
-        position=state.pos,  background=color.white, color=color.black 
+            /nodata, xstyle=1, ystyle=1, $
+            xrange=[state.xymnx[0], state.xymnx[2]], $
+            position=state.pos,  background=color.white, color=color.black, $
+            ylog=state.ylog, yrange=yrg
       oplot, state.xdat, state.fx, psym=10, color=color.black 
 
 ;  LINES
@@ -256,7 +308,7 @@ common x_identify_fit
                   xyouts, [state.lines[gdlin[top]].pix], $
                     [peaks[top] + 0.13*(state.xymnx[3]-state.xymnx[1])], $
                     [strtrim(state.lines[gdlin[top]].name,2)+' '+$
-                     strmid(strtrim(state.lines[gdlin[top]].wave,2),0,7)], $
+                     strmid(strtrim(state.lines[gdlin[top]].wave,2),0,8)], $
                     orientation=90., color=color.red, charsize=1.3
               endif
               ; High lines
@@ -269,7 +321,7 @@ common x_identify_fit
                     [replicate(state.xymnx[1]+$
                                0.10*(state.xymnx[3]-state.xymnx[1]),nbot)], $
                     [strtrim(state.lines[gdlin[bot]].name,2)+' '+$
-                     strmid(strtrim(state.lines[gdlin[bot]].wave,2),0,7)], $
+                     strmid(strtrim(state.lines[gdlin[bot]].wave,2),0,8)], $
                     orientation=90., color=color.red, charsize=1.3, $
                     alignment=1.0
               endif
@@ -298,12 +350,22 @@ common x_identify_fit
               xyouts, [state.lines[gdlin].wave_fit], $
                 [peaks + 0.13*(state.xymnx[3]-state.xymnx[1])], $
                 [strtrim(state.lines[gdlin].name,2)+' '+$
-                 strmid(strtrim(state.lines[gdlin].wave,2),0,7)], $
+                 strmid(strtrim(state.lines[gdlin].wave,2),0,8)], $
                 orientation=90., color=color.red, charsize=1.3
                 
           endif
       endif
   endelse
+
+  ;; Match
+  if keyword_set(state.flg_mtch) then begin
+      if state.flg_plot MOD 2 EQ 0 then begin ; PIXELS
+          oplot, lindgen(state.norg+state.mtch_stretch), mtch_sspec, $
+            color=color.green, psym = 10
+      endif else begin
+          oplot, mtch_wav, mtch_sspec, color=color.green, psym = 10
+      endelse
+  endif
 
 
 end
@@ -351,8 +413,8 @@ end
 ;;;;;;;;;
 ;  Mark Line
 ;;;;;;;;;
-   
-pro x_identify_SetLine, state
+  
+pro x_identify_SetLine, state, TEXT=text
 
 common x_identify_fit
 
@@ -374,12 +436,27 @@ common x_identify_fit
       pix = x_fndfitval(wv, tcalib, [0., state.norg-1.])
   endelse
 
-  ; CENTROID
-  center = x_centspln(state.xdat[round(pix)-state.linpix:round(pix)+state.linpix], $
-                      state.fx[round(pix)-state.linpix:round(pix)+state.linpix])
-  ; CHOOSE ARC LINE
-  line = x_slctline(state.lines, NLIN=state.nlin, ILIN=ilin, $
-                    PDMENU=xid_pdmenu)
+  ;; CENTROID
+  if state.fweight then begin
+      center = x_centfwgt(state.xdat[round(pix)-state.linpix:round(pix)+ $
+                                     state.linpix], $
+                          state.fx[round(pix)-state.linpix:round(pix)+ $
+                                   state.linpix])
+  endif else begin
+      center = x_centspln(state.xdat[round(pix)-state.linpix:round(pix)+ $
+                                     state.linpix], $
+                          state.fx[round(pix)-state.linpix:round(pix)+ $
+                                   state.linpix])
+  endelse
+  
+  if not keyword_set( TEXT ) then begin
+      ;; CHOOSE ARC LINE
+      line = x_slctline(state.lines, NLIN=state.nlin, ILIN=ilin, $
+                        PDMENU=xid_pdmenu)
+  endif else begin
+      val = x_guinum(1,TITLE='Approx wave:')
+      mn = min(abs(state.lines.wave-val),ilin)
+  endelse
       
   ; Set the values
   state.lines[ilin].flg_plt = 1
@@ -494,38 +571,72 @@ end
 ;  Auto ID :: Finds new lines given a first solution
 ;;;;;;;;;
 
-pro x_identify_AutoID, state
+ pro x_identify_AutoID, state
 
-common x_identify_fit
+ common x_identify_fit
 
-  widget_control, /hourglass
+   widget_control, /hourglass
 
-  ;; Find Peaks
-  x_fndpeaks, state.fx, peak, NSIG=5., MSK=spec_msk
-  npk = n_elements(peak)
+   lines = state.lines
+   
+   ;; Code below implemented by JFH 5-31-2013 to improve continuum fitting
+   ;bkspace = 100.0
+   ;spec_set = bspline_iterfit(findgen(n_elements(state.fx)), state.fx $
+   ;                           , invvar = (state.fx GE 0.0 AND state.fx LE 1d6)$
+   ;                           , bkspace = bkspace $
+   ;                           , yfit = autofit $
+   ;                           , upper = upper, lower = lower, nord = 3 $
+   ;                           , maxrej = 10, outmask = outmask $
+   ;                           , /silent, /sticky)
 
-  ; Add to lines
-  for i=0L,npk-1 do begin
-      ;; Require that a calibration line lies within +/- 5 pixels
-      gdln = where( (state.lines[0:state.nlin-1].wave - $
-                     state.wave[(peak[i]-5)>0])* $
-                    (state.lines[0:state.nlin-1].wave - $
-                     state.wave[(peak[i]+5)<(state.norg-1)]) LE 0 AND $
-                    state.lines[0:state.nlin-1].flg_qual NE 0, nmatch)
-      if nmatch NE 0 then begin
-          ;; Find the closest calibration line
-          sep = abs(state.lines[gdln].wave - state.wave[peak[i]])
-          minsep = min(sep, imin)
-          state.lines[gdln[imin]].flg_plt = 1 
-          ;; Center up on the peak
-          center = peak[i]
-          state.lines[gdln[imin]].pix = center 
-          state.lines[gdln[imin]].wave_fit = x_calcfit(center, FITSTR=tcalib)
-      endif
-  endfor
+   x_templarc, state.fx, lines, tcalib, FORDR = state.fordr $
+               , PKSIG = state.pksig, MXOFF = state.MXOFF, FLG = FLG_TEMPL $
+               , PKWDTH = state.pkwdth, toler = state.toler $
+               , MAXQUAL = state.MAXQUAL, THIN = state.thin $
+               , FWEIGHT = state.fweight, ICLSE = state.ICLSE
+   ;; Check the number of good lines
+   gdfit = where(lines.flg_plt EQ 1, ngd)
 
-  return
-end
+   if ngd EQ 0 then stop
+   lines[gdfit].wave_fit = x_calcfit(lines[gdfit].pix, fitstr = tcalib)
+   state.lines = lines
+   return
+ end
+
+
+;; This is the old Algorithm which was replaced by JFH on 05/29/08
+; pro x_identify_AutoID, state
+
+; common x_identify_fit
+
+;   widget_control, /hourglass
+
+;   ;; Find Peaks
+;   x_fndpeaks, state.fx, peak, NSIG=5., MSK=spec_msk
+;   npk = n_elements(peak)
+
+;   ; Add to lines
+;   for i=0L,npk-1 do begin
+;       ;; Require that a calibration line lies within +/- 5 pixels
+;       gdln = where( (state.lines[0:state.nlin-1].wave - $
+;                      state.wave[(peak[i]-5)>0])* $
+;                     (state.lines[0:state.nlin-1].wave - $
+;                      state.wave[(peak[i]+5)<(state.norg-1)]) LE 0 AND $
+;                     state.lines[0:state.nlin-1].flg_qual NE 0, nmatch)
+;       if nmatch NE 0 then begin
+;           ;; Find the closest calibration line
+;           sep = abs(state.lines[gdln].wave - state.wave[peak[i]])
+;           minsep = min(sep, imin)
+;           state.lines[gdln[imin]].flg_plt = 1 
+;           ;; Center up on the peak
+;           center = peak[i]
+;           state.lines[gdln[imin]].pix = center 
+;           state.lines[gdln[imin]].wave_fit = x_calcfit(center, FITSTR=tcalib)
+;       endif
+;   endfor
+
+;   return
+; end
 
 ;;;;;;;;;
 ;  Auto :: Finds a small set of lines given A/pix or km/s/pix
@@ -588,8 +699,13 @@ common x_identify_fit
   center = fltarr(npk)
   for i=0L,npk-1 do begin
       ; Center up on the peak
-      center[i] = x_centspln(state.xdat[peak[i]-3:peak[i]+3], $
-                          state.fx[peak[i]-3:peak[i]+3])
+      if not state.fweight then begin
+          center[i] = x_centspln(state.xdat[peak[i]-3:peak[i]+3], $
+                                 state.fx[peak[i]-3:peak[i]+3])
+      endif else begin ;; Flux weighting
+          center[i] = x_centfwgt(state.xdat[peak[i]-5:peak[i]+5], $
+                                 state.fx[peak[i]-5:peak[i]+5])
+      endelse
       ; Catch bad centroids (Not applicable anymore)
       if center[i] EQ -1 OR abs(center[i]-state.xdat[peak[i]]) GT 1. then begin
           center[i] = state.xdat[peak[i]]
@@ -796,10 +912,10 @@ pro x_identify_psfile, state
   !p.charthick = 3
 
   device, decompose=0
-  ps_open, file='idl.ps', font=1, /color
+  x_psopen, 'idl.ps', /maxs
   state.psfile = 1
   x_identify_UpdatePlot, state
-  ps_close, /noprint, /noid
+  x_psclose
   device, decomposed=svdecomp
   state.psfile = 0
   !p.thick = 1
@@ -809,74 +925,211 @@ end
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-pro x_identify, spec, calib, XSIZE=xsize, YSIZE=ysize, LINELIST=linelist, $
-                REJ=rej, AUTO=auto, DISP=disp, LINEROOT=lineroot, $
-                DEBUG=debug, MSK=msk, OUTLIN=outlin, $
-                REDBLUE=redblue, WAVE=wave, FLUX=flux, INLIN=inlin
+pro x_identify_match, state
 
 common x_identify_fit
 
+  ;; Orig wave
+  wav = x_calcfit(dindgen(mtch_npix*state.bin_ratio), FITSTR=mtch_fitstr)
+  if wav[mtch_npix/2] LT 10 then wav = 10^wav
 
-;
+  ;; Resize
+  mspec_pix = state.norg + state.mtch_stretch
+  
+  mtch_wav = congrid(wav, mspec_pix, /interp)
+  mtch_sspec = congrid(mtch_spec, mspec_pix, /interp)
+  
+  ;; Shift
+  mtch_wav = shift(mtch_wav,state.mtch_shift)
+  mtch_sspec = shift(mtch_sspec,state.mtch_shift)
+
+  return
+end
+  
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+pro x_identify_mapply, state
+
+common x_identify_fit
+
+  ;; Grab the good set of pixels
+  dwv = mtch_wav - shift(mtch_wav,1)
+  flip = 0
+  if median(dwv) LT 0 then begin
+      dwv = (-1)*dwv 
+      flip = 1
+  endif
+  a = where(dwv LT 0,na)
+  if na EQ 0 then begin
+      strt = 0
+      mp = n_elements(mtch_wav)
+  endif else begin
+      ;; JXP -- Modified :: June 2009
+      ;; JXP -- Modified :: October 2009
+;      if a[0] GT abs(state.mtch_shift)*3 then begin
+      ;; JXP -- Modified :: December 2009  -- Not sure why I had two
+;;              choices here.  Probably needed for something..
+      if state.mtch_shift LT 0 then begin
+          strt = 0 
+          mp = a[0]
+      endif else begin
+          strt = a[0]
+          mp = n_elements(mtch_wav)
+      endelse
+  endelse
+  np = mp - strt 
+  ;; Fit
+  ;;svn = tcalib.nord
+  ;;tcalib.nord = 3
+  fit = x_fitrej(strt+dindgen(np), mtch_wav[strt:mp-1], FITSTR=tcalib)
+;  x_splot, strt+dindgen(np), mtch_wav[strt:mp-1]-fit, /bloc
+;;JFH I think changing the tcalib.nord to the original value before
+;;the next fit is a bug, not sure why it was not
+;;triggered before. I've modified the code to set it back after the 
+;; the calcfit below
+  ;;tcalib.nord = svn
+
+  ; Set wavelengths
+  state.wave = x_calcfit(state.xdat, FITSTR=tcalib)
+  state.svwvxymnx[0] = min(state.wave, MAX=mxwv)
+  state.svwvxymnx[2] = mxwv
+
+  flg_calib = 1
+  WIDGET_CONTROL, state.pixwav_id, set_value = 1 ; Set switch to wavelength
+
+  ; PLOT AS WAVE
+  if state.flg_plot MOD 2 EQ 0 then state.flg_plot = state.flg_plot + 1
+  state.xymnx[0] = min(state.wave, max=mx)
+  state.xymnx[2] = temporary(mx)
+
+  ; RESET FLIP
+  state.flg_flip = 0
+
+  ; ID LINES
+  gdlin = where(state.lines.flg_plt MOD 2 EQ 1, count)
+  if count NE 0 then $
+    state.lines[gdlin].wave_fit = x_calcfit(state.lines[gdlin].pix,$
+                                            FITSTR=tcalib)
+  state.flg_mtch = 0
+
+  ; DISP/RES
+  x_identify_SetDispRes, state
+
+  return
+end
+  
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+pro x_identify, spec, calib, XSIZE=xsize, YSIZE=ysize, LINELIST=linelist $
+                , DISP = disp, LINEROOT = lineroot, MSHIFT = mshift $
+                , DEBUG = debug, MSK = msk, OUTLIN = outlin  $
+                , MSTRETCH = mstretch, REDBLUE = redblue, WAVE = wave $
+                , FLUX = flux, INLIN = inlin, MSPEC = mspec $
+                , MFITSTR = mfitstr, LINPIX = linpix $ 
+                , incalib = incalib, YLOG = ylog, PKWDTH = PKWDTH $
+                , MXOFF = MXOFF, PKSIG = PKSIG, TOLER = TOLER  $
+                , MAXQUAL = MAXQUAL, THIN = THIN, FWEIGHT = FWEIGHT $
+                , ICLSE = ICLSE $
+                , OUTSHIFT=outshift, FORDR = FORDR, OUTSTRETCH=outstretch
+
+common x_identify_fit
+
   if  N_params() LT 1  then begin 
     print,'Syntax - ' + $
              'x_identify, spec, calib, LINELIST=, XSIZE=, YSIZE= '
-    print, '     /REJ, /AUTO, DISP=, LINEROOT=, /FLUX, INLIN=, WAVE=, /REDBLUE [v1.1]'
+    print, '     /REJ, DISP=, LINEROOT=, /FLUX, INLIN=, WAVE=, /REDBLUE, /YLOG [v1.1]'
     return
   endif 
 
-; Initialize the common block
-  x_identify_initcommon
-  if keyword_set( MSK ) then spec_msk = msk
+  if not keyword_set( MSHIFT ) then mshift = 0L
+  if not keyword_set( MSTRETCH ) then mstretch = 0L
+  if not keyword_set( BIN_RATIO ) then bin_ratio = 1.
 
+  if not keyword_set( MXOFF ) then mxoff = 3L
+  if not keyword_set( PKSIG ) then pksig = 5.
+  IF NOT KEYWORD_SET(TOLER) THEN TOLER = 2.0D
+  IF NOT KEYWORD_SET(ICLSE) THEN ICLSE = 4.0D
+  IF NOT KEYWORD_SET(PKWDTH) THEN PKWDTH = 3L
+  IF NOT KEYWORD_SET(MAXQUAL) THEN MAXQUAL = 99999L
+  IF NOT KEYWORD_SET(THIN) THEN THIN = 0
+  IF NOT KEYWORD_SET(FWEIGHT) THEN FWEIGHT = 0
+  IF NOT KEYWORD_SET(FORDR) THEN FORDR = 9
+
+  flg_mtch = 0
+  if keyword_set( MSPEC ) then begin
+      mtch_spec = mspec
+      mtch_npix = n_elements(mspec)
+      if keyword_set( MFITSTR ) then begin
+          mtch_fitstr = MFITSTR
+          flg_mtch = 1
+          incalib = mtch_fitstr ;; JFH 05/08 this will use mfitstr for reid
+      endif
+  endif
+
+; Initialize the common block
+  x_identify_initcommon, incalib = incalib
+  if keyword_set( MSK ) then spec_msk = msk else begin
+      if keyword_set(SPEC_MSK) then delvarx, spec_msk
+  endelse
 ;  Optional Keywords
 
   if not keyword_set( LINEROOT ) then $
     lineroot = getenv('XIDL_DIR')+'/Spec/Arcs/Lists/'
-  if keyword_set( FLUX ) then linpix = 10L else linpix=5L
+  if not keyword_set(LINPIX) then $
+    if keyword_set( FLUX ) then linpix = 10L else linpix=5L
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Non-interactive
-
-  if keyword_set (AUTO) then begin
-      print, 'Not yet!'
-      return
-  endif else begin
-;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; INTERACTIVE
 
-  if not keyword_set( XSIZE ) then    xsize = 1200
-  if not keyword_set( YSIZE ) then    ysize = 800
+  device, get_screen_size=ssz
+;  if not keyword_set( XSIZE ) then    xsize = ssz[0]-200
+  if not keyword_set( XSIZE ) then begin
+      if ssz[0] gt 2*ssz[1] then begin    ;in case of dual monitors
+          ssz[0]=ssz[0]/2      
+          ; force aspect ratio in case of different screen resolution,
+          ; assumes widest resolution used is a 1.6 aspect ratio.
+          if ssz[0]/ssz[1] lt 1.6 then ssz[1]=ssz[0]/1.6 
+      endif
+      xsize = ssz[0]-200
+  endif
+  if not keyword_set( YSIZE ) then    ysize = ssz[1]-200
+;  if not keyword_set( XSIZE ) then    xsize = 1200
+;  if not keyword_set( YSIZE ) then    ysize = 800
 
   tmp = { arclinstrct }
 
 ;    STATE
   state = { $
-            fx: spec, $
-            xdat: findgen(n_elements(spec)), $
-            wave: dblarr(n_elements(spec)), $
-            norg: n_elements(spec), $
-            lines: replicate(tmp, 20000), $  ; LINES
-            nlin: 0L, $
-            linpix: linpix, $
-            nlist: 0, $
-            listid: 0, $
-            lists: strarr(100), $
-            lineroot: lineroot, $  ; Path to lists
-            cwlabel: strarr(10000), $
-            flg_plot: 0, $  ; 0 = Pixel, 1 = Wavelength
-            flg_disp: 0, $  ; 0= Dispersion, 1=Resolution
-            disp: 0.d, $
+          fx: spec, $
+          xdat: findgen(n_elements(spec)), $
+          wave: dblarr(n_elements(spec)), $
+          norg: n_elements(spec), $
+          lines: replicate(tmp, 20000L), $ ; LINES
+          nlin: 0L, $
+          ylog: keyword_set(YLOG), $
+          linpix: linpix, $
+          nlist: 0, $
+          listid: 0, $
+          lists: strarr(100), $
+          lineroot: lineroot, $ ; Path to lists
+          cwlabel: strarr(10000), $
+          flg_plot: 0, $ ; 0 = Pixel, 1 = Wavelength
+          flg_disp: 0, $ ; 0= Dispersion, 1=Resolution
+          flg_mtch: flg_mtch, $ ; 0= Dispersion, 1=Resolution
+          mtch_shift: mshift, $
+          mtch_stretch: mstretch, $
+          bin_ratio: bin_ratio, $
+          disp: 0.d, $
             flg_bluered: 0, $  ; 0= Blue-Red; 1=Red-Blue
             pos: [0.1,0.1,0.95,0.95], $ ; Plotting
             svxymnx: fltarr(4), $
@@ -901,10 +1154,23 @@ common x_identify_fit
             guessbut_id: 0L, $
             resdispb_id: 0L, $
             resdispv_id: 0L, $
+            shift_id: 0L, $
+            stretch_id: 0L, $
+            mtchb_id: 0L, $
             error_msg_id: 0L, $
-            gdpix: intarr(200000) $
+            gdpix: intarr(200000), $
+            toler: toler, $
+            pksig: pksig, $
+            pkwdth: pkwdth, $
+            mxoff: mxoff, $
+            fordr: fordr, $
+            maxqual: maxqual, $
+            thin: thin, $
+          fweight: fweight $
+          , iclse: iclse $
           }
-
+  IF KEYWORD_SET(incalib) THEN state.wave = x_calcfit(state.xdat $
+                                                      , FITSTR = tcalib)
 
   ; svxymnx
   state.svxymnx = [min(state.xdat)-0.01*abs(max(state.xdat)-min(state.xdat)), $
@@ -913,8 +1179,7 @@ common x_identify_fit
                   max(state.fx)+0.01*abs(max(state.fx)-min(state.fx))]
   state.svwvxymnx = state.svxymnx
 ;    WIDGET
-  base = WIDGET_BASE( title = 'x_identify: Interactive Mode', /column, $
-                    xoffset=300, yoffset=200)
+  base = WIDGET_BASE( title = 'x_identify: Interactive Mode', /column)
   state.base_id = base
   
 ;      Toolbar
@@ -943,7 +1208,16 @@ common x_identify_fit
 
   ; Set initial linelist
   if keyword_set( LINELIST ) then begin
-      init = where(strtrim(linelist,2) EQ a, count)
+     afiles = fileandpath(a)
+     init = where(strtrim(fileandpath(linelist), 2) EQ afiles, count)
+      if count EQ 0 then begin
+          aflg = bytarr(nlist)
+          for ii=0L,nlist-1 do begin
+              atrim = strmid(a[ii],strpos(a[ii],'/',/reverse_sea)+1)
+              if strmatch(linelist,atrim) then aflg[ii]=1B
+          endfor
+          init = where(aflg, count)
+      endif
       if count NE 0 then begin
           widget_control, state.linelist_id, set_list_select=init[0] 
           state.listid = init[0]
@@ -975,6 +1249,18 @@ common x_identify_fit
                                     uvalue='GUESS', sensitive=0)
   if state.disp GT 0 then widget_control, state.guessbut_id, /sensitive
   
+  mtchbase = WIDGET_BASE(toolbar, /column, /base_align_center, /frame, $
+                     /align_center)
+  state.shift_id = CW_FIELD(mtchbase, value=state.mtch_shift, xsize=5, ysize=1, $
+                            title='SHIFT', $
+                            /return_events, uvalue='SHIFT')
+  state.stretch_id = CW_FIELD(mtchbase, value=state.mtch_stretch, xsize=5, ysize=1, $
+                            title='STRETCH', /return_events, uvalue='STRETCH')
+  state.mtchb_id = CW_BGROUP(mtchbase, ['Match','Apply'], $ 
+                             /nonexclusive, /frame, $
+                             uvalue='MTCHB')
+  if state.flg_mtch EQ 1 then $
+    widget_control, state.mtchb_id, set_value=[1,0]
   
 ;        Help
   strhelp = strarr(50)
@@ -993,6 +1279,7 @@ common x_identify_fit
              's,s -- Zoom',$
              'Lines::::::::::::::::: ',$
              'm -- mark a line (LMB)',$
+             'M -- mark a line (enter approx wave)',$
              'F -- Fit current lines',$
              'L -- Auto ID more lines (given a fit)',$
              'A -- Auto ID all lines',$
@@ -1031,6 +1318,7 @@ common x_identify_fit
                               value = '')
 ;      Done
   done = WIDGET_BUTTON(toolbar, value='Done',uvalue='DONE', /align_right)
+  flip = WIDGET_BUTTON(toolbar, value='FLIP',uvalue='FLIP', /align_right)
   
 ; Realize
   WIDGET_CONTROL, base, /realize
@@ -1065,7 +1353,9 @@ common x_identify_fit
       state.lines[0:state.nlin-1] = inlin
   endif
 
+  if state.flg_mtch EQ 1 then x_identify_match, state
   x_identify_UpdatePlot, state
+
 
 ; Debug
   if keyword_set( DEBUG ) then begin
@@ -1085,18 +1375,22 @@ common x_identify_fit
 ; Send to the xmanager
   xmanager, 'x_identify', base
   
+  ;;MF save here tcalib
+  ;save, tcalib, filename='tcal.idl'
+  
+
 ; Passing back
   
-  endelse
-
   calib = tcalib
 ;  Wavelength array
   if arg_present(WAVE) AND flg_calib NE 0 then $
       wave = x_calcfit(findgen(n_elements(spec)), FITSTR=tcalib)
-  delvarx, tcalib
+  ;delvarx, tcalib
 
   ;; OUTLIN (good lines)
-  outlin = temporary(gd_lines)
+  if arg_present(OUTLIN) then outlin = temporary(gd_lines)
+  if arg_present(OUTSHIFT) then outshift = out_shift
+  if arg_present(OUTSTRETCH) then outstretch = out_stretch
 
   return
 end

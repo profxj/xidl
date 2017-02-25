@@ -1,21 +1,21 @@
 ;+ 
 ; NAME:
 ; f2dpoly
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
-;    Creates basis functions of a 2dpoly for feeding into SVDFIT
-;      Requires an initial call with m=-1 to set up the common block
-;      This code even makes my head spin!
+;    Creates basis functions of a 2dpoly for feeding into SVDFIT for
+;    2D surface fitting. Requires an initial call with m=-1 to set 
+;    up the common block.  This code even makes my head spin!
 ;
 ; CALLING SEQUENCE:
 ;   
-;   fpoly = f2dpoly(s, m)
+;   fpoly = f2dpoly(s, m, XVAL=, YVAL=, FLG=)
 ;
 ; INPUTS:
 ;   s          - scalar or vector identifying the index number
 ;   m          - Total order (nx*ny) of the polynomial (-1 to
-;                initialize)
+;                initialize; -2 to deconstruct)
 ;
 ; RETURNS:
 ;   fpoly      - Basis functions
@@ -23,6 +23,10 @@
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
+;  XVAL=  -- Dummy array used to initialize the common block
+;  YVAL=  -- Dummy array used to initialize the common block
+;  FLG=  -- Number of coefficients in the X direction.   
+;           If FLG=0, then it is assumed that nx=ny=sqrt(m)
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -34,7 +38,7 @@
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
 ;
-	; REVISION HISTORY:
+; REVISION HISTORY:
 ;   31-Jan-2002 Written by JXP
 ;-
 ;------------------------------------------------------------------------------
@@ -48,7 +52,7 @@ common f2dpoly_common, f2dpoly_x, f2dpoly_y, f2dpoly_flg
 ;
   if  N_params() LT 2  then begin 
     print,'Syntax - ' + $
-             'basis = f2dpoly(s, m) [v1.0]'
+             'basis = f2dpoly(s, m) [v1.1]'
     return, -1
   endif 
 

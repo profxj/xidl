@@ -4,21 +4,23 @@
 ;   Version 1.0
 ;
 ; PURPOSE:
-;    Launches a cw_field and grabs input from the user
+;    Launches a GUI which can be used to plot and print some 
+;  simple info from the galaxy survey.
 ;
 ; CALLING SEQUENCE:
-;   
-;   string = ovi_summary(title)
+; ovi_summary, ovi, MXY=mxy, REDSHIFT=redshift
 ;
 ; INPUTS:
-;   title - Title
+;   ovi  -- Galaxy survey
 ;
 ; RETURNS:
-;   string - String
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
+;  /REDSHIFT -- List only those galaxies with redshift measurements
+;  MXY=      -- Maximum number of galaxies to show without scrolling
+;               [Default: 30L]
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -361,7 +363,7 @@ common ovi_summary_common
 ;
   if  N_params() LT 1  then begin 
     print,'Syntax - ' + $
-             'ovi_summary, ovi_fil [v1.0]'
+             'ovi_summary, ovi, MXY=, REDSHIFT= [v1.1]'
     return
   endif 
 

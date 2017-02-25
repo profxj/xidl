@@ -1,14 +1,14 @@
 ;+ 
 ; NAME:
 ; x_llsfit
-;    Version 1.0
+;    Version 1.1
 ;
 ; PURPOSE:
-;   Plots a series of spectra to allow a quick check
+;   Implements a GUI to perform a N(HI) fit to a LLS.  I wonder
+;  if this really works right now.
 ;
 ; CALLING SEQUENCE:
-;   
-;   x_llsfit, wfccd, maskid, expsr, XSIZE=, YSIZE=
+;   x_llsfit, yin, zin, INFLG=
 ;
 ; INPUTS:
 ;
@@ -17,8 +17,6 @@
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
-;   XSIZE      - Size of gui in screen x-pixels (default = 1000)
-;   YSIZE      - Size of gui in screen y-pixels (default = 600)
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -385,29 +383,28 @@ end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-pro x_llsfit, yin, zin, GAL=gal, VMNX=vmnx, HEAD=head, INFLG=inflg, $
-              TITLE=title, NPLT=nplt, NRM=nrm, XSIZE=xsize, YSIZE=ysize
+pro x_llsfit, yin, zin, ysin=ysin, INFLG=inflg, NPLT=nplt, NRM=nrm
 
 ;
   if  N_params() LT 2  then begin 
     print,'Syntax - ' + $
-      'x_llsfit, spec, zin, /GAL, HEAD=, XMNX=, INFLG=, TITLE=, /NRM'
-    print, '      (v1.0)'
+      'x_llsfit, spec, zin, INFLG=, NPLT=, /NRM  [v1.1]'
     return
   endif 
 
 ;  Optional Keywords
-
-  if not keyword_set( XSIZE ) then xsize = 600
-  if not keyword_set( YSIZE ) then ysize = 500
-  if not keyword_set( VMNX ) then vmnx = [-300., 300.]
+  device, get_screen_size=ssz
+  if not keyword_set( XSIZE ) then    xsize = ssz[0]-300
+  if not keyword_set( YSIZE ) then    ysize = ssz[1]-400
   if not keyword_set( NPLT ) then nplt = 15L
   if not keyword_set( FWHM ) then fwhm = 4.
 
 ; Read in the Data
   if not keyword_set( INFLG ) then inflg = 0
-  ydat = x_readspec(yin, INFLG=inflg, /fscale, head=head, NPIX=npix, $
+  ydat = x_readspec(yin, INFLG=inflg, head=head, npix=npix, $
                     WAV=xdat, FIL_SIG=ysin, SIG=ysig)
+
+  
 
   tmp = { velpltstrct }
   tmp1 = { abslinstrct }
@@ -439,7 +436,7 @@ pro x_llsfit, yin, zin, GAL=gal, VMNX=vmnx, HEAD=head, INFLG=inflg, $
             conti: 1., $  ; ALL STUFF
             curlin: 0L, $
             all_zabs: zin, $
-            vmnx: vmnx, $
+            vmnx: [-1000.,1000.], $
             ntrans: 0L, $  ; PLOTTING LINES
             all_velo: dblarr(5000, 100), $  
             all_pmnx: lonarr(3, 100), $  
@@ -473,7 +470,6 @@ pro x_llsfit, yin, zin, GAL=gal, VMNX=vmnx, HEAD=head, INFLG=inflg, $
   if keyword_set( YSIG ) then state.sig = temporary(ysig)
 
 ; LINELIST for VELPLT
-
   resolve_routine, 'x_specplot', /NO_RECOMPILE
   resolve_routine, 'x_fitline', /NO_RECOMPILE
   x_llsfit_icmmn
@@ -482,7 +478,7 @@ pro x_llsfit, yin, zin, GAL=gal, VMNX=vmnx, HEAD=head, INFLG=inflg, $
   ;; VELPLT
   if not keyword_set( tlist ) then $
     tlist = getenv('XIDL_DIR')+'/LLS/Lines/LLSvp_std.lst'
-  readcol, tlist, trans
+  readcol, tlist, trans, /sil
   state.ntrans = n_elements(trans)
   srt = sort(trans)
   state.velplt[0:state.ntrans-1].wrest = trans[reverse(srt)]

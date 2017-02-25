@@ -1,0 +1,6 @@
+1. Dichroic wavelength
+2. Detector names
+3. Decide whether to include the figure on Sensitivity
+4. Acknowledgments
+5. Fill in the order numbers in Fig 9
+6. Decide on whether to include Fig 18.

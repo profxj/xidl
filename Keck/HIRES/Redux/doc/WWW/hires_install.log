@@ -1,0 +1,48 @@
+1)  Setup
+
+vi .cshrc
+
+<ADD>
+
+setenv IDLUTILS_DIR ~/idl/djs        # You might use idlutils instead of djs 
+setenv IDLSPEC2D_DIR ~/idl/idlspec2d 
+setenv XIDL_DIR ~/idl/xidl  
+setenv IDL_PATH +$IDL_DIR\/lib:+$IDL_DIR\/examples:+~/idl:+pro/
+  <The last line require IDL_DIR is set properly.  This is your job!>
+
+2) IDLUTILS (a.k.a. djs)
+
+Grab and unpack the tar file or CVS distribution from the SDSS website:
+http://spectro.Princeton.EDU/idlspec2d_install.html
+
+cd idlutils
+bin/evilmake clean
+bin/evilmake 
+
+
+3) IDLSPEC2D
+
+Grab and upack the tar file or CVS distribution from the SDSS website:
+http://spectro.Princeton.EDU/idlspec2d_install.html
+
+cd idlspec2d
+$IDLUTILS_DIR/bin/evilmake clean
+$IDLUTILS_DIR/bin/evilmake 
+
+
+4) XIDL
+
+Grab and unpack the tar file from my website:
+http://www.ucolick.org/~xavier/IDL/index.html
+
+cd xidl
+bin/evilmake clean
+bin/evilmake 
+
+5) Run IDL and try  
+
+  IDL> .com x_splot
+
+and 
+
+  IDL> a = djs_median(findgen(100,100),1)

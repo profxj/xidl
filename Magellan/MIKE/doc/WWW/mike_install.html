@@ -1,0 +1,130 @@
+<html>
+ 
+<head>
+<TITLE>Installing XIDL</TITLE>
+</head>
+ 
+<body>
+<H1>Installing XIDL</H1>
+<P>
+<STRONG>Last modified: </STRONG>March 31 2005 by JXP.<P>
+ 
+<HR>
+ 
+<a href=mike_install.log>Here</a> is a 'logfile' of my steps to install all of the IDL code related to MIKE.
+<HR>
+<H4>
+<UL>
+<LI> SETUP
+  <UL>
+ 	<LI> Environmental variables:  The code(s) require that a number of
+        environmental variables are setup to install and run the code.
+	<LI> One tends to keep all IDL codes together in their home directory
+		with a top level directory like ~/idl/.  All of the codes
+		are then placed underneath this directory.  I will refer to 
+		this directory as $HOMEIDL_DIR.
+	  <LI> You will need to set several environment variables 
+	  named IDLSPEC2D_DIR, IDLUTILS_DIR, MIKE_DIR, and 
+  	  XIDL_DIR which point to the directories
+	  for the Sloan codes and my code. 
+	  I suggest you add them right into your .cshrc file.  Also, you
+	  will need to update your IDL_PATH as necessary.
+	  <LI> Here are the entires in my .local_cshrc file
+	<UL>
+	   <LI> setenv IDLUTILS_DIR ~/idl/idlutils 
+	   <LI> setenv IDLSPEC2D_DIR ~/idl/idlspec2d 
+	   <LI> setenv XIDL_DIR ~/idl/xidl  
+	   <LI> setenv IDL_PATH +$IDL_DIR\/lib:+$IDL_DIR\/examples:+~/idl:+pro/
+	   <LI> setenv MIKE_DIR ~/idl/MIKE
+</UL> </UL>
+
+<HR>
+<LI> IDLUTILS (djs) IDL package
+  <UL>
+	<LI> Built and distributed by David J. Schlegel
+	<LI> Public version located here: 
+	<a href=http://spectro.Princeton.EDU/idlspec2d_install.html>Princeton</a>
+	<LI> Alternate version <a href=http://www.ucolick.org/~xavier/IDL/djs.tar.gz>Lick</a> (unpacks into djs instead of idlutils)
+	<LI> <I>WARNING!! :: This package contains the most up-to-date version
+	  of the Goddard libraries (GHRS, astron).  If you have old versions
+	  of that code you should remove it now.</i>
+	<LI> Installing...
+	<UL>		
+	  <LI> Copy the package into $HOMEIDL_DIR
+	  <LI> Unpack the distribution (my version unpacks into djs/)
+	  <LI> Make sure IDLUTILS_DIR is set! <p>
+	  (e.g. prompt> setenv IDLUTILS_DIR ~/idl/idlutils)
+	  <LI> Change directory <p>
+	  prompt> cd idlutils/ [(or djs]
+	  <LI> Clean the directories <p>
+	  prompt> bin/evilmake clean
+	  <LI> Run the make file (this should detect your operating system): <p>
+	  prompt> bin/evilmake
+	</UL>
+   </UL>
+
+<HR>
+<LI> idlspec2d IDL package
+   <UL>
+	<LI> Built and distributed by David J. Schlegel + Scott Burles
+	<LI> Public version located here: 
+	<A href=http://spectro.Princeton.EDU/idlspec2d_install.html>Princeton</a>
+	<LI> Alternate version: 
+	<A href=http://www.ucolick.org/~xavier/IDL/idlspec2d.tar.gz>Lick</a>
+	<LI> Installing...
+	<UL>
+	  <LI> Copy the package into $HOMEIDL_DIR
+	  <LI> Unpack the distribution (my version unpacks into idlspec2d/)
+	  <LI> prompt> cd idlspec2d/
+	  <LI> Make sure IDLSPEC2D_DIR is set!
+	  (e.g. $>$ setenv IDLSPEC2D_DIR ~/idl/idlspec2d)
+	  <LI> Clean the directories (use the evilmake from IDLUTILS) <p>
+	  prompt> $IDLUTILS_DIR/bin/evilmake clean   
+	  <LI> Run the make file (this should detect your operating system): <p>
+	  prompt> $IDLUTILS_DIR/bin/evilmake      
+	</UL>
+   </UL>
+
+<HR>
+<LI> XIDL package
+   <UL>
+	<LI> Built and distributed by Jason X. Prochaska
+	<LI> Public tarball version located here: 
+	<a href=http://www.ucolick.org/~xavier/IDL/xidl.tar.gz>Lick</a>
+        <LI> If you wish to modify the code yourself, I highly recommend you
+        contact me about accessing the CVS distribution.
+	<LI> Installing...
+	<UL>
+	  <LI> Copy the package into $HOMEIDL_DIR
+	  <LI> Unpack the distribution (unpacks into xidl/) and enter the directory <p>
+	  prompt> gtar -zxvf xidl.tar.gz <p>
+	  prompt> cd xidl/
+	  <LI> Clean the directories <p>
+	  prompt> bin/evilmake clean
+	  <LI> Run the make file (this should detect your operating system):<p>
+	  prompt> bin/evilmake
+	</UL>
+        <LI> Updating
+        <UL>
+           <LI> Simply grab the new tar file, unpack anew and rerun 
+           'bin/evilmake' and 'bin/evilmake clean'
+           <LI> WARNING: This will overwrite any changes you have made to 
+           these codes!!!  Use the CVS distribution to avoid this (contact
+           me)
+        </UL>
+   </UL>
+
+<HR>
+<LI> MIKE package
+   <UL>
+	<LI> Built and distributed by Scott Burles, Jason X. Prochaska and
+	Rebecca Bernstein.
+	<LI> Public version located here: 
+	<a href=Code/index.html>MIKE code</a>
+   </UL>
+
+</H3>
+	
+</body>
+</html>
+

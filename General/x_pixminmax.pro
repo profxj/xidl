@@ -1,35 +1,37 @@
 ;+ 
 ; NAME:
 ; x_pixminmax
+;  Version 1.1
 ;
 ; PURPOSE:
+;  Find pixels in the wavelength array corresponding to the redshift
+;  and rest wavelength.
 ;
 ; CALLING SEQUENCE:
 ;   
-;   x_pixminmax, ra, dec, rad, decd, /ARCS, /FLIP
+;   x_pixminmax, wave, wrest, zabs, [vmin, vmax], PIXMIN=, PIXMAX=, VELO=
 ;
 ; INPUTS:
-;   ra, dec    - RA and DEC in in RR:RR:RR.R -DD:DD:DD.D format 
-;                 Colons are required as separators
-;   rad, decd  - RA and DEC in decimal degrees (double)
+;  wave -- Wavlength array
+;  wrest -- Rest wavelength of transition
+;  zabs -- Absorption redshift
+;  [vmin,vmax] -- Velocity minimum and maximum
 ;
 ; RETURNS:
 ;
 ; OUTPUTS:
-;   ra, dec    - RA and DEC in in RR:RR:RR.R -DD:DD:DD.D format 
-;                 Colons are required as separators
-;   rad, decd  - RA and DEC in decimal degrees (double)
 ;
 ; OPTIONAL KEYWORDS:
-;   ARCS - Outputs in arcseconds
-;   FLIP - Gives RA and DEC from decimal RA,DEC
 ;
 ; OPTIONAL OUTPUTS:
+;  PIXMIN= -- Pixel value corresponding to VMIN
+;  PIXMAX= -- Pixel value corresponding to VMAX
+;  VELO= -- Velocity array
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   x_pixminmax, '21:12:23.1', '-13:13:22.2', rad, decd
+;   x_pixminmax, wave, 1808.0126d, 1.5, -100., 50., PIXMIN=pixmn
 ;
 ; PROCEDURES CALLED:
 ;
@@ -44,7 +46,7 @@ pro x_pixminmax, wave, wrest, zabs, vmin, vmax, $
   if (N_params() LT 3) then begin 
     print,'Syntax - ' + $
              'x_pixminmax, wave, wrest, zabs, [vmin,vmax], PIXMIN=, PIXMAX=, '
-    print, '              VELO= [v1.0]'
+    print, '              VELO= [v1.1]'
     return
   endif 
 
@@ -54,8 +56,10 @@ pro x_pixminmax, wave, wrest, zabs, vmin, vmax, $
 
   velo = (wave-wrest*(1+zabs))*spl/( wrest*(1+zabs) )
   ;; PIXMIN, PIXMAX
-  if arg_present(PIXMIN) AND keyword_set(VMIN) then mn = min(abs(velo-vmin),pixmin)
-  if arg_present(PIXMAX) AND keyword_set(VMAX) then mn = min(abs(velo-vmax),pixmax)
+  if arg_present(PIXMIN) AND (n_elements(VMIN) NE 0) then $
+    mn = min(abs(velo-vmin),pixmin)
+  if arg_present(PIXMAX) AND (n_elements(VMAX) NE 0) then $
+    mn = min(abs(velo-vmax),pixmax)
 
 
   return

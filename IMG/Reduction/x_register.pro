@@ -1,27 +1,29 @@
 ;+ 
 ; NAME:
-; x_register   Version 1.0
+; x_register   
+;   Version 1.1
 ;
 ; PURPOSE:
-;    Registers a set of images
+;    Given a set of offsets between images, this routine will
+;   create final images that are registered.
 ;
 ; CALLING SEQUENCE:
 ;   
-;   x_register, img, offsets, GOODREG=, OUTPTH=, NOSIG=
+;   x_register, img, offsets, GOODREG=, OUTPTH=
 ;
 ; INPUTS:
-;   img -- Array of image names (assumes _sig extensions for sig
+;   img -- String array of image names (assumes _sig extensions for sig
 ;          files)
-;   offsets -- Integer offsets
+;   offsets -- Integer offsets between images
 ;
 ; RETURNS:
 ;
 ; OUTPUTS:
-;   outimg -- Writes new images in current dir or OUTPTH
 ;
 ; OPTIONAL KEYWORDS:
 ;   goodreg -- Region of each image (4 int array) defining good data
 ;               Formatted (x0,x1,y0,y1)
+;   OUTPTH  -- Output path for the images
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -61,14 +63,6 @@ pro x_register, img, offsets, GOODREG=goodreg, OUTPTH=outpth
 
 ;  GOODREG
 
-  if not keyword_set( GOODREG ) then begin
-      goodreg = intarr(4,nimg)
-      for i=0,nimg-1 do begin
-          sz = size(img[i], /dimensions)
-          goodreg[1,i] = sz[0]-1
-          goodreg[3,i] = sz[1]-1
-      endfor
-  endif
 
 ; OUTPTH
 
@@ -87,13 +81,29 @@ pro x_register, img, offsets, GOODREG=goodreg, OUTPTH=outpth
       y2 = y2 < (goodreg[3,i] + offsets[1,i])
   endfor
 
+  ;; GOODREG
+  if not keyword_set( GOODREG ) then begin
+      goodreg = lonarr(4,nimg)
+      flg_good = 1
+  endif else flg_good = 0
+
 ; Read and copy!
 
   for i=0,nimg-1 do begin
 
       ; Read Flux img
 
-      din = mrdfits(img[i],0,h1, /fscale)
+      din = xmrdfits(img[i],0,h1, /fscale)
+
+      ;; GOODREG
+      if flg_good then begin
+          for i=0,nimg-1 do begin
+              sz = size(din, /dimensions)
+              goodreg[1,i] = sz[0]-1
+              goodreg[3,i] = sz[1]-1
+          endfor
+      endif
+
       dout = din[x1-offsets[0,i]:x2-offsets[0,i], $
                  y1-offsets[1,i]:y2-offsets[1,i]] 
 
@@ -113,7 +123,7 @@ pro x_register, img, offsets, GOODREG=goodreg, OUTPTH=outpth
           limg = strlen(img[i])
           sigfil = strjoin([strmid(img[i],0,limg-5), $
                             '_sig.fits'])
-          din = mrdfits(sigfil,0,h1, /fscale)
+          din = xmrdfits(sigfil,0,h1, /fscale)
           dout = din[x1-offsets[0,i]-1:x2-offsets[0,i]-1, $
                      y1-offsets[1,i]-1:y2-offsets[1,i]-1] 
           Sfil = strjoin([outpth, $

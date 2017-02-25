@@ -1,25 +1,32 @@
 ;+ 
 ; NAME:
 ; ovi_comball
-;    Version 1.0
+;    Version 1.1
 ;
 ; PURPOSE:
-;   Converts SDSS eigenfunctions into WFCCD
+;   Takes a list of files representing all of the observations for
+; a given field and combines them to make one galaxy summary file.
+; Unless /NOUNIQ is set, the routine will check that multiple observations
+; of the same object gave the same redshift and complain if not the case.
 ;
 ; CALLING SEQUENCE:
-;   
-;   ovi_comball, wffspec
+; ovi_comball, fspec_fil, obj_fil, out_fil, PARSE=, NOUNIQ=, ZSET=
 ;
 ; INPUTS:
+;  fspec_fil  -- List of WFCCD spectra files (string array)
+;  obj_fil    -- Object files (string array)
 ;
 ; RETURNS:
 ;
 ; OUTPUTS:
+;  out_fil  -- Combine WFCCD spectra file
 ;
 ; OPTIONAL KEYWORDS:
-;   XSIZE      - Size of gui in screen x-pixels (default = 1000)
-;   YSIZE      - Size of gui in screen y-pixels (default = 600)
-;
+;  PARSE   -- 2-element long array which manually sets the flags of 
+;             specific objects (mainly to reject bad redshifts)
+;  /NOUNIQ -- Skip the unique checks.  
+;  ZSET=   -- List of [name, redshift] to manually set the redshift 
+;             of an obj
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
@@ -38,7 +45,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-pro ovi_comball, fspec_fil, obj_fil, out_fil, PARSE=parse, OBJDIR=objdir, $
+pro ovi_comball, fspec_fil, obj_fil, out_fil, PARSE=parse, $
                  NOUNIQ=nouniq, ZSET=zset
 
 
@@ -189,7 +196,7 @@ pro ovi_comball, fspec_fil, obj_fil, out_fil, PARSE=parse, OBJDIR=objdir, $
           indx = where(list EQ obj, nindx)
           if nindx EQ 0 then stop
           case parse[i,2] of
-              -1: tot_fspec[indx].zans.z = -1.
+              -1: tot_fspec[indx].zans.z = -1.  ;; Confused blend
               -2: begin  ;; Bad slit
                   tot_fspec[indx].zans.z = -1.
                   tot_fspec[indx].flg_anly = 1

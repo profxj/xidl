@@ -1,0 +1,116 @@
+Greetings all,
+
+This note announces the release of HIRedux v1.0, an IDL package
+I have developed for HIRES based on the MIKE pipeline that 
+Scott Burles (MIT) and I have built in coordination with R. Bernstein 
+(U Michigan).
+
+It is fair to say that IDL novices will have a steep learning 
+curve to ride.  Get ready for that..  I highly recommend the 
+IDL Introduction Guide.  It is about 100pages of quick reading.
+
+If you want to skip straight to the chase, go here:
+
+http://www.ucolick.org/~xavier/HIRedux/index.html
+
+As this is the first release, there are a lot of growing pains to 
+be felt.  If you are likely to get upset when the code 'breaks' and you 
+have no idea what to do, then I'd hold off for another 2 weeks or so.  
+I'm hopeful, however, that some of you will get your hands dirty and
+help me identify the 'bugs'.  If you wish to help build the code,
+please contact me.
+
+-----
+
+What's new in V1.0:
+
+Well, this is the first release, so everything is officially new.
+
+The code will 
+
+ aa. Organize the data for a single night
+  a. Overscan subtract
+  b. Flatfield (ideally with pixel flats)
+  c. Trace the order curvature
+  d. Automatically wavelength calibrate every science pixel
+  e. Trace a single object in the slit
+  f. Sky subtract
+  g. Extract optimally 
+
+Here is the kind of data that is working well right now:
+
+UV cross-disperser only
+C deckers
+  -- Am attacking the B deckers right now and am wondering:
+     1.  Do people really try to do sky subtraction with these?
+     2.  Do people try to do optimal extraction with these?
+     3.  Shouldn't we really be using a 5" long slit instead? 
+         -- On the last point, I am pushing Keck to put in 5" long
+            deckers.  Would anyone resist this if it meant the B
+            deckers were replaced??  I believe there would be no 
+	    order overlap until below 3100 Ang.
+2x2 binning is best but other binning options will work 
+Single objects only
+Optimal extraction assuming a Gaussian PSF
+Wavelength solutions for orders 57-116.
+A quick redux mode for 'at the telescope' reduction  (<10min per chip)
+
+Here is what I am working on in the short term (i.e. less than 2 weeks):
+
+
+ i.  Wavelength solutions for the Red cross-disperser
+ii.  Pixel flats for all binnings on the UV and many on the Red
+
+  -- Note this is a new technique and one I highly recommend.  The idea
+     is to correct pixel-to-pixel variations by illuminating an entire 
+     single chip of the mosaic with light of the appropriate color.  
+     A series of frames are taken and a 
+     stack is made and normalized.  I consider this to be FAR advantageous
+     to using the 'traditional' flats.  The 'traditional' flats should
+     only be used for tracing the order curvature and the slit profile.
+
+  -- Also note that I am asking the Observatory to take these calibration
+     files on a regular basis (e.g. once per month).  They probably take 
+     too long for the visiting astronomer to do in the afternoon. 
+
+iii.  'Fluxing' --  I intend to put in a set of sensitivity functions
+  which will provide relative fluxing but not absolute.
+
+iv.  Coadding -- Routines will be added to combine multiple exposures
+ at the same setup and also convert the order-by-order extractions into 
+ a single 1D spectrum.
+
+v.  Improving the hires_redux GUI which can be used to guide the
+reduction steps.
+
+vi.  Double checking the heliocentric velocity correction.  I fear
+there may be a bug in this.
+
+vii. Extend the wavelength soultions to at least Order 118.
+
+viii.  Improve the results for the B deckers.
+
+ix.  Install the code at Keck HQ
+
+x.  Update the cookbook to match V1.0
+
+---
+
+Here are somewhat longer term projects (i.e. 1-2 months):
+
+1)  Improving sky subtraction on the brightest sky lines.  Currently
+lines like 5575 are not being handled well.
+
+2)  Adding an optimal extraction algorithm with a non-parametric profile
+ 
+3)  Placing the output to the screen into a Log file.  Or at least
+important WARNING messages.
+
+
+Feedback is encouraged.   
+
+Email hiredux@ucolick.org  starting on Monday.
+
+Cheers,
+
+X

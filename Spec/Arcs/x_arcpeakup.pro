@@ -1,25 +1,30 @@
 ;+ 
 ; NAME: 
 ; x_arcpeakup   
-;    Version 1.0
+;    Version 1.1
 ;
 ; PURPOSE:
-;    ID's lines from an initial fit + a lines structure
+;    Finds the fit iteratively to a set of lines given the Arc
+;    spectrum and a line list.  This code has been superseded by
+;    x_arctempl.
 ;
 ; CALLING SEQUENCE:
-;   
-;   x_arcpeakup, spec, lines, guessfit, /FFT
+;   x_arcpeakup, spec, lines, FFIT=, WV=, NFRST=, NFIN=, /INTER, SIG=
 ;
 ; INPUTS:
-;   spec       - Input arc image or spectrum
-;   lines      - Arc line structure
+;   spec       - Input arc spectrum
+;   lines      - Arc line list structure
 ;
 ; RETURNS:
 ;
 ; OUTPUTS:
-;   lines     - Sets flg_plt to 1 those lines which are ID'd
 ;
 ; OPTIONAL KEYWORDS:
+;  NFRST= -- Order of fit for the first try [default: 3L]
+;  NFIN=  -- Order of fit for the final fit
+;  MXOFF= -- Maximum pixel offset between a line and its expected
+;            position
+;  SIG=   -- Lower and upper sigma values for fitting
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -35,8 +40,6 @@
 ;   26-Aug-2002 Written by JXP
 ;-
 ;------------------------------------------------------------------------------
-
-  
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -47,7 +50,7 @@ pro x_arcpeakup, spec, lines, FFIT=ffit, WV=wv, NFRST=nfrst, NFIN=nfin, $
 ;  Error catching
   if  N_params() LT 2  then begin 
     print,'Syntax - ' + $
-             'x_arcpeakup, spec, lines, FFIT=, WV=, NFRST=, /INTER [v1.0]'
+             'x_arcpeakup, spec, lines, FFIT=, WV=, NFRST=, /INTER [v1.1]'
     	return
   endif 
 

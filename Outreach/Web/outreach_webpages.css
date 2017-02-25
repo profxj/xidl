@@ -1,0 +1,401 @@
+/* CSS Document */
+
+p{
+	font-family: Arial, sans-serif;
+	font-size: 15px;
+	color: #EEEEFF;
+	line-height: 18px;
+	padding: 3px;
+	text-align: justify;
+}
+.non_p {
+	font-size: 16px;
+	font-family: Arial, sans-serif;
+	color: #003366;
+}
+.small_non_p {
+	font-size: 14px;
+	font-family: Arial, sans-serif;
+	color: #EEEEFF;
+}
+.more_non_p {
+	font-size: 16px;
+	font-family: Arial, sans-serif;
+	color: #EEEEFF;
+}
+.p_lead_in{
+font-family: Arial, sans-serif;
+font-size: 17px;
+color: #DDCC88;
+line-height: 18px;
+padding: 3px;
+}
+
+.p_links{
+	font-family: Arial, sans-serif;
+	font-size: 15px;
+	color: red;
+	line-height: 18px;
+	padding: 3px;
+	text-decoration: none;
+}
+.p_links:hover{
+	font-family: Arial, sans-serif;
+	font-size: 15px;
+	color: green;
+	line-height: 18px;
+	padding: 3px;
+	text-decoration: none;
+}
+.p_links:visited{
+	font-family: Arial, sans-serif;
+	font-size: 15px;
+	color: orange;
+	line-height: 18px;
+	padding: 3px;
+	text-decoration: none;
+}
+.more{
+	font-family: Arial, sans-serif;
+	font-size: 15px;
+	color: #8888EE;
+	line-height: 18px;
+	padding: 3px;
+	text-decoration: none;
+	text-align: right;
+}
+.more:hover{
+	font-family: Arial, sans-serif;
+	font-size: 15px;
+	color: #DDCC88;
+	line-height: 18px;
+	padding: 3px;
+	text-decoration: none;
+	text-align: right;
+}.caption{
+	font-family: Arial, sans-serif;
+	font-size: 15px;
+	color: #CC99CC;
+}
+.list{
+font-family: Arial, sans-serif;
+font-size: 15px;
+color: #8888EE;
+line-height: 18px;
+padding: 3px;
+}
+
+.column_head{
+	font-family: Arial, sans-serif;
+	font-size: 18px;
+	color: #8888EE;
+	line-height: 18px;
+	padding: 3px;
+	text-align: center;
+}
+
+.navigation {
+	font-family: Arial, sans-serif;
+	font-size: 17px;
+	color: #8888EE;
+	text-decoration: none;
+	padding-left: 5px;
+	display: block;
+	line-height: 30px;
+	border-bottom-color: #CC99FF;
+	border-bottom-style: solid;
+	border-bottom-width: 1px;
+	text-align: left;
+}
+
+.navigation:hover {
+	font-family: Arial, sans-serif;
+	font-size: 17px;
+	color: #DDCC88;
+	text-decoration: none;
+	padding-left: 5px;
+	display: block;
+}
+.center_navigation {
+	font-family: Arial, sans-serif;
+	font-size: 17px;
+	color: #8888EE;
+	text-decoration: none;
+	padding-left: 5px;
+	display: block;
+	line-height: 30px;
+	border-bottom-color: #CC99FF;
+	border-bottom-style: solid;
+	border-bottom-width: 1px;
+	text-align: center;
+}
+.center_navigation:hover {
+	font-family: Arial, sans-serif;
+	font-size: 17px;
+	color: #DDCC88;
+	text-decoration: none;
+	padding-left: 5px;
+	display: block;
+}
+.center_link{
+	font-family: Arial, sans-serif;
+	font-size: 17px;
+	color: white;
+	text-decoration: none;
+	padding-left: 10px;
+	display: block;
+	text-align: center;
+}
+.center_link:hover {
+	font-family: Arial, sans-serif;
+	font-size: 17px;
+	color: #DDCC88;
+	text-decoration: none;
+	padding-left: 10px;
+	display: block;
+	text-align: center;
+}
+.left_link{
+	font-family: Arial, sans-serif;
+	font-size: 17px;
+	color: white;
+	text-decoration: none;
+	padding-left: 10px;
+	display: block;
+	text-align: left;
+}
+.left_link:hover {
+	font-family: Arial, sans-serif;
+	font-size: 17px;
+	color: #DDCC88;
+	text-decoration: none;
+	padding-left: 10px;
+	display: block;
+	text-align: left;
+}
+.red_link{
+	font-family: Arial, sans-serif;
+	font-size: 17px;
+	color: green;
+	text-decoration: none;
+	padding-left: 5px;
+	text-align: left;
+}
+.red_link:hover {
+	font-family: Arial, sans-serif;
+	font-size: 17px;
+	color: yellow;
+	text-decoration: none;
+	padding-left: 5px;
+	text-align: left;
+}
+.red_link:visited {
+	font-family: Arial, sans-serif;
+	font-size: 17px;
+	color: orange;
+	text-decoration: none;
+	padding-left: 5px;
+	text-align: left;
+}
+.nonp_links{
+	font-family: Arial, sans-serif;
+	font-size: 16px;
+	color: #003366;
+	text-decoration: underline;
+	padding-left: 2px;
+	text-align: left;
+}
+.nonp_links:hover {
+	font-family: Arial, sans-serif;
+	font-size: 16px;
+	color: yellow;
+	text-decoration: underline;
+	padding-left: 2px;
+	text-align: left;
+}
+.nonp_links:visited {
+	font-family: Arial, sans-serif;
+	font-size: 16px;
+	color: blue;
+	text-decoration: underline;
+	padding-left: 2px;
+	text-align: left;
+}
+.glossary_link{
+	font-family: Arial, sans-serif;
+	font-size: 15px;
+	color: white;
+	text-decoration: underline;
+	padding-left: 0px;
+	padding-right: 0px;
+	text-align: center;
+}
+.glossary_link:hover {
+	font-family: Arial, sans-serif;
+	font-size: 15px;
+	color: yellow;
+	text-decoration: underline;
+	padding-left: 0px;
+	padding-right: 0px;
+	text-align: center;
+}
+.glossary_link:visited {
+	font-family: Arial, sans-serif;
+	font-size: 15px;
+	color: white;
+	text-decoration: underline;
+	padding-left: 0px;
+	padding-right: 0px;
+	text-align: center;
+}
+.contrib_link{
+	font-family: Arial, sans-serif;
+	font-size: 15px;
+	color: white;
+	text-decoration: underline;
+	padding-left: 0px;
+	padding-right: 0px;
+	text-align: center;
+}
+.contrib_link:hover {
+	font-family: Arial, sans-serif;
+	font-size: 15px;
+	color: yellow;
+	text-decoration: underline;
+	padding-left: 0px;
+	padding-right: 0px;
+	text-align: center;
+}
+.contrib_link:visited {
+	font-family: Arial, sans-serif;
+	font-size: 15px;
+	color: white;
+	text-decoration: underline;
+	padding-left: 0px;
+	padding-right: 0px;
+	text-align: center;
+}
+.drop_down_nav {
+	font-family: Arial, sans-serif;
+	font-size: 17px;
+	color: #8888EE;
+	text-decoration: none;
+	padding: 2px;
+	padding-left: 10px;
+	background-color: #003366;
+	display: block;
+	border-color: #CC99FF;
+	border-width: 1px;
+	border-style: solid;
+	border-top: none;
+}
+
+.drop_down_nav:hover {
+	font-family: Arial, sans-serif;
+	font-size: 17px;
+	color: #DDCC88;
+	text-decoration: none;
+	padding: 2px;
+	padding-left: 10px;
+	background-color: #003366;
+	border-width: 1px;
+	border-color: #CC99FF;
+	display: block;
+}
+
+.menu {
+	text-align: right;
+	display: block;
+	padding: 1px;
+}
+.menu_text {
+	font-family: Arial, sans-serif;
+	font-size: 16px;
+	color: #8888EE;
+	text-decoration: none;
+	padding: 0px;
+	padding-left: 0px;
+	padding-right: 10px;
+}
+.menu_text:hover {
+	font-family: Arial, sans-serif;
+	font-size: 16px;
+	color: #DDCC88;
+	text-decoration: none;
+	padding: 0px;
+	padding-left: 0px;
+	padding-right: 10px;
+}
+.menu_title{
+	font-family:Arial, sans-serif;
+	font-size:20px;
+	color: #DDCC88;
+	font-weight: normal;
+	text-align: right;
+	padding-right: 10px;
+}
+
+.center{
+	text-align: center;
+}
+.right{
+	text-align: right;
+}
+.title{
+	font-family:Arial, Helvetica, sans-serif;
+	font-size:30px;
+	color: #FFCC00;
+	font-weight: normal;
+	text-align: center;
+}
+.subtitle{
+	font-family:Arial, Helvetica, sans-serif;
+	font-size:24px;
+	color: #DDCC88;
+	font-weight: normal;
+	text-align: center;
+}
+.table_title{
+	font-family:Arial, Helvetica, sans-serif;
+	font-size:16px;
+	color: #DDCC88;
+	font-weight: normal;
+	text-align: center;
+}.left_title{
+	font-family:Arial, sans-serif;
+	font-size:24px;
+	color: #DDCC88;
+	font-weight: normal;
+	text-align: left;
+}
+
+/* Beginning Here: List Definitions for drop-down menus */
+
+ul {
+	padding: 0;
+	margin: 0;
+	list-style: none;
+	z-index: 1;
+  }
+
+li {
+  float: left;
+  position: relative;
+  width: 155px;
+  }
+
+li ul {
+  display: none;
+  position: absolute; 
+  top: 1em;
+  left: 0;
+  }
+  
+li > ul {
+	top: auto;
+	left: auto;
+
+	}
+
+li:hover ul, li.over ul{ display: block; }      
+	

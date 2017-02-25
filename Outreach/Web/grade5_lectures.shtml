@@ -1,0 +1,112 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<title> Spectroscopic Inquiry from UC Santa Cruz</title>
+
+<!-- Input junk.html here -->
+<!-- End junk.html here -->
+<!--#include virtual="./class.html"-->
+<!--#include virtual="./noboard.html"-->
+<!--#include virtual="./header.html"-->
+
+
+<div id="content_panel">
+  <table width="920" border="0" cellspacing="0" cellpadding="5">
+	<tr>
+		<td height="5" colspan="2">&nbsp;</td>
+	</tr>
+	<tr>
+		<td colspan="2" class="title">Lectures for Grade 5
+  Science:</td>
+	</tr>
+
+	<tr>
+<td colspan="2"><p><span color="p_lead_in style2">
+  Starting in 2009, JXP began a series of lectures in Grade 5 classrooms
+  tailored to the science curriculum of California.  These have been
+  well received by the students and teachers alike.  The lectures are
+  designed to provide a mixture of content and inquiry.  For the latter,
+  the students are asked and encouraged to develop hypotheses to
+  explain everyday aspects of science that they have experienced
+  (e.g. the shining of the Sun).   I plan to continue to develop these
+  lectures and also produce new ones in the coming years.
+</span></p></td>
+	</tr>
+
+    <tr>
+
+  </table>
+
+<table width="930" border="0" cellspacing="0" cellpadding="0">
+        <tr><td colspan="5">
+<img src="images/spacer_10x30.gif" width="10" height="10" /></td>
+        </tr>
+        <tr><td colspan="5" class="title">
+Lectures<br>
+</td>
+</tr>
+</table>
+        <tr><td colspan="5">
+<img src="images/spacer_10x30.gif" width="10" height="10" /></td>
+        </tr>
+
+<table width="930" border="0" cellspacing="0" cellpadding="5">
+<tr>
+<td width="80" colspan="5" align="center" class="p_lead_in style2">
+  Lecture </td>
+<td width="80" colspan="5" align="center" class="p_lead_in style2">
+  Keynote (PPT upon request)</td>
+<td width="80" colspan="5" align="center" class="p_lead_in style2">
+  PDF </td>
+<td width="300" colspan="5" align="center" class="p_lead_in style2">
+ Brief Description </td>
+</tr>
+
+<tr>
+<td width="80" colspan="5" align="center" class="non_p">
+<font color="red">Stars</font>
+</td>
+<td width="80" colspan="5" align="center" class="non_p">
+<a href="Lectures/grade5_stars.key.gz" class="red_link">grade5_stars.key</a>
+
+</td>
+<td width="80" colspan="5" align="center" class="non_p">
+<a href="Lectures/grade5_stars.pdf" class="red_link">grade5_stars.pdf</a>
+</td>
+<td width="300" colspan="5" align="left" class="non_p">
+This lecture introduces the basic concepts of a Star.  This includes
+  an introduction to telescopes, the nature of stars in our Galaxy, a
+  brief description of the Atom, nuclear power, and the death of
+  Stars.
+</td>
+</tr>
+
+
+<tr>
+<td width="80" colspan="5" align="center" class="non_p">
+<font color="red">Atoms</font>
+</td>
+<td width="50" colspan="5" align="center" class="non_p">
+<a href="Lectures/grade5_atoms.key.gz" class="red_link">grade5_atoms.key</a>
+
+</td>
+<td width="150" colspan="5" align="center" class="non_p">
+<a href="Lectures/grade5_atoms.pdf" class="red_link">grade5_atoms.pdf</a>
+</td>
+<td width="300" colspan="5" align="left" class="non_p">
+This lecture describes the basic properties of atoms, e.g. the nucleus
+  and electrons.  It introduces the concepts of charge, electricity,
+  and the defintion of elements including the Periodic Table.  It ends
+  with a brief description of molecules.
+</td>
+</tr>
+
+</table>
+
+</div>
+
+
+</body>
+</html>

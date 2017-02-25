@@ -47,7 +47,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 pro esi_echmkaimg, esi, slit, TRCSTR=trcstr, NX=nx, NY=ny, CHK=chk,$
-                   CUAR=cuar
+                   CUAR=cuar, CBIN=cbin, RBIN=rbin, OUTFIL=outfil, $
+                   SEDG_FIL=sedg_fil
 
 ;
   if  N_params() LT 2  then begin 
@@ -57,39 +58,46 @@ pro esi_echmkaimg, esi, slit, TRCSTR=trcstr, NX=nx, NY=ny, CHK=chk,$
   endif 
   
 ;  Optional Keywords
-  if not keyword_set( SZ_ARC ) then sz_arc = [2048L,4096L]
-  if not keyword_set( MAP_FIL ) then map_fil = 'Maps/ECH_map.fits'
+  if not keyword_set( CBIN ) then cbin = 1
+  if not keyword_set( RBIN ) then rbin = 1
+  if not keyword_set( SZ_ARC ) then sz_arc = [2048L/cbin,4096L/rbin]
+  if not keyword_set( MAP_FIL ) then $
+    map_fil = getenv('ESI_CALIBS')+'/ECH_map.fits'
 
   c_s = esi_slitnm(slit)
 
-; Open Map
+  ;; Open Map
   print, 'esi_echmkaimg: Reading map file: ', map_fil
   if x_chkfil(map_fil+'*') EQ 0 then begin
       print, 'esi_echmkaimg: Map file doesnt exist', map_fil, ' Returning...'
       return
   endif
   map = xmrdfits(map_fil, /silent)
+
+  ;; Binning
+  if cbin NE 1 OR RBIN NE 1 then $
+    map = rebin(map, 2048L/cbin, 4096L/rbin) / float(cbin)
+
   ;; Transpose the map
   map = transpose(map)
 
-; Final Arc
+  ;; Final Arc
   fin_arc = dblarr(sz_arc[0],sz_arc[1]) + 1.d
 
-; Loop
+  ;; Loop
   if not keyword_set( CUAR ) then qend = 9L else qend = 8L
   for qq=0L,qend do begin
       ;; Grab Arc Trace
       ordr = 15L - qq
-      if ordr LT 10 then cordr = '0'+string(ordr, FORMAT='(i1)') $
-      else cordr = string(ordr, FORMAT='(i2)')
-      trcfil = 'Arcs/TRC/ArcECH_'+c_s+'trc'+cordr+'.fits'
+      trcfil = esi_getfil('arc_trc', SLIT=slit, cbin=cbin, rbin=rbin, ORDR=ordr, $
+                          /name)
       a = findfile(trcfil, count=na)
       if na EQ 0 then begin
           print, 'esi_echmkaimg: Trace ',trcfil,' doesnt exist. Run esi_echtrcarc!'
           return
       endif
       print, '------------------------------------------------'
-      print, 'esi_echmkaimg: Order ',cordr
+      print, 'esi_echmkaimg: Order ', ordr
       print, 'esi_echmkaimg: Reading trace structure: ', trcfil
       trcstr = xmrdfits(trcfil, 1, /silent)
       if x_chkfil(trcfil+'*') EQ 0 then begin
@@ -135,10 +143,11 @@ pro esi_echmkaimg, esi, slit, TRCSTR=trcstr, NX=nx, NY=ny, CHK=chk,$
       ;; Fit
       if not keyword_set( SILENT ) then $
         print, 'esi_echmkaimg: Fitting in 2D: ', systime()
-      fit = x_fit2dsurf(xydat, wvdat[gd_cen], FITSTR=fitstr)
-      res = fit - wvdat[gd_cen]
-      print, 'esi_echmkaimg: RMS = ', fitstr.rms
-
+      fit = x_fit2dsurf(xydat, alog10(wvdat[gd_cen]), FITSTR=fitstr)
+      res = fit - alog10(wvdat[gd_cen])
+      print, 'esi_echmkaimg: RMS (pix) = ', fitstr.rms*$
+        median(wvdat[gd_cen])*alog(10.)
+      
       sz_subimg = [sz_arc[1], sz_trc[0]]
       ;; Map over good part of image
       numy = mxxy-mnxy+1
@@ -161,7 +170,7 @@ pro esi_echmkaimg, esi, slit, TRCSTR=trcstr, NX=nx, NY=ny, CHK=chk,$
 
       ;; Place in fin_arc
       arc_img = dblarr(sz_subimg[0],sz_subimg[1]) + 1.d
-      arc_img[*,mnxy:mxxy] = temporary(tmp_img)
+      arc_img[*,mnxy:mxxy] = 10^temporary(tmp_img)
       ;; KLUDGE for Order 6 and 15
       case qq of 
           0: arc_img[0:1500,mnxy:mxxy] = 0.d
@@ -173,7 +182,6 @@ pro esi_echmkaimg, esi, slit, TRCSTR=trcstr, NX=nx, NY=ny, CHK=chk,$
       ;; Into 'Big Image'
       fin_arc[trcstr.xoff:trcstr.xoff+sz_subimg[1]-1,*] = $
         fin_arc[trcstr.xoff:trcstr.xoff+sz_subimg[1]-1,*] * temporary(arc_img)
-
   endfor
 
   if not keyword_set( SILENT ) then $
@@ -194,19 +202,43 @@ pro esi_echmkaimg, esi, slit, TRCSTR=trcstr, NX=nx, NY=ny, CHK=chk,$
   airtovac, tmpaimg
   fin_arc[a] = temporary(tmpaimg)
   
-; Output
-  outfil = 'Arcs/ArcECH_'+c_s+'IMG.fits'
+  ;; Output
+  arc_fil = esi_getfil('arc_fil', SLIT = slit, cbin = cbin, rbin = rbin, /name)
+  a = findfile(arc_fil+'*', count = na)
+  if na EQ 0 then begin
+      print, 'esi_echfitarc: Arc ', arc_fil $
+             , ' does not exist. Run esi_echmkarc!'
+      stop
+  endif
+  ;; This step added by JFH 05/08
+  if not keyword_set(SEDG_FIL) then $
+    sedg_fil = esi_getfil('sedg_fil', SLIT = slit $
+                          , cbin = cbin, rbin = rbin, /name)
+  tset_slits = xmrdfits(sedg_fil, 1)
+  arc_raw = xmrdfits(arc_fil, 0, head, /silent)
+  plate_scale = reverse([0.168, 0.163, 0.158, 0.153, 0.149, 0.144, 0.137 $
+                         , 0.134, 0.127, 0.120])
+  fwhm = slit/plate_scale
+  plate_med = median(plate_scale)
+  pkwdth = 1.3*slit/plate_med
+  TOLER = pkwdth/3.0D
+  mask = (arc_raw GT -20.0 AND arc_raw LT 1d5)
+  ;stop
+  wset = long_wavepix(mask*arc_raw, tset_slits, FWHM = FWHM $
+                      , pkwdth = pkwdth, toler = toler)
+  ;; write waveimg and piximg out to disk
+  outfil = esi_getfil('arc_img', SLIT = slit, cbin = cbin, rbin = rbin, /name)
   print, 'esi_echmkaimg: Writing file: ', outfil
   mwrfits, fin_arc, outfil, /create, /silent
-
+  mwrfits, wset, outfil, /silent
+  
   ;; Update arc_fil in structure for OBJ+STD
-  indx = where(esi.flg_anly NE 0 AND esi.mode EQ 2 AND $
-               esi.slit EQ slit AND $
-               (strtrim(esi.type,2) EQ 'OBJ' or $
-                strtrim(esi.type,2) EQ 'STD'), nindx)
-  esi[indx].arc_fil = outfil
-
-  ;; 
+  ;;indx = where(esi.flg_anly NE 0 AND esi.mode EQ 2 AND $
+  ;;             esi.slit EQ slit AND $
+  ;;             (strtrim(esi.type,2) EQ 'OBJ' or $
+  ;;             strtrim(esi.type,2) EQ 'STD'), nindx)
+  ;;if nindx NE 0 then esi[indx].arc_fil = outfil
+  
   print, 'esi_echmkaimg: All done!'
       
   return

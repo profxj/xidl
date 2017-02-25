@@ -1,0 +1,102 @@
+--------------------------------------------------
+mike_setup: Checking BLUE images
+mike_setup: Checking for calibs for setup =        1
+mike_setup:   Found Milky Flats --  b0042.fits b0043.fits b0044.fits
+b0045.fits b0046.fits b0047.fits b0048.fits b0049.fits b0050.fits b0051.fits
+b0052.fits
+mike_setup:   Found Trace Flats --  b0055.fits b0056.fits b0057.fits
+b0058.fits b0059.fits b0060.fits b0061.fits b0062.fits b0063.fits b0064.fits
+b0065.fits
+mike_setup:   Found Arc Frames-- (file, arclamp)
+b0002.fits       0
+b0005.fits       0
+b0008.fits       0
+b0012.fits       0
+b0015.fits       0
+b0019.fits       0
+b0025.fits       0
+b0027.fits       0
+b0030.fits       0
+b0032.fits       0
+b0037.fits       0
+b0053.fits       0
+mike_setup:   Found Standard stars--  b0003.fits b0004.fits b0009.fits
+b0013.fits b0014.fits b0020.fits b0021.fits b0026.fits b0031.fits b0038.fits
+b0040.fits
+ 
+EG274 EG274 EG274 NGC7293 Feige110 NGC7293 Feige110 Feige110 EG21 GD71 HR1996
+  30 b0031.f         EG21   1  200 Arcs/Arc_mb0032
+   2 b0003.f        EG274   2  200 Arcs/Arc_mb0002
+   3 b0004.f        EG274   2  200 Arcs/Arc_mb0005
+   8 b0009.f        EG274   2  200 Arcs/Arc_mb0008
+  13 b0014.f     Feige110   3  200 Arcs/Arc_mb0015
+  20 b0021.f     Feige110   3  200 Arcs/Arc_mb0019
+  25 b0026.f     Feige110   3  200 Arcs/Arc_mb0025
+  37 b0038.f         GD71   4  200 Arcs/Arc_mb0037
+  32 b0033.f  HE0310m6060   5 2400 Arcs/Arc_mb0032
+  34 b0035.f  HE0340m2612   6 2400 Arcs/Arc_mb0037
+  35 b0036.f  HE0340m2612   6 1500 Arcs/Arc_mb0037
+   9 b0010.f  HE2215m6206   7 2400 Arcs/Arc_mb0008
+  10 b0011.f  HE2215m6206   7 2400 Arcs/Arc_mb0012
+  15 b0016.f  HE2314m3405   8 2400 Arcs/Arc_mb0015
+  17 b0018.f  HE2314m3405   8 2400 Arcs/Arc_mb0019
+  22 b0023.f  HE2348m1444   9 2400 Arcs/Arc_mb0019
+  23 b0024.f  HE2348m1444   9 2400 Arcs/Arc_mb0025
+  39 b0040.f       HR1996  10    1 Arcs/Arc_mb0037
+  12 b0013.f      NGC7293  11  300 Arcs/Arc_mb0012
+  19 b0020.f      NGC7293  11  300 Arcs/Arc_mb0019
+  27 b0028.f    Q0101m304  12 2400 Arcs/Arc_mb0027
+  28 b0029.f    Q0101m304  12 2400 Arcs/Arc_mb0030
+   5 b0006.f    Q2000-330  13 2400 Arcs/Arc_mb0005
+   6 b0007.f    Q2000-330  13 2400 Arcs/Arc_mb0008
+---------------------------------------------------
+mike_setup: Checking RED images
+mike_setup: Checking for calibs for setup =        1
+mike_setup:   Found Milky Flats --  r0042.fits r0043.fits r0044.fits
+r0045.fits r0046.fits r0047.fits r0048.fits r0049.fits r0050.fits r0051.fits
+r0052.fits
+mike_setup:   Found Trace Flats --  r0055.fits r0056.fits r0057.fits
+r0058.fits r0059.fits r0060.fits r0061.fits r0062.fits r0063.fits r0064.fits
+r0065.fits
+mike_setup:   Found Arc Frames-- (file, arclamp)
+r0002.fits       0
+r0005.fits       0
+r0008.fits       0
+r0012.fits       0
+r0015.fits       0
+r0019.fits       0
+r0025.fits       0
+r0027.fits       0
+r0030.fits       0
+r0032.fits       0
+r0037.fits       0
+r0053.fits       0
+mike_setup:   Found Standard stars--  r0003.fits r0004.fits r0009.fits
+r0014.fits r0021.fits r0026.fits r0031.fits r0040.fits
+ 
+EG274 EG274 EG274 Feige110 Feige110 Feige110 EG21 HR1996
+ 106 r0031.f         EG21   1  200 Arcs/Arc_mr0032
+  78 r0003.f        EG274   2  200 Arcs/Arc_mr0002
+  79 r0004.f        EG274   2  200 Arcs/Arc_mr0005
+  84 r0009.f        EG274   2  200 Arcs/Arc_mr0008
+  89 r0014.f     Feige110   3  200 Arcs/Arc_mr0015
+  96 r0021.f     Feige110   3  200 Arcs/Arc_mr0019
+ 101 r0026.f     Feige110   3  200 Arcs/Arc_mr0025
+ 113 r0038.f         GD71   4  200 Arcs/Arc_mr0037
+ 108 r0033.f  HE0310m6060   5 2400 Arcs/Arc_mr0032
+ 110 r0035.f  HE0340m2612   6 2400 Arcs/Arc_mr0037
+ 111 r0036.f  HE0340m2612   6 1500 Arcs/Arc_mr0037
+  85 r0010.f  HE2215m6206   7 2400 Arcs/Arc_mr0008
+  86 r0011.f  HE2215m6206   7 2400 Arcs/Arc_mr0012
+  91 r0016.f  HE2314m3405   8 2400 Arcs/Arc_mr0015
+  93 r0018.f  HE2314m3405   8 2400 Arcs/Arc_mr0019
+  98 r0023.f  HE2348m1444   9 2400 Arcs/Arc_mr0019
+  99 r0024.f  HE2348m1444   9 2400 Arcs/Arc_mr0025
+ 115 r0040.f       HR1996  10    1 Arcs/Arc_mr0037
+  88 r0013.f      NGC7293  11  300 Arcs/Arc_mr0012
+  95 r0020.f      NGC7293  11  300 Arcs/Arc_mr0019
+ 103 r0028.f    Q0101m304  12 2400 Arcs/Arc_mr0027
+ 104 r0029.f    Q0101m304  12 2400 Arcs/Arc_mr0030
+  81 r0006.f    Q2000-330  13 2400 Arcs/Arc_mr0005
+  82 r0007.f    Q2000-330  13 2400 Arcs/Arc_mr0008
+---------------------------------------------------

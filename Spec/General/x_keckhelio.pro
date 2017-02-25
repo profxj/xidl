@@ -1,40 +1,49 @@
 ;+
 ; NAME:
 ;   x_keckhelio
+;  Version 1.1
 ;
 ; PURPOSE:
 ;   Compute correction term to add to velocities to convert to heliocentric.
+;   This code also does the VLT and MMT.  Note, it is the *NEGATIVE* of the 
+;   the number that one applies to a wavelength solution.
 ;
 ; CALLING SEQUENCE:
-;   vcorr = x_keckhelio( ra, dec, [ epoch, jd=, tai=, $
-;    longitude=, latitude=, altitude= ] )
+;   vcorr = x_keckhelio( ra, dec, [epoch], jd=, tai=, $
+;    longitude=, latitude=, altitude= )
 ;
 ; INPUTS:
 ;   ra             - Right ascension [degrees]
 ;   dec            - Declination [degrees]
-;   epoch          - Epoch of observation for RA, DEC; default to 2000.
+;   [epoch]          - Epoch of observation for RA, DEC; default to 2000.
 ;
+; RETURNS:
+;   vcorr          - Velocity correction term, in km/s, to add to measured
+;                    radial velocity to convert it to the heliocentric frame.
 ; OPTIONAL KEYWORDS:
 ;   jd             - Decimal Julian date.  Note this should probably be
-;                    type DOUBLE.
+;                    type DOUBLE.  This should be JD_TDB or at least
+;                    JT_TT but will probably not be for most folks.  Take note this
+;                    may introduce an error of ~1m/s and as much as 3m/s.
 ;   tai            - Number of seconds since Nov 17 1858; either JD or TAI
 ;                    must be specified.  Note this should probably either
-;                    be type DOUBLE or LONG64.
+;                    be type DOUBLE or LONG64.  Often written as TT
 ;   longitude      - Longitude of observatory;
 ;                    default to (360-155.47220) deg for APO
 ;   latitute       - Latitude of observatory; default to 32.780361 deg for APO
+;   /JPL            - Do the JPL correction in baryvel
 ;   altitude       - Altitude of observatory; default to 4000 m for
 ;                    Keck
+;   OBS=           - Observatory (default: 'keck')
 ;
 ; OUTPUTS:
-;   vcorr          - Velocity correction term, in km/s, to add to measured
-;                    radial velocity to convert it to the heliocentric frame.
 ;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
+;  helio_shift = -1. * x_keckhelio(RA, DEC, 2000.0)
 ;
 ; BUGS:
 ;
@@ -44,23 +53,53 @@
 ;
 ; REVISION HISTORY:
 ;   09-May-2000  Written by S. Burles & D. Schlegel
-;   30-Aug-2002  Revised by JXP
+;   30-Aug-2002  Revised by JXP for Keck
+;   22-Dec-2007  Revised to use observatory function by JFH. 
+;   15-Dec-2011  Notes added on JD_TT and TAI complements of Jason
+;       Eastman + /JPL switch turned on
 ;-
 ;------------------------------------------------------------------------------
 
-function x_keckhelio, ra, dec, epoch, jd=jd, tai=tai, $
- longitude=longitude, latitude=latitude, altitude=altitude 
+function x_keckhelio, ra, dec, epoch, jd = jd, tai = tai $
+                      , longitude = longitude, latitude = latitude $
+                      , altitude = altitude, OBS = OBS
 
+  if (N_params() LT 2) then begin 
+    print,'Syntax - ' + $
+             'heliovel = x_keckhelio(ra, dec, [epoch], JD=, /JPL) v(1.1)'
+    return, -1
+  endif 
    if (NOT keyword_set(epoch)) then epoch = 2000.0
-
-   ; Default to location of Keck Observatory
-   if (NOT keyword_set(longitude)) then longitude = 360. - 155.47220
-   if (NOT keyword_set(latitude)) then latitude = 19.82656886
-   if (NOT keyword_set(altitude)) then altitude = 4000.
+   
+   IF KEYWORD_SET(LONGITUDE) AND KEYWORD_SET(LATITUDE) $
+     AND KEYWORD_SET(altitude) AND NOT KEYWORD_SET(OBS) THEN BEGIN
+       longitude = 360.0d - longitude
+   ENDIF ELSE BEGIN 
+       IF NOT KEYWORD_SET(OBS) THEN OBS = 'keck'
+       if strmatch(OBS,'vlt',/fold) then begin
+           longitude = 360. - 70.40322
+           latitude = -24.6258
+           altitude = 2635.     ; meters
+       endif else if strmatch(OBS,'lbt',/fold) then begin
+           longitude = 360.0d - 109.885833
+           latitude = 32.701389
+           altitude = 3181.
+       endif else begin
+           observatory, obs, obs_struct
+           longitude = 360.0d - obs_struct.longitude
+           latitude  = obs_struct.latitude
+           altitude  = obs_struct.altitude ;; meters
+       endelse
+   ENDELSE
+      
+   if size(ra, /type) EQ 7 then begin
+      print, 'x_keckhelio: RA must be in decimal degrees!'
+      stop
+   end
 
    if (NOT keyword_set(jd)) then begin
       if (keyword_set(tai)) then begin
-         jd = 2400000.5D + tai / (24.D*3600.D)
+         jd = 2400000.5D + tai / (24.D*3600.D) 
       endif else begin
          message, 'Must specify either JD or TAI', /cont
          return, 0
@@ -70,9 +109,8 @@ function x_keckhelio, ra, dec, epoch, jd=jd, tai=tai, $
    DRADEG = 180.d0 / !DPI
 
    ;----------
-   ; Compute baryocentric velocity
-
-   baryvel, jd, epoch, dvelh, dvelb
+   ; Compute baryocentric velocity (Accurate only to 1m/s)
+   baryvel, jd, epoch, dvelh, dvelb, JPL=JPL
 
    ; Project velocity toward star
    vbarycen = dvelb[0]*cos(dec/DRADEG)*cos(ra/DRADEG) + $

@@ -1,0 +1,18 @@
+1.  The program dies while trying to compile a program which might
+not even be much related to the current execuation.
+  -- Explanation:  IDL likes to see a function compiled in its 'MAIN' program
+before being compiled in some other program.  Problem is that a few of
+the functions I have are embedded in larger .pro files.  The program
+hires_rslvall is an attempt to deal with this.
+
+  -- Solution:  
+   (1) If you are running IDLDE, make sure you do NOT have 
+       'Change Directory on Open' selected under preferences.
+   (2) 'retall' out
+   (3) Execute  hires_rslvall
+
+2.  hires_subbias is giving you fits
+ -- Explanation: Odds are you have an old version of hires_subbias in your
+XIDL distribution because you unpacked a new version of XIDL 
+into the old version.  
+ -- Solution:  Scrub XIDL altogether and unpack the newest version of XIDL

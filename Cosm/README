@@ -1,0 +1,2 @@
+;; For halomass, you need to compile the C++ code
+g++ cosm_dekelmiki_psn.cpp -o cosm_dekelmiki_psn

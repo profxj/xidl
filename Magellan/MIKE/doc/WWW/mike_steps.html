@@ -1,0 +1,79 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.70)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>mike_steps</TITLE>
+<META NAME="description" CONTENT="mike_cookbook">
+<META NAME="keywords" CONTENT="mike_cookbook">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+</HEAD>
+
+<BODY >
+
+<P>
+<DIV ALIGN="CENTER">
+<FONT SIZE="+3"><B>MIKE Steps [v1.0; August 2004]</B></FONT>
+<br>
+</div>
+
+<FONT SIZE="+1">
+This file is intended to give an executive summary of the 
+steps one runs through to reduce a given night of data.
+See the <a href="mike_cookbook.html">cookbook</a> for much
+more extensive discussion.
+
+<UL>
+ <LI> Setups
+  <OL>
+   <LI> Create stucture:  <br> IDL>  mike_strct, mike
+   <LI> Modify tags:      <br> IDL>  set_crds, mike
+   <LI> Setup:            <br> IDL>  mike_setup, mike
+  </ol>
+ <LI> Calibrations
+  <OL>
+   <LI> Bias (optional):  <br> IDL>  mike_mkbias, mike
+   <LI> Flats:            <br> IDL>  mike_allflat, mike, setup
+   <br> Calls --
+    <UL> 
+     <LI> mike_mkmflat
+     <LI> mike_mktflat
+     <LI> mike_trcflat
+     <LI> mike_fittflat
+    </UL>
+   <LI> Arcs:             <br> IDL> mike_allarc, mike, setup
+   <br> Calls --
+    <UL> 
+     <LI> mike_setarcm
+     <LI> mike_procarc
+     <LI> mike_arcalign
+     <LI> mike_fitarc
+     <LI> mike_fit2darc
+     <LI> mike_tracearc
+     <LI> mike_fittrcarc
+     <LI> mike_mkaimg
+    </UL>
+   <LI> Slit profile:    <br> IDL> mike_slitflat, mike, setup
+  </ol>
+ <LI> Extraction
+   <OL>
+    <LI> Process:       <br> IDL> mike_proc, mike, SETUP=setup, OBJ=obj_id
+                        <br> IDL> mike_objcr, mike, setup, obj_id, /CHK
+    <LI> Trace:         <br> IDL> mike_fntobj, mike, setup, obj_id, /CHK
+    <LI> Skysub:        <br> IDL> mike_skysub, mike, setup, obj_id, /CHK, /FCHK
+    <LI> Extract:       <br> IDL> mike_box, mike, setup, obj_id, /RESCHK
+   </OL>
+</ul>
+
+</font>
+<HR>
+<ADDRESS> Last modified 2004-08-31 </ADDRESS>
+</BODY>
+</HTML>

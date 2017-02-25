@@ -1,0 +1,331 @@
+\documentclass[11pt,letterpaper,dvips]{article}
+ 
+ 
+\usepackage{latexsym}
+\usepackage{fancybox}
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{color}
+%\usepackage{amstex}
+\usepackage{ulem}
+\usepackage{float}
+ 
+\pretolerance=10000
+\textwidth=7.0in
+\textheight=9.7in
+\voffset = -0.3in
+\topmargin=0.0in
+\headheight=0.00in
+\hoffset = -0.3in
+\headsep=0.00in
+\oddsidemargin=0in
+\evensidemargin=0in
+\parindent=2em
+\parskip=1.5ex
+ 
+\input{defs}
+\input{latex}
+ 
+\special{papersize=8.5in,11in}
+
+\renewcommand{\theenumi}{\Roman{enumi}}
+
+\begin{document}
+\pagestyle{empty}
+ 
+
+\center{{\Huge \bf NIRC2 Reduction Cheat Sheet}}
+
+\begin{enumerate}
+
+{\Large  \item Requirements:  }
+	\begin{itemize}
+		\item $>$300M RAM (this can be modified)
+                \item the XIDL package
+		\item the IDL coyote package 
+		\item the Goddard IDL package
+		\item the Schlegel IDL package (compiled)
+	\end{itemize}
+
+{\Large  \item Setup }
+
+  \begin{Aenumerate}
+
+  \item Create a Raw/ directory and put all the raw data in it.  Move
+    to the directory above Raw.
+
+  \item Create the IDL structure which drives all subsequent programs by typing the following:
+    {\bf xdimg\_strct, strct, 'NIRC2', 'Keck', /MKDIR}\\
+
+  \item If your Raw directory contains irrelevant files, you'll need to edit the structure by setting the FLG\_ANLY tag to 0 for those files.\\
+    {\bf irrel=where(strct.img\_root eq 'n0003.fits')}\\
+    {\bf strct[irrel].img\_root = 0} \\
+    
+  \item Verify that the image types were correctly identified.  If not, fix them by changing the TYPE keyword to one of the following: OBJ, STD, TWI, DRK, ZRO, DFT.
+
+  \item Save any changes you made to the structure.  Make sure to use the /create flag:\\
+    {\bf mwrfits, strct, 'struct.fits', /create}\\
+    
+    \it{Note that at any point during the reductions you can exit out of
+      IDL, and re-start where you left off by reading in the structure
+      as follows: strct=mrdfits('struct.fits',1).}
+         
+  \end{Aenumerate}
+
+  {\Large  \item CALIBRATIONS :: } \\
+  Create a bad pixel mask, super-darks, and flats.  You will need one set of
+  flats for each filter, and a dark frame for each exposure time
+  of science data.  The bad pixel mask is helpful but not necessary.
+
+  \begin{Aenumerate}
+    
+  \item Create a bad pixel mask.  This routine uses the dark frames to
+    pick out hot pixels and it uses well-exposed flat fields to pick
+    out dead pixels.  Therefore the structure must include at least
+    one of these types of frames.  You can set the DEADPERCENT and
+    HOTPERCENT keywords to change the threshold of what is considered
+    a bad pixel.  If multiple flats and darks are present the program
+    goes through each frame looking for dead and hot pixels.  In this
+    way it can locate ``sometimes'' dead and hot pixels.  If reducing narrow and wide field data simultaneously, you must run this routine once for the narrow camera and once for the wide camera since these are treated as separate instruments. \\
+    {\bf xdimg\_badpix, strct, CCD='NIRC2W'} \\
+    \vskip .2cm
+    Investigate the bad pixel mask like this:\\
+    {\bf atv, 'PixMask/BadPixMask\_w.fits'}\\
+    {\it If you are unsatisfied, you can always replace the BadPixMask\_w.fits file with a mask of your own.}
+
+  \item Create a super-dark frame for every type of dark frame that we
+    have.  For example, there will be one super-dark frame for each
+    unique combination of exposure time, coadds, sampmode, and nreads.
+    This routine median combines all the dark exposures of the same
+    type. \\
+    {\bf xdimg\_dark, strct}\\
+    \vskip .2cm
+    Investigate the super-darks if you like.  The darks are saved with
+    the NIRC2 camera name, the exposure time, the number of coadds,
+    the sampmode, and the number of reads (in that order).\\
+    {\bf xatv, 'Darks/Dark\_w10.000\_6\_3\_8.fits'}
+
+  \item Create the dome flat.  This routine dark subtracts the dome
+    flats with the super-dark frame of the same type, and then median
+    combines, scaling by the median value in a small portion of the
+    image.  It then deletes the dark subtracted images unless
+    instructed otherwise.  It creates one normalized flat per filter.  If reducing narrow and wide field data simultaneously, you must run this routine once for the narrow camera and once for the wide camera since these are treated as separate instruments. \\
+    {\bf xdimg\_dflat, strct, /IR, CCD='NIRC2W', BPM='PixMask/BadPixMask\_w.fits'} \\
+    \vskip .2cm
+    Investigate the flats as you like.  (The ``N'' is for Normalized.)\\
+    {\bf xatv, 'Flats/DFlat\_w\_NKp.fits', min=0, max=1}\\
+    
+  \item Create a sky flat.  A sky flat is not necessary if you just
+    created a dome flat.  Ideally one has $>5$ well dithered images
+    per filter with no terribly bright objects.  The routine dark
+    subtracts the science images and median combines with clipping.
+    It creates one normalized flat per filter.\\
+    {\bf xdimg\_skyflt, strct, /IR, CCD='NIRC2W', /NOMSK}\\
+    \vskip .2cm
+    Investigate the flats as you like:\\
+    {\bf xatv, 'Flats/SkyFlt\_w\_NKp.fits'}
+
+    \end{Aenumerate}
+
+% This next stuff doesn't belong in a reduction pipeline cheat sheet, and is in fact rather specific.
+
+% {\Large  \item PHOTOMETRIC CALIBRATION} :: \\
+
+% 	\begin{enumerate}
+
+% 	  \item See xdimg\_stds.pro for an example.
+% 	  \item {\bf xdimg\_proc } :: Process the standard field
+%             images.  Identify all STD images with the {\bf where}
+%             command, then run {\bf xdimg\_proc}.  You will need to
+%             choose which image to flatten with and input the root name
+%             (e.g.\ 'Flats/TSkyFltN' or 'Flats/DFlatN').  Notice you do
+%             not use the entire flat name, just the filterless portion.
+%             If dealing with infrared data, you will need to use the
+%             /IR flag, and you should provide the name of a bad pixel
+%             mask if you have one.  The resulting images are in the
+%             Final/ directory with an 'f\_' prefix.  Note that this
+%             procedure does NOT multiply by the gain by default.  Make
+%             sure the date is properly set for each image or is set globally! \\
+%             \quad OPT Example: STDS = where(n1\_struct.type EQ 'STD' AND
+%             n1\_struct.flg\_anly NE 0 ) \\
+%             \quad\quad\quad xdimg\_proc, n1\_struct, STDS, 'flatroot' \\
+%             \quad IR Example: STDS = where(n1\_struct.type EQ 'STD' AND n1\_struct.flg\_anly NE 0 and n1\_struct.ccd eq 'NIRC2W') \\
+%             \quad\quad\quad xdimg\_proc, n1\_struct, STDS, 'flatroot', /IR, BPM='PixMask/BadPixMask\_w.fits' \\
+%             \quad Time : Approx 15 sec / image
+	        
+% 	  \item {\bf xdimg\_starid} :: Identify the stars in each
+%             standard field.  This routine displays the image, allows
+%             one to flip it, directs the reader to read in a star list
+%             relevant to the field, and then facilitates the
+%             identification of all stars in that field.  It is not
+%             necessary to have the standard fields in the local List
+%             directory before starting this procedure.  (By default,
+%             the program will search the /IMG/Photometry/Lists
+%             directory.)  But it is advised to use the LST\_PATH
+%             keyword and copy over the list locally.  You'll want to be
+%             familiar with the order of the stardards in the list,
+%             because you'll have to click on the stars in the image one
+%             by one, in the order that they appear in the starlist.
+%             Once you have identified and centered the stars, you can
+%             save the list which is convenient given the poor quality
+%             of the Landolt coordinates and proper motions.  This
+%             program drives the program {\bf x\_starid} which is an IDL
+%             gui.  See its help page for more details.  Play around with the inorient keyword to get the standard stars to line up correctly on the image.  After running xdimg\_starid, there should be a new file in the Photo directory called std\_****.dat, and this file should contain the pixel positions of the standard stars.\\
+%             \quad Example: {\bf xdimg\_starid}, n1\_struct, inorient=4, LST\_PATH='/Users/pollack/foo/Lists/' \\
+%             \quad Time : Mostly human labor ($<$1 min / image)
+
+% 	  \item {\bf xdimg\_stdmag} :: Calculate magnitudes for the stars.  This 
+% 		routine takes the star positions from the previous step, 
+% 		reads in each image and calculates $7''$ aperture magnitudes.
+% 		The output is written to Photo/ by default (mag\_*).  Note: If you found that some of the standard stars are staruated, or fall on a bad column, or whatever, you may want to edit the ``mag'' files in the Photo directory before continuing on to the next step of photcal.  You'll have a chance in xdimg\_photcal to remove bad data points, but it may not be obvious which ones are bad. \\
+%          	\quad Example: {\bf xdimg\_stdmag}, n1\_struct \\
+% 	        \quad Time   : Fast, 5s/image
+
+% 	  \item {\bf xdimg\_photcal} :: Derive the final solution.  This routine
+% 		takes the magnitudes from the previous step, reads in the
+% 		Landolt info, and then creates and plots up the solution.  
+% 		One can set an AM
+% 		term instead of fitting for it with the SETAM keyword.  (For a good discussion on airmass, and to find values of AM to use in case you can't fit for it yourself, see Prochaska et al. 2001, AJ, 123, 2206.)
+% 		Also the default is to only include Landolt stars with at least
+% 		4 measurements.  This can be changed with the MIN\_NOBS and
+% 		MIN\_MOBS keywords.  The output is written as 'soln\_*' in
+% 		the Photo directory.  \\
+%          	\quad Example: {\bf xdimg\_photcal}, n1\_struct, setam=0.7, min\_nobs=1, /NCLR \\
+% 	        \quad Time   : Fast
+
+% 	  \item Checkout 'soln\_*' in the Photo directory for the final 
+% 		photometric solutions.  The output given is the filter
+% 		for the solution, and the color, followed by the ZP, AM, CLR fitted
+% 		parameters
+% 		(with corresponding $1\sigma$ errors on the last line).  The final magnitudes are given by:\\
+	
+% 	 	\begin{center}
+% 		Mag = m + 25.0 + ZP - AM*obs\_AM - CLR*obs\_clr \\
+% 		\end{center}
+
+% 		Of course, the +25.0 is simply the default when you use x\_aper or daophot to do standard aperture photometry.  i.e. If you look at the mag\_****.dat files which were created by xdimg\_stdmag, which are stored in the Photo directory, these values are already (m + 25.0) in the above equation.  Note: the quoted zero point applies to the images processed by xdimg\_proc, that is images which already have had the gain applied!
+
+% 	\end{enumerate}
+
+
+
+{\Large  \item Reduce the Science Images} \\
+
+	\begin{enumerate}
+
+        \item Reduce the science images.  Specify the name of a bad pixel mask if one exists, and which flat type is preferred for use.  (Specify the flat ROOT name only, not including the filter.)  If you want to later coadd the final images using Josh's code, include a FILEOUT name to be written with a list of final files. \\
+          {\bf IMS =  where(strct.type EQ 'OBJ' AND \$}\\
+          {\bf strct.flg\_anly NE 0 and strct.ccd eq 'NIRC2W')} \\
+          \vskip .2cm
+          {\bf xdimg\_proc, strct, IMS, 'Flats/SkyFlt\_w\_N', /IR, \$}\\
+          {\bf BPM='PixMask/BadPixMask\_w.fits', FILEOUT='stackFile'}\\
+          \vskip .2cm 
+          The reduced images are in Final directory, and
+          have a prefix 'f\_'.  They are in units of counts, i.e. they
+          have not been multiplied by the gain or divided by the
+          exposure time or the number of coadds.
+            
+        \item Run Josh's coadd code.  After a discussion with
+          Hsiao-Wen, we determined that the ideal coadd code would
+          subtract the median from each image, and then median combine (with clipping) the
+          median-subtracted images, weighting by the inverse variance
+          and scaling by the exposure time.
+
+          \end{enumerate}
+
+
+% 	  \item {\bf x\_offset} :: This routine takes a series of images (in a list)
+% 		and calculates the integer offset between number 2-n and number 1.
+% 		It uses sExtractor to identify objects and then cross-correlates
+% 		the images in a very simple way.
+% 		Copy the default.* files from $\$$XIDL/IMG/Notes/files to a 
+% 		new directory (e.g. '[obj]/offsets') and create a file lists the
+% 		final images. The default output is a file 'offsets' with
+% 		integer offsets.
+%          	\quad Example: {\bf x\_offset} 'obj.list' INSTR='SITe3'\\
+% 	        \quad Time   : 1min/image \\
+
+% 	  \item Combine! :: {\bf THIS IS WRONG!!!} Use IRAF's {\it combine} to register the processed
+% 		images.  Be sure to weight by exposure and scale by the median.
+% 		This has the same effect as just summing each image straight-up
+% 		(i.e.\ preserving total counts).
+%                 {\bf After a long discussion with Hsiao-Wen, we determined that what you should really do is subtract the median from each each, and then coadd the median-subtracted images by weighting by the inverse variance and scaling by the exposure time.}
+
+
+
+
+% {\Large  \item Measuring Magnitudes} \\
+
+% 	We will use sextractor and in order for it to work properly
+% 	the images must be in counts per second (i.e. counts for which Poisson Statistics applies),
+% 	have the same dimensions and be registered [these last requirements
+% 	may no longer be true, I can edit the in-house code to handle
+% 	different sizes and registrations].
+% 	We will use the R band to select our images
+% 	and set the aperture sizes.  We then will use an in-house 
+% 	program to do the photometry
+	
+% 	\begin{enumerate}
+
+% 	  \item Normalizing :: Divide each image by the value in TTIME in
+% 		the header. \\
+%          	\quad Example: imarith Q0951B / 600.0  Q0951NB \\
+% 	        \quad Time   : Quick 
+
+% 	  \item Registering :: Either use the Gawiser method where you give the
+% 		offset program the final B and R images and calculate the
+% 		offset and repeat for I or just use your eyeball and ximtool.  
+% 		Then use imcopy to copy subsections of each image into a 
+% 		final 3 images which have the same dimension and are 
+% 		registered. \\
+%          	\quad Example: imcopy Q0951NB[71:1839,86:2269] Q0951XB \\
+%          	\quad Example: imcopy Q0951NR[1:1769,1:2184] Q0951XR \\
+%          	\quad Example: imcopy Q0951NI[2:1770,3:2186] Q0951XI 
+
+
+% 	  \item Run Sextractor :: Copy all of the default.* files 
+% 	  	as well as the example .sex files from
+% 		/home/xavier/Keck/LRIS/DLAImg/Sex/ into a subdirectory (Sex).
+% 		Copy the *.sex files to the appropriate name.  Edit the *.sex
+% 		files changing CATALOG\_NAME, MAG\_ZEROPOINT (this is the
+% 		photometric zero point taking airmass into account), 
+% 		SATUR\_LEVEL (55000 / TTIME), 
+% 		SEEING\_FWHM, and CHECKIMAGE\_NAME. Finally, run sextractor
+% 		on the frame for which you wish to identify objects and
+% 		apertures.  We have been using R.\\
+%          	\quad Example: sex ../Q0132XR.fits -c Q0132+13R\_ap.sex \\
+
+% 	  \item Run SBlimit :: Check the Surface brightness limit.  Create
+% 		a file SBlimit.inp in Input/
+% 		with (1) Npix in aperture e.g.\ $1''$,
+% 		(2) Nfilt, (3-?) $b1, b2, XB$; $\sigma^{DN}$ repeat \\
+%          	\quad Ex: SBlimit
+
+% 	  \item Run lris\_clrphot :: This program will parse the sextractor
+% 		output and calculate mangitudes for BRI based on the output
+% 		from sextractor.  The key is that the apertures are of a fixed
+% 		size for all of the images.  Copy the input file 
+% 		lris\_clrphot.inp from DLAImg/Input into your Input directory
+% 		and edit everything.  The first 9 lines are the fits file,
+% 		total exposure time (s), and Airmass for each filter.
+% 		The next two are the aperture and catalog files from 
+% 		sextractor.
+% 		The last 3 lines are: (1) the number of dummy comments in the
+% 		sextractor output, don't touch this; (2) the photometric
+% 		calibration ($b1, \sigma(b1), b2, \sigma(b2), b3, \sigma(b3)$)
+% 		and (3) the $1\sigma$ limiting magnitude which we will
+% 		use in the case when nothing is detected.  The output is
+% 		fort.11 which has: (i) running number, (ii) x\_pix, 
+% 		(iii) y\_pix; (iv) Bmag, (v) Rmag, (vi) Imag, (vii) sex mag. \\
+%          	\quad Example: lris\_clrphot \\
+
+% 	   \item Run lris\_3comp ::  In theory you are ready to rock.  Just
+% 		copy over the lris\_3comp.inp file and get to it. \\
+% 		\quad Example: lris\_3comp \\
+
+% 	\end{enumerate}
+	
+
+\end{enumerate}
+
+\end{document}

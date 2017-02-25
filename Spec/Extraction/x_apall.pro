@@ -4,32 +4,51 @@
 ;   Version 1.1
 ;
 ; PURPOSE:
-;    Plots any array interactively
+;    Performs an aperture extraction on a 2D image.  Much like IRAFs
+;    apall routine.
 ;
 ; CALLING SEQUENCE:
-;   
-;   spec = x_apall(ydat, [head])
+;  spec = x_apall( img, OVR=, CLINE=, APER=, $
+;                 SKYFUNC=, SKYNORD=, SKYREG=, $
+;                 /DISPLAY, /NOREJ, TRACE=, /NOOV, $
+;                 /NOSKY=, STRCT=, RN=, GAIN=, VAR=, $
+;                 /CRUDE, TINTER=, ERROR=, /SILENT )
 ;
 ; INPUTS:
-;   ydat       - Values 
-;   [head]     - Header
+;   img -- 2D spectrum
 ;
 ; RETURNS:
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
-;   wave       - wavelength array
-;   DISPLAY    - Display the sky subtracted image with xatv
-;   OVR        - String array for ov region:  '[2050:2100, *]'
-;   ERROR      - Variance array
+;  /DISPLAY - Display the sky subtracted image with xatv
+;  OVR=     - String array for ov region:  '[2050:2100, *]'
+;  VAR=     - Variance image
+;  RN=      - Read noise [default: 5.]
+;  GAIN=    - Gain [default: 1.]
+;  /CRUDE   - Use trace_crude to trace the object
+;  /TINTER  - Fit the trace interactively
+;  /NOSKY   - Do not sky subtract
+;  SKYFUNC= - Function to use to fit the sky [default: POLY]
+;  SKYNORD= - Order for sky fit [default: 1]
+;  SKYREG=  - Region to fit the sky
+;  /NOREJ   - Do not do rejection when fitting the sky
+;  CLINE=   - Line to identify object in [default: sz[0]/2]
+;  APER=    - Aperture to extract [default: determine interactively]
+;  /NOOV    - Do not perform OV subtraction
+;  /ROT     - Transpose the data (code expects data parallel to rows)
 ;
 ; OPTIONAL OUTPUTS:
+;   ERROR=   - Sigma array (or is it variance?)
+;   STRCT=   - Structure defining the various extraction parameters.
+;              Useful for performing wavelength subtraction
+;   TRACE=   - Output trace
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   spec = x_apall('spec.fits')
+;   spec = x_apall('spec.fits', STRCT=strct)
 ;
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
@@ -46,15 +65,14 @@ function x_apall, img, OVR=ovr, CLINE=cline, APER=aper, $
                   SKYFUNC=skyfunc, SKYNORD=skynord, SKYREG=skyreg, $
                   DISPLAY=DISPLAY, NOREJ=norej, TRACE=trace, NOOV=noov, $
                   NOSKY=nosky, STRCT=strct, RN=rn, GAIN=gain, VAR=var, $
-                  CRUDE=crude, TINTER=tinter, ERROR=error, SILENT=silent
-
-
+                  CRUDE=crude, TINTER=tinter, ERROR=error, SILENT=silent, $
+                  CHKTRC=chktrc, ROT=rot
 ;
   if  N_params() LT 1  then begin 
     print,'Syntax - ' + $
              'spec = x_apall(img, OVR=, CLINE=, APER=, SKYFUNC=, SKYNORD=, '
     print, '        SKYREG=, /DISPLAY, /NOREJ, TRACE=, /NOOV, /NOSKY, STRCT=,'
-    print, '        RN=, GAIN=, VAR=, /crude, /tinter, ERROR=, /SILENT ) [V1.1]'
+    print, '        RN=, GAIN=, VAR=, /crude, /tinter, ERROR=, /SILENT, /CHKTRC ) [V1.1]'
     return, -1
   endif 
 
@@ -68,6 +86,8 @@ function x_apall, img, OVR=ovr, CLINE=cline, APER=aper, $
 
   dat = x_readimg(img, /fscale)
   if n_elements(dat) EQ 1 then return, -1
+
+  if keyword_set(ROT) then dat = transpose(dat)
       
   ; Overscan
   if keyword_set( strct ) then ovr = strct.ovr
@@ -101,14 +121,23 @@ function x_apall, img, OVR=ovr, CLINE=cline, APER=aper, $
   if not keyword_set( APER ) then begin
       if not keyword_set( SILENT) then print, 'x_apall: Define the Aperture'
       aper = x_setapergui(ovdat, CLINE=cline)
+      print, 'x_apall: APER = ', aper
   endif
 
 ; TRACE
   if not keyword_set( TRACE ) then begin
       if not keyword_set( SILENT) then print, 'x_apall: Tracing'
-      trace = x_trace(ovdat, aper, cline, VAR=var, TFITSTR=tfitstr, $
+      trace = x_trace(ovdat, total(aper)/2., cline, VAR=var, TFITSTR=tfitstr, $
                       CRUDE=crude, /ROT, INTER=tinter)
   endif
+  if keyword_set( CHKTRC ) then begin
+      rnd_trc2 = lindgen(sz[0])
+      trc_msk = rnd_trc2 + round(trace)*sz[0]
+      tmp = ovdat
+      tmp[trc_msk] = -10000
+      xatv, tmp, /block
+  endif
+      
 
 ;;;;; SKY ;;;;;;;;;;
   if not keyword_set( NOSKY ) then begin
@@ -128,6 +157,7 @@ function x_apall, img, OVR=ovr, CLINE=cline, APER=aper, $
                        djs_median(ovdat[cline-10L:cline+10L,*],1), $
                        FITSTR=skyfstr, $
                        REG=skyreg, /INTER)
+          print, 'x_apall: Skyreg = ', skyreg
       endif
       
       ; SUBTRACT SKY
@@ -142,11 +172,10 @@ function x_apall, img, OVR=ovr, CLINE=cline, APER=aper, $
 
 ; EXTRACT
 
-  stop
   if not keyword_set( SILENT) then print, 'x_apall: Extracting'
   if arg_present( ERROR ) then begin
       spec = x_extract(fimg, aper, trace, error, sky, CAPER=cline, $
-                       SKYRMS=skyrms, RN=rn, GAIN=gain) 
+                       SKYRMS=skyrms, RN=rn, GAIN=gain, VAR=var) 
   endif else spec = x_extract(fimg, aper, trace, CAPER=cline)
                      
 

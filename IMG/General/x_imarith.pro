@@ -4,10 +4,9 @@
 ;    Version 1.1
 ;
 ; PURPOSE:
-;    Performs arithmetic on two fits images
+;    Performs arithmetic on two fits images (akin to IRAF)
 ;
 ; CALLING SEQUENCE:
-;   
 ;   x_imarith, img1, oper, img2, outimg, FITS=
 ;
 ; INPUTS:
@@ -24,11 +23,12 @@
 ;
 ;
 ; OPTIONAL OUTPUTS:
-;   FITS - fimg is a fits file 
+;   /FITS - fimg is a fits file (string)
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
+;   x_imarith, 'f1.fits', '+', 'f2.fits', fimg
 ;   x_imarith, 'f1.fits', '+', 'f2.fits', 's12.fits', /FITS
 ;
 ;
@@ -59,7 +59,11 @@ pro x_imarith, img1, oper, img2, fimg, FITS=fits
   case oper of 
       '+' : outimg = i1 + i2
       '-' : outimg = i1 - i2
-      '/' : outimg = i1 / i2
+      '/' : begin
+          outimg = i1 * 0.
+          gd = where(i2 NE 0., ngd)
+          if ngd NE 0 then outimg[gd] = i1[gd] / i2[gd]
+      end 
       '*' : outimg = i1 * i2
       else : begin
           print, 'Operation', oper, ' not defined'

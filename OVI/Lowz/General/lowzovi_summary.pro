@@ -1,40 +1,39 @@
 ;+ 
 ; NAME:
 ; lowzovi_summary   
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
-;    Launches a cw_field and grabs input from the user
+;    Launches a GUI which can be used to plot and print some 
+;  simple info from the galaxy survey.
 ;
 ; CALLING SEQUENCE:
-;   
-;   string = lowzovi_summary(title)
 ;
 ; INPUTS:
-;   title - Title
+;   ovi  -- Galaxy survey
 ;
 ; RETURNS:
-;   string - String
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
+;  /REDSHIFT -- List only those galaxies with redshift measurements
+;  MXY=      -- Maximum number of galaxies to show without scrolling
+;               [Default: 30L]
 ;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   string = lowzovi_summary( 'Enter filename: ')
-;
+;   lowzovi_summary, ovi
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
 ;
 ; REVISION HISTORY:
-;   07-Oct-2002 Written by JXP
+;   Oct-2003 Written by JXP
 ;-
 ;------------------------------------------------------------------------------
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 pro lowzovi_summary_initlzovin
@@ -57,7 +56,13 @@ common lowzovi_summary_common
   WIDGET_CONTROL, ev.id, get_uvalue = uval
 
   case uval of
+      'BUTTON': begin
+          widget_control, state.button_id, get_value=buttons
+          state.flg_psfil = buttons[0]
+          state.flg_survey = buttons[1]
+      end
       'ZIMG': lowzovi_summary_zimg, state
+      'RADEC': lowzovi_summary_radec, state
       'PLT': lowzovi_summary_pltobj, state
       'PARSE': lowzovi_summary_updlist, state
       'ZHIST': lowzovi_summary_zhist, state
@@ -97,10 +102,13 @@ common lowzovi_summary_common
       list = strarr(n_elements(lzovi_indx))
 
       case state.nfilt of 
-          2: fmt = '(a6,1x,i1,1x,a23,1x,a3,1x,f8.5)'
+          2: fmt = '(a6,1x,i1,1x,a23,1x,a3,1x,f8.5,1x,f6.2,1x,2f6.0)'
           else: stop
       endcase
 
+      ;; Impact parameter (arcmin)
+      rho = sqrt(lzovi_gal.ra^2 + lzovi_gal.dec^2)/60.
+      
       ;; Loop
       for q=0L,n_elements(list)-1 do begin
           jj = lzovi_indx[q]
@@ -115,11 +123,12 @@ common lowzovi_summary_common
           ;; List
           list[q] = string(strtrim(lzovi_gal[jj].id,2)+ $
                            strtrim(lzovi_gal[jj].obj_id,2),$
-            lzovi_gal[jj].flg_anly, $
-            magstr, $
-            lzovi_gal[jj].gal_type, $
-            lzovi_gal[jj].z, $
-            FORMAT=fmt)
+                           lzovi_gal[jj].flg_anly, $
+                           magstr, $
+                           lzovi_gal[jj].gal_type, $
+                           lzovi_gal[jj].z, rho[jj], $
+                           lzovi_gal[jj].xypix, $
+                           FORMAT=fmt)
       endfor
   endelse
 
@@ -231,7 +240,8 @@ common lowzovi_summary_common
 
   ;; Grab the names
   tmp = x_getobjnm(lzovi_fspec, /lst)
-  indx = where(tmp EQ state.obj)
+  ;; Allow for 10000L
+  indx = where(tmp EQ state.tobj)
   ;; Obj files
   gd = where(strlen(strtrim(lzovi_fspec[indx].obj_fil,2)) GT 0,ngd)
   if ngd EQ 0 then stop
@@ -252,7 +262,7 @@ common lowzovi_summary_common
 
   widget_control, /hourglass   
   ;; Run plt obj
-  wfccd_pltobj, state.fspec_fil[state.fspec_sel], state.obj, $
+  wfccd_pltobj, state.fspec_fil[state.fspec_sel], state.tobj, $
     state.objnm_sel, /fspec
 
   return
@@ -266,6 +276,8 @@ common lowzovi_summary_common
   ;; INDEX
   state.indx = lzovi_indx[state.lindx]
   state.obj = strtrim(lzovi_gal[state.indx].id,2)+ $
+    strtrim(lzovi_gal[state.indx].obj_id,2)
+  state.tobj = strtrim(lzovi_gal[state.indx].id MOD 10000L,2)+ $
     strtrim(lzovi_gal[state.indx].obj_id,2)
   lowzovi_summary_fspeclst, state, state.flg_fspec
 
@@ -353,6 +365,56 @@ common lowzovi_summary_common
 end
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; radec -- Spatial dist of the galaxies
+pro lowzovi_summary_radec, state
+common lowzovi_summary_common
+
+
+ 
+  ;; Max min
+  mxx = max(lzovi_gal[lzovi_indx].ra, min=mnx)
+  mxy = max(lzovi_gal[lzovi_indx].dec, min=mny)
+
+ if (mxx-mnx) GT (mxy-mny) then begin
+     diff = (mxx-mnx) - (mxy-mny)
+     mxy = mxy + diff/2.
+     mny = mny - diff/2.
+ endif else begin
+     diff = -(mxx-mnx) + (mxy-mny)
+     mxx = mxx + diff/2.
+     mnx = mnx - diff/2.
+ endelse
+
+ if keyword_set( state.flg_psfil ) then begin
+     device, decompose=0
+     ps_open, filename='summ.ps', /color, bpp=8, /maxs
+     !p.thick = 5
+     !p.charthick = 3
+     !x.thick = 3
+     !y.thick = 3
+ endif
+  clr = getcolor(/load)
+  plot, [mnx,mxx]/60., [mny,mxy]/60., /nodata, color=clr.black, $
+    background=clr.white, charsize=2.5, xmargin=[6.5,1], ymargin=[3,1],$
+    xtitle='!17delta RA (arcmin)', ytitle='delta Dec(arcmin)'
+
+  oplot, lzovi_gal[lzovi_indx].ra/60., lzovi_gal[lzovi_indx].dec/60., $
+    color=clr.blue, psym=1, symsize=2.
+
+  oplot, [0.], [0.], psym=2, color=clr.red, symsize=2.
+
+ if keyword_set( state.flg_psfil ) then begin
+      ps_close, /noprint, /noid
+      device, decompose=1
+      !p.thick = 1
+      !p.charthick = 1
+     !x.thick = 1
+     !y.thick = 1
+ endif
+  return
+end
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -362,16 +424,25 @@ end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-pro lowzovi_summary, ovi, MXY=mxy, REDSHIFT=redshift
+pro lowzovi_summary, ovi, MXY=mxy, REDSHIFT=redshift, INDX=indx
 
 common lowzovi_summary_common
 
 ;
-  if  N_params() LT 1  then begin 
-    print,'Syntax - ' + $
-             'lowzovi_summary, ovi [v1.0]'
-    return
-  endif 
+;  if  N_params() LT 1  then begin 
+;    print,'Syntax - ' + $
+;             'lowzovi_summary, ovi [v1.0]'
+;    return
+;  endif 
+
+  if not keyword_set(OVI) then begin
+      files= findfile('*_gal.fits', count=nfil)
+      if nfil EQ 0 then begin
+          print, 'lowzovi_summary: Input a structure please'
+          return
+      endif
+      ovi = xmrdfits(files[0], 1)
+  endif
 
 ;  Optional Keywords
   if not keyword_set( XOFFSET ) then xoffset = 200
@@ -392,8 +463,11 @@ common lowzovi_summary_common
             flg_sci: 0L, $  ; 0L means include serendip
             flg_spec: 0L, $ ; 1L means spec only
             flg_z: 0L, $    ; 1L means good z only
+            flg_psfil: 0L, $
+            flg_survey: 0L, $
             nfilt: 0L, $
             obj: ' ', $
+            tobj: ' ', $
             objnm: 0L, $
             objnm_list: strarr(100), $
             objnm_sel: 0L, $
@@ -403,6 +477,7 @@ common lowzovi_summary_common
             list_id: 0L, $
             listfspec_id: 0L, $
             listobjnm_id: 0L, $
+            button_id: 0L, $
             nobj_id: 0L, $
             base_id: 0L $
           }
@@ -441,7 +516,13 @@ common lowzovi_summary_common
                            /align_right)
   zhist = WIDGET_BUTTON(butbase, value='ZHIST',uvalue='ZHIST', FONT='courier')
   zimg = WIDGET_BUTTON(butbase, value='ZIMG',uvalue='ZIMG', FONT='courier')
+  radec = WIDGET_BUTTON(butbase, value='RADEC',uvalue='RADEC', FONT='courier')
 
+  state.button_id = CW_BGROUP(toolbar, ['PSFIL', $
+                                         'flg_survey'], $
+                              row=2, set_value=[state.flg_psfil, $
+                                                state.flg_survey], $
+                              /nonexclusive, font=stdfont, uvalue='BUTTON')
 
 ; Find number of Filters
   a = where(lzovi_gal.flg_anly MOD 2 EQ 1, na)
@@ -450,8 +531,11 @@ common lowzovi_summary_common
       if nb EQ 0 then state.nfilt = 10 else state.nfilt = b[0]
   endif else state.nfilt = 0
   
-; Create the list
-  lowzovi_summary_setcindx, state
+; Get the index list
+  if keyword_set( INDX ) then begin
+      lzovi_indx = indx 
+      widget_control, state.nobj_id, set_value=nobj
+  endif else lowzovi_summary_setcindx, state
   lowzovi_summary_mklist, state, list
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -460,7 +544,7 @@ common lowzovi_summary_common
   listbase = WIDGET_BASE(state.base_id, /row, /frame, $
                          /align_top, uvalue='LISTS')
   state.list_id = widget_list(listbase, FONT=lst_font, $
-                              value=list, xsize=60L, ysize=ysz, $
+                              value=list, xsize=70L, ysize=ysz, $
                               uvalue = 'LIST')
   state.listfspec_id = WIDGET_LIST(listbase, FONT=lst_font, $
                                VALUE=[' '], xsize=25, $

@@ -1,0 +1,55 @@
+
+
+
+
+GMOS Pipeline
+------------
+-- gmos_imag_reduce.pro does pixel level manipulations, oscan and 
+   dark subtraction, bad pixel mask from darks, and flat fielding. This code
+   writes out a file that can be fed to gmosaic.pro
+
+-- Run gemini iraf package to mosaic individual images
+
+-- For each of these gmosaic-ed frames generate SWARP solutions for
+   each NB or g-band frame. Then map that to fixed image size with center
+   fixed to the location of the QSO. 
+
+-- These can be read in by gmos_imag_stackplay.pro and stacked using the input mask
+   and avsigclipping, to generate a mask that further rejects cosmics/outliers
+
+
+
+Things to do
+------------
+
+-- gmos_imag_stackplay.pro needs to have a mask and inverse variance image for each frame
+   mapped with the same SWARP transformation. For the mask, this should be:
+
+   mask = (darkmask EQ 1 AND LA_COSMISMASK EQ 1 AND (IVAR GT 0))
+
+   This mask then needs to be re-mapped to using the SWARP transformation for the original
+   image. Do the same for the inverse variance. You did this by copying filenames somehow. 
+   This mask should have good=1, bad=0. 
+
+   NOTE: The djs_avsigclip has a reverse masking convention from normal, i.e. 
+   good =0, bad=1. The mask is this flipped in gmos_imag_stackplay. See my example 
+   for how this was done. 
+
+
+-- We need to think about weighting to use. I recommend a single weight per image, based on the
+   overall S/N ratio. 
+
+-- Calibration of g-band images needs to be done. Then we will scale all g-band images up by 
+   scale to have the same average flux in the stars
+
+   g_new = scale*g_orig
+   ivar_new = ivar_orig/scale^2
+
+   A good choice for the weighting function would then be something like median(ivar_new)
+   because we want a single number. Of course only where the mask is positive. 
+
+   The calibration step should be done on the single re-mapped g-band images. These have
+   a WCS header, and you can use the SCAMP SDSS catalog. Then run sextractor and do the 
+   calibration. 
+
+

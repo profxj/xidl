@@ -1,36 +1,47 @@
 ;+ 
 ; NAME:
 ; x_wavecal   
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
-;    Wavelength calibrate a given input img/spectrum
+;    Wavelength calibrate a given input Arc img (or spectrum).  This
+;    routine simply extracts the Arc spectrum (if necessary) and then
+;    calls x_identify
 ;
 ; CALLING SEQUENCE:
-;   
-;   calib = x_wavecal(img/spec, [extrct], LINELIST=)
+;  wave = x_wavecal( arc, [extrct], LINELIST=, /DEBUG, $
+;                   /REDBLUE, DISP=, CALIB=, FLUX=)
 ;
 ; INPUTS:
 ;   img/spec   - 2D image or 1D spectrum
-;   [extrct]   - Extraction structure
+;   [extrct]   - Extraction structure (required for an input 2D image)
 ;
 ; RETURNS:
-;   FSTRCT - Structure defining the fit
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
-;   LINELIST   - List of lines
+;   LINELIST   - Reference list (user can set interactively)
+;   DISP       - Guess at dispersion (A or km/s per pix [pos/neg
+;                value])
+;   /FLUX       - Assumes wide slit and therefore wide arc lines
+;   /REDBLUE    - Spectrum runs from red to blue (not blue to red)
+;   /DEBUG
+;   /ROT       -  Transpose the Arc image (code requires orders
+;                parallel to rows)
 ;
 ; OPTIONAL OUTPUTS:
+;   CALIB= - Structure defining the fit
+;   SPEC=  - 1D extracted spectrum
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   x_wavecal, spec
-;
+;   wave = x_wavecal(spec)
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
+;  x_readimg
+;  x_identify
 ;
 ; REVISION HISTORY:
 ;   07-Dec-2001 Written by JXP
@@ -40,14 +51,15 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 function x_wavecal, arc, extrct, LINELIST=linelist, DEBUG=debug, $
-                    REDBLUE=redblue, DISP=disp, CALIB=calib, FLUX=flux
+                    REDBLUE=redblue, DISP=disp, CALIB=calib, FLUX=flux, $
+                    ROT=rot, SPEC=spec
 
 
 ;
   if  N_params() LT 1  then begin 
     print,'Syntax - ' + $
              'calib = x_wavecal(arc, [extrct], LINELIST=,/DEBUG, /REDBLUE'
-    print, '        DISP=, CALIB=, FLUX=) [v1.0]'
+    print, '        DISP=, CALIB=, FLUX=) [v1.1]'
     return, -1
   endif 
 
@@ -67,7 +79,7 @@ function x_wavecal, arc, extrct, LINELIST=linelist, DEBUG=debug, $
       endif
       ; EXTRACT
       spec = x_apall(dat, CLINE=extrct.cline, APER=extrct.aper, $
-                     TRACE=*extrct.trace, /NOOV, /NOSKY)
+                     TRACE=*extrct.trace, /NOOV, /NOSKY, ROT=rot)
   endif else spec = dat
   delvarx, dat
 

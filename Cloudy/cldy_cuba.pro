@@ -1,92 +1,128 @@
 ;+ 
 ; NAME:
 ; cldy_cuba
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
-;    Creates a Uplot for a given NHI, FeH, nH
+;   Creates a Cloudy input file from a CUBA output file given a
+;    redshift 
 ;
 ; CALLING SEQUENCE:
 ;   
-; cldy_Uplot, grid, NHI, FeH, nH, ions
+;   cldy_cuba, fil, z, outfil, FIXG=fixg
 ;
 ; INPUTS:
-;   grid  - CLOUDY grid
-;   NHI - Can be an array of values
-;   FeH
-;   nH
-;   ions  - Array of [Z,ion] vectors
+;   fil  - CUBA output file
+;   z    - Redshift
 ;
 ; RETURNS:
-;   
 ;
 ; OUTPUTS:
-;   Creates a Plot
+;   outfil  - Cloudy output file
+;
+; OPTIONAL INPUTS:
+;  /FIXG -- I do not remember what this is for!
+;  CALCU= -- Calculate the U parameter assuming n_H = 1 cm^-3
 ;
 ; OPTIONAL OUTPUTS:
+; STRCT -- Stucture containing the wavelength and flux values
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   cldy_cuba, fil, z, outfil
-; cldy_cuba, '/u/xavier/Cloudy/Spec/Data/CUBA/Q1G0/bkgthick.out',
-; 0.35, '/u/xavier/Cloudy/Spec/Output/q1g0_z035.spec'
+; cldy_cuba, 0.35, '/u/xavier/Cloudy/Spec/Output/q1g0_z035.spec'
+; CUBA_FILE='/u/xavier/Cloudy/Spec/Data/CUBA/Q1G0/bkgthick.out',
 ;
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
+;  cldy_read_cuba
 ;
 ; REVISION HISTORY:
 ;   06-Nov-2003 Written by JXP
+;   31-Jul-2010 Grabbed JFHs version
+;   15-Nov-2016 Until can get JFHs version, make this work; KLC
 ;-
 ;------------------------------------------------------------------------------
-pro cldy_cuba, fil, z, outfil, FIXG=fixg
+PRO cldy_cuba, z, outfil $
+               , CALCU = calcu, PHI = phi $
+               , GAMMA = GAMMA $
+               , J912 = J912, JNU_SCALE = JNU_SCALE $
+               , CUBA_FILE=cuba_file, skip_stop=skip_stop, _extra=extra
 
-  if  N_params() LT 3  then begin 
-      print, 'Syntax - ' +$
-        'cldy_cuba, fil, z, outfil, [v1.0]'
-      return
-  endif 
+  if not keyword_set(skip_stop) then $
+     ;; For those of us lacking cldy_cuba_jfh.pro
+     stop,'cldy_cuba stop: WARNING! Use cldy_cuba_jfh until further notice [JXP: 12-12-2010]'
 
-  ;; Open Madau file
-  close, /all
-  openr, 1, fil
-  zval = fltarr(10)
-  wv = dblarr(432L)
-  flux = dblarr(432L,10)
-  dumf = dblarr(11)
+  RYDLAM = 911.26705 ;; converts Rydbergs to Angstroms
+  IF NOT KEYWORD_SET(CUBA_FILE) THEN $
+     CUBA_FILE = getenv('XIDL_DIR') + '/Cloudy/cuba_q1g01_bkgthick.out'
 
-  ;; Loop
-  for ii=0L,999 do begin
-      readf, 1, zval, FORMAT='(11x,10f11.4)' 
-      for jj=0L,431 do begin
-          readf, 1, dumf;, FORMAT='(10f11.4)'
-          flux[jj,*] = dumf[1:*]
-          wv[jj] = dumf[0]
-      endfor
-      if (z GE zval[0] OR z LE zval[9]) then break
-  endfor
-
-  close, 1
-
+  IF NOT KEYWORD_SET(JNU_SCALE) THEN JNU_SCALE = 1.0D
+  
+  cldy_read_cuba, cuba_file, z, WAVE = WAVE, JNU = JNU1, _extra=extra ; _extra includes /hm2012
+  ;; re-scale the JNU
+  JNU = JNU_SCALE[0]*JNU1
+  ;; Interpolate at each wavelength!
+  energy = RYDLAM/wave
+  isort = sort(energy)
+  energy = energy[isort]
+  logjnu = alog10(JNU[isort])
+  iuniq = uniq(energy)
+  energy = energy[iuniq] 
+  logjnu = logjnu[iuniq] > (-30.0)
+  nen = n_elements(energy)
+  
   openw, 2, outfil
-  printf, 2, 'interpolate (0.00001 -30.0)'
+  printf, 2, 'interpolate (0.00000001 -30.0)' ; span CLOUDY range exactly
 
-  ;; Spline at each wavelength!
-  esv = 0.
-  for ii=431L,0,-1 do begin
-
-      fx = interpol(flux[ii,*], zval, z, /spline)
-      energy = 912./wv[ii]
-      if fx GT 1E-30 then jnu = alog10(fx) else jnu = -30.
-      if keyword_set(FIXG) and wv[ii] LT 50 then jnu = -30.
-      if energy NE esv then $  ; Multiple energies in a few spots
-        printf, 2, 'continue ('+strtrim(energy,2)+' '+ $
-        string(jnu,FORMAT='(f7.3)')+')'
-      esv = energy
-  endfor
+  FOR ii = 0L, nen-1L DO BEGIN
+     printf, 2, 'continue ('+strtrim(energy[ii], 2)+' '+ $
+             string(logjnu[ii], FORMAT = '(f10.6)')+')' 
+  ENDFOR
   printf, 2, 'continue (7400000 -30.0)'
   close, 2
+ 
+  IF arg_present(CALCU) OR arg_present(PHI) THEN BEGIN
+     ;; Sum up phi
+     c = x_constants()
+     nu = (2.9979246d18/wave)   ; (A/s)
+     blue_wave = where(wave LE 912.0D, nblue)
+     nu_blue = nu[blue_wave]
+     jnu_blue = jnu[blue_wave]
+     ;; restrict to unique values
+     uni_ind = uniq(nu_blue, sort(nu_blue))
+     nu_blue = nu_blue[uni_ind]
+     jnu_blue = jnu_blue[uni_ind]
+     lognu_blue = alog10(nu_blue)
+     mini = min(abs(wave-912.0D), k)
+     J912 = jnu[k]
+     LN10 = alog(10.0D)
+     integrand = 4*!dpi*jnu_blue/c.h
+     phi = LN10*int_tabulated(lognu_blue, integrand, /double, /SORT)
+     U =  phi/1.0d/c.c
+     calcU = alog10(U)
+  ENDIF
 
-  return
-  
-end
+  IF arg_present(GAMMA) THEN BEGIN
+     ;; Sum up phi
+     c = x_constants()
+     nu = (2.9979246d18/wave)   ; (A/s)
+     blue_wave = where(wave LE 912.0D, nblue)
+     nu_blue = nu[blue_wave]
+     jnu_blue = jnu[blue_wave]
+     ;; restrict to unique values
+     uni_ind = uniq(nu_blue, sort(nu_blue))
+     nu_blue = nu_blue[uni_ind]
+     jnu_blue = jnu_blue[uni_ind]
+     lognu_blue = alog10(nu_blue)
+     mini = min(abs(wave-912.0D), k)
+     J912 = jnu[k]
+     LN10 = alog(10.0D)
+     sigma_nu = hcross_section(lognu_blue)
+     ;; output is in units of 1d12
+     integrand = 4*!dpi*jnu_blue*sigma_nu/c.h*1.0d12
+     gamma = LN10*int_tabulated(lognu_blue, integrand, /double, /SORT)
+  ENDIF
+ 
+  RETURN
+END

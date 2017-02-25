@@ -1,13 +1,12 @@
 ;+ 
 ; NAME:
 ; xdimg_ar   
-;     Version 1.0
+;     Version 1.1
 ;
 ; PURPOSE:
 ;   Reads in the first file in the directory with 'xdimg*fits'
 ;
 ; CALLING SEQUENCE:
-;   
 ;  xdimg = xdimg_ar()
 ;
 ; INPUTS:
@@ -33,8 +32,6 @@
 ;   13-Nov-2001 Written by JXP
 ;-
 ;------------------------------------------------------------------------------
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 function xdimg_ar

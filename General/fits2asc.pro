@@ -1,24 +1,28 @@
 ;+ 
 ; NAME:
 ; fits2asc
+; V1.1
 ;
 ; PURPOSE:
-;    Converts fits to ASCII.  Useful for VPFIT
+;    Converts fits spectrum to ASCII.   The wavelength array is 
+;    read from the header.  Particularly useful for VPFIT
 ;
 ; CALLING SEQUENCE:
 ;   
 ;   fits2asc, file, [error], OUTFIL=
 ;
 ; INPUTS:
-;   file    - Data Filename
+;   file    - Data Filename [spectrum; data in extension 0]
 ;   [error] - Error filename
 ;
 ; RETURNS:
 ;
 ; OUTPUTS:
-;   outfil  - ASCII file with wavelength, file, [error]
+;   outfil  - ASCII file with wavelength, file, [error] in columns
 ;
 ; OPTIONAL KEYWORDS:
+;  WVMIN -- Minimum wavelength to print out [default: 0.]
+;  WVMAX -- Maximum wavelength to print out [default: 1e6]
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -27,8 +31,9 @@
 ; EXAMPLES:
 ;   fits2asc, 'Blah.fits'
 ;
-;
 ; PROCEDURES CALLED:
+;  x_fitswave
+;  writecol
 ;
 ; REVISION HISTORY:
 ;   27-Aug-2001 Written by JXP
@@ -39,14 +44,14 @@ pro fits2asc, file, error, OUTFIL=outfil, WVMIN=wvmin, WVMAX=wvmax
 
   if (N_params() LT 1) then begin 
     print,'Syntax - ' + $
-             'fits2asc, file, [error], OUTFIL=, WVMIN=, WVMAX='
+             'fits2asc, file, [error], OUTFIL=, WVMIN=, WVMAX=, [v1.1]'
     return
   endif 
 
 ; Keywords
 
-  if not keyword_set( WVMIN ) then wvmin = 0.0
-  if not keyword_set( WVMAX ) then wvmax = 100000.0
+  if not keyword_set( WVMIN ) then wvmin = 0.d
+  if not keyword_set( WVMAX ) then wvmax = 100000.d
 
 ;  Outfile
 
@@ -62,7 +67,7 @@ pro fits2asc, file, error, OUTFIL=outfil, WVMIN=wvmin, WVMAX=wvmax
 
 ;  Read data
 
-  data = mrdfits(file, 0, head)
+  data = xmrdfits(file, 0, head)
   naxis = sxpar(head, 'NAXIS')
   if naxis NE 1 then begin
       print, 'NAXIS NE 1', naxis
@@ -77,7 +82,11 @@ pro fits2asc, file, error, OUTFIL=outfil, WVMIN=wvmin, WVMAX=wvmax
 
 ; Cut on wavelengths as necessary
 
-  goodwv = where( wave LE wvmax AND wave GE wvmin)
+  goodwv = where( wave LE wvmax AND wave GE wvmin, ngd)
+  if ngd EQ 0 then begin
+	  print, 'fits2asc: No wavelength values satisfy wvmin, wvmax'
+	  return
+  endif
   
 
 ; Output

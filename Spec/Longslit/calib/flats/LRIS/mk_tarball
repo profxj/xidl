@@ -1,0 +1,2 @@
+tar -zcvf lris_pixflat.tar.gz pixfl*
+# mv the file to the LowRedux/LRIS directory

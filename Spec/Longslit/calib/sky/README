@@ -1,0 +1,9 @@
+=========================
+orig_kast_sky_red_600_7500.sav   :: JXP 23 August 2013
+  -- Includes the 5575A line (data goes down to 5500A)
+
+kast_sky_red_1200_5000.sav   :: JXP+RM 06 September 2013
+  -- Kindly made by Rosalie McGurk (5400-6800A)
+
+dupont_sky_bcs_600.sav :: JXP from August 2014 run
+  -- 600 lines/mm grating

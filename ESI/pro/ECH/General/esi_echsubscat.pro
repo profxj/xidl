@@ -66,16 +66,28 @@ pro esi_echsubscat, esi, indx, DFLAT=dflat, GAIN_RTO=gain_rto, CHK=chk, $
   c_s = esi_slitnm(slit)
 
 ; Open Flat
-
-  if not keyword_set( FLATFIL ) then $
+  if not keyword_set(FLATFIL) then $
     flatfil = strtrim(esi[indx[0]].flat_fil,2)
   if strlen(flatfil) EQ 0 then begin
-      print, 'esi_echsubscat: Flat file not set!'
-      stop
-      return
+     print, '    *********************************'
+     print, 'esi_echsubscat: Flat file not set!'
+;     print, 'esi_echsubscat: Assuming a dummy name!!'
+     print, '    *********************************'
+;     flatfil = 'Dummy_filename'
+;      stop
+;      return
   endif
-  head = xheadfits(flatfil, /silent)
-  scatt = sxpar(head,'SCATTER',COUNT=nval)
+  IF KEYWORD_SET(FLATFIL) AND file_test(flatfil+'*') THEN  $
+    headflt = xheadfits(flatfil, /silent) $
+  ELSE BEGIN
+      ;; JFH added 04/08. Kludge the header of the flat for the 
+      ;; case where the flat doesn't exist yet (i.e. for arcs). 
+      headflt = strarr(1)
+      sxaddpar, headflt, 'SCATTER', 'T'
+      sxaddpar, headflt, 'GAINFIX', 0.947916
+  ENDELSE
+        
+  scatt = sxpar(headflt, 'SCATTER', COUNT = nval)
   if scatt NE 1 then begin
       print, 'esi_echsubscat: Flat not created! Returning...'
       return
@@ -93,7 +105,7 @@ pro esi_echsubscat, esi, indx, DFLAT=dflat, GAIN_RTO=gain_rto, CHK=chk, $
 ; Gain Fix
   if not keyword_set( GAIN_RTO ) then begin
       ;; Grab value from Flat header
-      gain_rto = sxpar(head,'GAINFIX',count=nval)
+      gain_rto = sxpar(headflt,'GAINFIX',count=nval)
       if nval EQ 0 then begin
           print, 'esi_echsubscat: GAINFIX not measured! Returning..'
           return

@@ -1,3 +1,43 @@
+;+ 
+; NAME:
+; xpix_line
+;   Version 1.1
+;
+; PURPOSE:
+;  Finds all pixels within a ray (or line) of specified width.
+;
+; CALLING SEQUENCE:
+;   pval = xpix_line(x0, y0, x1, y1, wid, xmax, ymax, /NOZERO, COUNT=)
+;
+; INPUTS:
+;   x0 -- x position of one point on the ray
+;   y0 -- y position of one point on the ray
+;   x1 -- x position of one point on the ray
+;   y1 -- y position of one point on the ray
+;   wid -- Width of the line
+;
+; RETURNS:
+;  pval -- pixels in the circle:  array[2,npt]
+;
+; OUTPUTS:
+;
+; OPTIONAL KEYWORDS:
+;  /NOZERO -- Disallow value of 0 (minimum is 1 instead)
+;  COUNT=  -- Number of the pixels in the ray
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;
+; EXAMPLES:
+;   
+;
+; PROCEDURES/FUNCTIONS CALLED:
+;
+; REVISION HISTORY:
+;   17-Sep-2002 Written by JXP
+;-
+;------------------------------------------------------------------------------
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 function xpix_line, x0, y0, x1, y1, wid, xmax, ymax,  NOZERO=nozero, $
@@ -43,7 +83,6 @@ function xpix_line, x0, y0, x1, y1, wid, xmax, ymax,  NOZERO=nozero, $
       endif
   endelse
       
-
   totarr = lonarr(2, long(xmax-xmin+1)*long(ymax-ymin+1))
 
 

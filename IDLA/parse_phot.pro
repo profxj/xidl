@@ -1,3 +1,39 @@
+;+ 
+; NAME:
+;  parse_phot
+;   Version 1.1
+;
+; PURPOSE:
+;    Reads in the BRI ASCII file from DLA photometery to an IDL
+;    structure.  Not too useful for the common folk.
+;
+; CALLING SEQUENCE:
+;   
+;   parse_phot, file, nobj, supstrc, FLAG=
+;
+; INPUTS:
+;
+; RETURNS:
+;
+;
+; OUTPUTS:
+;
+; OPTIONAL KEYWORDS:
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;
+; EXAMPLES:
+; 
+; PROCEDURES/FUNCTIONS CALLED:
+
+; REVISION HISTORY:
+;   
+;
+;------------------------------------------------------------------------------
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 pro parse_phot, file, nobj, supstrc, FLAG= flag, ZFILE=zfile
 
 ; parse_phot -- Reads in BRI data to a structure

@@ -1,0 +1,8 @@
+Gregory D. Wirth / WMKO / 2011-Oct-12
+
+Files in this directory are related to exposure time calculators for
+Keck instruments.  They use the IDL ION script language. 
+
+For a live demo, please see:
+  http://www2.keck.hawaii.edu/cgi-bin/ion-p?page=esi_s2n_main.ion
+  http://www2.keck.hawaii.edu/cgi-bin/ion-p?page=hires-s2n-main.ion

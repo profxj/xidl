@@ -1,13 +1,13 @@
 ;+ 
 ; NAME:
 ; x_extract   
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
-;    Extracts a 1D spectrum from a 2D image given an aperture
+;    Extracts a 1D spectrum from a 2D image given an aperture.  This
+;  routine is superseded by x_extobjbox
 ;
 ; CALLING SEQUENCE:
-;   
 ;   spec = x_extract(img, aper, trace, [error, sky], CAPER=, GAIN=,
 ;                    RN=, /OPTIMAL)
 ;
@@ -45,14 +45,14 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-function x_extract, img, aper, trace, var, sky, CAPER=caper, GAIN=gain, $
-                    RN=rn, OPTIMAL=optimal, SKYRMS=skyrms
+function x_extract, img, aper, trace, svar, sky, CAPER=caper, GAIN=gain, $
+                    RN=rn, OPTIMAL=optimal, SKYRMS=skyrms, VAR=var
 
 ;
   if  N_params() LT 3  then begin 
     print,'Syntax - ' + $
-             'spec = x_extract(img, aper, trace, [var, sky], CAPER=, GAIN=,'
-    print, '        RN=, /OPTIMAL, SKYRMS=) [V1.0]'
+             'spec = x_extract(img, aper, trace, [svar, sky], CAPER=, GAIN=,'
+    print, '        RN=, /OPTIMAL, SKYRMS=, VAR=var) [V1.0]'
     return, -1
   endif 
 
@@ -68,16 +68,17 @@ function x_extract, img, aper, trace, var, sky, CAPER=caper, GAIN=gain, $
 
   if not keyword_set( RN ) then rn = 5.
   if not keyword_set( GAIN ) then gain = 1.
-  if arg_present( var ) then begin
+  if arg_present( svar ) then begin
       if not keyword_set( SKY ) then begin
           print, 'x_extract: Sky not set -- taking sky = 0. everywhere'
           sky = fltarr(sz[0],sz[1])
       endif
+      if not keyword_set( VAR ) then stop
       if not keyword_set( SKYRMS ) then begin
           print, 'x_extract: SKYRMS not set -- taking skyrms = 0. everywhere'
           skyrms = fltarr(sz[0])
       endif
-      var = fltarr(npix)
+      svar = fltarr(npix)
   endif
 
 ; Define spec
@@ -92,10 +93,9 @@ function x_extract, img, aper, trace, var, sky, CAPER=caper, GAIN=gain, $
           offset = trace[q] - center
           spec[q] = gain*$
             total( img[q,round(aper[0]+offset):round(aper[1]+offset)], 2)
-          if arg_present(var) then begin
-              var[q] = spec[q] + $
-                gain*total(sky[q,round(aper[0]+offset):round(aper[1]+offset)],2) $
-                + RN^2*(aper[1]-aper[0]+1) ; + gain*skyrms[q]*(aper[1]-aper[0]+1)
+          if arg_present(svar) then begin
+              svar[q] = $
+                total( var[q,round(aper[0]+offset):round(aper[1]+offset)], 2)
           endif
       endfor
   endif else begin ; OPTIMAL

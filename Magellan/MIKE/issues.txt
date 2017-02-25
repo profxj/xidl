@@ -1,0 +1,29 @@
+Major:
+
+1) 'Noise' in optimal profile of standard stars  (JXP -- 12feb04)
+
+2) When there is no signal, the profile is able to float around
+too much  (JXP -- 12feb04)
+   It also blows up the plot range and gives 0 chi^2 (JXP -- 13feb04)
+
+3)  Why does the chi^2 decrease with wavelength?  (JXP -- 15feb04)
+
+4)  Why is the red_chi^2 = 1.33 on the blue side?  (JXP -- 15feb04)
+
+Minor:
+
+a)  Sky subtracted image looks somewhat modelled 
+      in mike_skysub  (JXP -- 12feb04)
+   Could be the milky flat could be overfitting
+
+b)  Sky blows up at red end of orders  (JXP -- 12feb04)
+
+c)  Brightest sky lines are 'rejected' like CR's  (JXP -- 12feb04)
+
+d)  Red side [old window], quite a few CR in optimal 
+	extracted data (JXP -- 12feb04)
+
+
+Obj to reexamine:
+
+03apr06 --  346-006  (#3)

@@ -1,32 +1,31 @@
 ;+ 
 ; NAME:
 ; kast_specsetup   
-;     Version 1.0
+;     Version 1.1
 ;
 ; PURPOSE:
-;    Creates and outputs a structure for a series of ESI
-;    spectroscopic images
+;    Examines the Kast IDL structure, checks for appropriate
+;  Flats and Arcs and then outputs a summary ASCII file.
 ;
 ; CALLING SEQUENCE:
-;   
-;  kast_specsetup, kast
+;  kast_specsetup, kast, OUTFIL=
 ;
 ; INPUTS:
+;   kast --  Kast IDL structure
 ;
 ; RETURNS:
 ;
 ; OUTPUTS:
-;   kast --  ESI structure
 ;
 ; OPTIONAL KEYWORDS:
+;  OUTFIL=  -- Name of ASCII file (default: kast_specsumm.txt')
 ;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   kast_specsetup, kast, OUTFIL=
-;
+;   kast_specsetup, kast
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
 ;
@@ -34,16 +33,13 @@
 ;   01-Mar-2003 Written by JXP
 ;-
 ;------------------------------------------------------------------------------
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 pro kast_specsetup, kast, OUTFIL=outfil
 
 ;
   if  N_params() LT 1  then begin 
       print,'Syntax - ' + $
-        'kast_specsetup, kast, OUTFIL= (v1.0)'
+        'kast_specsetup, kast, OUTFIL= [v1.1]'
       return
   endif 
   
@@ -169,7 +165,7 @@ pro kast_specsetup, kast, OUTFIL=outfil
                           kast[tot[obj[a]]].flat_fil = qfil
                           ;; Set Object file
                           kast[tot[obj[a]]].obj_fil = $
-                            'Extract/Obj_'+kast[tot[obj[a]]].img_root
+                            strtrim('Extract/Obj_'+kast[tot[obj[a]]].img_root,2)
                           ;; Set Final Image
                           kast[tot[obj[a]]].img_final = $
                             'Final/f_'+kast[tot[obj[a]]].img_root

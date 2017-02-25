@@ -40,12 +40,12 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-pro esi_echmksky, esi, obj_id, exp, CHK=chk, BORDR=bordr, ALL_MNXWV=all_mnxwv
+pro esi_echmksky, esi, obj_id, exp, BORDR=bordr, ALL_MNXWV=all_mnxwv
 
 ;
   if  N_params() LT 3  then begin 
       print,'Syntax - ' + $
-        'esi_echmksky, esi, obj_id, exp, /CHK, [v1.0]'
+        'esi_echmksky, esi, obj_id, exp, [v1.0]'
       return
   endif 
   

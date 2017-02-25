@@ -1,34 +1,48 @@
 ;+ 
 ; NAME:
 ; x_tracearc   
-;    Version 1.0
+;    Version 1.1
 ;
 ; PURPOSE:
-;    Traces a series of arc lines
+;    Given an arc image (or a slit from a multi-slit or one order from
+;    an echelle), arc lines and trace them across the image.  The
+;    program returns a trace structure which can be used to create a
+;    wavelength image.  See x_echtrcarc for an Echelle version.
 ;
 ; CALLING SEQUENCE:
-;   
-;   x_tracearc, img, [ymnx], STRTY=, /ROT
+;   tracestr = x_tracearc( img, [ymnx], YSTRT=, /ROT, GAIN=, RN=, NSIG=, RADIUS=,
+;   MIN_XERR=, /SILENT, NORD=, VAR= )
 ;
 ; INPUTS:
 ;   img       - Input arc image
-;   [ymnx]    - Slit edges (default to image edges)
+;   [ymnx]    - Used to define edges of a slit or an order [default: image edges]
 ;
 ; RETURNS:
-;   tracestr
+;   tracestr  - Trace structure describing the traces and fits to the
+;               traces of the arc lines
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
+;   VAR=  - Variance image of the Arc
+;   GAIN= - Set this if you want the program to create the VAR image
+;   RN=   - Read noise (set this if you want the program to create the
+;           VAR image)  [default: 6]
+;   RADIUS=  -  Radius input parameter to trace_crude [default: 1.5]
+;   NSIG=  - Number of sigma significance for arc linews [default: 5.]
 ;   YSTRT - COLUMN/ROW to start at
+;   /ROT  - Rotate the iamge by 90deg in those cases where the Arc
+;           lines run side-to-side (trace_crude requries this)
+;   MIN_XERR= -- Minimum xerr for fitting  [default: 0.01]
+;   NORD= - Order for fit to arc line curvature [default: 2L]
+;   YSTRT= - Offset to account for sub images
 ;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   x_tracearc, img, map
-;
+;   trcstr = x_tracearc( img )
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
 ;
@@ -41,15 +55,15 @@
 
 function x_tracearc, img, ymnx, VAR=var, GAIN=gain, RN=rn, $
                      ystrt=ystrt, ROT=rot, NSIG=nsig, RADIUS=radius, $
-                     MIN_XERR=min_xerr, SILENT=silent, INITROW=initrow
+                     MIN_XERR=min_xerr, SILENT=silent, NORD=nord
 
 
 
 ;  Error catching
   if  N_params() LT 1  then begin 
     print,'Syntax - ' + $
-             'x_tracearc( img, [ymnx], VAR=, GAIN=, RN=, '
-    print,   '           ystrt=, /ROT, MIN_XERR=, /SILENT) [v1.0]'
+             'x_tracearc( img, [ymnx], VAR=, GAIN=, RN=, ystrt=, /ROT, MIN_XERR=,'
+    print, '     /SILENT, RADIUS=, MIN_XERR=, NORD=) [v1.1]'
     return, -1
   endif 
 
@@ -67,6 +81,7 @@ function x_tracearc, img, ymnx, VAR=var, GAIN=gain, RN=rn, $
       ymnx[1] = sz[2]-1
   endif
 
+  if not keyword_set( NORD ) then nord = 2L
   if not keyword_set( MIN_XERR ) then min_xerr = 0.01
   if not keyword_set( NSIG ) then nsig = 5.
   if not keyword_set( RADIUS ) then radius = 1.5
@@ -102,8 +117,7 @@ function x_tracearc, img, ymnx, VAR=var, GAIN=gain, RN=rn, $
 
   ; Take median around ystrt (5 rows)
 
-  if not keyword_set( INITROW ) then $
-    initrow = djs_median(tmpimg[*,ystrt-2:ystrt+2], 2)
+  initrow = djs_median(tmpimg[*,ystrt-2:ystrt+2], 2)
 
   x_fndpeaks, initrow, center, NSIG=nsig, SILENT=silent
 
@@ -136,7 +150,7 @@ function x_tracearc, img, ymnx, VAR=var, GAIN=gain, RN=rn, $
   
   xfitstr = { fitstrct }
   xfitstr.func = 'POLY'
-  xfitstr.nord = 2
+  xfitstr.nord = nord
   xfitstr.lsig = 3.
   xfitstr.hsig = 3.
   xfitstr.niter = 3

@@ -1,0 +1,187 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<title> Spectrometer Tool</title>
+
+<!-- Input junk.html here -->
+<!--#include virtual="./class.html"-->
+<!--#include virtual="./noboard.html"-->
+<!--#include virtual="./header.html"-->
+<!-- End junk.html here -->
+
+<div id="content_panel">  
+<table width="930" border="0" cellspacing="0" cellpadding="0">
+        <tr><td colspan="5">
+<img src="images/spacer_10x30.gif" width="10" height="10" /></td>
+        </tr>
+        <tr><td colspan="5" class="title">
+The Spectrometer Tool
+</td>
+        </tr>
+        <tr><td colspan="5">
+<img src="images/spacer_10x30.gif" width="10" height="20" /></td>
+        </tr>
+        <tr><td colspan="5">
+<img src="images/screen_spectra.gif" width="900" /></td>
+        </tr>
+ </table>
+
+<table width="930" border="0" cellspacing="0" cellpadding="5">
+<tr>
+<td width="250" colspan="5" align="center" class="non_p">
+<img align=center src="GRB/GRB990123_HST.gif" width="250" alt="Figure 1"/></td>
+<td width="10" colspan="5" class="non_p">
+<img src="images/spacer_10x30.gif" width="5" height="10" /> </td>
+<td width="600" align=left colspan="5" class="non_p">
+Gamma-ray bursts (GRBs) are amongst the most 
+energetic phenomena
+in the universe.  Those with longer durations (t > several seconds)
+represent the explosive deaths of massive stars collapsing to a
+black hole.  The evidence for this assertion includes the detection
+of star-forming galaxies spatially consistent with the events
+(e.g. Figure on left) at high z and spatially and temporally consistent
+core-collapse supernovae at low z.   
+</td>
+</tr>
+
+<tr>
+<td width="450" colspan="5" valign="middle" class="non_p">
+Spectroscopy of the
+bright (R < 21 mag) afterglows emitted by many of these GRBs
+provide measurements of the ISM surrounding the events
+as well as the IGM along the sightline to Earth.  The figure
+on the right shows a 'zoom-in' of the Lya profile from HI gas
+in the host galaxy of GRB 050730.   At wavelengths redward of
+6000Ang, one observes the quantum-mechanic damping wing of Lya 
+with a few metal transitions superimposed.  An analysis of this
+profile indicates a very large HI column density (10^22 atoms per
+cm^2).  To the blue of the line center, one notes absorption by
+the so-called Lya forest, HI gas from the intergalactic medium
+that lies between Earth and the GRB host galaxy.
+</td>
+<td width="10" colspan="5" class="non_p">
+<img src="images/spacer_10x30.gif" width="5" height="10" /> </td>
+<td width="450" align="center" colspan="5" class="non_p">
+<img src="GRB/050730.gif" width="450" alt="Figure 2"/></td>
+</tr>
+
+<tr>
+<td width="450" align="center" colspan="5" class="non_p">
+<img src="GRB/grb_ism_metals.gif" width="450" alt="Figure 3"/></td>
+<td width="10" colspan="5" class="non_p">
+<img src="images/spacer_10x30.gif" width="5" height="10" /> </td>
+<td width="400" colspan="5" valign="middle" class="non_p">
+The ISM features associated with the GRB host galaxy
+may include absorption-line signatures of the circumstellar
+medium (CSM) from the progenitor, the molecular cloud and/or
+HII region associated with the presumed star-forming region,
+and the `ambient' ISM surrounding this SF region.  
+High-resolution spectra of H2 and metal-line transitions 
+constrains the metallicity, ionization state, differential
+depletion, molecular fraction, kinematic characteristics,
+and distance of the gas from the GRB.   <br><br>
+
+The figure
+on the left shows two sets of metal-line transitions observed
+from GRB 051111 (left) and GRB 050730 (right).   
+The SiII 1808 and SII 1250 profiles are resonance-line
+transitions of dominant ions in neutral gas (so called low-ion
+transitions).  These data primarily constrain the abundance
+of the gas.   The MgI 2026 and fine-structure transitions 
+(designated with the *) constrain the distance of the gas 
+from the GRB (100pc to a few kpc).  Finally, the CIV and NV
+doublets may trace gas associated with the HII region surrounding
+the GRB and/or gas in the galactic halo of the host galaxy.
+
+</td>
+</tr>
+ </table>
+</center>
+
+
+<table width="930" border="0" cellspacing="0" cellpadding="5">
+        <tr><td colspan="5">
+<img src="images/spacer_10x30.gif" width="10" height="10" /></td>
+        </tr>
+<tr>
+<td width="900" colspan="5" valign="middle" class="more_non_p">
+Professor Prochaska leads the research on GRB afterglow
+spectroscopy at UCSC through his involvement with the 
+<a href="http://www.graasp.org">GRAASP</a> collaboration and the
+<a href="http://www.astro.ku.dk/dark/">Dark Cosmology Center</a>.  
+PhD students Prochter and Pollack are involved in projects
+to study the galaxies showing strong MgII absorption along
+GRB sightlines as well as the galaxies hosting the GRB itself.
+       </td>
+    </tr>
+</table>
+
+
+<hr>
+<table width="930" border="0" cellspacing="0" cellpadding="0">
+        <tr><td colspan="5">
+<img src="images/spacer_10x30.gif" width="10" height="10" /></td>
+        </tr>
+        <tr><td colspan="5" class="title">
+Selected Publications
+</td>
+</tr>
+</table>
+
+<table width="930" border="0" cellspacing="0" cellpadding="5">
+<tr>
+<td width="250" colspan="5" align="center" class="p_lead_in style2"> Title </td>
+<td width="250" colspan="5" align="center" class="p_lead_in style2"> Author </td>
+<td width="250" colspan="5" align="center" class="p_lead_in style2"> Publication </td>
+</tr>
+
+<tr>
+<td width="380" colspan="5" align="center" class="small_non_p">
+On the Incidence of Strong Mg II Absorbers along Gamma-Ray Burst Sight Lines
+</td>
+<td width="380" colspan="5" align="center" class="small_non_p">
+Prochter, Gabriel E.; Prochaska, Jason X.; Chen, Hsiao-Wen; Bloom, Joshua S.; Dessauges-Zavadsky, Miroslava; Foley, Ryan J.; Lopez, Sebastian; Pettini, Max; Dupree, Andrea K.; Guhathakurta, P.
+</td>
+<td width="100" colspan="5" align="center" class="small_non_p">
+ApJ, 2006, 648, 93L</td>
+</tr>
+
+<td width="380" colspan="5" align="center" class="small_non_p">
+Dissecting the Circumstellar Environment of Gamma-Ray Burst Progenitors
+</td>
+<td width="380" colspan="5" align="center" class="small_non_p">
+Prochaska, Jason X.; Chen, Hsiao-Wen; Bloom, Joshua S.
+</td>
+<td width="100" colspan="5" align="center" class="small_non_p">
+ApJ, 2006, 648, 95</td>
+</tr>
+
+<tr>
+<td width="380" colspan="5" align="center" class="small_non_p">
+Probing the Interstellar Medium near Star-forming Regions with Gamma-Ray Burst Afterglow Spectroscopy: Gas, Metals, and Dust </td>
+<td width="380" colspan="5" align="center" class="small_non_p">
+Prochaska, Jason X.; Chen, Hsiao-Wen; Dessauges-Zavadsky, Miroslava; Bloom, Joshua S. </td>
+<td width="100" colspan="5" align="center" class="small_non_p">
+ApJ, 2007, 666, 267 </td>
+</tr>
+
+<tr>
+<td width="380" colspan="5" align="center" class="small_non_p">
+Missing Molecular Hydrogen and the Physical Conditions of GRB Host Galaxies
+</td>
+<td width="380" colspan="5" align="center" class="small_non_p">
+Tumlinson, Jason; Prochaska, Jason X.; Chen, Hsiao-Wen; Dessauges-Zavadsky, Miroslava; Bloom, Joshua S.</td>
+<td width="100" colspan="5" align="center" class="small_non_p">
+ApJ, 2008, in press </td>
+</tr>
+
+</table>
+
+</div>
+<hr>
+
+</body>
+</html>
+

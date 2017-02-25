@@ -4,34 +4,34 @@
 ;   Version 1.0
 ;
 ; PURPOSE:
-;    Creates a Uplot for a given NHI, FeH, nH
+;    Calculate the ionization parameter 'U' for a given redshift
+;    an nH value assuming the Haardt & Madau (1996) spectrum
 ;
 ; CALLING SEQUENCE:
-;   
-; cldy_Uplot, grid, NHI, FeH, nH, ions
+;  cldy_calcu, hm_fil, z, nH, logU, NRM=nrm
 ;
 ; INPUTS:
-;   grid  - CLOUDY grid
-;   NHI - Can be an array of values
-;   FeH
-;   nH
-;   ions  - Array of [Z,ion] vectors
+;   hm_fil - Haardt & Madau file of fluxes 
+;   z - Redshif
+;   nH - Hydrogen volume density [linear]
 ;
 ; RETURNS:
 ;   
-;
 ; OUTPUTS:
-;   Creates a Plot
 ;
 ; OPTIONAL OUTPUTS:
+;  logU -- The log of the ionization parameter
+;
+; OPTIONAL KEYWORDS:
+;   [NRM] - Normalization factor for H&M data  [default: 1e-23]
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   cldy_calcu, grid, 19.0d, -1.0d, -1.0d, [[14,2], [14,3]]
-;
+;   cldy_calcu, hm_fil, z, nH, logU, NRM=
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
+;  readcol
 ;
 ; REVISION HISTORY:
 ;   02-Nov-2003 Written by JXP
@@ -40,12 +40,12 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-pro cldy_calcu, grid, z, nH, logU, NRM=nrm
+pro cldy_calcu, hm_fil, z, nH, logU, NRM=nrm
 
 ;
   if  N_params() LT 3  then begin 
       print, 'Syntax - ' +$
-        'cldy_calcu, grid, z, nH, [logU], NRM= [v1.0]'
+        'cldy_calcu, hm_fil, z, nH, [logU], NRM= [v1.0]'
       return
   endif 
 
@@ -55,7 +55,7 @@ pro cldy_calcu, grid, z, nH, logU, NRM=nrm
 
   ;; Get redshifts
   close, /all
-  openr, 1, grid
+  openr, 1, hm_fil
 
   dumc = ' '
   for i=0L,31 do readf, 1, dumc
@@ -65,7 +65,7 @@ pro cldy_calcu, grid, z, nH, logU, NRM=nrm
   
 
   ;; Grep flux
-  readcol, grid, wave, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, skipline=34
+  readcol, hm_fil, wave, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, skipline=34
   tflux = dblarr(10,167)
   tflux[0,*] = f1
   tflux[1,*] = f2
@@ -96,7 +96,7 @@ pro cldy_calcu, grid, z, nH, logU, NRM=nrm
   nflux = flux / flux[imn]
   dnu = nu - shift(nu,-1)
 
-  Phi = total(4*!pi*NRM * nflux[0:imn]*dnu[0:imn] / (6.63e-27*nu[0:imn]))
+  Phi = total(4*!pi*NRM * nflux[0:imn]*dnu[0:imn] / (6.63d-27*nu[0:imn]))
 
   ;; U
   logU = alog10(Phi / (nH * 3e10))

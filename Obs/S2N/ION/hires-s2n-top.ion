@@ -1,0 +1,143 @@
+<ION_SCRIPT>
+<ION_HEADER>
+  <EVENTS>
+    <!------- event for when button is hit    ---------->
+    <EVENT_DECL NAME="COMPUTE" ACTION="ion://hires-s2n-bottom.ion"/>
+    <EVENT_DECL NAME="HELP" ACTION="http://www2.keck.hawaii.edu/realpublic/inst/hires/etc.html"/>
+
+  </EVENTS>
+</ION_HEADER>
+
+<ION_BODY>
+
+<center>
+  <h1>HIRES Signal-to-Noise Estimator</h1>
+
+  <ION_FORM TARGET="disp">
+  <table>
+  <tbody>
+  <tr>
+  <td valign="top" style="background-color:silver;">
+
+    <table>
+    <thead>
+    <th style="background-color:teal;">Plot Type<th>
+    </thead>	
+    <tbody>
+    <tr><td><ION_RADIO NAME="PLOTTYPE" VALUE="S2N" DEFAULT/> S/N</td></tr>
+    <tr><td><ION_RADIO NAME="PLOTTYPE" VALUE="Eff"/> Efficiency</td></tr>
+    <tr><td><ION_RADIO NAME="PLOTTYPE" VALUE="Noise"/> Noise</td></tr>
+    <tr><td><ION_RADIO NAME="PLOTTYPE" VALUE="Table"/>Data Table</td></tr>
+    </tbody>	  
+    </table>
+
+  </td>
+
+  <td valign="top" style="background-color:silver;">
+    <table>
+    <thead>
+    <th style="background-color:teal;">Binning<th>
+    </thead>	
+    <tbody>
+    <tr><td><ION_RADIO NAME="BINNING" VALUE="1x1" DEFAULT/> 1&times;1</td></tr>
+    <tr><td><ION_RADIO NAME="BINNING" VALUE="2x1"/> 2&times;1</td></tr>
+    <tr><td><ION_RADIO NAME="BINNING" VALUE="3x1"/> 3&times;1</td></tr>
+    <tr><td><ION_RADIO NAME="BINNING" VALUE="2x2"/> 2&times;2</td></tr>
+    </tbody>	  
+    </table>
+  </td>
+
+  <td valign="top" style="background-color:silver;">
+  <table>
+    <thead>
+    <th colspan="3"  style="background-color:teal;">Parameters<th>
+    </thead>	
+   <tbody>
+
+    <tr>
+    <td>AB Magnitude</td>
+    <td>
+    <INPUT TYPE="TEXT"   NAME="MAG" VALUE="20.0" SIZE="8">
+    </td>
+    </tr>
+
+    <tr>
+    <td>Exposure time</td>
+    <td>
+    <INPUT TYPE="TEXT"   NAME="EXPTIME" VALUE="3600" SIZE="8">
+    </td>
+    <td>sec</td>
+    </tr>
+
+    <tr>
+    <td>Slit width</td>
+    <td>
+    <INPUT TYPE="TEXT"   NAME="SLITWIDTH" VALUE="1.0" SIZE="8">
+    </td>
+    <td>arcsec</td>
+    </tr>
+
+    <tr>
+    <td>Seeing FWHM</td>
+    <td>
+    <INPUT TYPE="TEXT"   NAME="SEEING" VALUE="1.0" SIZE="8">
+    </td>
+    <td>arcsec</td>
+    </tr>
+
+    <tr>
+    <td>Airmass </td>
+    <td>
+    <INPUT TYPE="TEXT"   NAME="AIRMASS" VALUE="1.0" SIZE="8">
+    </td>
+    </tr>
+
+    <tr>
+    <td>Moon phase</td>
+    <td>
+    <INPUT TYPE="TEXT"   NAME="MOONDAYS" VALUE="7" SIZE="8">
+    </td>
+    <td>days</td>
+    </tr>
+
+    <tr>
+    <td>Min wavelength</td>
+    <td>
+    <INPUT TYPE="TEXT"   NAME="MINWAVE" VALUE="3000" SIZE="8">
+    </td>
+    <td>&Aring;</td>
+    </tr>
+
+    <tr>
+    <td>Max wavelength</td>
+    <td>
+    <INPUT TYPE="TEXT"   NAME="MAXWAVE" VALUE="8000" SIZE="8">
+    </td>
+    <td>&Aring;</td>
+    </tr>
+
+    <tr>
+    <td>Increment</td>
+    <td>
+    <INPUT TYPE="TEXT"   NAME="DWAVE" VALUE="200" SIZE="8">
+    </td>
+    <td>&Aring;</td>
+    </tr>
+
+    </tbody>
+    </table>
+
+    </td>	
+    </tr>
+    </tbody>
+    </table>
+
+    <p>
+     <ION_BUTTON TYPE="BUTTON" EVENT="COMPUTE" LABEL="Compute" />
+     <input type="reset">
+     <ION_BUTTON TYPE="BUTTON" EVENT="HELP" LABEL="Help" />
+  By <a href="http://www.ucolick.org/~xavier/">Xavier Prochaska</a> (UCO/Lick)
+</center>
+  </ION_FORM>
+</ION_BODY>
+</ION_SCRIPT>

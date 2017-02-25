@@ -1,0 +1,296 @@
+\def\rexp{{\rm e}}
+\def\katzt{\ket{\alpha, t_0=0; t}}
+\def\katt{\ket{\alpha, t_0; t}}
+\def\usc{\mathcal{U}}
+\def\tsc{\mathcal{T}}
+\special{papersize=8.5in,11in}
+\newcommand{\nid}{\noindent}
+\newcommand{\ew}{W_\lambda}
+\def\aap{A \& A}
+\def\aj{AJ}
+\def\apj{ApJ}
+\def\apjl{ApJL}
+\def\apjs{ApJS}
+\def\apjsupp{ApJS}
+\def\araa{ARAA}
+\def\mnras{MNRAS}
+\def\nat{Nature}
+\def\pasp{PASP}
+\def\hangpara{\par\hangindent 25pt\noindent}
+\def\Lya{Ly$\alpha$}
+\def\lya{Ly$\alpha$}
+\def\Lyb{Ly$\beta$ }
+\def\lyb{Ly$\beta$ }
+\def\Lyg{Ly$\gamma$ }
+\def\Lyd{Ly$\delta$ }
+\def\etal{et al. }
+\def\kms{km~s$^{-1}$ }
+\def\mkms{{\rm \; km\,s\,^{-1}}}
+\def\bmkms{{\rm\bf \; km\,s\,^{-1}}}
+\def\L{$\lambda$}
+\def\s-1{s$^{-1}$}
+\def\Hz-1{Hz$^{-1}$}
+\def\pohf{\rm p_\ohf}
+\def\prhf{\rm p_\rhf}
+\def\ohf{\frac{1}{2}}
+\def\nohf{\frac{-1}{2}}
+\def\rhf{\frac{3}{2}}
+\def\sohf{\rm s_\ohf}
+\def\esp{\Delta E_{2s, 2p}}
+\def\chal{\frac{\Delta \alpha}{\alpha}}
+\def\ylab{y_{\rm lab}}
+\def\yaY{y \; {\rm and} \; Y}
+\def\dadz{\frac{1}{\alpha} |\frac{{\rm d} \alpha}{{\rm d} z}|}
+\def\abdadz{\frac{1}{\alpha} \left|\frac{{\rm d} \alpha}{{\rm d} z}\right|}
+\def\abdadt{\frac{1}{\alpha} \left|\frac{{\rm d} \alpha}{{\rm d} t}\right|}
+\def\sci#1{{\; \times \; 10^{#1}}}
+\def\yold{y_{\rm old}}
+\def\und#1{{\rm \underline{#1}}}
+\def\dlmb{\Delta \lambda}
+\def\abchal{| \chal |}
+\def\lbar{\bar\lambda}
+\def\elc{\rm e^-}
+\def\qnn#1{\eqno {\rm {#1}}}
+\def\l1l2{\lambda_2 \; {\rm and} \; \lambda_1}
+\def\id{\indent}
+\def\wid{\id\id}
+\def\rid{\id\id\id}
+\def\uid{\id\id\id\id}
+\def\imp{\, \Rightarrow \>}
+\def\di{\partial}
+\def\ba{{\bf a}}
+\def\bx{{\bf x}}
+\def\bv{{\bf v}}
+\def\bu{{\bf u}}
+\def\bq{{\bf q}}
+\def\br{{\bf r}}
+\def\bs{{\bf s}}
+\def\bp{{\bf p}}
+\def\bj{{\bf j}}
+\def\bk{{\bf k}}
+\def\bm{{\bf m}}
+\def\bn{{\bf n}}
+\def\bd{{\bf d}}
+\def\bg{{\bf g}}
+\def\by{{\bf y}}
+\def\bB{{\bf B}}
+\def\bE{{\bf E}}
+\def\bD{{\bf D}}
+\def\bH{{\bf H}}
+\def\bA{{\bf A}}
+\def\bI{{\bf I}}
+\def\bJ{{\bf J}}
+\def\bK{{\bf K}}
+\def\bL{{\bf L}}
+\def\bS{{\bf S}}
+\def\bF{{\bf F}}
+\def\bN{{\bf N}}
+\def\bP{{\bf P}}
+\def\bR{{\bf R}}
+\def\bU{{\bf U}}
+\def\bM{{\bf M}}
+\def\bY{{\bf Y}}
+\def\bOm{{\bf \Omega}}
+\def\bom{{\bf \omega}}
+\def\bell{{\bf \ell}}
+\def\di{\partial}
+\def\ddi#1#2{\frac{\di #1}{\di #2}}
+\def\gmm{\sqrt{1 - \frac{v^2}{c^2}}}
+\def\eng{\varepsilon}
+\def\dd#1#2{\frac{d #1}{d #2}}
+\def\dt#1{\frac{d #1}{dt}}
+\def\ddt{\frac{d}{d t}}
+\def\ddit{\frac{\di}{\di t}}
+\def\arr{\to \quad}
+\def\smm{\sum\limits}
+\def\intl{\int\limits}
+\def\ointl{\oint\limits}
+\def\liml{\lim\limits}
+\def\prodl{\prod\limits}
+\def\grd{{\bf \nabla}}
+\def\crl{{\bf \grd} \times}
+\def\dv{{\bf \grd} \cdot}
+\def\ec{\frac{e}{c} \,}
+\def\oc{\frac{1}{c}}
+\def\xht{{\; \rm \hat x}}
+\def\yht{{\; \rm \hat y}}
+\def\zht{{\; \rm \hat z}}
+\def\rht{{\; \rm \hat r}}
+\def\pht{{\; \rm \hat \phi}}
+\def\iht{{\; \rm \hat i}}
+\def\jht{{\; \rm \hat j}}
+\def\kht{{\; \rm \hat k}}
+\def\theht{{\; \rm \hat \theta}}
+\def\nht{{\; \rm \hat n}}
+\def\oht{{\; \rm \hat 1}}
+\def\tht{{\; \rm \hat 2}}
+\def\vht{{\; \rm \hat v}}
+\def\thht{{\; \rm \hat 3}}
+\def\Rht{{\; \rm \hat R}}
+\def\cyc{\Omega_c}
+\def\dl{{d {\bf \ell}}}
+\def\da{{\rm d {\bf a}}}
+\def\ds{{\rm d {\bf s}}}
+\def\smt{{\smll \rm T}}
+\def\opi#1{\frac{1}{#1 \pi}}
+\def\strs{\underline {\underline {\rm T}}}
+\def\dtr{\, d^3 r}
+\def\dftr{d^3 r \,}
+\def\dtp{\, d^3 p}
+\def\dftp{d^3 p \,}
+\def\abrr{|\br - \br'|}
+\def\rr{(\br - \br')}
+\def\orr#1{\frac{#1}{\abrr}}
+\def\trr#1{\frac{#1}{\abrr^3}}
+\def\drr{\delta \rr}
+\def\Grn{G(\br, \br')}
+\def\Ylm{Y_{\ell m}}
+\def\snth{\sin\theta}
+\def\csth{\cos\theta}
+\def\invr#1{\frac{1}{#1}}
+\def\fpc{\frac{4 \pi}{c}}
+\def\lgnl{P_\ell (\csth)}
+\def\lgnn#1{{P_{#1} (\csth)}}
+\def\thph{\theta, \phi}
+\def\eht1{{\rm \hat e_1}}
+\def\ehtb{{\rm \hat e_2}}
+\def\iot{i \omega t}
+\def\kr{\bk \cdot \br}
+\def\ele{{\rm e^-}}
+\def\iwc{\frac{i \omega}{c}}
+\def\iwt{i \omega t}
+\def\plr{{\rm \hat \epsilon}}
+\def\skp{\smallskip}
+\def\mkp{\medskip}
+\def\bkp{\bigskip}
+\def\elc{\rm e^{-s}}
+\def\bmx{\left[\matrix}
+\def\Det{{\rm Det \,}}
+\def\bra#1{{<\negmedspace#1|}}
+\def\ket#1{{|#1\negmedspace>}}
+\def\kalp{\ket{\alpha}}
+\def\kbet{\ket{\beta}}
+\def\balp{\bra{\alpha}}
+\def\bbet{\bra{\beta}}
+\def\inpr#1#2{{<\negmedspace#1|#2\negmedspace>}}
+\def\otpr#1#2{{|#1><#2|}}
+\def\dgg{\dagger}
+\def\dual{\Leftrightarrow}
+\def\hbm{\frac{\hbar^2}{2 m}}
+\def\hbu{\frac{\hbar^2}{2 \mu}}
+\def\mbh{\frac{2 m}{\hbar^2}}
+\def\ih{\frac{i}{\hbar}}
+\def\kjm{\ket{j m}}
+\def\bjm{\bra{j m}}
+\def\bjmp{\bra{j' m'}}
+\def\ylm{Y_{\ell m}}
+\def\pof#1{(\frac{#1}{2})}
+\def\tqk{T_q^k}
+\def\ptm{\frac{p^2}{2 m}}
+\def\psn{\psi_n}
+\def\tph{\frac{2 \pi}{\hbar}}
+\def\plr{{\hat \epsilon}}
+\def\Veff{V_{\rm eff}}
+\def\rhs{\rho^{(s)}}
+\def\rhis{\rho_i^{(s)}}
+\def\tilH{\tilde H}
+\def\tpi{2 \pi i}
+\def\prin{\intl_P}
+\def\ltk{\left [ \,}
+\def\ltp{\left ( \,}
+\def\ltb{\left \{ \,}
+\def\rtk{\, \right  ] }
+\def\rtp{\, \right  ) }
+\def\rtb{\, \right \} }
+\def\dc{\tilde d}
+\def\bskp{\bigskip}
+\def\nV{\Omega}
+\def\d3x{d^3 x}
+\def\mtI{\b{\b I}}
+\def\cmma{\;\;\; ,}
+\def\perd{\;\;\; .}
+\def\delv{\Delta v}
+\def\eikr{{\rm e}^{i \bk \cdot \br}}
+\def\rmikr{{\rm e}^{i \vec k \cdot \vec r}}
+\def\rmnikr{{\rm e}^{-i \vec k \cdot \vec r}}
+\def\eikx{{\rm e}^{i \bk \cdot \bx}}
+\def\muo{\mu_0}
+\def\epo{\epsilon_0}
+\def\rme{{\rm e}}
+\def\dnu{\Delta \nu_D}
+\def\rAA{\AA \enskip}
+\def\halp{{\rm H_\alpha}}
+\def\hbet{{\rm H_\beta}}
+\def\N#1{{N({\rm #1})}}
+\def\ekz{\rme^{i ( k_z z - \omega t )}}
+\def\cm#1{\, {\rm cm^{#1}}}
+\def\bcm#1{\; {\rm \mathbf{cm^{#1}}}}
+\def\rmK{\; \rm K}
+\def\rmm#1{\; {\rm #1}}
+\def\Nperp{N_\perp}
+\def\spkr#1{{\big \bf {#1}}}
+\def\inA{\quad $\bullet$ \quad}
+\def\inB{\quad\quad $\diamond$ \quad}
+\def\inC{\quad\quad\quad $\circ$ \quad}
+\def\sigfc{\sigma_{f_c}}
+\def\sech{\rm sech}
+\def\blck{\color[named]{Black}}
+\def\blue{\color[named]{Blue}}
+\def\skyblue{\color[named]{SkyBlue}}
+\def\red{\color[named]{Red}}
+\def\black{\color[named]{Black}}
+\def\green{\color[named]{Green}}
+\def\white{\color[named]{White}}
+\def\yellow{\color[named]{Yellow}}
+\def\purple{\color[named]{Purple}}
+\def\maroon{\color[named]{Maroon}}
+\def\redv{\color[named]{RedViolet}}
+\def\mahog{\color[named]{Mahogany}}
+\def\prb{$\frac{\delta \rho}{\rho}$}
+\def\trd{\frac{2}{3}}
+\def\mdn{\bar \rho}
+\def\ss{v_s^2}
+\def\msol{M_\odot}
+\def\W#1{{W({\rm #1})}}
+\def\Nav{N_a (v)}
+\def\f#1{{f_{\rm #1}}}
+\def\opt{$d \tau / d z \; $}
+\def\btau{\bar\tau (v_{pk}) / \sigma (\bar \tau)}
+\def\Ipk{I(v_{pk})/I_{c}}
+\def\vrot{v_{rot}}
+\def\sphr{\sqrt{R^2 + Z^2}}
+\def\mbf{\mathbf}
+\def\mgsqa{\, {\rm mag} / \Box ''}
+\newcommand{\ialii}{Al{\sc II}}
+\newcommand{\iari}{Ar{\sc I}}
+\newcommand{\ini}{N{\sc I}}
+\newcommand{\ioi}{O{\sc I}}
+\newcommand{\iovi}{O{\sc VI}}
+\newcommand{\iovii}{O{\sc VII}}
+\newcommand{\ioviii}{O{\sc VIII}}
+\newcommand{\ifeii}{Fe{\sc II}}
+\newcommand{\ifeiii}{Fe{\sc III}}
+\newcommand{\ispii}{S{\sc II}}
+\newcommand{\iznii}{Zn{\sc II}}
+\newcommand{\icaii}{Ca{\sc II}}
+\newcommand{\inai}{Na{\sc I}}
+\newcommand{\icii}{C{\sc II}}
+\newcommand{\iciv}{C{\sc IV}}
+\newcommand{\ihii}{H{\sc II}}
+\newcommand{\ihi}{H{\sc I}}
+\newcommand{\isiii}{Si{\sc II}}
+\newcommand{\isiiv}{Si{\sc IV}}
+\newcommand{\ici}{C{\sc I}}
+\newcommand{\dcost}{d \negmedspace \cos\theta}
+\newcommand{\mnvhi}{n_{\rm H {\sc I}}}
+\newcommand{\nvhi}{$n_{\rm H {\sc I}}$}
+\newcommand{\rem}{{\rm e}}
+\def\otpr#1#2{{|#1><#2|}}
+\def\avgq#1{<\negmedspace#1\negmedspace>}
+\newcommand{\negm}{\negmedspace}
+\newcommand{\dfhf}{^2\negm D_{\frac{5}{2}}}
+\newcommand{\negt}{\negthinspace}
+\newcommand{\nalph}{N/$\alpha$}
+\newcommand{\alphh}{$\alpha$/H}
+\newcommand{\nhi}{$N_{\rm HI}$}
+\newcommand{\mnhi}{N_{\rm HI}}

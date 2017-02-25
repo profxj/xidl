@@ -3,7 +3,8 @@
 ;   x_avsigclip
 ;
 ; PURPOSE:
-;   Average multiple images with sigma-rejection.
+;   Average multiple images with sigma-rejection.  This routine
+;   makes extensive use of Schlegels avsigclip routine.
 ;
 ; CALLING SEQUENCE:
 ;   result = x_avsigclip( array, [ dimension, siglo=, sighi=, maxiter=, $

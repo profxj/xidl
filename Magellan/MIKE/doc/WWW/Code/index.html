@@ -1,0 +1,59 @@
+<html>
+<head>
+<title>Obtaining and Installing the MIKE Code</title>
+</head>
+<body TEXT="Black" bgcolor="#DEDED3" link="Blue" vlink="Brown" alink="Pink">
+<b>
+<center><hr>
+<h2>
+<font color="#0F75FF">
+Obtaining and Installing the MIKE Code</font></h2>
+Current version  v1_4  May 18, 2005
+<hr></center></b>
+
+<b>
+<H3><font color="Red"> I. Obtaining the Code</font></h3>
+The best way to grab the code is with CVS.  
+<br>
+Assuming you have 'cvs' installed on your local system (you should), 
+<br>
+then you need to execute these few lines:
+<br>
+
+<ul>
+  <li> setenv CVS_RSH ssh
+  <li> cd ~/idl     [or whatever directory you use to keep IDL code]
+  <li> cvs -d :pserver:anonymous@horton.mit.edu:/CVS login
+  <li> Give a null password [press return]
+  <li> cvs -d :pserver:anonymous@horton.mit.edu:/CVS co MIKE
+</ul>
+
+<p>
+
+</p>
+
+IF you insist on grabbing a tar file than here you 
+<a href="mike-v1_0.tar.gz">go</a>.
+
+You may also want the version of XIDL matched to v1_0 of MIKE:
+<a href="xidl_v1.0.1.tar.gz">XIDL</a>.
+
+<H3><font color="Red"> II. Installing the MIKE software</font></h3>
+
+Just make sure your IDL path includes the MIKE directory.  And also
+make sure to set MIKE_DIR and the other environmental variables.
+
+<br>
+Something like this will work fine:
+
+<ul>
+  <li> setenv IDL_PATH +$IDL_DIR\/lib:+$IDL_DIR\/examples:+/home/username/idl:+pro/
+  <li> setenv MIKE_DIR ~/idl/MIKE/
+</ul>
+
+<hr>
+
+e-mail: <a href="mailto:mike@horton.mit.edu">mike@horton.mit.edu</a><br >
+<i>last modified 03/31/05</i></font>
+</body>
+</html>

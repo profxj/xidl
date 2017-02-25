@@ -1,33 +1,31 @@
 ;+ 
 ; NAME:
 ; dla_analyse
-;  V1.0
+;  V1.1
 ;
 ; PURPOSE:
-;    Given a list of DLA base files, fill up the structure ;
+;    Launches a GUI which enables simple plotting and inspection of
+;     individual DLA
 ; CALLING SEQUENCE:
-;   
-;   dla_analyse, stucture, filename
+;   dla_analyse, [list]
 ;
 ; INPUTS:
+;   [list] -- List of DLA to inspect  
+;       [default: /u/xavier/DLA/Lists/tot_dla.lst]
 ;
 ; RETURNS:
-;   structure      - IDL structure
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
-;  LIST - File
-;  ION - Input ionic column densities
-;  NOELM - Supress inputting Elemental values
+;  ROOT=  Path to the DLA tree
 ;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   dla_analyse, struct, '/u/xavier/DLA/Lists/tot_dla.lst'
-;
+;   dla_analyse, '/u/xavier/DLA/Lists/tot_dla.lst'
 ;
 ; PROCEDURES CALLED:
 ;
@@ -135,17 +133,18 @@ end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-pro dla_analyse, list
+pro dla_analyse, list, ROOT=root
 
 ; Optional Keywords
-
   if not keyword_set( list ) then begin
       print, 'dla_analyse: Using tot_dla.lst as the list'
-      list = '/u/xavier/DLA/Lists/tot_dla.lst'
+      list = '~/DLA/Lists/all_mtl.lst'
   endif
 
+  if not keyword_set(ROOT) then root = getenv('DLA')
+
 ; Parse DLA
-  parse_dlalst, dla, list
+  parse_dlalst, dla, list, /noelm, ROOT=root
 
 ; Files
   readcol, list, files, format='A'
@@ -189,7 +188,7 @@ pro dla_analyse, list
   labelbase = widget_base(toolbar, /column, /base_align_center, /frame, $
                           /align_center)
   namelabel = WIDGET_LABEL(labelbase, value='dla_analyse', /align_center)
-  verslabel = WIDGET_LABEL(labelbase, value='(v1.0)', /align_center)
+  verslabel = WIDGET_LABEL(labelbase, value='(v1.1)', /align_center)
 
 ;;;;;;;;;;;;;;;;;;
 ;  SUMMARY

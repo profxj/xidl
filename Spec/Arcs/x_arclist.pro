@@ -1,24 +1,24 @@
 ;+ 
 ; NAME:
 ; x_arclist   
-;    Version 1.0
+;    Version 1.1
 ;
 ; PURPOSE:
 ;    Reads a line list into an arclin strutcture
 ;
 ; CALLING SEQUENCE:
-;   
-;   x_arclist, linelist, lines
+;   x_arclist, linelist, lines, /GDONLY
 ;
 ; INPUTS:
-;   linelist  - Name of line list
+;   linelist  - Name of line list (formatted: D, I, A)
 ;
 ; RETURNS:
-;
-; OUTPUTS:
 ;   arclinstr   -  Arc line structure
 ;
+; OUTPUTS:
+;
 ; OPTIONAL KEYWORDS:
+;  /GDONLY -- Restrict the line list to those where flg_qual NE 0
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -27,8 +27,9 @@
 ; EXAMPLES:
 ;   x_arclist, linelist, lines
 ;
-;
 ; PROCEDURES/FUNCTIONS CALLED:
+;  arclinstrct__define
+;  readcol
 ;
 ; REVISION HISTORY:
 ;   14-Feb-2002 Written by JXP
@@ -43,7 +44,7 @@ pro x_arclist, linelist, lines, GDONLY=gdonly
 ;  Error catching
   if  N_params() LT 2  then begin 
     print,'Syntax - ' + $
-             'x_arclist, linelist, arclinstr, /GDONLY [v1.0]'
+             'x_arclist, linelist, arclinstr, /GDONLY [v1.1]'
     return
   endif 
 

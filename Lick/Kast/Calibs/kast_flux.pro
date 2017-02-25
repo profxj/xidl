@@ -1,28 +1,28 @@
 ;+ 
 ; NAME:
 ; kast_flux   
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
-;    Plots any array interactively
+;    Flux a set of Kast spectra given a sensitivity file.
 ;
 ; CALLING SEQUENCE:
-;   
-;   spec = x_apall(ydat, [head])
+;  kast_flux, kast, setup, side, obj_id, [exp], /STD, SENSFIL=
 ;
 ; INPUTS:
-;   ydat       - Values 
-;   [head]     - Header
+;   kast -- Kast IDL structure
+;  setup -- Setup value 
+;   side -- Side of Kast (blue=1, red=2)
+; obj_id -- Object ID value
+;  [exp] -- Exposure indices
 ;
 ; RETURNS:
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
-;   wave       - wavelength array
-;   DISPLAY    - Display the sky subtracted image with xatv
-;   OVR        - String array for ov region:  '[2050:2100, *]'
-;   ERROR      - Variance array
+;   /STD  -- Flux a standard
+; SENSFIL -- Name of sensitivity file
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -36,17 +36,17 @@
 ;
 ; REVISION HISTORY:
 ;   03-Mar-2003 Written by JXP
+;   12-Nov-2005 added blue g2 (600/4310) default (KLC)
 ;-
 ;------------------------------------------------------------------------------
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 pro kast_flux, kast, setup, side, obj_id, exp, STD=std, SENSFIL=sensfil
 
 ;
   if  N_params() LT 1  then begin 
       print,'Syntax - ' + $
-        'kast_flux, kast, setup, side, obj_id, [exp]  [v1.0]'
+        'kast_flux, kast, setup, side, obj_id, [exp], /STD, SENSFIL=  [v1.1]'
     return
   endif 
 
@@ -62,7 +62,7 @@ pro kast_flux, kast, setup, side, obj_id, exp, STD=std, SENSFIL=sensfil
                    kast.side EQ side AND kast.setup EQ setup AND $
                    kast.obj_id EQ obj_id AND kast.type EQ 'OBJ', nindx)
       if nindx EQ 0 then begin
-          print, 'kast_wavesol: No images to find obj for!', obj_id
+          print, 'kast_flux: No images to find obj for!', obj_id
           return
       endif
   endif else begin  ; STANDARD STAR
@@ -83,22 +83,26 @@ pro kast_flux, kast, setup, side, obj_id, exp, STD=std, SENSFIL=sensfil
 
 ; Grab sensititivty file
   if not keyword_set( SENSFIL ) then begin
-      stop
       if side EQ 1 then begin
           case strtrim(kast[indx[0]].grising,2) of 
               '452/3306': begin
-                  templt = getenv('XIDL_DIR')+'/Lick/Kast/Calibs/kastfit_g1.idl'
+                  sensfil = getenv('XIDL_DIR')+ $
+                    '/Lick/Kast/Calibs/kastsens_g191g1d46.fits'
               end
+              '600/4310': begin
+                  sensfil=getenv('XIDL_DIR') + $
+                          '/Lick/Kast/Calibs/kastsens_g2.fits'
+              end 
               else: stop
           endcase
-      endif else begin
-          case strtrim(kast[indx[0]].grising,2) of 
-              '300/7500': begin
-                  templt = getenv('XIDL_DIR')+'/Lick/Kast/Calibs/kastfit_3007500.idl'
-              end
-              else: stop
-          endcase
-      endelse
+      endif else stop
+;          case strtrim(kast[indx[0]].grising,2) of 
+;              '300/7500': begin
+;                  templt = getenv('XIDL_DIR')+'/Lick/Kast/Calibs/kastfit_3007500.idl'
+;              end
+;              else: stop
+;          endcase
+;      endelse
   endif
   ;; Sensitivity function
   bset = xmrdfits(sensfil, 1, /silent)
@@ -109,7 +113,7 @@ pro kast_flux, kast, setup, side, obj_id, exp, STD=std, SENSFIL=sensfil
       ;; Open objfil
       objfil = kast[indx[exp[q]]].obj_fil 
       if x_chkfil(objfil+'*') EQ 0 then begin
-          print, 'kast_extract: No Obj file ', objfil
+          print, 'kast_flux: No Obj file ', objfil
           continue
       endif
       objstr = xmrdfits(objfil, 1, STRUCTYP='specobjstrct', /silent)
@@ -117,7 +121,8 @@ pro kast_flux, kast, setup, side, obj_id, exp, STD=std, SENSFIL=sensfil
       
       for kk=0L,nobj-1 do begin
           npix = objstr[kk].npix
-          ;; Sens
+          if npix eq 0 then continue
+          ;; Sens     
           sens = bspline_valu(objstr[kk].wave[0:npix-1],bset)
           ;; Flux
           objstr[kk].flux[0:npix-1] = objstr[kk].fx[0:npix-1] * sens / $
@@ -128,13 +133,13 @@ pro kast_flux, kast, setup, side, obj_id, exp, STD=std, SENSFIL=sensfil
       endfor
 
       ;; Write
-      print, 'kast_wavesol: Updating ', objfil
+      print, 'kast_flux: Updating ', objfil
       mwrfits, objstr, objfil, /create
       spawn, 'gzip -f '+objfil
 
   endfor
 
 
-  print, 'kast_extract: All Done!'
+  print, 'kast_flux: All Done!'
   return
 end

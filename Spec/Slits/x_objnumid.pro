@@ -1,25 +1,22 @@
 ;+ 
 ; NAME:
 ; x_objnumid   
-;    Version 1.0
+;    Version 1.1
 ;
 ; PURPOSE:
-;    Given the slitstr and the map, find slit positions in the
-;    original image
+;    Turns an integer into a letter for Obj identification
 ;
 ; CALLING SEQUENCE:
 ;   
-;   x_objnumid, slitstr, map
+;   idval = x_objnumid( num )
 ;
 ; INPUTS:
-;   img         - Flux image
-;   slitstr     - Slit structure
-;   map         - y-distortion map (fits is ok)
+;  num - An integer
 ;
 ; RETURNS:
+;  idval -- A letter (0='a', 1='b', etc.)
 ;
 ; OUTPUTS:
-;   Updates slitstr for original positions
 ;
 ; OPTIONAL KEYWORDS:
 ;
@@ -28,8 +25,7 @@
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   x_objnumid, num
-;
+;   idval = x_objnumid( 1 )
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
 ;
@@ -54,23 +50,34 @@ function x_objnumid, num
 ;  Optional Keywords
 
 ;  Simple copy
+  val = strarr(n_elements(num))
+  for qq=0L, n_elements(num)-1 do begin
+      case num[qq] of 
+          0: val[qq]= 'a'
+          1: val[qq]= 'b'
+          2: val[qq]= 'c'
+          3: val[qq]= 'd'
+          4: val[qq]= 'e'
+          5: val[qq]= 'f'
+          6: val[qq]= 'g'
+          7: val[qq]= 'h'
+          8: val[qq]= 'i'
+          9: val[qq]= 'j'
+          10: val[qq]= 'k'
+          11: val[qq]= 'l'
+          12: val[qq]= 'm'
+          13: val[qq]= 'n'
+          14: val[qq]= 'o'
+          15: val[qq]= 'p'
+          16: val[qq]= 'q'
+          17: val[qq]= 'r'
+          18: val[qq]= 's'
+          19: val[qq]= 't'
+          20: val[qq]= 'u'
+          else: stop
+      endcase
+  endfor
+  if n_elements(num) EQ 1 then val = val[0]
 
-  case num of 
-      0: return, 'a'
-      1: return, 'b'
-      2: return, 'c'
-      3: return, 'd'
-      4: return, 'e'
-      5: return, 'f'
-      6: return, 'g'
-      7: return, 'h'
-      8: return, 'i'
-      9: return, 'i'
-     10: return, 'i'
-     11: return, 'j'
-     12: return, 'k'
-      else: stop
-  endcase
-
-  return, -1
+  return, val
 end

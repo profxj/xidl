@@ -1,0 +1,18 @@
+mkdir HIRES_S2N
+cp S2N/hires_s2ngui.pro       HIRES_S2N
+cp S2N/x_inithires.pro        HIRES_S2N
+cp S2N/x_initkeck.pro         HIRES_S2N
+cp S2N/hires_calcs2n.pro      HIRES_S2N
+cp S2N/hires_thruput.pro      HIRES_S2N
+cp telestruct__define.pro     HIRES_S2N
+cp instrstruct__define.pro    HIRES_S2N
+cp x_obsinit.pro              HIRES_S2N
+cp obsstruct__define.pro      HIRES_S2N
+cp maunakea_trans.pro         HIRES_S2N
+cp maunakea_sky.pro           HIRES_S2N
+cp x_gaussslit.pro            HIRES_S2N
+cp ../Color/getcolor.pro      HIRES_S2N
+cp ../General/x_helpwidg.pro  HIRES_S2N
+tar -zcvf hires_s2n.tar.gz    HIRES_S2N
+\rm -rf HIRES_S2N
+

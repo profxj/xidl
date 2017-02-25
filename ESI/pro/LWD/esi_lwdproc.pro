@@ -82,8 +82,12 @@ pro esi_lwdproc, esi, obj_id, FLAT=flat, BIAS=bias, CLOBBER=clobber, $
   endif
 
 ;  Optional Keywords
+  rbin = esi[indx[0]].rbin
+  cbin = esi[indx[0]].cbin
   if not keyword_set( FLAT ) then flat = esi[indx[0]].flat_fil
-  if not keyword_set( BIAS ) then bias = 'Bias/BiasS.fits'
+  if not keyword_set( BIAS ) then bias = $
+    esi_getfil('bias_fil', esi[indx[0]].mode, $
+               cbin=cbin, rbin=rbin, /name)
 
 ;  Bias Image
   print, 'esi_lwdproc: Reading Bias ', bias
@@ -119,9 +123,9 @@ pro esi_lwdproc, esi, obj_id, FLAT=flat, BIAS=bias, CLOBBER=clobber, $
       fil = esi[indx[q]].rootpth+esi[indx[q]].img_root
       print, 'esi_lwdproc: Processing ', fil
       raw = xmrdfits(fil, 0, head, range=[230,3529], /silent, /fscale)
-      ;; Bias subtract
-      raw = raw[25:2072,*] - img_bias
 
+      ;; Bias subtract
+      raw = raw[25:2072,*] - img_bias[25:2072,*]
 
       ;; Create VAR image
       var = ((raw>3.)*esi[indx[q]].gain + esi[indx[q]].readno^2) > 0.

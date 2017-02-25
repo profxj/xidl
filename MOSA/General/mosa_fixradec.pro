@@ -1,36 +1,34 @@
 ;+ 
 ; NAME:
 ; mosa_fixradec   
-;     Version 1.0
+;     Version 1.1
 ;
 ; PURPOSE:
-;    Process a data frame
+;    Updates the header of a modified MOSA FITS file to keep the
+;  WCS header in order.  The program either reads in offset values
+;  in order to calculate the CRPIX values or it just reads in the
+;  CRPIX values.
 ;
 ; CALLING SEQUENCE:
-;   
-;  mosa_fixradec, esi, indx, /IFLAT, /REDDOV
+;  mosa_fixradec, list [offset], CRPIX=, EQUINOX=
 ;
 ; INPUTS:
-;   esi     -  ESI structure
-;   indx    -  Index values
+;   list     -- File containing the list of images
+;   [offset] -- File containing the list of offsets
 ;
 ; RETURNS:
 ;
 ; OUTPUTS:
-;  Fully processed image
+;  Image with the updated header
 ;
 ; OPTIONAL KEYWORDS:
-;  /SVOV    - Save OV files
-;  /REDOOV  - Redo OV subtraction
-;  /CLOBBER - Clobber existing image
-;  /SUBSCAT - Subtract scattered light from data image
+;  CRPIX=  -- New CRPIX1, CRPIX2 values (2-element array)
 ;
 ; OPTIONAL OUTPUTS:
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
-;   mosa_fixradec
 ; mosa_fixradec, 'Lists/headers.list', 'Lists/cr_off.list'
 ;
 ;
@@ -40,12 +38,11 @@
 ;   13-Apr-2003  Written by JXP
 ;-
 ;------------------------------------------------------------------------------
-
 pro mosa_fixradec, list, offset, CRPIX=crpix, EQUINOX=equinox
 
   if  N_params() LT 1  then begin 
       print,'Syntax - ' + $
-        'mosa_fixradec, imglist, [offlist], CRPIX= [v1.0]'
+        'mosa_fixradec, imglist, [offlist], CRPIX=, EQUINOX= [v1.1]'
       return
   endif 
   
@@ -58,7 +55,7 @@ pro mosa_fixradec, list, offset, CRPIX=crpix, EQUINOX=equinox
       readcol, offset, xoff, yoff
   endif else begin
       ;; Read image list
-      readcol, list, imgfil, format='a,a'
+      readcol, list, imgfil, format='a'
   endelse
 
 

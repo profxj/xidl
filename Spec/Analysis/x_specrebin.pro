@@ -1,31 +1,35 @@
 ;+ 
 ; NAME:
 ; x_specrebin
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
 ;    Rebin a single data set to a new wavlength scale
-;      Simple adding (no weighting by S/N)
+;      Simple linear interpolation.
 ;
 ; CALLING SEQUENCE:
-;   
-;   x_specrebin, gdpix, orig_wv, orig_fx, newwv, newfx
+;   x_specrebin, wv, fx, nwwv, nwfx, VAR=, NWVAR=, /SILENT, /REDBLUE
 ;
 ; INPUTS:
-;   orig_wv
-;   orig_fx
-;   newwv
+;   wv -- Original wavelength array
+;   fx -- Orignal flux array
+;   newwv -- New (desired) wavelength array
 ;
 ; RETURNS:
+;   nwfx  -- New flux array
 ;
 ; OUTPUTS:
-;   newfx
 ;
 ; OPTIONAL KEYWORDS:
-;  VAR         
+;  VAR= -- Original variance array
+;  /REDBLUE --  Data runs from red to blue (not blue to red)
+;  /SILENT
+;  SMOOTH= -- Number of pixels to smooth over
+;  /PRESERVE -- An old and wrong mode to preserve flambda [AVOID]
+;  /FLAMBDA -- Preserve the flux (i.e. scale and divide by delta lambda)
 ;
 ; OPTIONAL OUTPUTS:
-;  NEWVAR      
+;  NWVAR= -- New variance array
 ;
 ; COMMENTS:
 ;
@@ -42,22 +46,34 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-pro x_specrebin, wv, fx, nwwv, nwfx, VAR=var, NWVAR=nwvar, $
-                   SILENT=silent, REDBLUE=redblue
+pro x_specrebin, wv, in_fx, nwwv, nwfx, VAR=in_var, NWVAR=nwvar, $
+                 SILENT=silent, REDBLUE=redblue, CHK=chk, $
+                 SMOOTH=SMOOTH, PRESERVE=preserve, FLAMBDA=flambda
 
 ;
   if  N_params() LT 4  then begin 
     print,'Syntax - ' + $
-             'x_specrebin, wv, fx, nwwv, nwfx, VAR=, NWVAR=, GDPIX= [V1.0]'
+          'x_specrebin, wv, fx, nwwv, nwfx, ' + $
+          'VAR=, NWVAR=, /CHK, /REDBLUE, SMOOTH=, /PRESERVE, /FLAMBDA [V1.2]'
     return
   endif 
 
 
 ;  Optional Keywords
   npix = n_elements(wv)
-  if not keyword_set(VAR) then var = fltarr(npix) + 1.
-
+  if not keyword_set(IN_VAR) then in_var = fltarr(npix) + 1.
   nwpix = n_elements(nwwv)
+
+; Smooth
+  if keyword_set(SMOOTH) then begin
+      kernel = gauss_kernel(smooth)
+      fx = convol(in_fx, kernel)
+      var = convol(in_var, kernel)
+  endif else begin
+      fx = in_fx
+      var = in_var
+  endelse
+
 
 ; Calculate wavelength endpoints for each pixel
 
@@ -75,6 +91,10 @@ pro x_specrebin, wv, fx, nwwv, nwfx, VAR=var, NWVAR=nwvar, $
       wvh[npix-1,*] = wv[npix-1] + (wv[npix-1,*] - wv[npix-2,*])/2.
   endelse
 
+  if keyword_set(FLAMBDA) then $
+     scale = wvh-wvl $ ; dlambda 
+  else scale = replicate(1., npix)
+
 ; Calculate endpoints of the final array
   bwv = dblarr(nwpix+1)
   bwv[0:nwpix-1] = (nwwv + shift(nwwv,1))/2.
@@ -84,11 +104,12 @@ pro x_specrebin, wv, fx, nwwv, nwfx, VAR=var, NWVAR=nwvar, $
 ; Create tmp arrays for final array
 
   nwfx  = fltarr(nwpix)
+  tot_dwv  = fltarr(nwpix)
   nwvar = fltarr(nwpix)
 
 ;  Loop!
 
-  if not keyword_set(SILENT) then print, 'x_specrebin: Big Loop!'
+;  if not keyword_set(SILENT) then print, 'x_specrebin: Big Loop!'
   ; Loop on pixels
   for q=0L, npix-1 do begin
 
@@ -105,20 +126,35 @@ pro x_specrebin, wv, fx, nwwv, nwfx, VAR=var, NWVAR=nwvar, $
       j1 = i1[0]
       j2 = i2[0]
 
+      if j1 eq -1 or j2 eq -1 then continue ;added by KLC
+
       ; Now Sum up
       for kk=j1,j2 do begin
           ; Rejected pixels do not get added in
           if var[q] GT 0. then begin
               frac = ( (wvh[q] < bwv[kk+1]) - (wvl[q] > bwv[kk]) ) / (wvh[q]-wvl[q])
-              nwfx[kk] = nwfx[kk] + frac * fx[q]
+              if (wvh[q]-wvl[q]) LT 1e-3 then stop
+              nwfx[kk] = nwfx[kk] + frac * fx[q] * scale[q]
+              tot_dwv[kk] = tot_dwv[kk] + frac*scale[q]
           endif
           ; Variance
           if arg_present( NWVAR ) then begin
               if var[q] LE 0. OR nwvar[kk] EQ -1 then nwvar[kk] = -1 else $
-                nwvar[kk] = nwvar[kk] + frac * var[q]
+                nwvar[kk] = nwvar[kk] + frac * var[q] * scale[q]^2
           endif
       endfor
-  endfor
+   endfor
+
+  if keyword_set(PRESERVE) or keyword_set(FLAMBDA) then begin
+     dwv = bwv-shift(bwv,1) 
+     ;dwv[0] = dwv[1]
+;     printcol, dwv[1:nwpix], tot_dwv, nwwv, nwfx
+     nwfx = nwfx/dwv[1:nwpix]
+;     x_splot, wv, fx, xtwo=nwwv, ytwo=nwfx, ythr=sqrt(nwvar>0), /blo
+  endif
+
+  if keyword_set(CHK) then $
+      x_splot, wv, fx, xtwo=nwwv, ytwo=nwfx, ythr=sqrt(nwvar>0), /blo
 
   return
 end

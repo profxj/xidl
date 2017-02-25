@@ -1,14 +1,59 @@
-FUNCTION airmass, obs_dec, obj_dec, hour_angle ;angles in degrees except for HA
+;+ 
+; NAME:
+; airmass
+;   Version 1.1
+;
+; PURPOSE:
+;    Calculate the airmass for an obj with a given DEC at an
+;  observatory with a given DEC and an offset in RA
+;
+; CALLING SEQUENCE:
+;  airmass = airmass(obs_dec, obj_dec, [hour_angle])
+;
+; INPUTS:
+;  obs_dec -- DEC of the observatory
+;  obj_dec -- DEC of the object
+;  [hour_angle]  -- Offset of RA [default: [-2,-1,0,1,2]]
+;
+; RETURNS:
+;
+; OUTPUTS:
+;
+; OPTIONAL KEYWORDS:
+;  APER=   -- Aperture size (boxcar)
+;  /BOXCAR -- Do boxcar extraction
+;  /CHK    -- 
+;  YMODEL= -- 2D solution from extract_image
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;
+; EXAMPLES:
+;  print, airmass( 20., 45., [-3, -2, -1, 0])
+;
+; PROCEDURES/FUNCTIONS CALLED:
+;
+; REVISION HISTORY:
+;   Written by E. Gawiser
+;-
+;------------------------------------------------------------------------------
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+FUNCTION airmass, obs_dec1, obj_dec1, hour_angle1
+                                ;angles in degrees except for HA
 
   if (N_params() LT 2) then begin 
     print,'Syntax - ' + $
-             'am = airmass(obs_dec, obj_dec, [hour_angle]) [V1.0]'
+             'am = airmass(obs_dec, obj_dec, [hour_angle]) [V1.1]'
     return, -1
   endif 
 
 ; Optional keywords
-
-if not keyword_set( HOUR_ANGLE ) then hour_angle = findgen(5) - 2.
+  obs_dec = obs_dec1
+  obj_dec = obj_dec1
+  if n_elements(HOUR_ANGLE1) EQ 0 then hour_angle = findgen(5) - 2. $
+  ELSE hour_angle = hour_angle1
 
 
 

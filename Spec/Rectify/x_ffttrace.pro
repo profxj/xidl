@@ -1,22 +1,22 @@
 ;+ 
 ; NAME:
 ; x_ffttrace   
-;    Version 1.0
+;    Version 1.1
 ;
 ; PURPOSE:
-;    Traces the y-distortion of a flat using FFTs
+;    Traces the y-distortion of a flat using FFTs.  It is unlikely
+;    this program works well.  I highly recommend tracing the
+;    'sawtooth' image of a flat instead.
 ;
 ; CALLING SEQUENCE:
-;   
-;   x_ffttrace, img, map
+;   x_ffttrace, img
 ;
 ; INPUTS:
-;   img       - Input image (flat)
+;   img    - Input image (flat)
 ;
 ; RETURNS:
 ;
 ; OUTPUTS:
-;   map - Map of the y-distortion
 ;
 ; OPTIONAL KEYWORDS:
 ;
@@ -37,12 +37,12 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-pro x_ffttrace, img, map, xval, yval, dyval, PLT=plt, XSTRT=xstrt
+pro x_ffttrace, img, xval, yval, dyval, PLT=plt, XSTRT=xstrt
 
 ;  Error catching
-  if  N_params() LT 2  then begin 
+  if  N_params() LT 1  then begin 
     print,'Syntax - ' + $
-             'x_ffttrace, img, map, [V1.0]' 
+             'x_ffttrace, img, [V1.0]' 
     return
   endif 
 

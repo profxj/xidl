@@ -1,0 +1,5 @@
+; IDL commands for building HTML documentation
+
+cd, '..'
+make_html_help, 'pro/*', 'doc/Web/lowredux_doc.html', /strict, title='IDL Help for Low-Redux'
+exit

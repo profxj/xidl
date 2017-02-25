@@ -7,18 +7,18 @@
 ;    Reads and writes the echfspec structure
 ;
 ; CALLING SEQUENCE:
-;   
 ;   x_wrechfspec, echfspec, outfil, /READ
 ;
 ; INPUTS:
-;   wfstrct     - WFCCD structure
+;   echfspec -- IDL structure
+;   outfil -- Name of FITS file
 ;
 ; RETURNS:
 ;
 ; OUTPUTS:
-;   wfarc      -  WFCCD arc structure (fits file)
 ;
 ; OPTIONAL KEYWORDS:
+;  /READ -- Read instead of write the structure
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -26,7 +26,6 @@
 ;
 ; EXAMPLES:
 ;   x_wrechfspec, echfspec, 'Extract/2015+657_ech.fits'
-;
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
 ;
@@ -70,6 +69,8 @@ pro x_wrechfspec, echfspec, outfil, READ=read
                wave: dblarr(5000,50), $
                fx: fltarr(5000,50), $
                var: dblarr(5000,50), $ ; <=0 :: rejected pix
+               novar: dblarr(5000, 50), $  ;; Variance without object flux
+               sky: dblarr(5000, 50), $    ;; sky extraction
                class:  '', $     ;;;;;; ALL ZANS BELOW HERE  ;;;;;;;;;
                subclass: '', $
                z: 0.0, $

@@ -77,7 +77,7 @@ pro esi_lwdfndobj, esi, obj_id, exp, REFWV=refwv, CHK=chk, CLOBBER=clobber, $
       flg_objstr = 0
       ;; Look for obj file
       objfil = esi[indx[exp[q]]].obj_fil
-      if strlen(strtrim(objfil,2)) NE 0 and not keyword_set(CLOBBER) then begin
+      if strlen(strtrim(objfil,2)) NE 0 and keyword_set(NOCLOBBER) then begin
           print, 'esi_lwdfndobj: Using Obj structure -- ', objfil
           objstr = xmrdfits(objfil, 1, STRUCTYP='specobjstrct', /silent)
           nobj = n_elements(objstr)

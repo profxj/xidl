@@ -1,7 +1,7 @@
 ;+ 
 ; NAME:
 ; x_photcal   
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
 ;    Derives a photometric solution for standard stars
@@ -16,7 +16,7 @@
 ;
 ; RETURNS:
 ;   ans - Fit
-;   sig - Error on the fit
+;   sig - Error on the fit parameters
 ;
 ; OUTPUTS:
 ;
@@ -24,7 +24,7 @@
 ;  MINSIG - Minimum error for obs+landolt        (default = 0.01)
 ;  MAXSIG - Maximum error to include in analysis (default = 0.1)
 ;  SETAM   - Value to assume for the airmass term
-;  NOCLR  - No color term (e.g. only one filter solution)
+;  /NOCLR  - No color term (e.g. only one filter solution)
 ;  MIN_NOBS  - Minimum number of n epochs to include (default = 4)
 ;  MIN_MOBS  - Minimum number of m epochs to include (default = 2)
 ;
@@ -36,7 +36,6 @@
 ;
 ; EXAMPLES:
 ;   x_photcal, obs, landolt, ans, sig
-;
 ;
 ; PROCEDURES/FUNCTIONS CALLED:
 ;
@@ -56,7 +55,7 @@ pro x_photcal, obs, landolt, ans, sig, MINSIG=minsig, MAXSIG=maxsig, $
   if  N_params() LT 4  then begin 
       print, 'Syntax - ' +$
         'x_photcal, obs, landolt, ans, sig, MINSIG=, MAXSIG=, SETAM=, NCORR='
-      print, '        CHISQ=, /NOCLR (v1.0)'
+      print, '        CHISQ=, /NOCLR (v1.1)'
       return
   endif 
 
@@ -121,7 +120,7 @@ pro x_photcal, obs, landolt, ans, sig, MINSIG=minsig, MAXSIG=maxsig, $
       sig = sqrt(obs[i].sig_Mag^2 + sig_lndlt^2)
       if sig GT maxsig then begin
           obs[i].flg_anly = 0
-          continue
+         continue
       endif
       error[nstrs] = sig > minsig
 

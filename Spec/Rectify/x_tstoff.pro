@@ -1,7 +1,7 @@
 ;+ 
 ; NAME:
 ; x_tstoff
-;    Version 1.0
+;    Version 1.1
 ;
 ; PURPOSE:
 ;    Does a quick check on the offset between a flat 
@@ -16,9 +16,9 @@
 ;   obj_in        - Flat image (array or string)
 ;
 ; RETURNS:
+;   offset - Vertical pixel offset
 ;
 ; OUTPUTS:
-;   offset - Vertical pixel offset
 ;
 ; OPTIONAL KEYWORDS:
 ;   ELINE - End line of data (routine takes 1/3, 1/2, 2/3)
@@ -58,7 +58,7 @@ common x_tstoff_cmm
 ;  Error catching
   if  N_params() LT 3  then begin 
     print,'Syntax - ' + $
-             'x_tstoff, flat_in, obj_in, offset, ELINE= [V1.0]'
+             'x_tstoff, flat_in, obj_in, offset, ELINE= [V1.1]'
     return
   endif 
 

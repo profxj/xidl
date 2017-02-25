@@ -23,8 +23,8 @@
 \parindent=2em
 \parskip=1.5ex
  
-\input{/home/xavier/bin/defs}
-\input{/home/xavier/bin/latex}
+\input{defs}
+\input{latex}
  
 \special{papersize=8.5in,11in}
 
@@ -38,13 +38,20 @@
 
 \begin{enumerate}
 
+{\Large \item Introduction: }
+Should write a brief intro here.
+
+
 {\Large  \item Requirements:  }
 	\begin{itemize}
 		\item $>$300M RAM (this can be modified)
+                \item the XIDL package
 		\item the IDL coyote package 
 		\item the Goddard IDL package
 		\item the Schlegel IDL package (compiled)
 	\end{itemize}
+
+\clearpage
 
 {\Large  \item Setup }
 
@@ -55,9 +62,9 @@
 
     \item {\bf xdimg\_strct} :: This creates the IDL structure which 
 	drives all of the subsequent programs.  It also creates a fits file
-	of the structure and an executive summary in the ASCII file 
-	``image.dat''.  After running the program, one should 
-	modify the resulting structure accordingly.  A brief summary of
+	of the structure (``struct.fits'') and a summary in the ASCII file 
+	``image.list''.  After running the program, one should 
+	modify the resulting structure as needed.  A brief summary of
 	the structure is given below.  An example of this step
 	is xdimg\_setup.pro \\
          \quad Example: {\bf xdimg\_strct}, n1\_strct, 'LRISR', 'Keck', /MKDIR\\
@@ -70,10 +77,12 @@
 	  \hline
 	  Tag & Type & Comment \\
 	  \hline
-          flg\_anly & 0 &       Analysis flag 0=Don't Analyse \\
+          flg\_anly & 0 &      Analysis flag 0=Don't Analyse \\
           frame & 0L &         FRAME Number \\
+          naxis1 &  0L &       NAXIS1 is helpful for determining sub-chip readouts, esp for NIRC2 \\
+          naxis2 & 0L       &  NAXIS2 \\
           exp & 0.d &          Exposure time \\
-          filter & ' ' &       Filter : U,B,V,R,I \\
+          filter & ' ' &       Filter : U,B,V,R,I,H,Kp \\
           type & ' ' &         ObjTyp : OBJ, STD, TWI, DRK, ZRO, DFT, SPS \\
           Obj & ' ' &          Object Name \\
           Equinox & 0. &       EQUINOX \\
@@ -85,8 +94,11 @@
           AM &   0. &          Airmass \\
           RMS &   0. &         RMS \\
           extinct &   0. &     Extinction (e.g. cirrus) \\
-          CCD & ' ' &          CCD \\
+          CCD & ' ' &          CCD : LRISR, NIRC2, SITe3, etc.\\
           namp & 0 &           Namps \\
+          coadds & 0L &        Number of coadds (For IR images) \\
+          sampmode & 0L &      Sampmode \\
+          multisam & 0L &      Multisam \\
           statsec & lonarr(4) &    Stat section \\
           gain & 0. &          Gain \\
           readno & 0. &        Read Noise \\
@@ -96,14 +108,19 @@
           med\_raw & 0L &      Median of the Raw image \\
           min\_raw & 0L &      Min of the Raw image \\
           max\_raw & 0L &      Max of the Raw image \\
-          flg\_ov &  0 &       OV FILE?  0=No, 1=Yes   \\
+          flg\_ov &  0L &       OV FILE?  0=No, 1=Yes   \\
           img\_ov &  ' ' &     Name of OV file (with directory) \\
           med\_ov &  0. &      Median of OV file \\
-          flg\_msk &  0 &      Mask FILE?  0=No, 1=Yes   \\
+          flg\_drk & 0L &        Does necessary dark file exist? 0=NO, 1=Yes \\
+          img\_drk & ' ' &     Name of dark file which should be used with this image. (with directory) \\
+          flg\_drksub & 0L &    Has image been dark subtracted? 0=NO, 1=Yes \\
+          img\_drksub & ' ' &  Name of the dark subtracted (and coadd divided) file (with directory) \\
+          med\_drksub & 0. &   Median of dark subtracted, coadded divided file \\
+          flg\_msk &  0L &      Mask FILE?  0=No, 1=Yes   \\
           img\_msk &  ' ' &    Name of Mask file \\
-          flg\_skymsk &   0 &  Sky Mask FILE?  0=No, 1=Yes   \\
+          flg\_skymsk &   0L &  Sky Mask FILE?  0=No, 1=Yes   \\
           img\_skymsk &  ' ' & Name of Sky Mask file \\
-          flg\_final & 0 &     Final File? 0=No \\
+          flg\_final & 0L &     Final File? 0=No \\
           img\_final & ' ' &  Name of Final img \\
 	  \hline
 	\end{tabular}
@@ -112,57 +129,108 @@
   \end{Aenumerate}
 
   \clearpage
-{\Large  \item CALIBRATIONS :: } \\
-	Create Bias and flats including Super-sky flat.
-	An example of these steps is given in xdimg\_calibs.pro.  You will
-	need one set of flats but otherwise these steps are optional.
-	For the flats, a non-linear correction is applied where applicable
-	(e.g.\ SITe3)
+
+  {\Large  \item CALIBRATIONS :: } \\
+  The calibration section is split into two parts, the
+  first for creating calibration files for use with optical images and
+  the second for creating calibration files for use with infrared
+  images.
+  
+  Note that at any point during the reductions you can exit out of
+  IDL, and re-start the calibrations later by reading in the structure
+  as follows: n1\_strct=mrdfits('struct.fits',1).  The structure is
+  re-saved at each step in the process.
+
+
+  {\Large OPTICAL CALIBRATIONS ::} \\
+  Create Biases and Flats, including a Super-sky flat.
+  An example of these steps is given in Notes/pro/xdimg\_calibs\_opt.pro.  You will
+  need one set of flats but otherwise these steps are optional.
+  For the flats, a non-linear correction is applied where applicable
+  (e.g.\ SITe3)
+  
+  \begin{Aenumerate}
+    
+  \item {\bf xdimg\_bias} :: Create the Bias frame.  This routine ov
+    subtracts the bias images and median combines.  It then deletes
+    the ov images unless instructed otherwise.  Currently, the 
+    'Tek5', 'Site\#1', 'LRISR' chips are supported.  Investigate the
+    bias as you like (e.g.\ xatv, 'Bias/Bias.fits') \\
+    \quad Example: xdimg\_bias, n1\_strct \\
+    \quad Time   : 5 min
+    
+  \item {\bf xdimg\_dflat} :: Create the Dome Flats.  This routine ov
+    subtracts the dome flat images and median combines.  It then deletes
+    the ov images unless instructed otherwise.  It creates one normalized
+    flat per filter.  Investigate the
+    flats as you like (e.g.\ xatv, 'Flats/DFlatNR.fits'). \\
+    \quad Example: xdimg\_dflat, n1\_strct \\
+    \quad Time   : 10 min
+    
+  \item {\bf xdimg\_twiflt} :: Create the Twilight Flats.  This routine ov
+    subtracts the twilight flat images and median combines.  It then deletes
+    the ov images unless instructed otherwise.  It creates one normalized
+    flat per filter.  Investigate the
+    flats as you like (e.g.\ xatv, 'Flats/TFlatNR.fits'). \\
+    \quad Example: xdimg\_twiflt, n1\_strct \\
+    \quad Time   : 10 min
+  \end{Aenumerate}
+  
+  {\Large INFRARED CALIBRATIONS ::} \\
+  Create darks, flats, and a bad pixel mask.  An example of these
+  steps is given in Notes/pro/xdimg\_calibs\_ir.pro.  You will need one set of
+  flats for each filter, and a super-dark frame for each exposure time
+  of science data.  The bad pixel mask is helpful but not necessary.
 
   \begin{Aenumerate}
+    
+  \item{\bf xdimg\_badpix} :: Create a bad pixel mask.  This routine
+    uses the dark frames to pick out hot pixels and it uses
+    well-exposed flat fields to pick out dead pixels.  Therefore the
+    structure must include at least one of these types of frames.  You
+    can set the DEADPERCENT and HOTPERCENT keywords to change the
+    threshold of what is considered a bad pixel.  If multiple flats
+    and darks are present the program goes through each frame looking
+    for dead and hot pixels.  In this way it can locate ``sometimes''
+    dead and hot
+    pixels.  If running this program on NIRC2 data, you must run it once for the narrow camera and once for the wide camera since these are treated as separate instruments. \\
+    \quad Example: xdimg\_badpix, n1\_struct, CCD='NIRC2W' \\
+    
+  \item{\bf xdimg\_dark} :: Create a super-dark frame for every type of dark frame that we have.  For example, there will be one super-dark frame for each unique combination of exposure time, coadds, sampmode, and nreads.  This routine median combines all the dark exposures of the same type.  Investigate the super-darks as you like (e.g. \ xatv,
+    'Darks/Dark\_w10.000\_6\_3\_8.fits') The darks are saved with the NIRC2 camera name, the exposure
+    time, the number of coadds, the sampmode, and the number of reads (in that order). \\
+    \quad Example: xdimg\_dark, n1\_struct \\
 
-    \item {\bf xdimg\_bias} :: Create the Bias frame.  This routine ov
-	subtracts the bias images and median combines.  It then deletes
-	the ov images unless instructed otherwise.  Currently, the 
-	'Tek5', 'Site\#1', 'LRISR' chips are supported.  Investigate the
-	bias as you like (e.g.\ xatv, 'Bias/Bias.fits') \\
-         	\quad Example: xdimg\_bias, n1\_strct \\
-	        \quad Time   : 5 min
-
-    \item {\bf xdimg\_dflat} :: Create the Dome Flats.  This routine ov
-	subtracts the dome flat images and median combines.  It then deletes
-	the ov images unless instructed otherwise.  It creates one normalized
-	flat per filter.  Investigate the
-	flats as you like (e.g.\ xatv, 'Flats/DFlatNR.fits'). \\
-         	\quad Example: xdimg\_dflat, n1\_strct \\
-	        \quad Time   : 10 min
-
-    \item {\bf xdimg\_twiflt} :: Create the Twilight Flats.  This routine ov
-	subtracts the twilight flat images and median combines.  It then deletes
-	the ov images unless instructed otherwise.  It creates one normalized
-	flat per filter.  Investigate the
-	flats as you like (e.g.\ xatv, 'Flats/TFlatNR.fits'). \\
-         	\quad Example: xdimg\_twiflt, n1\_strct \\
-	        \quad Time   : 10 min
- \end{Aenumerate}
-
-{\Large  \item Sky Flat :: } \\
-	This is the preferred flat for analysis.  
-	Although strictly a calibration file, this step is more interactivec
-	than the previous and deals with the data images.  
-	Ideally one has $>5$ well dithered images per filter.  The routine:
+  \item{\bf xdimg\_dflat} :: Create the dome flat.  When used with the
+    /IR flag, this routine dark subtracts the flats with the
+    super-dark frame of the same type, and then median combines,
+    scaling by the median value in a small portion of the image.  It
+    then deletes the dark subtracted images unless instructed
+    otherwise.  It creates one normalized flat per filter, and per camera, of course.
+    Investigate the flats as you like (e.g. \ xatv, 'Flats/DFlat\_w\_NKp.fits').\\
+    \quad Example xdimg\_dflat, n1\_strct, /IR, CCD='NIRC2W', BPM='PixMask/BadPixMask\_w.fits' \\
+    
+  \end{Aenumerate}
+  
+  {\Large  \item Sky Flat :: } \\
+  This is the preferred flat for analysis.  Although strictly a
+  calibration file, this step can be more interactive than the previous
+  and deals with the data images.  Ideally one has $>5$ well dithered
+  images per filter.  The routine:
 
   \begin{Aenumerate}
     \item OV subtracts the object images (usually interactively with the /INTER 
-	keyword) 
+	keyword).  If the /IR flag is supplied then the routine dark subtracts instead of OV subtracting.
     \item Runs a gui ({\bf xmkmask}) designed to make sky masks (suppressed
 	with the /NOMSK keyword). 
     \item It then median combines with clipping. 
   \end{Aenumerate}
     	The ov images are generally kept. The routine creates one normalized 
 	flat per filter.  Investigate the flats as you like 
-	(e.g.\ xatv, 'Flats/SkyFltNR.fits'). \\
-        \quad Example: xdimg\_skyflt, n1\_strct, /INTER \\
+	(e.g.\ xatv, 'Flats/SkyFltNR.fits'  OR \ xatv, 'Flats/SkyFlt\_w\_Nkp.fits').  \\
+	Note: If xdimg\_skyflt fails due to problems with dynamic linking, it is possible that your installation of XIDL was faulty.  Update the XIDL CVS repository, and be sure to type bin/evilmake clean followed by bin/evilmake all while in XIDL.\\
+        \quad OPT Example: xdimg\_skyflt, n1\_strct, /INTER \\
+        \quad IR Example: xdimg\_skyflt, n1\_strct, /IR, CCD='NIRC2W', /NOMSK \\
 	\quad Time   : 45min (masks), 10min combining
 
 	\begin{itemize}
@@ -192,39 +260,50 @@
 	\begin{enumerate}
 
 	  \item See xdimg\_stds.pro for an example.
-	  \item {\bf xdimg\_proc } :: Process the standard field images 
-		Identify all STD images with the {\bf where} command, then
-		run {\bf xdimg\_proc}.   You will need to choose which image to
-		flatten with and input the root name (e.g.\ 'Flats/TSkyFltN').
-		The resulting
-		images are in the Final/ directory with an 'f\_' prefix.  
-		Note that this procedure
-		also multiplies by the gain by default.  Make sure the 
-		date is properly set for each image or is set globally! \\
-  		\quad Example: STDS = where(struct.type EQ 'STD' AND 
-			struct.flg\_anly NE 0 ) \\
-	    	\quad\quad\quad xdimg\_proc, n1\_struct, STDS, 'flatroot', /DELOV \\
-	        \quad Time   : Approx 15 sec / image 
-
-	  \item {\bf xdimg\_starid} :: Identify the stars in each standard field. 
-		This routine displays the image, allows one to flip it, 
-		directs the reader to read in a star list relevant to the
-		field, and then facilitates the identification of all stars
-		in that field.  It is necessary, to 
-		have the standard fields in the list 
-		directory before starting this procedure.  Once you have
-		identified and centered the stars, you can save the list
-		which is convenient given the poor quality of the 
-		Landolt coordinates and proper motions.  This program drives
-		the program {\bf x\_starid} which is an IDL gui.  See its help
-		page for more details. \\
-		\quad Example: {\bf xdimg\_starid}, n1\_struct \\
-	        \quad Time   : Mostly human labor ($<$1 min / image)
+	  \item {\bf xdimg\_proc } :: Process the standard field
+            images.  Identify all STD images with the {\bf where}
+            command, then run {\bf xdimg\_proc}.  You will need to
+            choose which image to flatten with and input the root name
+            (e.g.\ 'Flats/TSkyFltN' or 'Flats/DFlatN').  Notice you do
+            not use the entire flat name, just the filterless portion.
+            If dealing with infrared data, you will need to use the
+            /IR flag, and you should provide the name of a bad pixel
+            mask if you have one.  The resulting images are in the
+            Final/ directory with an 'f\_' prefix.  Note that this
+            procedure does NOT multiply by the gain by default.  Make
+            sure the date is properly set for each image or is set globally! \\
+            \quad OPT Example: STDS = where(n1\_struct.type EQ 'STD' AND
+            n1\_struct.flg\_anly NE 0 ) \\
+            \quad\quad\quad xdimg\_proc, n1\_struct, STDS, 'flatroot' \\
+            \quad IR Example: STDS = where(n1\_struct.type EQ 'STD' AND n1\_struct.flg\_anly NE 0 and n1\_struct.ccd eq 'NIRC2W') \\
+            \quad\quad\quad xdimg\_proc, n1\_struct, STDS, 'flatroot', /IR, BPM='PixMask/BadPixMask\_w.fits' \\
+            \quad Time : Approx 15 sec / image
+	        
+	  \item {\bf xdimg\_starid} :: Identify the stars in each
+            standard field.  This routine displays the image, allows
+            one to flip it, directs the reader to read in a star list
+            relevant to the field, and then facilitates the
+            identification of all stars in that field.  It is not
+            necessary to have the standard fields in the local List
+            directory before starting this procedure.  (By default,
+            the program will search the /IMG/Photometry/Lists
+            directory.)  But it is advised to use the LST\_PATH
+            keyword and copy over the list locally.  You'll want to be
+            familiar with the order of the stardards in the list,
+            because you'll have to click on the stars in the image one
+            by one, in the order that they appear in the starlist.
+            Once you have identified and centered the stars, you can
+            save the list which is convenient given the poor quality
+            of the Landolt coordinates and proper motions.  This
+            program drives the program {\bf x\_starid} which is an IDL
+            gui.  See its help page for more details.  Play around with the inorient keyword to get the standard stars to line up correctly on the image.  After running xdimg\_starid, there should be a new file in the Photo directory called std\_****.dat, and this file should contain the pixel positions of the standard stars.\\
+            \quad Example: {\bf xdimg\_starid}, n1\_struct, inorient=4, LST\_PATH='/Users/pollack/foo/Lists/' \\
+            \quad Time : Mostly human labor ($<$1 min / image)
 
 	  \item {\bf xdimg\_stdmag} :: Calculate magnitudes for the stars.  This 
 		routine takes the star positions from the previous step, 
 		reads in each image and calculates $7''$ aperture magnitudes.
-		The output is written to Photo/ by default (mag\_*).\\
+		The output is written to Photo/ by default (mag\_*).  Note: If you found that some of the standard stars are staruated, or fall on a bad column, or whatever, you may want to edit the ``mag'' files in the Photo directory before continuing on to the next step of photcal.  You'll have a chance in xdimg\_photcal to remove bad data points, but it may not be obvious which ones are bad. \\
          	\quad Example: {\bf xdimg\_stdmag}, n1\_struct \\
 	        \quad Time   : Fast, 5s/image
 
@@ -232,23 +311,25 @@
 		takes the magnitudes from the previous step, reads in the
 		Landolt info, and then creates and plots up the solution.  
 		One can set an AM
-		term instead of fitting for it with the SETAM keyword.  Also
-		the default is to only include Landolt stars with at least
+		term instead of fitting for it with the SETAM keyword.  (For a good discussion on airmass, and to find values of AM to use in case you can't fit for it yourself, see Prochaska et al. 2001, AJ, 123, 2206.)
+		Also the default is to only include Landolt stars with at least
 		4 measurements.  This can be changed with the MIN\_NOBS and
 		MIN\_MOBS keywords.  The output is written as 'soln\_*' in
 		the Photo directory.  \\
-         	\quad Example: {\bf xdimg\_photcal}, n1\_struct \\
+         	\quad Example: {\bf xdimg\_photcal}, n1\_struct, setam=0.7, min\_nobs=1, /NCLR \\
 	        \quad Time   : Fast
 
 	  \item Checkout 'soln\_*' in the Photo directory for the final 
 		photometric solutions.  The output given is the filter
-		for the solution, the color, and then the ZP, AM, CLR fitted
+		for the solution, and the color, followed by the ZP, AM, CLR fitted
 		parameters
-		with $1\sigma$ errors.  The final magnitudes are given by:\\
+		(with corresponding $1\sigma$ errors on the last line).  The final magnitudes are given by:\\
 	
 	 	\begin{center}
-		Mag = 25.0 + ZP - AM*obs\_AM - CLR*obs\_clr \\
+		Mag = m + 25.0 + ZP - AM*obs\_AM - CLR*obs\_clr \\
 		\end{center}
+
+		Of course, the +25.0 is simply the default when you use x\_aper or daophot to do standard aperture photometry.  i.e. If you look at the mag\_****.dat files which were created by xdimg\_stdmag, which are stored in the Photo directory, these values are already (m + 25.0) in the above equation.  Note: the quoted zero point applies to the images processed by xdimg\_proc, that is images which already have had the gain applied!
 
 	\end{enumerate}
 
@@ -257,8 +338,11 @@
 	\begin{enumerate}
 
 	  \item {\bf xdimg\_proc} :: Process the data images.  Make sure to set
-		the correct flat root.
-         	\quad Example: {\bf xdimg\_proc}, n1, 'flatroot', /delov
+		the correct flat root.  Use the /IR flag if dealing with infrared data, and also provide the name of a bad pixel mask if one exists.  If you want to later coadd the final images using Josh's code, include a FILEOUT name to be written with a list of final files. \\
+		\quad OPT Example: IMS = where(n1\_struct.type EQ 'OBJ' AND n1\_struct.flg\_anly NE 0) \\
+         	\quad\quad\quad {\bf xdimg\_proc}, n1\_struct, IMS, 'flatroot' \\
+                \quad IR Example: IMS =  where(n1\_struct.type EQ 'OBJ' AND n1\_struct.flg\_anly NE 0 and n1\_struct.ccd eq 'NIRC2W') \\
+               \quad\quad\quad {\bf xdimg\_proc}, n1\_struct, IMS, 'Flats/SkyFlt\_w\_N', /IR, BPM = 'PixMask/BadPixMask\_w.fits', FILEOUT = 'stackFile' \\
 	        \quad Time   : Approx 20 sec / image  
 
 	  \item {\bf x\_offset} :: This routine takes a series of images (in a list)
@@ -272,16 +356,20 @@
          	\quad Example: {\bf x\_offset} 'obj.list' INSTR='SITe3'\\
 	        \quad Time   : 1min/image \\
 
-	  \item Combine! :: Use IRAF's {\it combine} to register the processed
+	  \item Combine! :: {\bf THIS IS WRONG!!!} Use IRAF's {\it combine} to register the processed
 		images.  Be sure to weight by exposure and scale by the median.
 		This has the same effect as just summing each image straight-up
 		(i.e.\ preserving total counts).
+                {\bf After a long discussion with Hsiao-Wen, we determined that what you should really do is subtract the median from each each, and then coadd the median-subtracted images by weighting by the inverse variance and scaling by the exposure time.}
+
 	\end{enumerate}
 
-  \item Measuring Magnitudes
+
+
+{\Large  \item Measuring Magnitudes} \\
 
 	We will use sextractor and in order for it to work properly
-	the images must be in counts per second,
+	the images must be in counts per second (i.e. counts for which Poisson Statistics applies),
 	have the same dimensions and be registered [these last requirements
 	may no longer be true, I can edit the in-house code to handle
 	different sizes and registrations].

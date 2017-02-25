@@ -134,7 +134,8 @@ pro esi_lwdtrcarc, esi, slit, REFROW=refrow, LINLIST=linlist, $
       fitpix = x_fndfitval(lintrc[ii], fitstr, xval, $
                            TOLER=10.d-6)
       xstart[ii] = x_centspln(dum1[round(fitpix)-3L:round(fitpix)+3L], $
-                              arc_spec[round(fitpix)-3L:round(fitpix)+3], /SILENT)
+                              arc_spec[round(fitpix)-3L:round(fitpix)+3], $
+                              /SILENT)
       if xstart[ii] EQ -1 then xstart[ii] = fitpix
       ;; Center with fweight
       for j=0L,9 do $
@@ -148,7 +149,6 @@ pro esi_lwdtrcarc, esi, slit, REFROW=refrow, LINLIST=linlist, $
   xcen_pos = trace_crude(img_arc, ivar, yset=ycen_pos, XSTART=xstart, $
                          radius=2., ystart=REFROW, xerr=xerr_pos, $
                          MAXSHIFTE=0.5, NMED=7, NAVE=5)
-
   ;; Parse out bad lines!
   print, 'esi_lwdtrcarc: Parsing bad trace!'
   gdends = lonarr(ntrc,2)

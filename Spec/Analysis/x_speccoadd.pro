@@ -1,13 +1,14 @@
 ;+ 
 ; NAME:
 ; x_speccoadd
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
-;    Coadds inputted data
+;    Routine written to coadd spectra.  I highly recommend using
+;    x_combspec instead.  The routine here is old and not recently
+;    tested!
 ;
 ; CALLING SEQUENCE:
-;   
 ;   dat = x_speccoadd(spec)
 ;
 ; INPUTS:
@@ -45,10 +46,11 @@ pro x_speccoadd, files, fmt, delt, outfil=outfil
 ;
   if  N_params() LT 3  then begin 
     print,'Syntax - ' + $
-             'x_speccoadd, indata, fmt, delt OUTFIL=[V1.0]'
+             'x_speccoadd, indata, fmt, delt, OUTFIL=[V1.1]'
     return
   endif 
 
+  stop  ;; This code is obsolete
 
 ;  Optional Keywords
 
@@ -67,9 +69,9 @@ pro x_speccoadd, files, fmt, delt, outfil=outfil
   case fmt of 
       1: begin  ; Fits files (flux, sig, wave)
           nfil = n_elements(files)
-          flux = fltarr(200000, nfil)
-          sig = fltarr(200000, nfil)
-          wave = dblarr(200000, nfil)
+          flux = fltarr(200000L, nfil)
+          sig = fltarr(200000L, nfil)
+          wave = dblarr(200000L, nfil)
           allwvmn = dblarr(nfil)
           allwvmx = dblarr(nfil)
           npix = lonarr(nfil)

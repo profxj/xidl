@@ -9,25 +9,26 @@
 ;
 ; CALLING SEQUENCE:
 ;   
-;   x_extobjbox, slitstr, map
+;  x_extobjbox, fx, wv, xyguess, fin_spec, MSK=, VAR=, WVMNX=
 ;
 ; INPUTS:
-;   sub_fil      - Sky subtracted image file
-;   slit_fil     - Slit file
-;   obj_fil      - Object structure file
-;   [fin_fil]    - Flux,sig,wave file
+;  fx  -- Image array
+;  wv  -- Wavelength array
+;  xyguess -- Guess at the trace
 ;
 ; RETURNS:
 ;
 ; OUTPUTS:
-;   Updates slitstr for original positions
+;   fin_spec -- Final spectrum
 ;
 ; OPTIONAL KEYWORDS:
 ;   WVMNX - Endpoints for extraction (default: [3200., 11000.])
 ;   COLLMNX - Endpoints for collapsing the spectrum prior to extraction
 ;              (default: [3400., 8000.])
 ;   REDBLUE - Spectrum runs from red to blue
-;   SKYSUB  - Data has been sky subtracted (helps with aperture)
+;   NEWWV -  Finaly 1D wavelength array desired
+;   CRVAL1 -  Starting wavelength of final 1D array
+;   CDELT -   Delta lambda (lor or linear)
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -50,10 +51,10 @@ pro x_extobjbox, fx, wv, xyguess, fin_spec, MSK=msk, VAR=var, WVMNX=wvmnx, $
                  NMED=nmed, PIX=pix, FRAC=frac, RADIUS=radius, $
                  APER=aper, TOT_TRC=tot_trc, CRVAL1=crval1, CDELT=cdelt, $
                  NPIX=npix, COLLMNX=collmnx, DEBUG=debug, REDBLUE=redblue, $
-                 SKYSUB=skysub, REJ_CR=rej_cr, MXSHIFT=MXSHIFT, TRADIUS=tradius,$
+                 REJ_CR=rej_cr, MXSHIFT=MXSHIFT, TRADIUS=tradius,$
                  NEWWV=newwv, TRC_ORD=trc_ord, NOCRREJ=nocrrej, REJSIG=rejsig,$
-                 REBINC=rebinc, BKAPER=bkaper, SIG_COLL=sig_coll, SILENT=silent
-
+                 REBINC=rebinc, BKAPER=bkaper, SIG_COLL=sig_coll, SKY=sky, $
+                 SILENT=silent, CHK=chk
 
 
 ;  Error catching
@@ -69,138 +70,40 @@ pro x_extobjbox, fx, wv, xyguess, fin_spec, MSK=msk, VAR=var, WVMNX=wvmnx, $
 ;  Optional Keywords
 
   sz = size(fx, /dimensions)
-  if not keyword_set(WVMNX) then wvmnx = [3200., 11000.]
-  if not keyword_set(COLLMNX) then collmnx = [3400., 8000.]
-  if not keyword_set(NMED) then nmed = 5L
-  if not keyword_set(NAVE) then nave = 5L
-  if not keyword_set(RADIUS) then radius = 10L
-  if not keyword_set(FRAC) then frac = 0.025
   if not keyword_set(REJSIG) then rejsig = 7.
-  if not keyword_set(TRADIUS) then tradius = 3.
-  if not keyword_set(TRC_ORD) then trc_ord = 5L
-  if not keyword_set(SIG_COLL) then sig_coll = 2.5
+  if not keyword_set(WVMNX) then wvmnx = [3000., 12000.]
   if not keyword_set( VAR ) then begin
       var = fltarr(sz[0],sz[1])
       var = (fx>0.) + 25.  ; Assumes readnoise = 25
   endif
 
-;  Find all pixels in that slit
-  if keyword_set( MSK ) then nwmsk = msk else nwmsk = bytarr(sz[0],sz[1])+1 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;; TRACE ;;;;;;;;;
-; Transpose for tracecrude
-
-  if not keyword_set( TOT_TRC ) then begin
-      nwmsk = transpose(nwmsk)
-      tfx = transpose(fx)
-      gdpix = where(nwmsk NE 0)
-
-  ; Calculate subtracted ivar for the trace [dont use input var]
-      ivar = fltarr(sz[1],sz[0]) 
-      ivar[gdpix] = 1./(abs(tfx[gdpix]))
-
-  ; Tracecrude
-      newx = trace_fweight(tfx, xyguess[1], long(xyguess[0]), invvar=ivar, $
-                           xerr=sigx)
-      newx = trace_fweight(tfx, newx, long(xyguess[0]), invvar=ivar, $
-                           xerr=sigx)
-      xcen_pos = trace_crude(tfx, yset=ycen_pos, xstart=newx, nmed=nmed, $
-                             nave=nave, radius=tradius, ystart=xyguess[0], $
-                             xerr=xerr_pos, MAXSHIFTE=mxshift)
-
-  ; Fit to the trace 
-      gdtrc = where(xerr_pos LT 0.1, ntrc)
-
-      if ntrc LE 5 then begin
-          print, 'x_extobjbox: No object to extract!'
+  ;; Grab the aperture and profile
+  if not keyword_set( APER ) then begin
+      ;; Get the aperture
+      x_extapprof, fx, wv, xyguess, APSTRCT=apstrct, FLG_APER=flg_aper, MSK=msk,$
+        TOT_TRC=tot_trc, VAR=var, COLLMNX=collmnx, NMED=nmed, NAVE=nave, $
+        RADIUS=radius, frac=frac, TRADIUS=tradius, SIG_COLL=sig_coll, $
+        TRC_ORD=trc_ord, CHK=chk
+      if flg_aper EQ -1 then begin
+          print, 'x_extobjbox: No object'
           fin_spec = { npix: 0 }
           return
       endif
-      
-      fitstr = { fitstrct }
-      fitstr.func = 'POLY'
-      fitstr.nord = TRC_ORD
-      fitstr.hsig = 3.
-      fitstr.lsig = 3.
-      fitstr.maxrej = ntrc/5
-      fitstr.niter = 2
-      fitstr.minpt = 20
-      
-      if ntrc LT 40 then fitstr.nord = 3L
-
-      trc = x_fitrej(float(gdtrc), xcen_pos[gdtrc], FITSTR=fitstr)
-      tot_trc = x_calcfit(findgen(sz[0]), FITSTR=fitstr)
-  endif 
-
-  if keyword_set(DEBUG) then begin
-      tmpfx = fx
-      tmpfx[lindgen(sz[0]),tot_trc[lindgen(sz[0])]] = -100
-      xatv, tmpfx, /block, min=-50, max=50, wvimg=wv, sigimg=var
-      stop
-  endif
-
-;;;;; APERTURE ;;;;;;;;;
-; Collapse along the trace (restrict to 3200 - 8000A by default)
-  rnd_trc = round(tot_trc)
-  collpix = where(wv[lindgen(sz[0]),rnd_trc] GT collmnx[0] AND $
-                  wv[lindgen(sz[0]),rnd_trc] LT collmnx[1], ncoll)
-  ; Pad with zeros before shifting (key for the edges)
-  pad_img = fltarr(ncoll, sz[1]+200L)
-  pad_var = fltarr(ncoll, sz[1]+200L)
-  pad_img[*,100:sz[1]+99] = fx[collpix,*]
-  pad_var[*,100:sz[1]+99] = var[collpix,*] > 0. ; No neg values
-  ;; Create straightened image
-  coll_img = fltarr(ncoll,sz[1])
-  coll_var = fltarr(ncoll,sz[1])
-  for i=0L,ncoll-1 do begin
-      yshft = -round(tot_trc[collpix[i]]-tot_trc[collpix[0]])
-      coll_img[i,*] = (shift(pad_img[i,*], 0, yshft))[*,100:sz[1]+99]
-      coll_var[i,*] = (shift(pad_var[i,*], 0, yshft))[*,100:sz[1]+99]
-  endfor
-  ;; Total along columns
-  ymn = (round(tot_trc[collpix[0]]) - radius) > 0L
-  ymx = (round(tot_trc[collpix[0]]) + radius) < (sz[1]-1)
-  sum_cimg = total(coll_img[*,ymn:ymx], 2)
-  sum_cvar = total(coll_var[*,ymn:ymx], 2)
-  a = where(sum_cvar GT 0.)
-  ;; Calculate S/N
-  sn_coll = fltarr(ncoll)
-  sn_coll[a] = sum_cimg[a]/sqrt(sum_cvar[a])
-  gd_coll = where(sn_coll GT sig_coll, ngd)
-
-  if ngd LT ncoll/20 then flg_smsh = 0 else begin
-      flg_smsh = 1
-      smsh = djs_median(coll_img[gd_coll,*], 1)
+      if apstrct.flg_smsh NE 1 then begin
+          if keyword_set( BKAPER ) then apstrct.aper = bkaper $
+          else apstrct.aper = [5.,5.]
+          print, 'x_extobjbox: No flux to set aperture for! Using backup!'
+      endif
+  endif else begin
+      print, 'x_extobjbox: Using an aperture ', aper
+      apstrct = { $
+                aper: aper, $
+                gcoeff: fltarr(3), $
+                flg_smsh: 0 $
+                }
   endelse
-      
-  if keyword_set(DEBUG) then stop
-; Find or set aperture 
-  if not keyword_set( APER ) then begin
-      if flg_smsh NE 1 then begin
-          if keyword_set( BKAPER ) then aper = bkaper else aper = [5.,5.]
-          print, 'x_extobjbox: No flux to set aperture for! Using backup!',$
-            aper
-      endif else begin
-          aper = x_setaper(smsh, tot_trc[collpix[0]], frac, RADIUS=radius, $
-                           SKYSUB=skysub)
-      endelse
-  endif
 
-; Spline the aperture
-  if flg_smsh EQ 1 then begin
-      sv_cen = tot_trc[collpix[0]]
-      amin = round(sv_cen - aper[0] - 1) > 0
-      amax = round(sv_cen + aper[1] + 1) < (n_elements(smsh)-1)
-      ax = amin + findgen(amax-amin+1)
-      ay = smsh[amin:amax]
-      splin = spl_init(ax, ay, /double)
-      ;; Find the area of the spline
-      dx = (amax-amin)/500.
-      tx = (amin + findgen(500)*dx)
-      fspln = spl_interp(ax,ay,splin,tx,/double)
-      spln_area = total( fspln*dx )
-  endif
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;  EXTRACT ;;;;;;;
@@ -214,21 +117,23 @@ pro x_extobjbox, fx, wv, xyguess, fin_spec, MSK=msk, VAR=var, WVMNX=wvmnx, $
       a = where(wv[i,*] GT wvmnx[0] AND wv[i,*] LT wvmnx[1], nwv)
       if nwv EQ 0 then continue
       ; Find aperture edges
-      lmin = (sz[1]-1) < (long(tot_trc[i]-aper[0]-0.5)+1) > 0L
-      lmax = 0L > (long(tot_trc[i]+aper[1]+0.5) < (sz[1]-1)) 
+      lmin = (sz[1]-1) < (long(tot_trc[i]-apstrct.aper[0]-0.5)+1) > 0L
+      lmax = 0L > (long(tot_trc[i]+apstrct.aper[1]+0.5) < (sz[1]-1)) 
       msk[i,lmin:lmax] = 1
       ; Deal with endpoints
-      if (lmin-0.5) LT tot_trc[i]-aper[0] then $
-        fx_img[i,lmin] = fx[i,lmin]*(1.-(tot_trc[i]-aper[0]-lmin+0.5))
-      if lmax GT tot_trc[i]+aper[1] then $
-        fx_img[i,lmax] = fx[i,lmax]*(tot_trc[i]+aper[1]+0.5-lmax)
+      if (lmin-0.5) LT tot_trc[i]-apstrct.aper[0] then $
+        fx_img[i,lmin] = fx[i,lmin]*(1.-(tot_trc[i]-apstrct.aper[0]-lmin+0.5))
+      if lmax GT tot_trc[i]+apstrct.aper[1] then $
+        fx_img[i,lmax] = fx[i,lmax]*(tot_trc[i]+apstrct.aper[1]+0.5-lmax)
       ; Find total 
       tot = total(fx_img[i,lmin:lmax])
       ; Ignore tot LT 0 case
-      if tot GT 0. AND not keyword_set( NOCRREJ ) AND flg_smsh EQ 1 then begin
-          xpix = lmin + findgen(lmax-lmin+1) - tot_trc[i] + sv_cen
+      if tot GT 0. AND not keyword_set( NOCRREJ ) AND $
+        apstrct.flg_smsh EQ 1 then begin
+          xpix = lmin + findgen(lmax-lmin+1) - tot_trc[i] + apstrct.sv_cen
           ; Get spline values
-          spval = spl_interp(ax,ay,splin,xpix,/double)/spln_area
+          spval = spl_interp(apstrct.ax,apstrct.ay,apstrct.splin, $
+                             xpix,/double)/apstrct.spln_area
           ; Calc number of sigma [need to do correct variance]
           nsig = abs(fx_img[i,lmin:lmax]/tot - spval) / $
             (sqrt(var[i,lmin:lmax]) / tot)
@@ -236,16 +141,9 @@ pro x_extobjbox, fx, wv, xyguess, fin_spec, MSK=msk, VAR=var, WVMNX=wvmnx, $
           rej = where(nsig GT rejsig AND $
                       abs(fx_img[i,lmin:lmax]/tot/spval) GT 2, nrej)
           if nrej NE 0 then var[i,lmin+rej] = -1.
-;          if wv[i,lmin] GT 7800. and nrej NE 0 then begin
-;              plot, fx_img[i,lmin:lmax]/tot
-;              oplot, spval
-;              print, i
-;              stop
-;          endif
       endif
   endfor
   gdpix = where(msk EQ 1) 
-
 
 ;;;;;;;; REBIN ;;;;;;;;
 
@@ -262,9 +160,14 @@ pro x_extobjbox, fx, wv, xyguess, fin_spec, MSK=msk, VAR=var, WVMNX=wvmnx, $
 
   ; Check wavelength direction
   if not keyword_set( REDBLUE ) then begin
-      if wv[sz[0]/2,tot_trc[sz[0]/2]] GT wv[sz[0]/2 + 1, tot_trc[sz[0]/2 + 1]] $
+      if (tot_trc[sz[0]/2] LT 0. OR tot_trc[sz[0]/2] GT (sz[1]-1)) then begin
+          mxt = where(tot_trc GT 0. AND tot_trc LT (sz[1]-1))
+          mn = min(abs(sz[0]/2 - mxt),rb_idx)
+          rb_idx = mxt[rb_idx]
+      endif else rb_idx = sz[0]/2
+      if wv[rb_idx,tot_trc[rb_idx]] GT wv[rb_idx + 1, tot_trc[rb_idx + 1]] $
         then redblue = 1 else redblue = 0
-  endif
+  endif 
   
   ; Rebin
   if not keyword_set( SILENT ) then $
@@ -272,17 +175,40 @@ pro x_extobjbox, fx, wv, xyguess, fin_spec, MSK=msk, VAR=var, WVMNX=wvmnx, $
   x_rebin2dspec, wv, fx, newwv, newfx, GDPIX=gdpix, $
     VAR=var, NWVAR=newvar, SILENT=silent, REDBLUE=redblue, CR=rej_cr, $
     REBINC=rebinc
-
+if keyword_set(SKY) then begin
+  x_rebin2dspec, wv, sky, newwv, skyspec, GDPIX=gdpix, $
+    VAR=var, NWVAR=newvar, SILENT=silent, REDBLUE=redblue, CR=rej_cr, $
+    REBINC=rebinc
+  norm = sky
+  norm[*] = 1.
+  x_rebin2dspec, wv, norm, newwv, nrmspec, GDPIX=gdpix, $
+    VAR=var, NWVAR=newvar, SILENT=silent, REDBLUE=redblue, CR=rej_cr, $
+    REBINC=rebinc
+  ;; Normalize by boxcar aperture -- Gives flux per pixel
+  gdn= where(nrmspec > 0.)
+  skyspec[gdn] = skyspec[gdn] / nrmspec[gdn]
+endif else skyspec = 0*newvar
 ;;;;;; PASS IT BACK ;;;;;;;
-  
-  fin_spec = { $
+ fin_spec = { $
                npix: npix, $
                wv: newwv, $
                fx: newfx, $
                var: newvar, $
+               novar: 0*newvar, $
+               sky: skyspec, $
                trc: tot_trc, $
-               aper: aper $
+               aper: apstrct.aper, $
+               gauss_sig: apstrct.gcoeff[2] $
              }
+  
+;;   fin_spec = { $
+;;                npix: npix, $
+;;                wv: newwv, $
+;;                fx: newfx, $
+;;                var: newvar, $
+;;                trc: tot_trc, $
+;;                aper: apstrct.aper $
+;;              }
 
   return
 end

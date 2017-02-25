@@ -39,8 +39,8 @@
 ;------------------------------------------------------------------------------
 
 pro wfccd_mkobjstr, wfccd, mask_id, exp_id, NOCHK=nochk, SILENT=silent, $
-                    NOSLIT=noslit, NOOBJ=noobj, NOSKYSET=noskyset, $
-                    SKYOFF=skyoff, DEBUG=debug
+                    NOSLIT=noslit, NOOBJ=noobj, NOSKYSET=noskyset, $ 
+                    SKYOFF=skyoff
 
 ;
   if  N_params() LT 1  then begin 
@@ -54,6 +54,8 @@ pro wfccd_mkobjstr, wfccd, mask_id, exp_id, NOCHK=nochk, SILENT=silent, $
 
   if not keyword_set( SKYOFF ) then skyoff = 2.
 
+  wfccd.img_final=strtrim(wfccd.img_final,2)
+
 ; Set exp
   allexp = where(wfccd.type EQ 'OBJ' AND wfccd.flg_anly NE 0 AND $
               wfccd.mask_id EQ mask_id, nexp)
@@ -63,19 +65,19 @@ pro wfccd_mkobjstr, wfccd, mask_id, exp_id, NOCHK=nochk, SILENT=silent, $
   wfslit = xmrdfits(wfccd[exp].slit_fil,1,STRUCTYP='mslitstrct',/silent)
 
 ;  Read in Flux and Wave images
+  splog, 'reading from '+wfccd[exp].img_final
   flux = xmrdfits(wfccd[exp].img_final, /silent)
   wave = xmrdfits(wfccd[exp].img_final,2, /silent)
 
 ; Check for objects Automatically and Create Obj Structure
-  x_fndslitobj, flux, wave, wfslit, wfobj, WVGUESS=5720., $
-    DEBUG=debug
+  x_fndslitobj, flux, wave, wfslit, wfobj, WVGUESS=5720.
   wfobj.spec2d_fil = wfccd[exp].img_final
   wfobj.slit_fil = wfccd[exp].slit_fil
   wfobj.exp = wfccd[exp].exp
 
 ; Set yedg_sky
   if not keyword_set( NOSKYSET ) then begin
-      if wfslit[0].yedg_sky[0,0] NE 0. then begin
+      if wfslit[0].yedg_sky[0,0] NE 0. and keyword_set(NOCHK) eq 0 then begin
           print, 'wfccd_mkobjstr: Are you sure you want to change the sky? (1/0)'
           ans = x_guinum(2, TITLE='Change sky? (1/0)')
       endif else ans = 1L
@@ -87,7 +89,6 @@ pro wfccd_mkobjstr, wfccd, mask_id, exp_id, NOCHK=nochk, SILENT=silent, $
 
 ;  Check the Objects
   if not keyword_set( NOCHK ) then x_setobjgui, flux, wfobj, wfslit, wvimg=wave
-
   
 ; FITS
   ; Outfil
@@ -95,10 +96,8 @@ pro wfccd_mkobjstr, wfccd, mask_id, exp_id, NOCHK=nochk, SILENT=silent, $
   wfccd[exp].obj_fil = objfil
   ; WRITE
   if not keyword_set(NOOBJ) then mwrfits, wfobj, objfil, /create
-  if not keyword_set(NOSLIT) then begin
-      mwrfits, wfslit, wfccd[exp].slit_fil, /create
-      spawn, 'gzip -f '+wfccd[exp].slit_fil
-  endif
+  if not keyword_set(NOSLIT) then mwrfits, wfslit, wfccd[exp].slit_fil, /create
+   
   ; ALL DONE
   if not keyword_set(SILENT) then print, 'wfccd_mkobjstr: All Done!'
   return

@@ -1,10 +1,11 @@
 ;+ 
 ; NAME:
 ; x_fitstrtofits
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
-;    Writes a fitstr as a binary fits file (or the opposite)
+;    Writes a fitstr as a binary fits file (or read in a fit struct
+;    from a binary FITS file)
 ;
 ; CALLING SEQUENCE:
 ;   x_fitstrtofits, fit_str, fits_fil, /REVERSE
@@ -18,6 +19,8 @@
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
+;   /REVERSE  -- Default is to write the file.  If /REVERSE is set
+;                then the FITS file is read into a FIT structure
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -41,7 +44,7 @@ pro x_fitstrtofits, fit_str, fits_fil, REVERSE=reverse
 ;
   if  N_params() LT 2  then begin 
     print,'Syntax - ' + $
-             'x_fitstrtofits, fit_str, fits_fil, /REVERSE [v1.0]'
+             'x_fitstrtofits, fit_str, fits_fil, /REVERSE [v1.1]'
     return
   endif 
 

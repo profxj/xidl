@@ -34,8 +34,8 @@
 ;  /NOVAC   - Do not perform vacuum wavelength correction
 ;  BORDR=   - Order to begin bspline fitting (default: 5L)
 ;  SKLFIL=  - ASCII file setting breakpoints around sky lines (string)
-;  /CLOBBER - Overwrite any previos sky image
 ;  /USEOLD  - Overwrite only the new orders into the old sky sub image
+;  /FCHK
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -57,9 +57,11 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-pro esi_echskysub, esi, obj_id, exp, CHK=chk, STD=std, ORDR=ordr, $
-                   NOVAC=novac, SKLFIL=sklfil, BORDR=bordr, AIMG=aimg, $
-                   USEOLD=useold, SEDG_FIL=sedg_fil, FITFIL=fitfil
+pro esi_echskysub, esi, obj_id, exp, CHK = chk, STD = std, ORDRS = ordrs1 $
+                   , NOVAC = novac, SKLFIL = sklfil, BORDR = bordr $
+                   , AIMG = aimg, USEOLD = useold, SEDG_FIL = sedg_fil $
+                   , FITFIL = fitfil, CBIN = cbin, RBIN = rbin, FCHK = fchk $
+                   , LSLITE = LSLITE, RSLITE = RSLITE, NO_SKYLINE=no_skyline
 
 ;
   if  N_params() LT 2  then begin 
@@ -70,19 +72,35 @@ pro esi_echskysub, esi, obj_id, exp, CHK=chk, STD=std, ORDR=ordr, $
   endif 
   
 ;  Optional Keywords
-  if not keyword_set(BORDR) then bordr = 5L  ;; Order to begin bspline
-  if not keyword_set( FITFIL ) then fitfil = 'Maps/hole_fit.idl'
-  if not keyword_set( ORDR ) then begin  ;; Orders to sky subtract
-      ordr = [0L,9L]
-      flg_ordr = 0
-  endif else begin
-      if keyword_set( USEOLD ) then flg_ordr = 1 else flg_ordr = 0
-      if n_elements(ordr) NE 2 then begin
-          print, 'esi_echskysub: ORDR must be a 2 element array'
-          return
-      endif
-  endelse
+  IF NOT KEYWORD_SET(SIGREJ) THEN SIGREJ = 3.0
+  if not keyword_set( CBIN ) then cbin = 1
+  if not keyword_set( RBIN ) then rbin = 1
+  IF NOT KEYWORD_SET(BORDR) THEN BORDR = 0L ;; use to be default was 5
+  ;; force bordr to be 0
+  bordr = 0
+;  if not keyword_set(BORDR) then bordr = 5L  ;; Order to begin bspline
+;  if not keyword_set( FITFIL ) then fitfil = 'Maps/hole_fit.idl'
+  if not keyword_set( LSLITE ) then lslite = round(22./cbin)
+  if not keyword_set( RSLITE ) then rslite = round(14./cbin)
+  if n_elements(ORDRS1) EQ 0 THEN ordrs = lindgen(10) $
+  ELSE ordrs = ordrs1
+  nord = n_elements(ordrs)
+  icheck = WHERE(sort(ordrs) - lindgen(nord) NE 0, nbad)
+  IF nbad GT 0 THEN message, 'The numbers in ordrs must be sorted'
 
+  ;if not keyword_set( ORDR ) then begin  ;; Orders to sky subtract
+  ;    ordr = [0L,9L]
+  ;    flg_ordr = 0
+  ;endif else begin
+  ;    if keyword_set( USEOLD ) then flg_ordr = 1 else flg_ordr = 0
+  ;    if n_elements(ordr) NE 2 then begin
+  ;        print, 'esi_echskysub: ORDR must be a 2 element array'
+  ;        return
+  ;    endif
+  ;endelse
+  plate_scale = reverse([0.168, 0.163, 0.158, 0.153, 0.149, 0.144, 0.137 $
+                         , 0.134, 0.127, 0.120])
+  
 ; SKYLINES
   skylin = dblarr(10,75,3)
   if not keyword_set( SKLFIL ) then begin
@@ -250,12 +268,12 @@ pro esi_echskysub, esi, obj_id, exp, CHK=chk, STD=std, ORDR=ordr, $
   if keyword_set( STD ) then skylin[*,*,2] = skylin[*,*,2] - 1
 
   all_mnxwv = dblarr(10,2)
-  all_mnxwv[0,*] = [3900., 4380.]
+  all_mnxwv[0,*] = [3900., 4400.]
   all_mnxwv[1,*] = [4000., 4720.]
   all_mnxwv[2,*] = [4320., 5070.]
   all_mnxwv[3,*] = [4660., 5500.]
   all_mnxwv[4,*] = [5055., 5980.]
-  all_mnxwv[5,*] = [5618., 6572.]
+  all_mnxwv[5, *] = [5610., 6572.]
   all_mnxwv[6,*] = [6230., 7300.]
   all_mnxwv[7,*] = [7000., 8210.]
   all_mnxwv[8,*] = [8000., 9380.]
@@ -266,6 +284,7 @@ pro esi_echskysub, esi, obj_id, exp, CHK=chk, STD=std, ORDR=ordr, $
 ;  Find all relevant obj
   if not keyword_set( STD ) then begin
       indx = where(esi.flg_anly NE 0 AND esi.mode EQ 2 AND $
+                   esi.rbin EQ rbin AND esi.cbin EQ cbin AND $
                    esi.obj_id EQ obj_id AND $
                    strtrim(esi.type,2) EQ 'OBJ', nindx)
       if nindx EQ 0 then begin
@@ -273,19 +292,23 @@ pro esi_echskysub, esi, obj_id, exp, CHK=chk, STD=std, ORDR=ordr, $
           return
       endif
   endif else begin
-      indx = obj_id[0]
+      indx = [obj_id[0]]
       nindx = 1L
   endelse
       
 
 ;  Exposures
-  if not keyword_set(exp) then exp = lindgen(nindx)
+  if n_elements(exp) EQ 0 then exp = lindgen(nindx)
 
 ;  Read Arc
   ;; arc_fil
-  if not keyword_set(AIMG) then $
-    arc_fil = strtrim(esi[indx[0]].arc_fil,2) $
-  else arc_fil = aimg
+  IF NOT keyword_set(AIMG) then BEGIN
+     arc_fil = strtrim(esi[indx[0]].arc_fil, 2) 
+     IF NOT KEYWORD_SET(arc_fil) THEN $
+        arc_fil = esi_getfil('arc_img', SLIT = esi[indx[0]].SLIT $
+                             , cbin = cbin, rbin = rbin $
+                             , /name)
+  ENDIF else arc_fil = aimg
   ;; READ
   if x_chkfil(arc_fil+'*') EQ 0 then begin
       print, 'esi_echskysub: Arc file doesnt exist!', arc_fil
@@ -294,21 +317,39 @@ pro esi_echskysub, esi, obj_id, exp, CHK=chk, STD=std, ORDR=ordr, $
   print, 'esi_echskysub: Reading Arc file ', arc_fil
   img_arc = xmrdfits(arc_fil, /silent) 
   sz_arc = size(img_arc, /dimensions)
-
+  nx = sz_arc[0]
+  ny = sz_arc[1]
+  ;raw_arc_fil = esi_getfil('arc_fil', SLIT = esi[indx[0]].SLIT $
+  ;                         , cbin = cbin, rbin = rbin $
+  ;                         , /name)
+  wset_arc = xmrdfits(arc_fil, 1, /silent)  ;; Only good for new ESI redux
+  ;; Do we have twilight flats? If so, use these for the illum func. 
+  ;; If not, use the dome flats. 
+  ;IF KEYWORD_SET(strcompress(esi[indx[0]].twiflat_fil, /rem)) THEN $
+  ;   illum_fil =  esi[indx[0]].TWIFLAT_FIL $
+  ;ELSE illum_fil = esi[indx[0]].FLAT_FIL
+  ;illum_flat = xmrdfits(illum_fil, 1, /silent)
+  
 ; Open Slit file
-  c_s = esi_slitnm(esi[indx[0]].slit)
-  if not keyword_set( SEDG_FIL ) then $
-    sedg_fil = 'Flats/SEdg_ECH'+c_s+'.fits'
-  if x_chkfil(sedg_fil+'*') EQ 0 then begin
-      print, 'esi_echskysub: Slit edge file doesnt exist!', sedg_fil
-      return
-  endif
-  print, 'esi_echskysub: Grabbing slit edges from: ', sedg_fil
-  slit_edg = xmrdfits(sedg_fil, /silent)
-  slit_cen = round((slit_edg[*,*,0] + slit_edg[*,*,1])/2.)
+  if not keyword_set( SEDG_FIL ) then begin
+     sedg_fil = esi_getfil('sedg_fil', SLIT = esi[indx[0]].slit, $
+                            cbin = cbin, rbin = rbin, /name)
+      slit_edg = xmrdfits(sedg_fil, 0)
+      tset_slits = xmrdfits(sedg_fil, 1)
+  endif else begin
+      slit_edg = xmrdfits(strtrim(SEDG_FIL, 2), 0, /silent)
+      tset_slits = xmrdfits(SEDG_FIL, 1)
+  endelse
+  ordermask = long_slits2mask(tset_slits) 
+  ordermask[WHERE(ordermask GT 0)] = -ordermask[WHERE(ordermask GT 0)] + 16L
+  slit_cen = round((slit_edg[*, *, 0] + slit_edg[*, *, 1])/2.)
   rnd_edg = round(slit_edg)
-  ;; Hole Trace
-  restore, fitfil
+  ;; compute piximg for sky subtraction. 
+  piximg_arc = long_wpix2image(wset_arc, tset_slits)
+  yarr = findgen(ny)## replicate(1.0, nx)
+  
+  ;; Hole Trace (historic)
+;  restore, fitfil
 
 ;  Loop
 
@@ -320,11 +361,11 @@ pro esi_echskysub, esi, obj_id, exp, CHK=chk, STD=std, ORDR=ordr, $
           print, 'esi_echskysub: No Obj file! ', objfil, ' Skipping...'
           continue
       endif
-      objstr = xmrdfits(objfil, 1, STRUCTYP='dblsobjstrct', /silent)
+      objstr = xmrdfits(objfil, 1, /silent)
       nobj = n_elements(objstr)/10
 
       ;; IMG+VAR Fil 
-      imgfil = objstr[0].spec2d_fil
+      imgfil = esi_getfil('fin_fil', subfil=esi[indx[exp[q]]].img_root,/name)
       skyfil = 'Sky/sky_'+esi[indx[exp[q]]].img_root
       if x_chkfil(imgfil+'*') EQ 0 then begin
           print, 'esi_echskysub: Image file doesnt exist!', imgfil
@@ -334,41 +375,66 @@ pro esi_echskysub, esi, obj_id, exp, CHK=chk, STD=std, ORDR=ordr, $
       img = xmrdfits(imgfil, 0, head, /silent)
       var = xmrdfits(imgfil, 1, /silent)
       sz_img = size(img, /dimensions)
+      ;good = where(ordermask GT 0)
+      ;img[good] = img[good]/illum_flat[good]
+      ;var[good] = var[good]/illum_flat[good]^2
 
+      ;; Trace the actual sky lines in this image for the reddest orders
+      slit = esi[indx[exp[q]]].SLIT
+      fwhm = slit/plate_scale
+      bsp = fwhm/5.5d
+      plate_med = median(plate_scale)
+      pkwdth = 1.3*slit/plate_med
+      imask = (img GT -20.0 AND img LT 1d5)
+      ;; Should probably put an Exposure time limit on this next set
+      ;; of code , e.g.  exp > 300s
+      IF NOT KEYWORD_SET(STD) and not keyword_set(NO_SKYLINE) THEN BEGIN
+         wset_sky = long_wavepix(imask*img, tset_slits, FWHM = FWHM $
+                                 , pkwdth = pkwdth, toler = toler $
+                                 , ISLIT = [8, 9, 10], nsig = 5.0d $
+                                 , piximg_in = piximg_arc)
+         wset = wset_arc
+         wset[7:*] = wset_sky[7:*]
+         ;; I was working from orders 7,8,9,10, but there are not always
+         ;; enough lines in order 7
+      ENDIF ELSE wset = wset_arc
+      piximg = long_wpix2image(wset, tset_slits, /NOSTOP)
+      piximg = float(piximg) ;; force the pixel image to be a flaot array.
       ;; Mask
-      msk = lonarr(sz_img[0],sz_img[1])
+      msk = lonarr(sz_img[0], sz_img[1])
       ;; Final image
-      if flg_ordr EQ 1 then img_new = xmrdfits(imgfil, 2, /silent) $ 
-      else img_new = fltarr(sz_img[0],sz_img[1])
-
+      ;if flg_ordr EQ 1 then skyimage = xmrdfits(imgfil, 2, /silent) $ 
+      ;;else 
+      skyimage = fltarr(sz_img[0], sz_img[1])
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;; Loop on Orders
-      for qq=ordr[0],ordr[1] do begin
+      for jorder = 0L, nord-1L DO BEGIN
+          qq = ordrs[jorder]
           ;; 
           print, 'esi_echskysub: Subtracting order ', $
             string(15L-qq, FORMAT='(i3)')
 
           ;; Create Mask
           msk[*] = 0
-          lhs = (rnd_edg[*,qq,0]+17L) > 0L  ;; LHS has funny edge (0.5" only?)
-          rhs = (rnd_edg[*,qq,1]-9L) < (sz_img[0]-1)
+          lhs = (rnd_edg[*,qq,0]+LSLITE) > 0L ;; LHS has funny edge (0.5" only?)
+          rhs = (rnd_edg[*,qq,1]-RSLITE) < (sz_img[0]-1)
 
           gdmsk = where(lhs LE rhs, ngdmsk)
           for ii=0L,ngdmsk-1 do begin
               j = gdmsk[ii]
               msk[lhs[j]:rhs[j],j] = 1
           endfor
-
           ;; Mask out Obj
           print, 'esi_echskysub: Masking... '
-          mskobj = where(objstr.slit_id EQ qq, nmsk)
+          mskobj = where(objstr.order EQ qq, nmsk)
           for ii=0L,nmsk-1 do begin
               case qq of 
                  0: begin
                     jjmn = 1500L
-                    jjmx = 3800L
+                    jjmx = sz_img[1]-1L
+                    ;;jjmx = 3800L ;; changed by JFH 04-29-2008
                  end
                  9: begin
                     jjmn = 0L
@@ -433,6 +499,9 @@ pro esi_echskysub, esi, obj_id, exp, CHK=chk, STD=std, ORDR=ordr, $
               msk[bd] = 0
               ivar[bd] = -1.
           endif
+          ;; Okay now mask the edges since we have extended the slits
+          
+
 
           ;; Sky Shape here!
 
@@ -442,13 +511,58 @@ pro esi_echskysub, esi, obj_id, exp, CHK=chk, STD=std, ORDR=ordr, $
               ;; Convert to 1D
               print, 'esi_echskysub: Grabbing sky pixels'
               skypix = where(msk EQ 1, nsky)
-              srt = sort(img_arc[skypix])
-              sky_wv = img_arc[skypix[srt]]
+              old_srt = sort(img_arc[skypix])
+              sky_wv = img_arc[skypix[old_srt]]
+              srt = sort(piximg[skypix])
+              sky_pix = piximg[skypix[srt]]
               sky_fx = img[skypix[srt]]
               sky_ivar = ivar[skypix[srt]]
-
-          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+              ;; We want to determine the optimal bkpt spacing here. 
+              ;; First determine where and how well we've sampled the sky
+              ;ypix = yarr[skypix[srt]]
+              ;ymin = min(round(ypix))
+              ;ymax = max(round(ypix))
+              ;samplmin = dindgen(ymax-ymin+1L)
+              ;samplmax = dindgen(ymax-ymin+1L)
+              ;FOR kk = ymin, ymax DO BEGIN
+              ;    smpix = where(ypix EQ kk, np)
+              ;    IF np GT 0 THEN BEGIN
+              ;       samplmin[kk-ymin] = min(sky_pix[smpix])
+              ;       samplmax[kk-ymin] = max(sky_pix[smpix])
+              ;    ENDIF
+              ;ENDFOR
+              ;dsamp = shift(samplmin, -1)-samplmax
+              ;dsamp[ymax-ymin] = dsamp[ymax-ymin-1L]
+              ;dsamp = djs_median(dsamp, width = 15, boundary = 'reflect')
+              ;dsamp = smooth(dsamp, 5)
+              ;skybkpt_orig = samplmax + dsamp/2.0
+              ;skybkpt = skybkpt_orig
+              ;bksp_min = 0.5D
+              ;nbkpt = n_elements(skybkpt)
+              ;; Now loop over the bkpts and insert bkpts where we can add more
+              ;FOR kk = 1L, nbkpt-1L DO BEGIN
+              ;    dbkpt = skybkpt_orig[kk]-skybkpt_orig[kk-1L]
+              ;    ;; can we fit another bkpt
+              ;    dsamp_eff = dsamp[kk] > bksp_min 
+              ;    IF dbkpt GT 2.0*dsamp_eff THEN BEGIN
+              ;        nsmp = floor(dbkpt/(dsamp_eff)) 
+              ;        bkpt_new = skybkpt_orig[kk-1L] + $
+              ;          (lindgen(nsmp-1L) + 1L)*dbkpt/double(nsmp)
+              ;        ibkpt = WHERE(skybkpt EQ skybkpt_orig[kk-1L])
+              ;        IF ibkpt EQ 0 THEN $
+              ;          skybkpt = [skybkpt[0], bkpt_new, skybkpt[ibkpt+1:*]] $
+              ;        ELSE IF ibkpt EQ n_elements(skybkpt)-2L THEN $
+              ;          skybkpt = $
+              ;          [skybkpt[0:ibkpt], bkpt_new, skybkpt[ibkpt+1]] $
+              ;        ELSE $
+              ;         skybkpt = $
+              ;          [skybkpt[0:ibkpt], bkpt_new, skybkpt[ibkpt+1:*]]
+              ;    ENDIF
+              ;ENDFOR
+              ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
               ;; BKPTS
+              bsp_min = 0.6d
+              skybkpt = long_skybkpts(piximg, bsp_min, nx, ny, skypix)
               obj_wv = dblarr(sz_img[1])
               obj_mn = dblarr(sz_img[1])
               obj_mx = dblarr(sz_img[1])
@@ -495,51 +609,84 @@ pro esi_echskysub, esi, obj_id, exp, CHK=chk, STD=std, ORDR=ordr, $
                   endcase
               endfor
               ;; Add and Sort
-              srt = sort(bkpts)
-              bkpts = bkpts[srt]
+              bsrt = sort(bkpts)
+              bkpts = bkpts[bsrt]
               
               ;; Ends
               if bkpts[0] GT sky_wv[0] then bkpts=[sky_wv[0]-0.1,bkpts]
-              if bkpts[n_elements(bkpts)-1] LT sky_wv[n_elements(sky_wv)-1] then $
-                bkpts=[bkpts,sky_wv[n_elements(sky_wv)-1]+0.1]
+              if bkpts[n_elements(bkpts)-1] LT sky_wv[n_elements(sky_wv)-1] $
+                then bkpts = [bkpts, sky_wv[n_elements(sky_wv)-1]+0.1]
               
           ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
               ;; FIT Bspline
-              nord = 3L
+              pos_sky = where(sky_fx GT 1.0 AND sky_ivar GT 0., npos)
+              IF npos GT ny THEN BEGIN
+                  lsky = alog(sky_fx[pos_sky])
+                  lsky_ivar = lsky*0.+0.1
+                  ;skybkpt = bspline_bkpts(sky_pix[pos_sky], nord = 4 $
+                  ;;                        , bkspace = bsp[qq], /silent)
+                  lskyset = bspline_longslit(sky_pix[pos_sky], lsky, lsky_ivar $
+                                             , pos_sky*0.+1 $
+                                             , fullbkpt = skybkpt $
+                                             , upper = sigrej, lower = sigrej $
+                                             , /silent, yfit = lsky_fit $
+                                             , /groupbadpix)
+                  res = (sky_fx[pos_sky]-exp(lsky_fit))*sqrt(sky_ivar[pos_sky])
+                  lmask = (res LT 5.0 AND res GT -4.0)
+                  sky_ivar[pos_sky] = sky_ivar[pos_sky] * lmask
+              ENDIF 
+              ;fullbkpt = bspline_bkpts(sky_pix, nord = 4, bkspace = bsp[qq] $
+              ;                         , /silent)
+              bset = bspline_longslit(sky_pix, sky_fx, sky_ivar, sky_pix*0.+1. $
+                                      , /groupbadpix, maxrej = 10 $
+                                      , fullbkpt = skybkpt, upper = sigrej $
+                                      , lower = sigrej, /silent $
+                                      , yfit = yfit)
+              ;; smooth the fit with a 1-pixel gaussian
+              ;sig_res = 1.0D 
+              ;nhalf =  long(sig_res)*4L
+              ;xkern = dindgen(2*nhalf+1)-nhalf
+              ;kernel = gauss1(xkern, [0.0, sig_res, 1.0])
+              ;yfit_sm = convol(yfit_pix, kernel, /edge_truncate)
+              ;bset_sm = bspline_iterfit(xpix, yfit_sm $
+              ;                          , upper = 3, lower = 3, yfit = yfit2 $
+              ;                          , bkspace = 0.05 $
+                                ;, maxiter = 20, maxrej = 10)
+;              nord = 3L
               print, 'esi_echskysub: Fitting ', nsky, ' sky pixels with Bspline'
-              bset = bspline_iterfit(sky_wv, sky_fx, bkpt=bkpts, nord=nord, $
-                                     upper=5., lower=5., INVVAR=sky_ivar, $
-                                     maxiter=5L)
+;              bset = bspline_iterfit(sky_wv, sky_fx, bkpt=bkpts, nord=nord, $
+;                                     upper=5., lower=5., INVVAR=sky_ivar, $
+;                                     maxiter=5L)
               ;; Check FIT
-              if keyword_set( CHK ) then begin
-                  nfit = 100000L
-                  x0 = all_mnxwv[qq,0]
-                  xN = all_mnxwv[qq,1]
-                  
-                  xfit = fltarr(nfit)
-                  for i=0L,nfit-1 do xfit[i] = x0 + $
-                    float(i)*(xN-x0)/float(nfit)
-                  yfit = bspline_valu(xfit, bset)
+              if keyword_set(CHK) then begin
                   ybkpt = bspline_valu(bset.fullbkpt, bset)
-                  a = where(msk EQ 2)
-                  srt = sort(img_arc[a])
-                  obj_w = img_arc[a[srt]]
-                  obj_f = img[a[srt]]
-                  x_splot, sky_wv, sky_fx, PSYM1=3, /block, XTWO=xfit, $
-;                YTWO=yfit;, XTHR=obj_w, YTHR=obj_f, PSYM3=1
-                  YTWO=yfit, XTHR=bset.fullbkpt, YTHR=ybkpt, PSYM3=2
+                  dpix = max(sky_pix) - min(sky_pix)
+                  nfine = round(dpix/0.01)
+                  xpix = min(sky_pix) + findgen(nfine+1L)*dpix/float(nfine)
+                  yfit_pix = bspline_valu(xpix, bset)
+                  ;;a = where(msk EQ 2)
+                  ;;srt = sort(img_arc[a])
+                  ;;obj_w = img_arc[a[srt]]
+                  ;;obj_f = img[a[srt]]
+                  x_splot, sky_pix, sky_fx, PSYM1 = 3, /block, XTWO = xpix $
+                           , YTWO = yfit_pix $
+                           , XTHR = bset.fullbkpt, YTHR = ybkpt, PSYM3 = 2
+                  ;;                YTWO=yfit;, XTHR=obj_w, YTHR=obj_f, PSYM3=1
               endif
 
           ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
               ;; Create sky image
-              gdreg = where(msk NE 0 AND img_arc GT 0.)
+              ;;gdreg = where(msk NE 0 AND img_arc GT 0.)
+              gdreg = where(ordermask EQ (15L-qq)); AND img_arc GT 0)
+;;            JFH 05/08 replaced above. No need to mask edges just don't
+;;            use them to estimate the sky
+              
 ;              print, 'esi_echskysub: Creating a sky image'
 ;              img_sky[gdreg] = bspline_valu(img_arc[gdreg], bset)
               
               ;; Subtract from image
               print, 'esi_echskysub: Subtracting sky'
-              img_new[gdreg] = img[gdreg] - bspline_valu(img_arc[gdreg], bset)
-              
+              skyimage[gdreg] = bspline_valu(piximg[gdreg], bset)
               ;; Release memory
               delvarx, bkpts, gdmsk, gdreg
           endif else begin ;; POLY FIT
@@ -552,15 +699,19 @@ pro esi_echskysub, esi, obj_id, exp, CHK=chk, STD=std, ORDR=ordr, $
               sky_spec = fltarr(sz_img[1],2)
               for j=0L,sz_img[1]-1 do begin
                   a = where(msk[*,j] EQ 1, na)
-                  b = where(msk[*,j] NE 0, nb)
-                  if na GT 3 then begin
-                      fit = x_fitrej(img_arc[a,j], img[a,j], FITSTR=pfitstr, $
+                  b = where(ordermask[*, j] EQ (15L-qq) $
+                            AND img_arc[*, j] GT 0, nb) 
+                  ;; changed by JFH 05/08
+;                  b = where(msk[*,j] NE 0, nb)
+                  if na GT 11 then begin
+                      fit = x_fitrej(piximg[a,j], img[a,j], FITSTR=pfitstr, $
                                      IVAR=ivar[a,j])
                       if fit[0] NE -1 then begin
-                          img_new[b,j] = img[b,j] - $
-                            x_calcfit(img_arc[b,j],FITSTR=pfitstr)
-                          sky_spec[j,0] = img_arc[b[nb/2],j]
-                          sky_spec[j,1] = x_calcfit(sky_spec[j,0], FITSTR=pfitstr)
+                         skyimage[b, j] = img[b, j] - $
+                            x_calcfit(piximg[b, j], FITSTR = pfitstr)
+                          temp = piximg[b[nb/2], j]
+                          sky_spec[j, 0] = img_arc[b[nb/2], j]
+                          sky_spec[j, 1] = x_calcfit(temp, FITSTR = pfitstr)
                       endif else var[b,j] = -1
                   endif else begin
                       if nb NE 0 then var[b,j] = -1.
@@ -568,67 +719,75 @@ pro esi_echskysub, esi, obj_id, exp, CHK=chk, STD=std, ORDR=ordr, $
               endfor
           endelse
           
-          
           ;; Write Sky info (bset or spectrum)
-          if flg_ordr EQ 0 then begin  ;; ENTIRE SPECTRUM
-              if qq GE BORDR then begin
-                  if qq EQ 0 then mwrfits, bset, skyfil, /create, /silent $
-                  else mwrfits, bset, skyfil, /silent 
-              endif else begin
-                  if qq EQ 0 then begin
-                      mwrfits, fltarr(5), skyfil, /create, /silent 
-                      mwrfits, sky_spec, skyfil, /silent  ; Twice for organization
-                  endif else mwrfits, sky_spec, skyfil, /silent 
-              endelse
-          endif else begin  ;; SELECT ORDERS
-              a = findfile(skyfil+'*',count=na)
-              if na EQ 0 then stop
-              spawn, 'cp '+skyfil+' tmp_sky.fits'
-              case qq of 
-                  0: begin
-                      if qq GE BORDR then mwrfits, bset, skyfil, /create,/silent $
-                      else begin
-                          mwrfits, fltarr(5), skyfil, /create, /silent 
-                          mwrfits, sky_spec, skyfil, /silent
-                      endelse
-                      for i=1L,9L do begin
-                          tmp_sky = xmrdfits('tmp_sky.fits', i+1, /silent)
-                          mwrfits, tmp_sky, skyfil, /silent 
-                      endfor
-                  end
-                  else: begin
-                      tmp_sky = xmrdfits('tmp_sky.fits', 1, /silent)
-                      ;; FIRST
-                      if BORDR EQ 0 then mwrfits,tmp_sky,skyfil,/create,/silent $
-                      else begin
-                          mwrfits, fltarr(5), skyfil, /create, /silent 
-                          mwrfits, tmp_sky, skyfil, /silent
-                      endelse
-                      ;; MIDDLE
-                      for i=1L,qq-1 do begin
-                          tmp_sky = xmrdfits('tmp_sky.fits', i+1, /silent)
-                          mwrfits, tmp_sky, skyfil, /silent 
-                      endfor
-                      ;; NEW
-                      if qq GE BORDR then mwrfits, bset, skyfil, /silent $
-                      else mwrfits, sky_spec, skyfil, /silent
-                      ;; REST
-                      for i=qq+1L,9 do begin
-                          tmp_sky = xmrdfits('tmp_sky.fits', i+1, /silent)
-                          mwrfits, tmp_sky, skyfil, /silent 
-                      endfor
-                  endelse
-              endcase
-              spawn, '\rm -f tmp_sky.fits'
-          endelse
+ ;          if flg_ordr EQ 0 then begin  ;; ENTIRE SPECTRUM
+;               if qq GE BORDR then begin
+;                   if qq EQ 0 then mwrfits, bset, skyfil, /create, /silent $
+;                   else mwrfits, bset, skyfil, /silent 
+;               endif else begin
+;                   if qq EQ 0 then begin
+;                       mwrfits, fltarr(5), skyfil, /create, /silent 
+;                       mwrfits, sky_spec, skyfil, /silent  ; Twice for organization
+;                   endif else mwrfits, sky_spec, skyfil, /silent 
+;               endelse
+;           endif else begin  ;; SELECT ORDERS
+;               a = findfile(skyfil+'*',count=na)
+;               if na EQ 0 then stop
+;               spawn, 'cp '+skyfil+' tmp_sky.fits'
+;               case qq of 
+;                   0: begin
+;                       if qq GE BORDR then mwrfits, bset, skyfil, /create,/silent $
+;                       else begin
+;                           mwrfits, fltarr(5), skyfil, /create, /silent 
+;                           mwrfits, sky_spec, skyfil, /silent
+;                       endelse
+;                       for i=1L,9L do begin
+;                           tmp_sky = xmrdfits('tmp_sky.fits', i+1, /silent)
+;                           mwrfits, tmp_sky, skyfil, /silent 
+;                       endfor
+;                   end
+;                   else: begin
+;                       tmp_sky = xmrdfits('tmp_sky.fits', 1, /silent)
+;                       ;; FIRST
+;                       if BORDR EQ 0 then mwrfits,tmp_sky,skyfil,/create,/silent $
+;                       else begin
+;                           mwrfits, fltarr(5), skyfil, /create, /silent 
+;                           mwrfits, tmp_sky, skyfil, /silent
+;                       endelse
+;                       ;; MIDDLE
+;                       for i=1L,qq-1 do begin
+;                           tmp_sky = xmrdfits('tmp_sky.fits', i+1, /silent)
+;                           mwrfits, tmp_sky, skyfil, /silent 
+;                       endfor
+;                       ;; NEW
+;                       if qq GE BORDR then mwrfits, bset, skyfil, /silent $
+;                       else mwrfits, sky_spec, skyfil, /silent
+;                       ;; REST
+;                       for i=qq+1L,9 do begin
+;                           tmp_sky = xmrdfits('tmp_sky.fits', i+1, /silent)
+;                           mwrfits, tmp_sky, skyfil, /silent 
+;                       endfor
+;                   endelse
+;               endcase
+;               spawn, '\rm -f tmp_sky.fits'
+;           endelse
       
       endfor
+
+      badpix = WHERE(img_arc LE 0.0, nbad)
+      IF nbad GT 0 THEN BEGIN 
+         skyimage[badpix] = 0.0
+         var[badpix] = -1.0d
+      ENDIF
       ;; Ouptut New Image
       print, 'esi_echskysub: Writing output to: ', imgfil
-      if keyword_set( CHK ) then xatv, img_new, WVIMG=img_arc, /block
-      mwrfits, img, imgfil, head, /create, /silent
-      mwrfits, var, imgfil, /silent
-      mwrfits, img_new, imgfil, /silent
+      if keyword_set( CHK ) or keyword_set( FCHK ) then $
+        xatv, (img-skyimage)*float(ordermask GT 0.0) $
+        , WVIMG = img_arc, /block, min = -50, max = 200
+      mwrfits, float(img), imgfil, head, /create, /silent
+      mwrfits, float(var), imgfil, /silent
+      mwrfits, float(skyimage), imgfil, /silent
+      mwrfits, float(piximg), imgfil, /silent
       ;; COMPRESS
       print, 'esi_echskysub: Compressing...'
       spawn, 'gzip -f '+imgfil

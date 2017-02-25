@@ -4,7 +4,7 @@
 ;     Version 1.0
 ;
 ; PURPOSE:
-;    Process arc file
+;    Create a Map for rectification of the Arc files
 ;
 ; CALLING SEQUENCE:
 ;   
@@ -83,6 +83,7 @@ pro esi_echmkmap, esi
 ; Output
   print, 'esi_echmkmap: Map is in ', outfil
   mwrfits, map, outfil, /create
+  spawn, 'gzip -f '+outfil
 
   return
 end

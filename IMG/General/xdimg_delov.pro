@@ -1,9 +1,43 @@
+;+ 
+; NAME:
+; xdimg_delov
+;     Version 1.1
+;
+; PURPOSE:
+;   Delete a set of OV images
+;
+; CALLING SEQUENCE:
+;  xdimg_delov, strct, delimg
+;
+; INPUTS:
+;   strct  -- Direct image structure
+;   delimg -- Indices of direct images
+;
+; RETURNS:
+;
+; OUTPUTS:
+;
+; OPTIONAL KEYWORDS:
+;
+; OPTIONAL OUTPUTS:
+;
+; COMMENTS:
+;
+; EXAMPLES:
+;
+; PROCEDURES/FUNCTIONS CALLED:
+;
+; REVISION HISTORY:
+;   13-Nov-2001 Written by JXP
+;-
+;------------------------------------------------------------------------------
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 pro xdimg_delov, struct, delimg
 
   ; 
   if  N_params() LT 2  then begin 
       print,'Syntax - ' + $
-        'xdimg_delov, struct, delimg (v1.0)'
+        'xdimg_delov, struct, delimg [v1.1]'
       return
   endif 
 

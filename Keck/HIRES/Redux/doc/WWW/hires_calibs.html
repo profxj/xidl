@@ -1,0 +1,458 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.70)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>hires_calibs</TITLE>
+<META NAME="description" CONTENT="hires_calibs">
+<META NAME="keywords" CONTENT="hires_calibs">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+</HEAD>
+
+<BODY >
+
+<P>
+<DIV ALIGN="CENTER">
+<FONT SIZE="+3"><B>HIRedux Calibs</B></FONT>
+
+</DIV>
+
+<FONT SIZE="+2">HIRES_REDUX</FONT>
+</DIV>
+
+<FONT SIZE="+1">
+<UL>  
+ <LI>  It is possible that all of the following steps can be controlled
+by the GUI, &nbsp;&nbsp;<B>hires_redux</B>.  I use it sometime, but it
+is a bit buggy.
+I'm hopeful that it will be the best
+way to run the code someday.  
+<LI> To run, simply try: <br>
+  IDL> &nbsp;   <b>hires_redux</b>, hires
+<OL>
+<LI> Choose a setup
+  <UL>
+   <LI> Reduce the flats
+   <LI> Reduce the arcs
+   <LI> Check the QA plots
+  </UL>
+<LI> Choose an object
+  <UL>
+   <LI> Reduce and extract
+   <LI> Check the QA plots
+   <LI> Check the spectra
+  </UL>
+ </OL>
+</UL>
+
+
+</DIV>
+<hr>
+<P>
+<FONT SIZE="+2">Create Bias (Zero) frames [NOT recommended and NOT functional]</FONT>
+	
+<UL>
+<LI>The default method of bias subtraction is to use the overscan
+	region and the bias row.  If the user prefers, one can also subtract
+	off a combined bias frame.  This routine creates that combined frame
+	from a series of Bias frames. This routine
+	will create 1 bias frame per chip per binning mode.  
+<BR>
+Alternatively, one may perform this step as a test of the bias
+	subtraction algorithm.  The resulting images should have 0 counts
+	with no gross structure.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B><a href="HIRES_doc.html#HIRES_MKBIAS">hires_mkbias</a></B>, hires 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 3-5min 
+</LI>
+<LI> <I>You know the code is working right when you</I> 
+&nbsp; check the Bias frame : IDL> <B>xatv</B>, 'Bias/name.fits'<br>
+and it shows a generally blank image with no counts.  Of course, there
+is the possibility that you have bad bias frames and the code is still
+working fine.
+	
+</LI>
+</UL>
+
+<hr>
+<P>
+<FONT SIZE="+2">Set Gain</FONT>
+	
+<UL>
+<LI> The stability of the gain with the new HIRES ccd's is not well known
+at this time.  At present, we choose to measure the value by comparing
+a series of flats.  
+<LI> Note that the gain was changed from approximately 1 to 
+2 (Low mode) in October 2004.  You should definitely run this
+routine if your data is from before then.
+<LI><a href="HIRES_doc.html#HIRES_FINDGAIN">hires_findgain</a> :: Loops on the Milky Flats and performs statistics (in <a href="HIRES_doc.html#HIRES_GAIN">hires_gain</a>) to determine the gain and apply it to the gain TAG.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>hires_findgain</B>, hires, setup
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 3-5min 
+<LI> This routine is included in <b>hires_allflat</b>, see below.
+<LI> <I>You know the code is working right when you</I> see it looping
+through all of the flat files and reporting gain values within
+the ballpark of the published values.  You might also print out the gain
+tags after completion:  <br> IDL> print, hires.gain
+<LI> It is highly recommended that you use <b>hires_wrstrct</b> to write
+out the structure now.
+	
+</UL>
+
+<P>
+<FONT SIZE="+2">Process Flats </FONT>
+
+ <p> 
+<FONT SIZE="+1">
+These routines process the Milky and Trace flats to create a 
+	response image (pixel by pixel variations) and to determine the 
+	curvature of the orders on the CCD.  These files are essential to
+	run the HIRES pipeline.  Note that the next four steps can be run
+	together using the routine <a href="HIRES_doc.html#HIRES_ALLFLAT">hires_allflat</a>.
+
+<P>
+<UL>
+
+<LI><a href="HIRES_doc.html#HIRES_MKTFLAT">hires_mktflat</a> :: Combines the series of trace flats (standard flats) to create one high S/N image 
+for order and slit tracing.  I highly recommend that one account
+for pixel-to-pixel variations with a Pixel flat.  You can grab those
+flats off the Web site.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>hires_mktflat</B>, hires, setup, [chip]
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 1min  
+<UL>
+<LI> <I>You know the code is working right when you</I> &nbsp; see it process and 
+stack the various trace flat files.  You should then
+check the Trace Flat: <br> IDL> <B>xatv</B>, 'Flats/Flat_B_01_T.fits'
+</ul>
+
+<P>
+</LI>
+<LI><a href="HIRES_doc.html#HIRES_EDGEFLAT">hires_edgeflat</a> :: 
+Routine to trace the fit the order curvature by using the 'trace flat'.  
+<UL>
+<LI> The routine combines bits and pieces of the 2 (obsolete) routines
+	      that follow.  The main difference is that the fit is performed
+	      on the centroid of each order as determined by an average of
+	      the left and right hand sides.
+<LI>         Example: IDL> <B>hires_edgeflat</B>, hires, setup, [chip], /INTER, /CHK
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 2min 
+<LI> <I>You know the code is working right when</I> &nbsp; the curves
+look sensible. I have found that the reduced chi^2 might still be large
+even when things are working just fine.
+You can check the QA plots in (e.g. 'QA/Flats01/qa_trcflt_01B.ps').  
+The X0 and PCA0 values should vary significantly but be well fit while 
+the PCA1-4 values should have minor variations. <br>
+<LI> QA: <a href="hires_edgqa.pdf">HERE</a> is an example of the QA. Note:
+<UL>
+  <LI> The first page shows output from the PCA analysis.  The x0 and PCA0
+  components should be well fit (there may be red, rejected outliers).
+  <OL>
+  <LI> PCA1 should be confined to a small range of values 
+         (the magnitude is not particularly relevant) but may not.
+  <LI> PCA2-4 should each be confined to a small range of values
+         (the magnitude is not particularly relevant). 
+  </OL>
+  <LI> The second and third pages show the order edges (black points)
+		and the fits to the edges.  
+  <OL>
+    <LI>  Green lines indicate regions used in the PCA analysis
+    <LI>  Orange lines indicate where orders overlap.  These order edges
+		    were extrapolated using the PCA analysis.
+    <LI>  Light blue lines show partial orders.  These were not included in the
+		    PCA analysis.
+    <LI>  Dark blue lines show extrapolated orders at the edges of the CCD.
+  </OL>
+</UL>
+
+<LI> You can also check the tracing with
+<a href="HIRES_doc.html#HIRES_CHKTRCFLAT">hires_chktrcflat</a>.  Along with 
+	<B>xatv</B>, this routine is used to check the results from <B>hires_trcflat</B>.
+<BR>	 &nbsp;&nbsp;&nbsp;&nbsp;IDL> <B>xatv</B>, 'Flats/Flat_B_01_T.fits' 
+<BR>	 &nbsp;&nbsp;&nbsp;&nbsp;IDL> <B>hires_chktrcflat</B>, hires, setup, 1, /NOSTOP
+
+<LI> This routine has the most trouble with data taken with HIRESr
+in a setup with an improper 2nd order blocking filter.  The 'extra'
+orders causes troubles.
+	 
+</LI>
+</UL>
+<P>
+</LI>
+<LI>[OPTIONAL and NOT recommended] 
+<a href="HIRES_doc.html#HIRES_NRMFLAT">hires_nrmflat</a> 
+        :: This routines attempts to normalize the traditional 'trace flats'
+	  that one takes with HIRES.  Ideally you will instead use the 'pixel'
+	  flats which I have archived at the redux website and skip this step.  
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>hires_nrmflat</B>, hires, setup, [chip]
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : <2min per chip
+<UL>
+<LI> <I>You know the code is working right when</I> &nbsp; the routine
+finishes.  You should inspect the resulting images and consider if the
+variations from pixel-to-pixel are sufficiently small. 
+</UL>
+
+
+<P>
+</LI>
+<LI><a href="HIRES_doc.html#HIRES_ALLFLAT">hires_allflat</a> 
+        :: The previous 4 routines have been bundled into
+	one simple script.  We recommend using this routine once you are 
+	comfortable that the code is working well with your setup, etc.  We
+	recommend you 
+	run <B>hires_chktrcflat</B> after the procedure is through to examine
+	the solutions and also look at the QA.  
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>hires_allflat</B>, hires, setup, [chip, /INTER]
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : <20min per chip
+<UL>
+<LI> <I>You know the code is working right when</I> you go through all of the
+checking steps listed above.
+</UL>
+
+<P>
+</LI>
+</UL>
+
+<hr>
+<P>
+<FONT SIZE="+2">Arc Images </FONT>
+  
+<UL>
+<LI><B>General</B> :: 
+	The arcs are processed through a series of steps which:
+	<OL>
+	  <LI> Process the raw frame (<B>hires_procarc</b>) 
+	  <LI> Derive a 1D solution down the center of each order (<B>hires_fitarc</b>)
+	  <LI> Create a 2D solution (<B>hires_fit2darc</b>)
+	  <LI> Traces the individual arc lines (<B>hires_tracearc</b>)
+	  <LI> Fits the changing slope of the arc lines (<B>hires_fittrcarc</b>)
+	  <LI> Create a 2D wavelength image (<B>hires_mkaimg</b>)
+	</OL>
+	
+<p>
+<LI><B>Recommended: One Shot</B> <br>
+<a href="HIRES_doc.html#HIRES_ALLARC">hires_allarc</a>: There are two modes of processing the arcs.  
+We strongly recommend against running the arc steps individually unless you 
+are debugging.  In fact, it is possible that some procedures will not run
+on their own at the present time.  
+<OL>
+	<LI> Process individually.  This is generally only recommended 
+	    for redoing specific arcs.  It is also useful for testing the code
+            on non-standard setups before running on all of the arcs.  
+            The user inputs the indice(s) of the arc(s) to process.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>hires_allarc</B>, hires, [indx], /INDX
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 5min per arc
+
+	<LI> Process all together.  This is recommended. 
+	If you are reducing a full night
+	of data, I suggest the latter. 
+	    I do highly recommend, however, that you check the 1D
+	    solutions and consider tweaking a few orders as need be.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>hires_allarc</B>, hires, setup, [chip]
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 5min per arc
+
+</OL>
+
+<P>
+</LI>
+	  
+<P>
+</LI>
+<LI><B>Individual Procedures</B> 
+
+<P>
+
+<UL>
+
+<LI><a href="HIRES_doc.html#HIRES_PROCARC">hires_procarc</a> :: Process the Arcs.  
+	This step bias subtracts and flat fields the arc images.  It chooses
+	the arc image closest in UT time to the science exposure.  This routine
+	will also calculate the x,y shifts between the arcs being processed
+	and a 'template' arc.  The `template' arc should be the arc taken
+	most closely in time to the trace flats.  By default, the first Arc
+	of the night is taken as the template.  Output
+	are fits files in the 'Arcs/' directory.  
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>hires_procarc</B>, hires, setup, obj_id, [chip] 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> 
+		rslt = <B>hires_procarc_sngl</B>('raw.fits', setup, chip)
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 1min per image
+<UL>
+<LI> <I>You know the code is working right when</I> &nbsp; it finishes.  It would
+be quite unusual for this procedure to fail.
+</UL>
+<BR>
+
+<LI><a href="HIRES_doc.html#HIRES_FITARC">hires_fitarc</a> :: This routine extracts a 1D spectrum down the
+	center of each order and determines the wavelength solution.  
+ <UL>
+  <LI>
+	There are two levels of interaction with this routine.  The most
+	interaction (not recommended) is to use /INTER which prompts the
+	user to identify and fit the Arc lines.  One can also use the option
+	/PINTER which has the program attempt to identify a set of
+	lines in each order.  The user than interactively fits the lines
+	using the routine <B>x_identify</B> which calls <B>x1dfit</B>.
+	As long as your arc lines are within several 
+	pixels of my solution, things ought to run smoothly in the non-interactive
+	mode.  
+
+<LI> At this point, we recommend using the full AUTO mode.  If it fails,
+	we would hope to fix it.
+	The output is an IDL file containing the arc lines identified and 
+	their pixel centroids: 'Arcs/Fits/Arc_<I>name</I>_fit.idl'.  
+	The program can also create a ps file to examine the quality of fits.  
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>hires_fitarc</B>, hires, setup, obj_id, 
+		[chip, /INTER, /PINTER, /PSOUT]
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> result = <B>hires_fitarc_work</B>('arc_file', 
+	setup,  chip) 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 5min per chip per arc image
+<LI> <I>You know the code is working right when</I> &nbsp; the RMS of the fits to
+each order are generally less than 0.1 pixel.  There will be several exceptions
+per full exposure.  Also, it is common for the code to fail for the very bluest
+orders of the blue chip (at least with the original blue CCD).
+<br>
+The code produces a QA file (e.g. 'QA/Arcs01/qa_arcfit_mb0038.ps.gz')
+which shows the residuals to the order by order fits including the RMS
+(in pixels).
+<LI> QA: <a href="hires_afitqa.pdf">HERE</a> is an example of the QA. Each
+page shows the residuals of the fits to a set of echelle orders.  Red points
+indicate arc lines rejected in the fit.  The RMS values are in pixels and 
+the Dlambda values are Ang.  If any of the RMS values exceed 
+0.1 (and especially 0.2) you may wish to 'tweak' the arcs as described
+<a href="hires_tweakarc.html">here</a>.  In the example shown here, I have
+a little concern about Order #88, but none about #108.
+</ul>
+</LI>
+
+<BR>
+<LI><a href="HIRES_doc.html#HIRES_FIT2DARC">hires_fit2darc</a> :: This routine fits a 2D solution to the
+	wavelengths as a function of their y pixel value and their order number.  
+	It is rather straightforward. 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>hires_fit2darc</B>, hires, setup, obj_id, [chip]  
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> result = <B>hires_fit2darc_work</B>('arc_file', 
+	  setup, chip) 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : fast
+<UL>
+<LI> <I>You know the code is working right when</I> &nbsp; the RMS of the 2D fit
+is less than 0.1 pix or so.
+The code produces a QA file (e.g. 'QA/Arcs01/qa_arc2dfit_mb0038.ps.gz')
+which shows the 2D solution and lists the RMS.
+<LI> QA: <a href="hires_a2dfitqa.pdf">HERE</a> is an example of the QA. The
+first page shows the 2D solution and the lines fit.  There isn't too much
+to see visually.  I mainly check the RMS and hope to see values of 
+0.1 to 0.15 Ang*Order# (strange units).  The remaining pages show the
+residuals off the 2D solution.  Again, I hope to see RMS of 0.1pix or less.
+If you don't, consider a <a href="hires_tweakarc.html">tweak</a>.  
+</ul>
+
+<P>
+</LI>
+<LI><a href="HIRES_doc.html#HIRES_TRACEARC">hires_tracearc</a> :: This routine traces arc lines in each
+	order.  It traces the lines in the curved order frame of the original
+	image and then fits a straight line to each arc line.  The slope
+	and centroid of the arc line is recorded to a file for later use. 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>hires_tracearc</B>, hires, setup, obj_id, [chip]
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> result = <B>hires_tracearc_work</B>('arc_file', setup, 
+ 	chip) 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 2min per chip per arc image
+<UL>
+<LI> <I>You know the code is working right </I> &nbsp; by reviewing the QA file
+it produces (e.g. 'QA/Arcs01/qa_tracearc_mb0034.ps.gz').  So long as the
+arc lines and the fits look reasonably straight, everything should be fine.
+<LI> You can check the output by using &nbsp;
+<a href="HIRES_doc.html#HIRES_CHKARCTRC">hires_chkarctrc</a>
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>xatv</B>, arc_img
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>hires_chkarctrc</B>, hires, indx  
+</ul>
+
+<P>
+</LI>
+<LI><a href="HIRES_doc.html#HIRES_FITTRCARC">hires_fittrcarc</a> :: Using the slopes derived in the previous step,
+	this routine fits for the slope throughout the 2D arc image.  That is
+	the slope as a function of order and vertical height in the image.  Uses
+	the usual least-squares algorithm.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>hires_fittrcarc</B>, hires, setup, 
+		obj_id, [chip], /CLOBBER, /CHK 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> result = <B>hires_fittrcarc_work</B>('arc_file', 
+		setup, chip) 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : Fast
+<UL>
+<LI> <I>You know the code is working right when</I> &nbsp; RMS3 is less than 0.01.
+The code produces a QA file (e.g. 'QA/Arcs01/qa_fittrcarc_mb0038.ps.gz'). 
+</UL>
+
+<P>
+</LI>
+<LI><a href="HIRES_doc.html#HIRES_MKAIMG">hires_mkaimg</a> :: Using the 2D slope solution and the 1D arc
+	solution from step 2, this routine calculates a wavelength value for
+	every science pixel in the image.
+	The final wavelength image has air wavelengths and are saved as alog10 
+	double values.
+	Output is : 'Arcs/Arc_<I>name</I>I.fits'
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>hires_mkaimg</B>, hires, setup, obj_id, [chip],
+		/CHK 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> result = <B>hires_mkaimg_work</B>('arc_file', 
+		setup, chip, XOFF=) 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 1min  
+<UL>
+<LI> <I>You know the code is working right provided </I> it does not
+complain about an order not being single-valued in wavelength.  Also
+one can examine the BAD_ANLY parameter (it should be 0 upon completion).
+</UL>
+
+<P>
+</LI>
+</UL>
+</UL>
+
+<LI><B>Useless orders due to Blocking Filters</B>
+<BR>
+<BR>
+If you have orders blocked by a blocking filter, and you
+want to remove those from being analyzed by hires_allarc, you
+can remove orders by the following methodology: <br>
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;ostr = xmrdfits('Flats/OStr_chip_setup.fits',1) 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;good = where(ostr.order LT XX) 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;mwrfits, ostr[good], 'Flats/OStr_chip_setup.fits', /create 
+<br>
+<BR>You may want to make a backup of the file first in case you
+want to go back! <br>
+
+<br> Only do this if you are experienceing problems with the code
+</LI>
+
+<hr>
+
+<P>
+<FONT SIZE="+2">Slit Profile</FONT>
+  
+<UL>
+<LI><a href="HIRES_doc.html#HIRES_SLITFLAT">hires_slitflat</a> :: 
+This routine determines the slit profile
+for each order.  This is crucial for optimal sky subtraction, particularly
+given the short slit length used in HIRES.   The profile is used to correct
+the illumination pattern of the science frames.  The procedure is also important
+for optimal extraction.  It must be run after the arc calibrations as the
+slope of the arc lines is a necessary input.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>hires_slitflat</B>, hires, setup, [chip], [/chk], [/nodetilt]
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 10min per setup per chip 
+<UL>
+<LI> <I>You know the code is working right when </I> you check the QA
+file (e.g. 'QA/Flats01/qa_slitflat_01B.ps.gz') and the slit profiles
+look reasonably well behaved and the chi^2 values are around 0.5.
+</LI>
+<LI> If you want to see the fits in real-time, use /chk </LI>
+<LI> For internal flats (standard), there is likely to be an illumination
+pattern imposed on the slit.  Therefore, the default is to have the code
+'detilt' the slit profile.  If you prefer NOT to detilt, turn on /NODETILT.
+</UL>
+</UL>
+<P>
+<BR><HR>
+<ADDRESS> Last modified 2005-10-10 </ADDRESS>
+</BODY>
+</HTML>

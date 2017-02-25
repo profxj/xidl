@@ -4,12 +4,13 @@
 ;   Version 1.2  
 ;
 ; PURPOSE:
-;    Combines a set of images
+;    Combines a set of images with a variety of options.
 ;
 ; CALLING SEQUENCE:
 ;   
 ;   xcombine, img, comb, [header], FCOMB=, GAIN=, RN=, MASKS=, SCALE=,
-;     STATSEC=
+;     STATSEC=, MMEM=, SIGHI=, SIGLO=, MXITER=, OUTNM=, /SILENT, 
+;     WEIGHT=, IMGINDX=
 ;
 ; INPUTS:
 ;   img -- Array of image names
@@ -25,13 +26,16 @@
 ;          2 = SIG Rej
 ;          4 = Masks
 ;          8 = Weight
-;   mmem -- Maximum memory to use at any one time
+;   mmem -- Maximum memory to use at any one time [default: Approx 200Mb]
 ;   outnm -- File to write combined fits image
 ;   gain -- Gain (required for SIGMEDCLIP)
 ;   rn -- ReadNoise (required for SIGMEDCLIP)
 ;   scale -- scale:  Could be array of floats, 'MED', 'AVG', or
 ;            Keyword
 ;   statsec -- Section to perform stats on (for scale)
+;   imgindx -- Index number of image [default: 0L]
+;   siglo  -- Lower sigma for rejection [default: 3.]
+;   sighi  -- Upper sigma for rejection [default: 3.]
 ;   
 ;
 ; OPTIONAL OUTPUTS:
@@ -56,8 +60,10 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-pro xcombine, img, cmbimg, header, FCOMB=fcomb, SCALE=scale, MMEM=mmem, MASKS=masks, $
-              SIGLO=siglo, SIGHI=sighi, MXITER=mxiter, OUTNM=outnm, SILENT=silent, $
+pro xcombine, img, cmbimg, header, FCOMB=fcomb, SCALE=scale, MMEM=mmem, $
+              MASKS=masks, $
+              SIGLO=siglo, SIGHI=sighi, MXITER=mxiter, OUTNM=outnm, $
+              SILENT=silent, $
               GAIN=gain, RN=rn, STATSEC=statsec, IMGINDX=imgindx, WEIGHT=weight
 
 ;
@@ -76,7 +82,7 @@ pro xcombine, img, cmbimg, header, FCOMB=fcomb, SCALE=scale, MMEM=mmem, MASKS=ma
   if not keyword_set( IMGINDX ) then imgindx = 0L
   if not keyword_set( RN ) then rn = 5.
   if not keyword_set( GAIN ) then gain = 1.
-  if not keyword_set( MMEM ) then mmem = 200
+  if not keyword_set( MMEM ) then mmem = 2000. ;; 2Gb
   if not keyword_set( FCOMB ) then fcomb = 0
   if keyword_set( MASKS ) then begin
       if fcomb mod 8 LE 3 then print, 'fcomb not set for Masks; Proceeding without'
@@ -207,7 +213,7 @@ pro xcombine, img, cmbimg, header, FCOMB=fcomb, SCALE=scale, MMEM=mmem, MASKS=ma
   endif
 
   ; Max number of rows at a time
-  nrow = fix(n2_0*float(maximg)/nimg) < n2_0 ; Number of rows to read in
+  nrow = round(float(n2_0)*float(maximg)/float(nimg)) < n2_0 
 ;  nrow = 2000L
 
 ; Create Mask array as necessary
@@ -249,7 +255,6 @@ pro xcombine, img, cmbimg, header, FCOMB=fcomb, SCALE=scale, MMEM=mmem, MASKS=ma
             xmrdfits(masks[i],IMGINDX,range=[srow,lrow], /silent)
       endif
     
-
       print, 'xcombine: Combining...'
       case fcomb of 
           0 : $                 ; Plain Median
@@ -268,7 +273,7 @@ pro xcombine, img, cmbimg, header, FCOMB=fcomb, SCALE=scale, MMEM=mmem, MASKS=ma
                                              SIGLO=siglo, $
                                              SIGHI=sighi, $
                                              MAXITER=mxiter)
-          4 : $                 ; Median with Sigma Rej+Masks
+          6 : $                 ; Median with Sigma Rej and Masks
             comb[*, srow:lrow] = x_medsigclip(imgarr, $
                                              SIGLO=siglo, $
                                              SIGHI=sighi, $
@@ -276,7 +281,7 @@ pro xcombine, img, cmbimg, header, FCOMB=fcomb, SCALE=scale, MMEM=mmem, MASKS=ma
                                              RN=rn,   $
                                              MAXITER=mxiter, $
                                              INMASK=mskarr)
-          7 : $                 ; Average with SigmaRej and Masks
+          7 : $                 ; Average with Sigma Rej and Masks
             comb[*, srow:lrow] = x_avsigclip(imgarr, $
                                              SIGLO=siglo, $
                                              SIGHI=sighi, $

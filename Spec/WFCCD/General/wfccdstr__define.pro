@@ -41,7 +41,10 @@ pro wfccdstr__define
          arc_fil: ' ', $   ; Name of the Arc image file (fits)
          map_fil: ' ', $   ; Name of the Map image file (fits)
          flat_fil: ' ', $  ; Name of the Flat image file (fits)
-         obj_fil: ' ' $    ; Object structure
+         obj_fil: ' ', $   ; Object structure
+         rotated:0L, $     ; 1L if we are setting rotation by hand
+         theta:0., $       ;   angle of rotation
+         shift:0. $        ;   shift of image
          }
 
 end

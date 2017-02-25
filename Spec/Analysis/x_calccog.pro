@@ -1,36 +1,50 @@
 ;+ 
 ; NAME:
 ; x_calccog
-;   Version 1.0
+;   Version 1.1
 ;
 ; PURPOSE:
+;  Perform a COG solution given a list of flambda values, EW
+;  measurements and the errors in those measurements.  The user inputs
+;  an array of column densities to search over and the code finds the
+;  minimum in chi^2 and returns the value.
+;
+;  This code is currently only used to calculate the best b value for
+;  the lines for the given N values.  See fuse_cog for a better COG
+;  routine.  [JXP: 5/25/04]
 ;   
 ;
 ; CALLING SEQUENCE:
-;   
 ;   x_calccog, ew_red, sig_ew, flambda, Nval, blmt, FNDB=
+;   BANS=, /EXACT
 ;
 ; INPUTS:
-;   ew_red  -- Reduced ew
-;   sigew  - Error in ew
+;   ew_red  -- Reduced ew array
+;   sigew   -- Error in ew 
 ;   flambda  -- f lambda (assumes A not cm)
+;   Nval    -- List of Nval to consider
 ;   blmt    --  Limits for b value search (assumes km/s)
 ;
 ; RETURNS:
-;   ew   - Equivalent width
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
+;  /EXACT  -- Calculate the COG exactly  (otherwise use lookup table)
+;  /FNDB   -- Find the b-value (only option now)
 ;
 ; OPTIONAL OUTPUTS:
+;  BANS=  -- The b value which minimizes chi^2
 ;
 ; COMMENTS:
 ;
 ; EXAMPLES:
 ;
-;
 ; PROCEDURES/FUNCTIONS CALLED:
+;  x_calccog_initcomm
+;  x_calccog_cog
+;  x_calccog_ftau
+;
 ; REVISION HISTORY:
 ;   05-Mar-2002 Written by JXP
 ;-
@@ -77,16 +91,17 @@ end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 pro x_calccog, ew_red, sig_ew, flambda, Nval, blmt, $
-               NANS=nans, BANS=bans, FNDB=fndb, EXACT=exact
+               BANS=bans, FNDB=fndb, EXACT=exact, EWONLY=ewonly
 
   common x_calccog_cmm
 ;
   if  N_params() LT 5  then begin 
     print,'Syntax - ' + $
-             'x_calccog, ew_red, sig_ew, flambda, Nval, blmt, NANS=, '
-    print, '       BANS=, /FNDB  [v1.0]'
+             'x_calccog, ew_red, sig_ew, flambda, Nval, blmt, '
+    print, '       BANS=, /FNDB  [v1.1]'
     return
   endif 
+
 
   x_calccog_initcomm
 
@@ -94,7 +109,7 @@ pro x_calccog, ew_red, sig_ew, flambda, Nval, blmt, $
 
   if not keyword_set(NCHI) then nchi = 50L
   if not keyword_set(EXACT) then begin
-      cog_fil = getenv('XIDL_DIR')+'/Spec/Aanalysis/cogmax_tab.fits'
+      cog_fil = getenv('XIDL_DIR')+'/Spec/Analysis/cogmax_tab.fits'
       cog_strct = xmrdfits(cog_fil, 1, /silent)
   endif
 

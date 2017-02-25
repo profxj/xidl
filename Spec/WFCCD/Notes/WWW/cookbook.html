@@ -1,0 +1,1211 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.70)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>cookbook</TITLE>
+<META NAME="description" CONTENT="cookbook">
+<META NAME="keywords" CONTENT="cookbook">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="cookbook.css">
+
+<LINK REL="next" HREF="node1.html">
+</HEAD>
+
+<BODY >
+
+<P>
+<DIV ALIGN="CENTER">
+<FONT SIZE="+3"><B>WFCCD Multi-Slit Reduction [v1.1]</B></FONT>
+
+</DIV>
+
+<P>
+
+<FONT SIZE="+2">Requirements </FONT>
+   
+<UL>
+
+<OL>
+<LI>IDL v5.4 or later
+</LI>
+<LI>500M RAM
+</LI>
+<LI>2G hard drive space
+</LI>
+<LI>The full software package, including the <B>djs</B> and 
+		<B>idlspec2d</B> codes
+</LI>
+<LI>Hopefully a 300MHz processor or better
+</LI>
+<LI>Slit mask information (ideally from Andy's maskgen program)
+</LI>
+<LI>Log sheets 
+   
+</LI>
+</UL>
+
+<P>
+<FONT SIZE="+2">Suggested Calibrations</FONT>
+   
+<UL>
+<LI>2 QTZ Lamps at position of science frames
+</LI>
+<LI>1 Arc on each side of the science frames
+</LI>
+<LI>(Optional) Bias frames to check CCD performance
+   
+</LI>
+</UL>
+
+<P>
+<FONT SIZE="+2">Installation</FONT>
+   
+<UL>
+<LI> Review the notes on XIDL provided <a href="http://www.ucolick.org/~xavier/IDL/index.html"> here</a>
+</LI>
+</UL>
+
+<P>
+<DIV ALIGN="CENTER">
+<FONT SIZE="+3"><B>&nbsp;&nbsp;&nbsp;&nbsp; Setup</B></FONT>
+</DIV>
+
+<P>
+<FONT SIZE="+2">Initial Setup (Repeat for each night) </FONT>
+
+<P>
+
+<OL>
+<LI>Create a new directory for the night and enter it
+</LI>
+<LI>Create a Raw/ directory and put all the raw data in it.  
+</LI>
+<LI>Create a pro/ directory and copy the files from 
+	$XIDL_DIR/Spec/WFCCD/pro into it 
+	(e.g. <I>setcrds.pro, proc_night.pro, extract_night.pro</I>).
+	<B>These files can be used to run most of the steps that follow.</B>
+</LI>
+<LI>Launch idl in the directory above Raw/
+</LI>
+<LI><a href="wfccd_doc.html#WFCCD_STRCT">wfccd_strct</a> :: Create the wfccd structure.  
+	Again, I use the <I>proc_night.pro</I> file to do this.
+	This structure organizes
+	the entire night of data and is the most important file created.  The 
+	structure is listed on the next page [v1.1].  
+<BR>
+The routine creates a few things: (1) an IDL structure in memory with
+	whatever name you choose (e.g. night1); 
+	(2) the file 'struct.fits' which is a fits
+	version of the structure; (3) the file 'wfccd.list' which is an ASCII
+	version of the fits file which lists the values of some but not all tags.
+	To view the structure outside of IDL (or even in general), I highly 
+	recommend the program 'fv' which I think stands for fitsview.  It allows
+	you to examine binary fits tables. 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>wfccd_strct</B>, night1, /MKDIR 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : <4s per image
+
+	<DIV ALIGN="CENTER">
+<FONT SIZE="+2"><B>wfccdstr</B></FONT>
+	
+
+<P>
+<FONT SIZE="-1">	</FONT><TABLE CELLPADDING=3 BORDER="1">
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1">
+	  Tag </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> Type </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Comment </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+	  
+         frame </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> 0     </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> FRAME Number </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         flg_anly </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> 0   </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1">  Analysis flag 0=Don't Analyse </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         Obj </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> ' '       </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Object Name </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         type </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> ' '    </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> ObjTyp : OBJ, STD, DRK, ZRO, FLT, ARC, MSK, ALG </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         mask_id </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> 0L    </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Mask ID </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         masknm </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> ' '    </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Mask Name </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         exp </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> 0.d        </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Exposure time </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         filter </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> ' '     </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Filter : U,B,V,R,I, C </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         filtpos </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> 0     </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Filter Position </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         grism </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> ' '     </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Grism : BG, RG, NO </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         aperpos </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> 0     </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Aperture position </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         casspos </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> 0.    </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> CASS pos angle </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         AM </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">   0.     </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Airmass </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         CCD </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> ' '     </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> CCD </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         TEL </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> ' '    </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Telescope </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         gain </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> 0.     </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Gain </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         readno </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> 0.     </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Read Noise </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         date </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> 0.0d    </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Date of Obs </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         UT </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> ' '    </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> UT </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         RA </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> ' '    </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> RA </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         DEC </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> ' '    </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> DEC </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         Equinox </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> 0.     </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> EQUINOX </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         rootpth </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> ' '    </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Path of the Root </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         img_root </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> ' '   </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Root name (usually in Raw directory) </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         flg_ov </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  0     </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> OV FILE?  0=No, 1=Yes   </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         img_ov </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  ' '   </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Name of OV file (with directory) </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         flg_msk </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  0     </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Mask FILE?  0=No, 1=Yes   </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         img_msk </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  ' '   </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Name of Mask file </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         flg_final </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> 0   </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Final File? 0=No </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         img_final </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> ' '  </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Name of Final img </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         nslits </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> 0     </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Num of slits </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         ystrt </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> 0L      </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Column for initiating the trace </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         msk_fil </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> ' '  </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Name of the Mask info file (fits) </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         slit_fil </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> ' '  </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Name of the Slit info file (fits) </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         arc_fil </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> ' '   </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Name of the Arc image file (fits) </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         map_fil </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> ' '   </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Name of the Map image file (fits) </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         flat_fil </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> ' '   </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Name of the Flat image file (fits) </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         obj_fil </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> ' '  </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1">  Name of object structure (fits) </FONT></TD>
+</TR>
+</TABLE>
+</DIV>
+
+<P>
+</LI>
+<LI>Modify the WFCCD structure :: 
+	The previous step creates the structure and takes a guess at the 
+	initial values of many of the tags based on the header card info.  It
+	is impossible, however, to automate all of the values for the tags and
+	therefore the user must do a fair amount of this by hand.  The file
+	<I>setcrds.pro</I> 
+	is an extensive example.  Note the routine <B>x_fmidx</B> converts
+	the frameno of an image to the index in the structure. 
+<BR>
+The obvious tags to modify are: 
+	 
+<OL>
+<LI>Obj :: Object name 
+</LI>
+<LI>flg_anly :: Include in analysis (defaulted to 1 for yes)
+</LI>
+<LI>type :: ARC, FLT, etc.  (see the struct definition)
+</LI>
+<LI>masknm :: Generally a two character string giving the unique def
+</LI>
+<LI>mask_id :: Long integer identifying a given mask.  This is the
+			most important
+</LI>
+<LI>msk_fil :: Mask file describing the slits.  You will
+		always need to set this tag.  Ideally, the 
+		output from Andy's <I>maskgen</I> program. I tend to put these
+		files in the Masks/ directory.
+	 
+</LI>
+</OL>
+
+<P>
+</LI>
+<LI>Updating the WFCCD structure :: In IDL you can modify the values
+	of any of the tags.  You can then save the structure in fits form and 
+	rewrite the ASCII file  with the routine <a href="wfccd_doc.html#WRITE_WFCCDSTR">write_wfccdstr</a>. 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>write_wfccdstr</B>, night1, FITS='name' 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : fast
+
+<P>
+</LI>
+<LI>Overscan region :: By default, the package will assume 32 columns of
+	overscan.  If you use less, the program will behave fine.  If
+	you use more, they will be ignored.
+  
+</LI>
+</OL>
+
+<P>
+
+<P>
+<P>
+<FONT SIZE="+2">Create bias frame (optional)</FONT>
+	
+<OL>
+<LI>As a check you might create a bias frame.  At the moment
+	the reduction process does not include the bias frame.
+</LI>
+<LI>Run <a href="wfccd_doc.html#WFCCD_BIAS">wfccd_bias</a>. This routine outputs an image
+	'Bias.fits' in the Bias/ directory. The routine creates and then
+	deletes overscan frames for each image.  Warning: This program 
+        sometimes freezes up on Solaris;  never on Linux, Mac.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>wfccd_bias</B>, night1 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>proc_night</B>, night1, /MKBIAS 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 3-5min 
+<BR></LI>
+<LI>To check the Bias frame : <B>xatv</B>, 'Bias/Bias.fits'
+	
+</LI>
+</OL>
+
+    <P>r
+</LI>
+</OL>
+
+<P>
+
+<P>
+<DIV ALIGN="CENTER">
+<B><FONT SIZE="+2">&nbsp;&nbsp;&nbsp;&nbsp;Mask Calibration</FONT></B>
+</DIV>
+
+<P>
+
+<UL>
+<LI>The following routines all apply to a single mask.  In general,
+	this means multiple science exposures of one designed mask.  One
+	could break these up too, however.
+</LI>
+<LI>I suggest you create a .pro file like <I>proc_night.pro</I> 
+	to guide the process.  
+	It provides a convenient way of stepping through the reduction.
+</LI>
+<LI>Most of the following routines take only the WFCCD structure
+	and the <I>maskid</I> as inputs.
+  
+</LI>
+</UL>
+
+<P>
+
+<FONT SIZE="+2">Combine Flats </FONT>
+  
+<UL>
+
+<OL>
+<LI>Generally, one has at least 2 flats per mask.  To remove CR,
+	if nothing else, I combine the images.
+</LI>
+<LI>Run <a href="wfccd_doc.html#WFCCD_BIAS">wfccd_mkflat</a> :: This routine uses <B>x_addtwoflats</B> to
+	combine 2 flats if there are only two or <B>x_combine</B> for more than
+	2 flats. 
+</LI>
+<LI>Output is 'Flats/Flat_<I>maskid</I>.fits' 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>wfccd_mkflat</B>, night1, maskid 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>proc_night</B>, night1, maskid, /MKFLAT 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : <2 min 
+<BR>
+<P>
+</LI>
+<LI>Check the Flat: <B>xatv</B>, 'Flats/Flat_<I>maskid</I>.fits'
+  
+</LI>
+</UL>
+
+<P>
+<FONT SIZE="+2">Create the Map</FONT>
+  
+<UL>
+<LI><a href="wfccd_doc.html#WFCCD_MKMAP">wfccd_mkmap</a> ::
+	This step produces a fits file which contains information
+	relating the original data frame to one where the slits run straight
+	accross the image.  The 'straightened' image has the same number of
+	total rows as the original.
+</LI>
+<LI>The main routine <B>x_traceflat</B> takes the following steps: 
+	  
+<OL>
+<LI>transposes the flat image
+</LI>
+<LI>creates a sawtooth image (shifts and subtracts) to highlight
+		slit edges
+</LI>
+<LI>Keys on column (row) 400 to find all significant peaks in the
+		sawtooth image
+</LI>
+<LI>Uses <B>trace_crude</B> to trace the slit edges
+</LI>
+<LI>Outputs a trace structure <B>tracestrct</B>
+	  
+</LI>
+</OL>
+</LI>
+<LI>The user then interactively checks the various traces with the
+	routine <B>x_ydtortgui</B>.   
+        <a href="wfccd_xydtort.html">Here</a> is a screen shot of x_ydtortgui.
+	
+<UL>
+<LI>You can resize this gui
+</LI>
+<LI>LMB : Stretches the contrast and brightness.  
+</LI>
+<LI>RMB : Edit the ends of each trace.  The program assumes
+		you have chosen the nearest edge and changes good to bad
+		or vice-versa.
+</LI>
+<LI>DELTRC : Delete a given trace altogether.  
+	
+</LI>
+</UL>
+	I advise you extend the RHS of traces where it is sensible as there
+	is generally little signal out at these edges.
+	This program is one of the most user intensive of the 
+	entire reduction package.   In most cases, the step could be skipped
+	and the code would proceed fine.
+</LI>
+<LI>Finally, I run <B>x_fit2dtrace</B> to fit a 2D polynomial to 
+	the traces and create a map of the transformation.  I also create the
+	inverse map.
+</LI>
+<LI>Output is 'Maps/Map_<I>maskid</I>.fits' and 
+	'Maps/Trc_<I>maskid</I>.fits.  The map files are saved as double images
+	and take a fair amount of memory.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>wfccd_mkmap</B>, night1, maskid 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 5min to check the trace + 5min for the Map creation 
+<BR></LI>
+<LI>Check the Map
+	 
+<OL>
+<LI>Read in the flat: &nbsp;&nbsp;&nbsp;&nbsp;
+		flat = xmrdfits('Flats/Flat_<I>maskid</I>.fits')
+</LI>
+<LI>Read in the map: &nbsp;&nbsp;&nbsp;&nbsp;
+		map = xmrdfits('Maps/Map_<I>maskid</I>.fits')
+</LI>
+<LI>Rectify: &nbsp;&nbsp;&nbsp;&nbsp;rflat = <B>x_rectify</B>(flat, map)
+</LI>
+<LI>Examine: &nbsp;&nbsp;&nbsp;&nbsp;<B>xatv</B>, rflat 
+	 
+</LI>
+</OL>
+</LI>
+</UL>
+
+<P>
+<FONT SIZE="+2">Create the Slit Structure</FONT>
+  
+<OL>
+<LI><a href="wfccd_doc.html#WFCCD_SETSLITS">wfccd_setslits</a> ::
+	This step creates a slit structure which describes the slits in a mask
+	in greater detail than the WFCCD structure.  The user can interactively
+	set the slit edges.  This is important for dealing with slit overlap.
+	Here is the structure: 
+
+<P>
+<DIV ALIGN="CENTER">
+<FONT SIZE="+2"><B>mslitstrct</B> </FONT>
+	
+	<FONT SIZE="-1">	</FONT><TABLE CELLPADDING=3 BORDER="1">
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1">
+	  Tag </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> Type </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Comment </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+	  
+         flg_anly </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  0  </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Analyse? (1=yes, 0=no) </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         id </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  0L </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1">  ID number </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         field </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  ' ' </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1">  Field name </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         length </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  0. </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> (arcsec) </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         width </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  0.  </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> (arcsec) </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         pa </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  0. </FONT></TD>
+<TD></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         arcpix </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  0.   </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Arcsec per pix </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         xyqso </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  fltarr(2) </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1">  x offset from the QSO (arcsec) </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         xpos </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  0. </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1">  x position of silt </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         nobj </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  0 </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1">  Number of objects in slit </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         ypos </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  fltarr(10) </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1">  y pos of obj relative to slit edges (5#5) </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         yedg </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  fltarr(2) </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1">  Slit edges relative to slit mask cen (pix) </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         yedg_flt </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  fltarr(2) </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1">  y-Edges  of slit on CCD (Undistorted FLAT) </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         yedg_orig </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  fltarr(5000,2)   </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1">  Array of slit edges in orig </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         yedg_sky </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  fltarr(5000,2)   </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1">  Edges of slit for sky subtraction</FONT></TD>
+</TR>
+</TABLE>
+</DIV>
+
+<P>
+</LI>
+<LI>Parse the slit file listed in the WFCCD
+	structure under the 'msk_fil' tag.  
+	You will need to have put your mask file in the appropriate place
+	beforehand (e.g. 'Masks/').
+	The routine is <a href="wfccd_doc.html#WFCCD_PRSSLITS">wfccd_prsslits</a>.
+	The slit structure is created in memory.
+</LI>
+<LI>Straighten the Flat with the Map file (uses <B>x_rectify</B>).
+</LI>
+<LI><B>x_setslits</B> ::
+	Guess at the slit positions using the info in 'msk_fil'
+</LI>
+<LI><B>x_stsltgui</B> :: Unless NOVERIFY is set, 
+	launch a gui to interactively check
+	the slits.  It is important to set the silt edges
+	about right.  In particular, overlapping slits leads to a real
+	problem with sky subtraction and they are best dealt with by 
+	identifying the slit edges properly.
+	  
+<UL>
+<LI>You can resize the display screen
+</LI>
+<LI>I would examine the LHS of the image where there is more flux
+</LI>
+<LI>The slit width is always preserved
+</LI>
+<LI>Red (blue) lines indicate the top (bottom) of a slit
+</LI>
+<LI>z (Z) zooms in (out)
+</LI>
+<LI>LMB sets contrast/brightness
+</LI>
+<LI>s (S) shifts all slits below the selected one
+		(inclusive) and keys on top (bottom) of slit
+</LI>
+<LI>b (t) shifts one slit and keys on bottom (top) of slit
+	  
+</LI>
+<LI><a href="x_stsltgui.html">Here</a> is a screen shot.
+</UL>
+</LI>
+<LI>Map the slits into the original frame using <B>x_origslit</B>.
+	The slit edge traces are written into 'yedg_orig' in the slit structure.
+</LI>
+<LI>Output the Slit structure to 'Slits/Slits_<I>mask_id</I>.fits' 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>wfccd_setslits</B>, night1, maskid 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : <5min to check the slits 
+<BR>  
+</LI>
+</OL>
+
+<P>
+<FONT SIZE="+2">Normalize the Flat</FONT>
+  
+<UL>
+<LI><a href="wfccd_doc.html#WFCCD_NORMFLAT">wfccd_normflat</a> :: Collapses (median) the slits in the flat
+	using the slit edges from the previous step.  Fits a high order
+	bspline to the final result (with 5sig rejection).
+</LI>
+<LI>The main driver is <B>x_normflat</B>.
+</LI>
+<LI>The output is 'Flats/FlatN_<I>mask_id</I>.fits'. The 
+	WFCCD structure is updated to reflect the new flat.  At this point
+	the file 'Flats/Flat_<I>mask_id</I>.fits' is unnecessary (33M). 
+	I'd check the normalized flat before ever deleting it, however.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>wfccd_normflat</B>, night1, maskid 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : <3min 
+<BR>  
+</LI>
+</UL>
+
+<P>
+<FONT SIZE="+2">Create the Wavelength Image</FONT>
+  
+<OL>
+<LI>This sequence of steps (i) processes the arc images, (ii) creates
+	a wavelength solution for the central row of each slit in the
+	straightened frame; and (iii) finds the wavelength solution for each
+	pixel and maps back to the original frame.
+</LI>
+<LI><a href="wfccd_doc.html#WFCCD_PROCARC">wfccd_procarc</a> :: Process each Arc image. OV subtract, 
+	flatten, straighten the slits.  Output is 
+	'Arcs/ArcR_ccd###.fits' where ccd### corresponds
+	to the orginal ccd frame number.  
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>wfccd_procarc</B>, night1, maskid 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : <5min 
+<BR></LI>
+<LI><a href="wfccd_doc.html#WFCCD_ALLARCSOL">wfccd_allarcsol</a> :: Find the wavelength solution for the
+	center of each slit to be analysed (alignment star boxes are skipped).
+	This routine drives the program <a href="wfccd_doc.html#WFCCD_ARCSOL">wfccd_arcsol</a> which: 
+	
+<UL>
+<LI>Medians the 5 central rows of each slit
+</LI>
+<LI>Guesses the initial wavelength solution based on the
+		slit position
+</LI>
+<LI>Calls <B>x_autoid</B> which is a 
+	chi^2 minimization routine that automatically finds 
+	a wavelength solution
+	given an initial guess, an arc spectrum, and a line list.  By
+	default we use the linelist 'wfccdB_HeNe.lst' given in 
+	$XIDL_DIR/Spec/Arcs/Lists
+</LI>
+<LI>Output is an Arc structure <B>wfccdarcstr</B> which is output
+	as a fits file 'Arcs/ArcS_ccd###.fits'.  It has
+	the wavlength solution, arc spectrum, and a wavelength array 
+	for the center of each slit in the straightened frame.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>wfccd_allarcsol</B>, night1, maskid
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : <5s/slit 
+<BR>	
+</LI>
+</UL>
+
+<P>
+</LI>
+<LI><a href="wfccd_doc.html#WFCCD_ARCIMG">wfccd_arcimg</a> :: Translate the wavelength solution from
+	the center rows to the entire slit.  
+	This is the only procedure which is exposure sensitive.
+	The main driver is <B>x_arcimage</B>:
+
+<UL>
+<LI>Identifies all 3sigma arc lines and traces
+	them across the slit.  
+</LI>
+<LI>It then calculates a unique wavelength solution
+	for each row.  
+	
+</LI>
+</UL>
+	Finally, the program maps the wavelength solution
+	back into the original frame. The routine is called once per exposure
+	for a given mask.  It matches each exposure with the nearest Arc
+	frame by considering the UT of the images.  The output is an Arc
+	image 'Arcs/ArcI_ccd###.fits'. 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>wfccd_arcimg</B>, night1, maskid, expsr 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : <10min/exposure 
+<BR>
+<P>
+</LI>
+<LI><a href="wfccd_doc.html#WFCCD_CHKARC">wfccd_chkarc</a> :: Plots the arc line solutions from each
+	slit in a simple gui.  Shows the RMS solution (&#197;) and the red lines
+	identify key arc lines.  If something isn't right, you are in trouble!
+	<a href="wfccd_chkarc.html">Here</a> is a screen shot.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>wfccd_chkarc</B>, night1, maskid, expsr 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : fast 
+<BR>
+<P>
+</LI>
+<LI><a href="wfccd_doc.html#WFCCD_CLEANARC">wfccd_cleanarc</a> :: Zeros out bad wavelength values.  These
+	should only occur when two slits are too close or overlapping.  This
+	procedure helps with the sky subtraction and extraction.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL3#3 <B>wfccd_cleanarc</B>, night1, maskid, expsr 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 4#4min 
+<BR>
+<P>
+</LI>
+</OL>
+
+<P>
+<DIV ALIGN="CENTER">
+<FONT SIZE="+3"><B>&nbsp;&nbsp;&nbsp;&nbsp; Setup</B></FONT>
+</DIV>
+
+<P>
+<FONT SIZE="+2">Process the Science Images</FONT>
+  
+<UL>
+<LI><a href="wfccd_doc.html#WFCCD_PROCOBJ">wfccd_procobj</a> :: OV subtract, flatten and staple in 
+	the wavelength image.
+</LI>
+<LI>Produces one final fits image: 'Final/f_ccd###.fits'.
+	This file has Flux, Var, Wave in the first 3 data units (50Mb). 
+<BR>    	&nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>wfccd_procobj</B>, night1, maskid 
+<BR>  	&nbsp;&nbsp;&nbsp;&nbsp;Time   : fast 
+<BR>  
+</LI>
+</UL>
+
+<P>
+<FONT SIZE="+2">CR Flagging</FONT>
+  
+<UL>
+<LI><a href="wfccd_doc.html#WFCCD_OBJCR">wfccd_objcr</a> :: Identifies CR in the object frames by
+	comparing two exposures.  Currently can only take two images at a time
+	but this is easily updated.  A CR must have a flux >3x the
+	pixel in the other frame and a flux >200.  <B>WARNING</B>: This
+	program should be used with caution.
+<BR>    	&nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>wfccd_objcr</B>, night1, maskid 
+<BR>  	&nbsp;&nbsp;&nbsp;&nbsp;Time   : <2min 
+<BR>  
+</LI>
+</UL>
+
+<P>
+<FONT SIZE="+2">Clean Up</FONT>
+  
+<UL>
+<LI><a href="wfccd_doc.html#WFCCD_CLEANUP">wfccd_cleanup</a> :: Removes many of the unnecessary files that
+	the package creates (e.g. the unnormalized flat).  Don't run this
+	unless you are quite confident your processing is complete.
+<BR>    	&nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>wfccd_cleanup</B>, night1, maskid 
+<BR>  	&nbsp;&nbsp;&nbsp;&nbsp;Time   : fast 
+<BR>  
+</LI>
+</UL>
+
+<P>
+</LI>
+</OL>
+
+<P>
+
+<UL>
+<LI>The following routines all apply to a single exposure  
+</LI>
+<LI>I suggest you create a .pro file like <I>extrct_msk.pro</I> 
+	to guide the process.  It provides a convenient way 
+	of stepping through the reduction.
+</LI>
+<LI>Most of the following routines take the WFCCD structure, 
+	the <I>maskid</I>, and the exposure number as inputs.
+  
+</LI>
+</UL>
+
+<P>
+
+<FONT SIZE="+2">Create Object Structure</FONT>
+
+<OL>
+
+<UL>
+<LI><a href="wfccd_doc.html#WFCCD_MKOBJSTR">wfccd_mkobjstr</a> :: Creates the object structure which
+	stores the spectra of all objects idenitified in the mask. 
+</LI>
+<LI>Options: 
+	  
+<UL>
+<LI>/NOSKY :: Will not modify the region for sky subtraction
+</LI>
+<LI>/NOCHK :: Will not run <B>x_setobjgui</B>
+</LI>
+<LI>/NOSLIT :: Will not modify the Slit structure
+</LI>
+<LI>/NOOBJ :: Will not modify the Obj structure
+</LI>
+<LI>SKYOFF :: Offset of sky edge from slit edge (default=2pix)
+	  
+</LI>
+</UL>
+
+<P>
+<DIV ALIGN="CENTER">
+<FONT SIZE="+2"><B>specobjstrct</B> </FONT>
+	
+	<FONT SIZE="-1">	</FONT><TABLE CELLPADDING=3 BORDER="1">
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1">
+	  Tag </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> Type </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> Comment </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+	  
+         field </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  ' ' </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1">  Name of field </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         slit_id </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  0L </FONT></TD>
+<TD></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         obj_id </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  ' ' </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> ID value (a=primary, b-z=serendip, x=NG) </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         flg_anly </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  0 </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1">  0=No analysis</FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1">  
+         exp </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  0. </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         xcen </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  0L </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1">  Column where obj was id</FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         ycen </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  0. </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         flg_aper </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  0 </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1">  0=boxcar</FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         aper </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  fltarr(2) </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1">  Widths of aperture, 0/1 = bottom/top (pixels)</FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         skyrms </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  0. </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1">  RMS of sky fit</FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         trace </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  fltarr(5000) </FONT></TD>
+<TD></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         npix </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  0L </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         wave </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  fltarr(5000) </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         fx </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  fltarr(5000) </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> </FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         var </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  fltarr(5000) </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1">    15#15 rejected pix</FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         flg_flux </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1"> 0 </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1">    0=f16#16, 1=f17#17</FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         flux </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  fltarr(5000) </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1">    Fluxed data</FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         sig </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  fltarr(5000) </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1">    Err in fluxed data</FONT></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         date </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  0.0d </FONT></TD>
+<TD></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         UT </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  ' ' </FONT></TD>
+<TD></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         img_fil </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  ' ' </FONT></TD>
+<TD></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         slit_fil </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  ' ' </FONT></TD>
+<TD></TD>
+</TR>
+<TR><TD ALIGN="LEFT"><FONT SIZE="-1"> 
+         instr_strct </FONT></TD>
+<TD ALIGN="CENTER"><FONT SIZE="-1">  ' ' </FONT></TD>
+<TD ALIGN="LEFT"><FONT SIZE="-1"> e.g. wfccdstr fits file</FONT></TD>
+</TR>
+</TABLE>
+</DIV>
+
+<P>
+</LI>
+<LI>The program first runs <B>x_fndslitobj</B> which automatically
+	looks for the main science object (as defined in the Mask output
+	file) and any serendipitous objects.
+</LI>
+<LI>The user should then run <B>x_setobjgui</B> to confirm the 
+	object locations and set the slit edges to their 'final' locations
+	for sky subtraction. Rough centroid for the objects is good enough.
+	<I>In general, sky subtraction works best on regions 18#18 pix
+	wide.</I>  Beware of objects near the slit edge.  Try to extend the sky
+	regions beyond them.
+	
+<UL>
+<LI> <a href="xsetobjgui.html">Here</a> is a screen shot.
+</LI>
+<LI>xatv-like display (use the Help window)
+</LI>
+<LI>Green (blue) lines trace science (serendipitous) objects
+</LI>
+<LI>Red crosses identifies the guess from the slit info
+</LI>
+<LI>'m' moves the closest object to the cursor position
+</LI>
+<LI>'d' deletes closest obj
+</LI>
+<LI>'[]' = pan up,down,left,right
+</LI>
+<LI>b (t) shifts the slit edge at the bottom (top) of slit
+	
+</LI>
+</UL>
+</LI>
+<LI>Output is 'Extract/Obj_<I>maskid</I>.fits' and the Slit
+	structure is updated.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>wfccd_mkobjstr</B>, night1, maskid, expsr 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 3min/exposure for slit+obj checking 
+<BR></LI>
+<LI><a href="wfccd_doc.html#WFCCD_EDITOBJSTR">wfccd_editobjstr</a> :: Edit the Obj structure. Options: 
+	/NOOBJ, /NOSLIT.  
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>wfccd_editobjstr</B>, night1, maskid, expsr 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : fast
+<BR>  
+</LI>
+</UL>
+
+<P>
+<FONT SIZE="+2">Sky Subtraction</FONT>
+  
+<UL>
+<LI><a href="wfccd_doc.html#WFCCD_SKYSUB">wfccd_skysub</a> ::
+	This procedure subtracts the sky from each slit, one by one.
+	The main driver is <B>x_subskyslit</B> which does a LEGENDRE fit
+	(the better of 2nd or 3rd order provided enough pixels) 
+	to each column after masking out the objects
+	in the slit. It works on individual exposures.  Currently, my routines
+	do not handle objects right at the slit edge very well.
+</LI>
+<LI>Output is the sky subtracted 2D frame 
+	'Extract/F_ccd###.fits' with the appended Sky image and
+	the rms of the fit along each column for each slit (35M).
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>wfccd_skysub</B>, night1, maskid, exposure 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 20-30s/slit (roughly 10-15min) 
+<BR>  
+</LI>
+</UL>
+
+<P>
+<FONT SIZE="+2">Extraction</FONT>
+  
+<OL>
+<LI><a href="wfccd_doc.html#WFCCD_EXTOBJBOX">wfccd_extobjbox</a> ::
+	This procedure extracts the objects from the slits one by one.
+	It works on individual exposures seperately.
+	The main driver is <B>x_extobjbox</B> which 
+	
+<OL>
+<LI>Traces the object with <B>trace_crude</B>
+</LI>
+<LI>Smashes the object to determine its profile
+</LI>
+<LI>Determines an aperture which includes 95% of the flux
+</LI>
+<LI>Identify pixels included in the aperture and what fraction
+</LI>
+<LI>Flags CR's by comparing the flux in a given column against
+		the object profile.  CR events have variance set to -1.
+</LI>
+<LI>Calls <B>x_rebin2dspec</B> which sums the flux into a 
+		1D array with starting wavelength
+		3200&#197; and 100km/s pixels
+	
+</LI>
+</OL>
+</LI>
+<LI>All of the output is written to the object structure 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>wfccd_extobjbox</B>, night1, maskid, expsr 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : <5min 
+<BR></LI>
+<LI>Run <a href="wfccd_doc.html#WFCCD_OBJSUMM">wfccd_objsumm</a> to get a summary of the Fspec file.
+  
+</LI>
+</OL>
+
+<P>
+<FONT SIZE="+2">Check/Edit the Individual Spectra</FONT>
+  
+<UL>
+<LI><a href="wfccd_doc.html#WFCCD_CHKSPEC">wfccd_chkspec</a> :: This routine plots up all of the
+	objects in the object structure for a quick glance.
+	It is a very simple gui.  Bad extractions are easily identified
+	and can be removed by adjusting the object structure 'by hand'.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>wfccd_chkspec</B>, night1, maskid, expsr 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : fast 
+<BR></LI>
+<LI><a href="wfccd_doc.html#WFCCD_PLTOBJ">wfccd_pltobj</a> :: This routine plots the spectrum and the
+	2D image together (very nice).  You can examine the 'reality' of 
+	various emission and absorption lines. 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>wfccd_pltobj</B>, night1, maskid, 
+		expsr, [objnm] 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : 5s 
+<BR></LI>
+<LI><a href="wfccd_doc.html#WFCCD_EDITSPEC">wfccd_editspec</a> :: This routine allows the user to set the
+	variance of regions of spectra to 0 to eliminate them from further
+	analysis. 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>wfccd_editspec</B>, night1, maskid, expsr 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : fast 
+<BR>  
+</LI>
+</UL>
+
+<P>
+<FONT SIZE="+2">Flux the Spectra</FONT>
+  
+<UL>
+<LI><a href="wfccd_doc.html#WFCCD_FLUXSPEC">wfccd_fluxspec</a> :: This routine plots up all of the
+	objects in the object structure for a quick glance.
+	It is a very simple gui.  Bad extractions are easily identified
+	and can be removed by adjusting the object structure 'by hand'.
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>wfccd_fluxspec</B>, night1, maskid, [expsr] 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : fast 
+<BR>  
+</LI>
+</UL>
+
+<P>
+<FONT SIZE="+2">Combine the Spectra</FONT>
+  
+<UL>
+<LI><a href="wfccd_doc.html#WFCCD_COMBSPEC">wfccd_combspec</a> :: This routine combines multiple object
+	structures (primarily their spectra) into one Final structure. 
+	For objects with multiple
+	spectra, the spectra are matched to the same flux and summed.  At
+	the moment this routine only handles two spectra at a time.  
+<BR></LI>
+<LI>Output :: A structure containg all of the fluxed, coadded spectra
+	with name : <I>'Extract/Fspec_maskid.fits'</I>.  
+         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>wfccd_combspec</B>, night1, maskid 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : fast 
+<BR></LI>
+<LI>Run <a href="wfccd_doc.html#WFCCD_FSPECSUMM">wfccd_fspecsumm</a> to get a summary of the Fspec file.
+</LI>
+<LI>Run <a href="wfccd_doc.html#WFCCD_CHKFSPEC">wfccd_chkfspec</a> to view the Final spectra 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>wfccd_chkfspec</B>, 'Extract/Fspec_maskid.fits'
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : fast 
+<BR>  
+</LI>
+</UL>
+
+<P>
+<FONT SIZE="+2">Solve for Redshifts</FONT>
+  
+<UL>
+<LI><a href="wfccd_doc.html#WFCCD_ZFIND">wfccd_zfind</a> :: This routine drives the SDSS <B>zfind</B> routines
+	and uses the SDSS eigenspectra (rebinned to WFCCD pixel scale) to
+	automate redshift identification.  It is a chi^2 minimization routine
+	and it works rather well.  Like all chi^2 routines, however, it tends
+	to fail when there are particularly bad regions of data.  The ZANS
+	structure in the Fspec structure is updated. 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>wfccd_zfind</B>, night1, maskid 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : Long, 60s per obj 
+<BR></LI>
+<LI>Run <B>wfccd_chkfspec</B> with the /ZFIND switch to 
+		view the Final spectra + 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Example: IDL> <B>wfccd_chkfspec</B>, 
+		'Extract/Fspec_maskid.fits', /zfind 
+<BR>         &nbsp;&nbsp;&nbsp;&nbsp;Time   : fast 
+<BR>  
+</LI>
+</UL>
+
+<P>
+</LI>
+</OL>
+
+<P>
+<BR><HR>
+<ADDRESS>
+Last revised 2004-06-10
+</ADDRESS>
+</BODY>
+</HTML>

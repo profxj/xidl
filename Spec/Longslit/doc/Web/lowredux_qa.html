@@ -1,0 +1,93 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.70)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Typical QA Files for the LowRedux Package</TITLE>
+<META NAME="description" CONTENT="kast_cook">
+<META NAME="keywords" CONTENT="kast_cook">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+</HEAD>
+
+<BODY >
+
+<P>
+<DIV ALIGN="CENTER">
+<FONT SIZE="+3"><B>Typical QA Files for the LowRedux Package</B></FONT>
+</DIV>
+
+<br>
+<br>
+
+<FONT SIZE="+2"> <a href="index.html">BACK</a>
+<br>
+<br>
+
+<FONT SIZE="+1">
+This page describes a few of the files generally produced
+by the LowRedux routines during the reduction process.
+
+
+</DIV>
+<hr>
+<P>
+<FONT SIZE="+2">Arcs:</FONT>
+<br>
+<br>
+
+<FONT SIZE="+1">
+The code generates a multi-page postscript file for every
+arc frame reduced.  For every slit in the arc frame, 3 pages
+of output are recorded.  The upper panel of the first page shows  
+the 1D arc spectrum with the calibrated lines marked.  Here is
+an example<br>
+</font>
+
+<img src="qa_arc_spec.gif" alt="Arc Spectrum" width="600">
+
+<br>
+
+The lower panel of the first page shows the wavelength 
+of the 1D spectrum as a function of the pixels.  The boxes
+show the arc lines that were fit.  The RMS, dispersion,
+and central wavelength are also reported.  Here is an example:<br>
+
+
+<img src="qa_arc_fit.gif" alt="Arc Spectrum" width="600">
+
+<br>
+
+The upper panel of the 2nd page shows the residuals to the 
+fit in pixels as a function of wavelength.  Here is an example:
+
+<img src="qa_arc_resid.gif" alt="Arc Spectrum" width="600">
+
+<br>
+
+The lower panel of the 2nd page shows the non-linear terms in
+the fit. Here is an example:
+
+<img src="qa_arc_nonlin.gif" alt="Arc Spectrum" width="600">
+
+<br>
+
+Finally, the upper panel of the 3rd page shows the FWHM of the
+arc lines (in pixels).  Here is an example:<br>
+
+<img src="qa_arc_fwhm.gif" alt="Arc Spectrum" width="600">
+
+<br>
+
+
+<P>
+<BR><HR>
+<ADDRESS> Last modified 2007-5-11 </ADDRESS>
+</BODY>
+</HTML>

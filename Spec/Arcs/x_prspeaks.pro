@@ -4,7 +4,7 @@
 ;     Version 1.1
 ;
 ; PURPOSE:
-;    Plots any array interactively
+;    Launches a GUI to enable the user to fiddle with peaks by hand
 ;
 ; CALLING SEQUENCE:
 ;   
@@ -97,7 +97,7 @@ pro x_prspeaks_event, ev
           eventch = string(ev.ch)
           if (state.flg_zoom EQ 1 AND eventch NE 'z') then begin
               widget_control, state.error_msg_id, $
-                set_value='Expecting another s !!'
+                set_value='Expecting another z !!'
               WIDGET_CONTROL, state.base_id, set_uvalue = state, /no_copy
               return
           endif
@@ -127,10 +127,10 @@ pro x_prspeaks_event, ev
               'w': state.xymnx = state.svxymnx ; Reset the screen
               'W': state.xymnx = state.svxymnx ; Reset the screen
               'P': xprspeaks_psfile, state  ; Send Current screen to ps file
-              ;; Delete peak
-              'd': xprspeaks_delpeak, state
+              'd': xprspeaks_delpeak, state  ; Delete peak
               'u': xprspeaks_undelpeak, state
-              'N': xprspeaks_newpeak, state
+              'n': xprspeaks_newpeak, state  ; Add new peak
+              'N': xprspeaks_newpeak, state  ; Add new peak
               'q': begin
                   widget_control, ev.top, /destroy
                   return
@@ -451,18 +451,24 @@ common x_prspeaks_common
 
 ;        Help
   state.help[0] = '     Help Menu   '
-  state.help[1] = 'LMB/LMB -- Set region'
-  state.help[2] = 's/s -- Set region'
-  state.help[3] = 'l -- Set Left '
-  state.help[4] = 'r -- Set Right '
-  state.help[5] = 'b -- Set Bottom '
-  state.help[6] = 't -- Set Top '
-  state.help[7] = 'z -- Set ymin to 0.'
-  state.help[8] = 'N -- Set ymax to 1.1'
-  state.help[9] = 'h -- Switch to histogram mode'
-  state.help[10] = 'H -- Show this screen'
-  state.help[11] = 'W -- Reset screen'
-  state.help[12] = 'q -- Quit '
+  state.help[1] = 'LMB -- Set left'
+  state.help[2] = 'RMB -- Set right'
+  state.help[3] = 'CMB -- Set top'
+  state.help[4] = 'l -- Set Left '
+  state.help[5] = 'r -- Set Right '
+  state.help[6] = 'b -- Set Bottom '
+  state.help[7] = 't -- Set Top '
+  state.help[8] = 'z/z -- Zoom'
+  state.help[9] = 'N -- Set ymax to 1.1'
+  state.help[10] = 'i/o -- Zoom in/out'
+  state.help[11] = '{[]} -- Pan left, right'
+  state.help[12] = 'd -- Delete peak'
+  state.help[13] = 'u -- UnDelete peak'
+  state.help[14] = 'N -- Add new peak'
+  state.help[15] = 'H -- Show this screen'
+  state.help[16] = 'W or w -- Reset screen'
+  state.help[17] = 'q -- Quit '
+  state.help[18] = 'h -- Switch to histogram mode'
 
 ;      Drawing
   state.size[0] = xsize

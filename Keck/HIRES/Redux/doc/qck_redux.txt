@@ -1,0 +1,25 @@
+With V1.0, I have included a quick redux program.  Of course,
+it only has a chance to work with the setups that V1.0 supports.
+
+Anyhow, give this a shot and hope for the best:
+
+(Odds are you have to be on your laptop for all of this and you will
+have to have installed all of the code.)
+
+1.  Create a temporary directory
+2.  Put a Science frame in the directory and an Arc and Flat corresponding
+  to the Science setup
+3.  Launch IDL 
+4.  IDL> hires_qckrdx, Arcfil, Flatfil, Objfil
+
+If you do this more than on more than one setup, you should
+set SETUP=#  for each additional setup where # > 1 and increases.
+
+
+-------------
+
+-- It is unlikely that Keck folks have setup my code yet.  I will work
+on this shortly.
+
+-- A nice bonus of trying this at the telescope is that you will know
+right away if you have the correct calibrations taken.

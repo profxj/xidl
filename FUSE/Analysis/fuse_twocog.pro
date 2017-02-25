@@ -4,24 +4,40 @@
 ;  V1.1
 ;
 ; PURPOSE:
-;    Given a list of DLA base files, fill up the structure ;
+;    Perform a COG analysis allowing for two components.  This program
+;    is best used to plot (use PLTONLY) the results of 
+;    a two component analysis, not
+;    to fit for the 2 components.
 ; CALLING SEQUENCE:
 ;   
+;  fuse_twocog, strct_fil, cog_fil, N1lmt, b1lmt, N2lmt, b2lmt, delv
+;   /CHICHK, PLTONLY=, ZLBL=,  NSTP=, BSTP=, PSFILE=, OUTFIL=, /EXACT
+
 ;   lowzovi_prsdat, stucture, filename
 ;
 ; INPUTS:
+;  strct_fil -- FITS file for the FUSE structure
+;  cog_fil -- COG input file (lists redshift and transitions to use)
+;  [N1lmt] -- Range of column densities to explore (2 element array)
+;  [b1lmt] -- Range of Doppler parameters to explore (2 element array)
+;  [N2lmt] -- Range of column densities to explore (2 element array)
+;  [b2lmt] -- Range of Doppler parameters to explore (2 element array)
+;  [delv]  -- Separation of the 2 components (km/s)
 ;
 ; RETURNS:
-;   structure      - IDL structure
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
-;  LIST - File
-;  ION - Input ionic column densities
-;  NOELM - Supress inputting Elemental values
+;  /CHICHK -- Plot Chi^2 image
+;  PLTONLY --  4-element array of N,b values and error for a plot
+;  NSTP -- Number of steps to search N space [default: 5L]
+;  BSTP -- Number of steps to search b space [default: 5L]
+;  ZLBL= -- Label for Plot giving redshift of the absorber (string)
 ;
 ; OPTIONAL OUTPUTS:
+;  OUTFIL -- File with best fit values and error
+;  PSFILE -- File for postscript plot
 ;
 ; COMMENTS:
 ;
@@ -74,25 +90,22 @@ end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 pro fuse_twocog, strct_fil, cog_fil, N1lmt, b1lmt, N2lmt, b2lmt, delv, $
-                 CHICHK=chichk, PLTONLY=pltonly, $
-                 NSTP=nstp, BSTP=bstp, PSFILE=psfile, OUTFIL=outfil, EXACT=exact
+                 CHICHK=chichk, PLTONLY=pltonly, ZLBL=zlbl, $
+                 NSTP=nstp, BSTP=bstp, PSFILE=psfile, OUTFIL=outfil
 
   common fuse_twocog_cmm
 
-  if (N_params() LT 4) then begin 
+  if (N_params() LT 7) then begin 
     print,'Syntax - ' + $
-             'fuse_twocog, strct, cog_fil (v1.0)' 
+      'fuse_twocog, strct, cog_fil, N1lmt, b1lmt, N2lmt, ' + $
+      'b2lmt, delv, /CHICHK, PLTONLY= '
+    print, '   ZLBL=, NSTP=, BSTP=, PSFILe=, OUTFIL= [v1.1]'
     return
   endif 
 
   if not keyword_set( NSTP ) then nstp = 5L
   if not keyword_set( BSTP ) then bstp = 5L
-;  if not keyword_set(EXACT) then begin
-;      print, 'fuse_cog: Using spline interpolation for the COG.  '
-;      print, '      This assumes a Maxwellian profile'
-;      cogmax_fil = getenv('XIDL_DIR')+'/Spec/Analysis/cogmax_tab.fits'
-;      cog_strct = xmrdfits(cogmax_fil, 1, /silent)
-;  endif
+  if not keyword_set( LSIZE ) then lsize = 2.7
 
   tcog_dv = delv
 
@@ -250,14 +263,7 @@ pro fuse_twocog, strct_fil, cog_fil, N1lmt, b1lmt, N2lmt, b2lmt, delv, $
   yplt = alog10(redew)  ; log (EW/lambda)
   ysig = redsigew/(alog(10)*10^yplt)
 
-  if keyword_set( PSFILE ) then begin
-      device, decompose=0
-      ps_open, filename=PSFILE, /color, bpp=8, /maxs
-      !p.thick = 5
-      !p.charthick = 3
-      !x.thick = 5
-      !y.thick = 5
-  endif
+  if keyword_set( PSFILE ) then x_psopen, psfile, /maxs
 
   xmn = min(xplt, MAX=xmx) - 0.1
   xmx = xmx + 0.1
@@ -266,9 +272,9 @@ pro fuse_twocog, strct_fil, cog_fil, N1lmt, b1lmt, N2lmt, b2lmt, delv, $
 
   clr = getcolor(/load)
   plot, [xmn,xmx], ymnx, /nodata, background=clr.white, $ 
-    color=clr.black, xtitle='!17 log!d10!n(f!7k!X)', $
-    ytitle='log!d10!n(W/!7k!X)', xstyle=1, ystyle=1, charsize=2.2, $
-    xticks=5, xmargin=[10,3], ymargin=[4,1]
+    color=clr.black, xtitle='log!d10!n(f!9l!X)', $
+    ytitle='log!d10!n(W/!9l!X)', xstyle=1, ystyle=1, charsize=2.0, $
+    xticks=5, xmargin=[8,2], ymargin=[4,1], xtickinterval=0.5
   oploterror, xplt, yplt, ysig, psym=1, color=clr.blue, ERRCOLOR=clr.blue
   
   nplt = 100L
@@ -303,15 +309,16 @@ pro fuse_twocog, strct_fil, cog_fil, N1lmt, b1lmt, N2lmt, b2lmt, delv, $
 ;  tau = 1.497e-2*(10^xplt2)*(10^Ngd)/(bgd*1e5)
 ;  for q=0L,nplt-1 do cog[q] = x_calccog_cog(tau[q])
 ;  oplot, xplt2, alog10(cog), color=clr.green, linestyle=2
+  Nsv = alog10(10^N1gd + 10^N2gd)
 
-  if keyword_set( PSFILE ) then begin
-      ps_close, /noprint, /noid
-      device, decompose=1
-      !p.thick = 1
-      !p.charthick = 1
-      !x.thick = 1
-      !y.thick = 1
-  endif
+  ;; Label
+  if keyword_set(ZLBL) then xyouts, 0.55, 0.37, zlbl, /normal, charsize=lsize
+  xyouts, 0.55, 0.28, 'log N(HI)!dT!n = '+string(Nsv,FORMAT='(f5.2)'), $
+    charsize=lsize, /normal
+;  xyouts, 0.55, 0.19, 'b = '+string(bsv,FORMAT='(i2)')+'!9 '+string("261B)+ $
+;    ' !7'+string(sigb,FORMAT='(f3.1)')+' km/s', charsize=2.3, /normal
+
+  if keyword_set( PSFILE ) then x_psclose
 
   return
 end

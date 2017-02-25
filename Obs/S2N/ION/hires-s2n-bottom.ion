@@ -1,0 +1,222 @@
+<ION_SCRIPT>
+<ION_HEADER>
+  <VARIABLES>
+    <!--- pass the string variables from Form into a typed variable -->
+    <VARIABLE_DECL NAME="PLOTTYPE"   VALUE="$Form.PLOTTYPE " TYPE="STR" />
+    <VARIABLE_DECL NAME="BINNING"    VALUE="$Form.BINNING"   TYPE="STR" />
+    <VARIABLE_DECL NAME="MAG"        VALUE="$Form.MAG"       TYPE="DOUBLE" />
+    <VARIABLE_DECL NAME="EXPTIME"    VALUE="$Form.EXPTIME"   TYPE="INT" />
+    <VARIABLE_DECL NAME="SLITWIDTH"  VALUE="$Form.SLITWIDTH" TYPE="DOUBLE" />
+    <VARIABLE_DECL NAME="SEEING"     VALUE="$Form.SEEING"    TYPE="DOUBLE" />
+    <VARIABLE_DECL NAME="AIRMASS"    VALUE="$Form.AIRMASS"   TYPE="DOUBLE" />
+    <VARIABLE_DECL NAME="MOONDAYS"   VALUE="$Form.MOONDAYS"  TYPE="DOUBLE" />
+    <VARIABLE_DECL NAME="MINWAVE"    VALUE="$Form.MINWAVE"   TYPE="DOUBLE" />
+    <VARIABLE_DECL NAME="MAXWAVE"    VALUE="$Form.MAXWAVE"   TYPE="DOUBLE" />
+    <VARIABLE_DECL NAME="DWAVE"      VALUE="$Form.DWAVE"     TYPE="DOUBLE" />
+    <!-- other variables -->
+    <VARIABLE_DECL NAME="MAG_MIN"       VALUE="0"              TYPE="DOUBLE" />
+    <VARIABLE_DECL NAME="MAG_MAX"       VALUE="30"             TYPE="DOUBLE" />
+    <VARIABLE_DECL NAME="EXPTIME_MIN"   VALUE="1"              TYPE="INT" />
+    <VARIABLE_DECL NAME="EXPTIME_MAX"   VALUE="30000"          TYPE="INT" />
+    <VARIABLE_DECL NAME="SLITWIDTH_MIN" VALUE="0."             TYPE="DOUBLE" />
+    <VARIABLE_DECL NAME="SLITWIDTH_MAX" VALUE="10."            TYPE="DOUBLE" />
+    <VARIABLE_DECL NAME="SEEING_MIN"    VALUE="0."             TYPE="DOUBLE" />
+    <VARIABLE_DECL NAME="SEEING_MAX"    VALUE="10."            TYPE="DOUBLE" />
+    <VARIABLE_DECL NAME="AIRMASS_MIN"   VALUE="1."             TYPE="DOUBLE" />
+    <VARIABLE_DECL NAME="AIRMASS_MAX"   VALUE="10."            TYPE="DOUBLE" />
+    <VARIABLE_DECL NAME="MOONDAYS_MIN"  VALUE="0."             TYPE="DOUBLE" />
+    <VARIABLE_DECL NAME="MOONDAYS_MAX"  VALUE="13."            TYPE="DOUBLE" />
+    <VARIABLE_DECL NAME="MINWAVE_MIN"   VALUE="3000."          TYPE="DOUBLE" />
+    <VARIABLE_DECL NAME="MINWAVE_MAX"   VALUE="10000."         TYPE="DOUBLE" />
+    <VARIABLE_DECL NAME="MAXWAVE_MIN"   VALUE="3000."          TYPE="DOUBLE" />
+    <VARIABLE_DECL NAME="MAXWAVE_MAX"   VALUE="10000."         TYPE="DOUBLE" />
+    <VARIABLE_DECL NAME="DWAVE_MIN"     VALUE="1."             TYPE="DOUBLE" />
+    <VARIABLE_DECL NAME="DWAVE_MAX"     VALUE="1000."          TYPE="DOUBLE" />
+    <VARIABLE_DECL NAME="errFlag"       VALUE="FALSE"          TYPE="BOOL" />
+  </VARIABLES>
+</ION_HEADER>
+
+<ION_BODY>
+
+  <!-- ============================================================ --->
+  <!-- data validation --->
+  <!-- ============================================================ --->
+
+  <ION_IF EXPR="$MAG LT $MAG_MIN">
+      <h2> Error</h2>
+	       Magnitude must be greater than
+	       	      	 <ION_VARIABLE NAME="$MAG_MIN"/>.   
+      <ION_EVALUATE EXPR="$errFlag=TRUE" />
+  </ION_IF>
+  <ION_IF EXPR="$MAG GT $MAG_MAX">
+      <h2> Error</h2>
+	       Magnitude must be less than than
+	      	       <ION_VARIABLE NAME="$MAG_MAX"/>.   
+      <ION_EVALUATE EXPR="$errFlag=TRUE" />
+  </ION_IF>
+
+  <ION_IF EXPR="$EXPTIME LT $EXPTIME_MIN">
+      <h2> Error</h2>
+	       Exposure time must be greater than
+	      	       <ION_VARIABLE NAME="$EXPTIME_MIN"/>.   
+      <ION_EVALUATE EXPR="$errFlag=TRUE" />
+  </ION_IF>
+  <ION_IF EXPR="$EXPTIME GT $EXPTIME_MAX">
+      <h2> Error</h2>
+	       Exposure time must be less than
+	      	       <ION_VARIABLE NAME="$EXPTIME_MAX"/>.   
+      <ION_EVALUATE EXPR="$errFlag=TRUE" />
+  </ION_IF>
+
+  <ION_IF EXPR="$SLITWIDTH LE $SLITWIDTH_MIN">
+      <h2> Error</h2>
+	       Slit width must be greater than
+	      	       <ION_VARIABLE NAME="$SLITWIDTH_MIN"/>.   
+      <ION_EVALUATE EXPR="$errFlag=TRUE" />
+  </ION_IF>
+  <ION_IF EXPR="$SLITWIDTH GT $SLITWIDTH_MAX">
+      <h2> Error</h2>
+	       Slit width must be less than
+	      	       <ION_VARIABLE NAME="$SLITWIDTH_MAX"/>.   
+      <ION_EVALUATE EXPR="$errFlag=TRUE" />
+  </ION_IF>
+
+  <ION_IF EXPR="$SEEING LE $SEEING_MIN">
+      <h2> Error</h2>
+	       Seeing must be greater than
+	      	       <ION_VARIABLE NAME="$SEEING_MIN"/>.   
+      <ION_EVALUATE EXPR="$errFlag=TRUE" />
+  </ION_IF>
+  <ION_IF EXPR="$SEEING GT $SEEING_MAX">
+      <h2> Error</h2>
+	       Seeing must be less than
+	      	       <ION_VARIABLE NAME="$SEEING_MAX"/>.   
+      <ION_EVALUATE EXPR="$errFlag=TRUE" />
+  </ION_IF>
+
+  <ION_IF EXPR="$AIRMASS LT $AIRMASS_MIN">
+      <h2> Error</h2>
+	       Airmass must be greater than
+	      	       <ION_VARIABLE NAME="$AIRMASS_MIN"/>.   
+      <ION_EVALUATE EXPR="$errFlag=TRUE" />
+  </ION_IF>
+  <ION_IF EXPR="$AIRMASS GT $AIRMASS_MAX">
+      <h2> Error</h2>
+	       Airmass must be less than
+	      	       <ION_VARIABLE NAME="$AIRMASS_MAX"/>.   
+      <ION_EVALUATE EXPR="$errFlag=TRUE" />
+  </ION_IF>
+
+  <ION_IF EXPR="$MOONDAYS LT $MOONDAYS_MIN">
+      <h2> Error</h2>
+	       Moondays must be greater than
+	      	       <ION_VARIABLE NAME="$MOONDAYS_MIN"/>.   
+      <ION_EVALUATE EXPR="$errFlag=TRUE" />
+  </ION_IF>
+  <ION_IF EXPR="$MOONDAYS GT $MOONDAYS_MAX">
+      <h2> Error</h2>
+	       Moondays must be less than
+	      	       <ION_VARIABLE NAME="$MOONDAYS_MAX"/>.   
+      <ION_EVALUATE EXPR="$errFlag=TRUE" />
+  </ION_IF>
+
+  <ION_IF EXPR="$MINWAVE LT $MINWAVE_MIN">
+      <h2> Error</h2>
+	       Minwave must be greater than
+	      	       <ION_VARIABLE NAME="$MINWAVE_MIN"/>.   
+      <ION_EVALUATE EXPR="$errFlag=TRUE" />
+  </ION_IF>
+  <ION_IF EXPR="$MINWAVE GT $MINWAVE_MAX">
+      <h2> Error</h2>
+	       Minwave must be less than
+	      	       <ION_VARIABLE NAME="$MINWAVE_MAX"/>.   
+      <ION_EVALUATE EXPR="$errFlag=TRUE" />
+  </ION_IF>
+
+  <ION_IF EXPR="$MAXWAVE LT $MAXWAVE_MIN">
+      <h2> Error</h2>
+	       Maxwave must be greater than
+	      	       <ION_VARIABLE NAME="$MAXWAVE_MIN"/>.   
+      <ION_EVALUATE EXPR="$errFlag=TRUE" />
+  </ION_IF>
+  <ION_IF EXPR="$MAXWAVE GT $MAXWAVE_MAX">
+      <h2> Error</h2>
+	       Maxwave must be less than
+	      	       <ION_VARIABLE NAME="$MAXWAVE_MAX"/>.   
+      <ION_EVALUATE EXPR="$errFlag=TRUE" />
+  </ION_IF>
+
+  <ION_IF EXPR="$DWAVE LT $DWAVE_MIN">
+      <h2> Error</h2>
+	       DeltaWave must be greater than
+	      	       <ION_VARIABLE NAME="$DWAVE_MIN"/>.   
+      <ION_EVALUATE EXPR="$errFlag=TRUE" />
+  </ION_IF>
+  <ION_IF EXPR="$DWAVE GT $DWAVE_MAX">
+      <h2> Error</h2>
+	       DeltaWave must be less than
+	      	       <ION_VARIABLE NAME="$DWAVE_MAX"/>.   
+      <ION_EVALUATE EXPR="$errFlag=TRUE" />
+  </ION_IF>
+
+  <!-- ============================================================ --->
+  <!-- visualization --->
+  <!-- ============================================================ --->
+
+  <ION_IF EXPR="NOT $errFlag" >
+  <ION_IF EXPR="$PLOTTYPE NE 'Table'" >
+  <center>
+      <ION_IMAGE TYPE="DIRECT" WIDTH="800" HEIGHT="600" LABEL="Plot of $PLOTTYPE">
+        <IDL>
+plottype = '$PLOTTYPE'
+binning = '$BINNING'
+exptime = $EXPTIME
+mag = $MAG
+slitwidth = $SLITWIDTH
+seeing = $SEEING
+airmass = $AIRMASS
+moondays = $MOONDAYS
+minwave = $MINWAVE
+maxwave = $MAXWAVE
+dwave = $DWAVE
+
+!p.font = 1
+xsize = 800
+ysize = 600
+
+hires_ions2n, plottype, binning, exptime, mag, slitwidth, seeing, $
+              airmass, moondays, minwave, maxwave, dwave, $
+              XSIZE=xsize,  YSIZE=ysize, SLIT_THRU=slit_thru, RESOLU=resolu
+
+        </IDL>
+      </ION_IMAGE>
+  </center>
+  </ION_IF>
+
+  <!-- ============================================================ --->
+  <!-- param dump --->
+  <!-- ============================================================ --->
+
+   <ION_DATA_OUT PRE="FALSE" ASTEXT="FALSE">  
+      <IDL>  
+plottype = '$PLOTTYPE'
+binning = '$BINNING'
+exptime = $EXPTIME
+mag = $MAG
+slitwidth = $SLITWIDTH
+seeing = $SEEING
+airmass = $AIRMASS
+moondays = $MOONDAYS
+minwave = $MINWAVE
+maxwave = $MAXWAVE
+dwave = $DWAVE
+
+hires_s2n_print_params, plottype, binning, exptime, mag, slitwidth, seeing, $
+              airmass, moondays, minwave, maxwave, dwave
+      </IDL>  
+   </ION_DATA_OUT> 
+
+  </ION_IF>
+
+</ION_BODY>
+</ION_SCRIPT> 

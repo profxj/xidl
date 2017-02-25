@@ -4,7 +4,7 @@
 ;    Version 1.1
 ;
 ; PURPOSE:
-;    Write a dimg_struct to an ASCII file and/or FITS file
+;    Write a dimg_struct (direct image) to an ASCII file and/or FITS file
 ;
 ; CALLING SEQUENCE:
 ;   
@@ -16,11 +16,11 @@
 ; RETURNS:
 ;
 ; OUTPUTS:
+;   OUTFIL  - Output file for ASCII [default is image.list]
 ;
 ; OPTIONAL KEYWORDS:
-;   ANONLY - Only print files with flg_anly NE 0   
-;   FITS - Fits file output for the structure
-;   OUTFIL = Output file (default is image.list)
+;   /ANONLY - Only print files with flg_anly NE 0   
+;   FITS=   - Fits file output for the structure
 ;
 ; OPTIONAL OUTPUTS:
 ;
@@ -29,7 +29,6 @@
 ; EXAMPLES:
 ;   write_dimgstr, nght1_strct
 ;
-;
 ; PROCEDURES/FUNCTIONS CALLED:
 ;
 ; REVISION HISTORY:
@@ -37,8 +36,6 @@
 ;   29-Dec-2001 Added fits option
 ;-
 ;------------------------------------------------------------------------------
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 pro write_dimgstr, struct, ANONLY=anonly, OUTFIL=outfil, FITS=fits

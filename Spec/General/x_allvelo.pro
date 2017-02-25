@@ -6,18 +6,24 @@
 ;  Create an array of velocity arrays for a string of transitions
 ;
 ; CALLING SEQUENCE:
-;   
-;   all_velo = x_allvelo(wave, zabs, wrest, vmnx, ALL_PMNX=)
+;   all_velo = x_allvelo(wave, zabs, wrest, vmnx, ALL_PMNX=, NPIX=)
 ;
 ; INPUTS:
+;  wave  -- Wavelength array
+;  zabs  -- Redshift of absorption system
+;  wrest -- Array of rest wavelengths
+;  vmnx  -- 2-element array of velocities
 ;
 ; RETURNS:
+;  all_velo  -- Velocity array (one per rest wavelength)
 ;
 ; OUTPUTS:
 ;
 ; OPTIONAL KEYWORDS:
+;  NPIX -- Number of pixels in the array
 ;
 ; OPTIONAL OUTPUTS:
+;  ALL_PMNX=  -- pixmin and pixmax array
 ;
 ; COMMENTS:
 ;
@@ -33,10 +39,10 @@
 
 function x_allvelo, wave, zabs, wrest, vmnx, ALL_PMNX=all_pmnx, NPIX=npix
 
-  if (N_params() LT 3) then begin 
+  if (N_params() LT 4) then begin 
     print,'Syntax - ' + $
              'all_velo = x_allvelo(wave, zabs, wrest, vmnx, ALL_PMNX='
-    print, '              ) [v1.0]'
+    print, '             NPIX= ) [v1.1]'
     return, -1
   endif 
 
@@ -44,7 +50,8 @@ function x_allvelo, wave, zabs, wrest, vmnx, ALL_PMNX=all_pmnx, NPIX=npix
   ntrans = n_elements(wrest)
 ; Optional keywords
 
-  if arg_present(ALL_PMNX) AND keyword_set(VMNX) then all_pmnx = lonarr(3,ntrans)
+  if arg_present(ALL_PMNX) AND keyword_set(VMNX) $
+    then all_pmnx = lonarr(3,ntrans)
   if not keyword_set( NPIX ) then npix = nwv
 
   spl=2.9979d5

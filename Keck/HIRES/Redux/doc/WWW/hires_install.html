@@ -1,0 +1,132 @@
+<html>
+ 
+<head>
+<TITLE>Installing XIDL</TITLE>
+</head>
+ 
+<body>
+<H1>Installing XIDL</H1>
+<P>
+<STRONG>Last modified: </STRONG>Oct 10 2005 by JXP.<P>
+ 
+<HR>
+ 
+<a href="hires_install.log">Here</a> are some notes which may make more 
+sense then the following stuff.
+<HR>
+<H4>
+<UL>
+<LI> SETUP
+  <UL>
+ 	<LI> Environmental variables:  The code(s) require that a number of
+        environmental variables are setup to install and run the code.
+	<LI> One tends to keep all IDL codes together in their home directory
+		with a top level directory like ~/idl/.  All of the codes
+		are then placed underneath this directory.  I will refer to 
+		this directory as $HOMEIDL_DIR.
+	  <LI> You will need to set several environment variables 
+	  named IDLSPEC2D_DIR, IDLUTILS_DIR, and XIDL_DIR 
+	    which point to the directories
+	  for the Sloan codes and my code. 
+	  I suggest you add them right into your .cshrc file.  Also, you
+	  will need to update your IDL_PATH as necessary.
+	  <LI> Here are the entires in my .local_cshrc file
+	<UL>
+	   <LI> setenv IDLUTILS_DIR ~/idl/idlutils 
+	   <LI> setenv IDLSPEC2D_DIR ~/idl/idlspec2d 
+	   <LI> setenv XIDL_DIR ~/idl/xidl  
+	   <LI> setenv IDL_PATH +$IDL_DIR\/lib:+$IDL_DIR\/examples:+~/idl:+pro/
+</UL> </UL>
+
+<HR>
+<LI> IDLUTILS (djs) IDL package
+  <UL>
+	<LI> Built and distributed by David J. Schlegel
+	<LI> Public version located here: 
+	<a href="http://spectro.Princeton.EDU/idlspec2d_install.html">Princeton</a>
+	<LI> <I>WARNING!! :: This package contains the most up-to-date version
+	  of the Goddard libraries (GHRS, astron).  If you have old versions
+	  of that code you should remove it now.</i>
+	<LI> Installing...
+	<UL>		
+	  <LI> Unpack the distribution into $HOMEIDL_DIR
+	  <LI> Make sure IDLUTILS_DIR is set! <p>
+	  (e.g. prompt> setenv IDLUTILS_DIR ~/idl/idlutils)
+	  <LI> Change directory <p>
+	  prompt> cd idlutils/ 
+	  <LI> Clean the directories <p>
+	  prompt> bin/evilmake clean
+	  <LI> Run the make file (this should detect your operating system): <p>
+	  prompt> bin/evilmake
+	  <LI> WARNING:  I do not believe IDL works with Linux 64bit 
+	      processors right now.
+	</UL>
+   </UL>
+
+<HR>
+<LI> idlspec2d IDL package
+   <UL>
+	<LI> Built and distributed by David J. Schlegel + Scott Burles
+	<LI> Public version located here: 
+	<A href="http://spectro.Princeton.EDU/idlspec2d_install.html">Princeton</a>
+	<LI> Installing...
+	<UL>
+	  <LI> Copy the package into $HOMEIDL_DIR
+	  <LI> Unpack the distribution (my version unpacks into idlspec2d/)
+	  <LI> prompt> cd idlspec2d/
+	  <LI> Make sure IDLSPEC2D_DIR is set!
+	  (e.g. $>$ setenv IDLSPEC2D_DIR ~/idl/idlspec2d)
+	  <LI> Clean the directories (use the evilmake from IDLUTILS) <p>
+	  prompt> $IDLUTILS_DIR/bin/evilmake clean   
+	  <LI> Run the make file (this should detect your operating system): <p>
+	  prompt> $IDLUTILS_DIR/bin/evilmake      
+	</UL>
+   </UL>
+
+<HR>
+<LI> XIDL package
+   <UL>
+	<LI> Built and distributed by Jason X. Prochaska
+	<LI> Public tarball version located here: 
+	<a href="http://www.ucolick.org/~xavier/IDL/index.html">XIDL</a>
+        <LI> If you wish to modify the code yourself, I highly recommend you
+        contact me about accessing the CVS distribution.
+	<LI> Installing...
+	<UL>
+	  <LI> Copy the package into $HOMEIDL_DIR
+	  <LI> Unpack the distribution (unpacks into xidl/) and enter the directory <p>
+	  prompt> gtar -zxvf xidl.tar.gz <p>
+	  prompt> cd xidl/
+	  <LI> Clean the directories <p>
+	  prompt> bin/evilmake clean
+	  <LI> Run the make file (this should detect your operating system):<p>
+	  prompt> bin/evilmake
+	</UL>
+        <LI> Updating
+        <UL>
+           <LI> Simply grab the new tar file, unpack anew and rerun 
+           'bin/evilmake' and 'bin/evilmake clean'
+           <LI> WARNING: This will overwrite any changes you have made to 
+           these codes!!!  Use the CVS distribution to avoid this (contact
+           me)
+        </UL>
+   </UL>
+
+</H3>
+
+<LI> HIRES Calibs
+  <UL> 
+   <LI>  Grab the files from 
+	<a href="http://www.ucolick.org/~xavier/HIRedux/CALIBS/index.html">XIDL</a>
+   <LI>  The arc template files are REQUIRED
+   <LI>  The pixel flats are HIGHLY recommended and essentially required
+   <LI>  Create a Keck/HIRES/CAILBS directory somewhere
+   <LI>  Set the environmental variable HIRES_CALIBS pointing here
+   <LI>  Unpack the Arcs into a directory named ARCS under CALIBS
+   <LI>  Unpack the Flats into a directory named FLATS under CALIBS
+  </UL> 
+</UL>
+	
+</body>
+</html>
+
