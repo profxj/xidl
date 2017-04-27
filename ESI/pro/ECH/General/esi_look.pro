@@ -56,7 +56,13 @@ sciivar = (modelvar GT 0.0)/(modelvar + 3*(modelvar LE 0.0))
 IF KEYWORD_SET(RESIDS) THEN $
   xatv, sqrt(sciivar)*(sciimg-skyimg - objimg)*(ordermask GT 0.0)*outmask $
   , wvimg = waveimg, min = -6.0, max = 6.0 $
-ELSE BEGIN     
+ELSE IF KEYWORD_SET(ZEROMASK) THEN BEGIN
+    inds = WHERE(ordermask GT 0.0 AND outmask GT 0.0, ngood)
+    sky, (sciimg-skyimg)[inds], skymode, skysig $
+         , /silent
+    xatv, (sciimg-skyimg)*(ordermask GT 0.0)*(outmask GT 0.0), wvimg = waveimg $
+          , min = -2.5*skysig, max = 25.0*skysig
+ENDIF ELSE BEGIN
     inds = WHERE(ordermask GT 0.0 AND outmask GT 0.0, ngood)
     sky, (sciimg-skyimg)[inds], skymode, skysig $
          , /silent
