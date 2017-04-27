@@ -59,8 +59,8 @@ FOR j = 0L, nobj-1L DO BEGIN
 objid = strtrim(objstruct.objid, 2)
 splog, 'Select object'
 id = x_guilist(objid, indx = ind)
-ivar  = objstruct[ind].IVAR_OPT
-sig = (ivar GT 0.0)/sqrt(ivar + (ivar LE 0.0))
+ivar1  = objstruct[ind].IVAR_OPT
+sig = (ivar1 GT 0.0)/sqrt(ivar1 + (ivar1 LE 0.0))
 wave = objstruct[ind].WAVE_OPT
 flux = objstruct[ind].FLUX_OPT
 
