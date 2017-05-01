@@ -222,7 +222,7 @@ PRO gnirs_mkflat, bluefiles, redfiles, order5files, order6files, objfiles $
                plot, pix[fitpix], fxarr[fitpix], psym = 3 $ 
                      , xrange = [min(pix[fitpix]), max(pix[fitpix])] $
                      , xstyle = 1
-               oplot, pix[fitpix], bfit, color = fsc_color('red', 245)
+               oplot, pix[fitpix], bfit, color = djs_icolor('red') ;;, 245)
                wait,1.0
            ENDIF
            thisimg[this_order] = thisimg[this_order]/ymodel
@@ -257,7 +257,7 @@ PRO gnirs_mkflat, bluefiles, redfiles, order5files, order6files, objfiles $
                plot, pix[fitpix], fxarr[fitpix], psym = 3 $ 
                      , xrange = [min(pix[fitpix]), max(pix[fitpix])] $
                      , xstyle = 1
-               oplot, pix[fitpix], bfit, color = fsc_color('red', 245)
+               oplot, pix[fitpix], bfit, color = djs_icolor('red');;, 245)
                wait,1.0
            ENDIF
            thisimg[this_order] = thisimg[this_order]/ymodel
@@ -291,7 +291,7 @@ PRO gnirs_mkflat, bluefiles, redfiles, order5files, order6files, objfiles $
                plot, pix[fitpix], fxarr[fitpix], psym = 3 $ 
                      , xrange = [min(pix[fitpix]), max(pix[fitpix])] $
                      , xstyle = 1
-               oplot, pix[fitpix], bfit, color = fsc_color('red', 245)
+               oplot, pix[fitpix], bfit, color = djs_icolor('red');, 245)
                wait,1.0
            ENDIF
            thisimg[this_order] = thisimg[this_order]/ymodel
@@ -323,7 +323,7 @@ PRO gnirs_mkflat, bluefiles, redfiles, order5files, order6files, objfiles $
                plot, pix[fitpix], fxarr[fitpix], psym = 3 $ 
                      , xrange = [min(pix[fitpix]), max(pix[fitpix])] $
                      , xstyle = 1
-               oplot, pix[fitpix], bfit, color = fsc_color('red', 245)
+               oplot, pix[fitpix], bfit, color = djs_icolor('red');;, 245)
                wait, 1.0
            ENDIF
            thisimg[this_order] = thisimg[this_order]/ymodel

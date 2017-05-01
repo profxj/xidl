@@ -37,7 +37,6 @@ function long_wavepix, arcimg, tset_slits $
                        , SIG_THRESH = SIG_THRESH, ISLIT = ONLY_SLITS1 $
                        , NOT_THIN = NOT_THIN, arc_ncoeff = arc_ncoeff1 $
                        , ARCTRC_POS=arctrc_pos, FWEIGHT = FWEIGHT1
-
 if N_PARAMS() LT 2 then begin
      print, 'Syntax: wave_pix = long_wavepix(arcimage, left_edge, right_edge, [thresh=, radius=, med_err= ]'
       return, 0
