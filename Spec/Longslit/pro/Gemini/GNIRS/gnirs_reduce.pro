@@ -204,7 +204,7 @@ for igroup = 0L, ngroup-1L do begin
             targdir =  scidir + '/' + strcompress(targ_list[itarg], /rem)  $
               + '_' + strcompress(string(group_list[igroup]), /rem) 
             spawn, '\mkdir -p '+targdir
-;           Incides of science files for this target
+;           Indices of science files for this target
             jndx    = indx[where(planstr[indx].TARGET EQ targ_list[itarg] $
                                  AND (planstr[indx].FLAVOR EQ 'SCIENCE' $
                                       OR planstr[indx].FLAVOR EQ 'TELL'))]

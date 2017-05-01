@@ -173,9 +173,10 @@ IF pixrms[5] GE 1.0D THEN BEGIN
                      , sz = dims, pixrms = pixrms)
 ENDIF
 
+;;chk=1
 pixset = long_wavepix(image, tset_slits, FWHM = FWHM, pkwdth = pkwdth $
                       , toler = toler, CHK = chk $
-                      , med_err = [0.1, 0.1, 0.1, 0.1, 0.1, 0.2])
+                      , med_err = [0.1, 0.1, 0.1, 0.1, 0.1, 0.3])
 ;;, ISLIT = [1, 2, 3, 4, 5])
 ;; Trying to trace order 8 causes many problems so don't try for now. 
 ;; Could improve this by using the arcs. 

@@ -74,6 +74,9 @@ ELSE IF strmatch(observatory, '*South*') THEN gnirs = 'SOUTH' $
 ELSE message, 'Unrecognized instrument'
 
 
+jd = 2400000.5D + double(sxpar(hdr, 'MJD_OBS'))
+daycnv, jd, year, mn, day, hdr0
+
 ;----------
 ; Set defaults
 
@@ -88,6 +91,14 @@ CASE GNIRS OF
       
       xleft_right  = [320, 440, 530, 590, 660, 730]
       xright_right = [380, 490, 580, 655, 720, 800]
+      ;; Hack to reduce 2017 data
+      IF year GE 2017 THEN BEGIN
+         xleft_left =  [210,340,420,490,560,630]
+         xright_left  = [265,385,465,535,600,660]
+         
+         xleft_right = [265,390,470,530,590,665]
+         xright_right = [320,430,502,580,640,715]
+      ENDIF
    END
    'SOUTH': BEGIN
       ARCHIVE_FILE = getenv('LONGSLIT_DIR') + $

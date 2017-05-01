@@ -2,7 +2,7 @@ PRO GNIRS_FLUXCOMBINE, infile, sensfuncfile, loglam = loglam $
                        , ONEDFLUX = flux, ONEDIVAR = IVAR $
                        , ONEDMASK = MASK $
                        , outfile = outfile $
-                       , SIGREJ = SIGREJ1 
+                       , SIGREJ = SIGREJ1,HIZQSO=HIZQSO
 
 IF KEYWORD_SET(SIGREJ1) THEN sigrej = sigrej1 ELSE SIGREJ = 3.0D
 ; Read in sensitivity function (only used for masking regions)
@@ -12,7 +12,6 @@ influx = xmrdfits(infile, 0, scihdr)
 inivar = xmrdfits(infile, 1)
 inmask = xmrdfits(infile, 2)
 loglam = xmrdfits(infile, 3)
-
 dims = size(influx, /dim)
 ngrid = dims[0]
 norders = dims[1]
@@ -73,10 +72,17 @@ scale_56 = (median_5/median_6)
 influx[*, 3] = influx[*, 3]*scale_56
 inivar[*, 3] = inivar[*, 3]/scale_56^2
 ;; Tie order 7 to 6
-ind_6 = WHERE(finalmask[*, 3] AND wave GT 10000 AND wave LT 11000)
-ind_7 = WHERE(finalmask[*, 4] AND wave GT  9750 AND wave LT 11000)
+IF KEYWORD_SET(HIZQSO) THEN BEGIN 
+   ind_6 = WHERE(finalmask[*, 3] AND wave GT 10400 AND wave LT 11000)
+   ind_7 = WHERE(finalmask[*, 4] AND wave GT  10400 AND wave LT 11000)
+ENDIF ELSE BEGIN
+   ind_6 = WHERE(finalmask[*, 3] AND wave GT 10000 AND wave LT 11000)
+   ind_7 = WHERE(finalmask[*, 4] AND wave GT  9750 AND wave LT 11000)
+ENDELSE
+;; JFH changed for high-z QSO work. JFH 04/2017
 djs_iterstat, influx[ind_6, 3], sigrej = sigrej, median = median_6
-djs_iterstat, influx[ind_7, 4], sigrej = sigrej, median = median_7 
+djs_iterstat, influx[ind_7, 4], sigrej = sigrej, median = median_7
+
 scale_67 = (median_6/median_7)
 influx[*, 4] = influx[*, 4]*scale_67
 inivar[*, 4] = inivar[*, 4]/scale_67^2
@@ -88,7 +94,6 @@ djs_iterstat, influx[ind_8, 5], sigrej = sigrej, median = median_8
 scale_78 = (median_7/median_8)
 influx[*, 5] = influx[*, 5]*scale_78
 inivar[*, 5] = inivar[*, 5]/scale_78^2
-
 ;; Read in an archived bspline fit to the (S/N)^2 of each order 
 ;; obtained by fitting a fluxed telluric standard spectrum.
 archive_fluxfile = getenv('LONGSLIT_DIR') + $

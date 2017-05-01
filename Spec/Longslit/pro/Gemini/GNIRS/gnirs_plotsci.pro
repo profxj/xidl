@@ -89,13 +89,14 @@ FOR iobj = 0L, nobj-1L DO BEGIN
               , xtickformat = '(F6.4)'
         IF KEYWORD_SET(NSMOOTH) THEN flux = smooth(flux, NSMOOTH)
         oplot, wave, flux, psym = 10, THICK = THICK $
-               , color = fsc_color('black', 255)
-        oplot, wave, sig, psym = 10, col = fsc_color('red', 254) $
+               , color = djs_icolor('black')                   ;, 255)
+        oplot, wave, sig, psym = 10, col = djs_icolor('red') $ ;, 254) $
                , thick = thick
         scale = 0.40
         oplot, lam_atm, (1.0-scale)*yrange[1] + $
                0.90*scale*yrange[1]*trans, thick = thick $
-               , color = fsc_color('blue', 252), psym = 10
+               , color = djs_icolor('blue') $ ;, 252)
+               , psym = 10
     ENDFOR
 ENDFOR
 
