@@ -153,7 +153,7 @@ pro sdss_velplt,spec_fil,zabs,dir=dir,linlst=linlst,$
   for xx=0,nx-1 do begin
      for yy=0,ny-1 do begin
         
-        if (xx eq 0) or (yy eq ny-1) then begin
+        if (xx eq 0) or (yy eq ny-1) or (iion eq nion-1) then begin
            if (xx eq 0) and (yy eq ny-1) then $
               ;; All axis
               plot,xrng,yrng,/nodata,ystyle=1,xstyle=1,background=clr.white,$
