@@ -1,0 +1,11 @@
+wave,r,h,,,,"wavelength to trace (A)"
+xmm,r,h,,,,"X-slitmask coord (mm)"
+ymm,r,h,,,,"Y-slitmask coord (mm)"
+mu,r,h,,,,"Grating tilt (deg)"
+o3,r,h,,,,"3rd yaw angle (deg)"
+roll3,r,h,,,,"Grating roll"
+gmm,r,h,900.,,,"grooves/mm"
+norder,i,h,1,,,"grating order"
+amap,f,h,,,,"Output file mask<-->alpha mapping"
+bmap,f,h,,,,"Output file beta<-->ICS mapping"
+mode,s,h,"ql",,,

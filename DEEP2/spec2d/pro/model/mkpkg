@@ -1,0 +1,46 @@
+# Make the DEIMOS package.
+
+$call	relink
+$exit
+
+update:
+	$call	relink
+	$call	install
+	;
+
+relink:
+	$set	LIBS = "-lxtools -liminterp -lsurfit -lgsurfit -lcurfit"
+# /opt/extern/tables/bin.ssun/libtbtables.a"
+
+	$update	libpkg.a
+	$omake	x_deimos.x
+	$link	x_deimos.o libpkg.a $(LIBS) -o xx_deimos.e
+	;
+
+install:
+	$move	xx_deimos.e x_deimos.e
+	;
+
+libpkg.a:
+	keck_util.x	<math.h> "keck.h"
+	deimos_util.x	<math.h> "deimos.h" "keck.h"
+#	fitsgen.x	<time.h> "ftab.h"
+#	fitsmask.x	<math.h> <time.h> <error.h> "ftab.h"
+#	fitsmap.x	<math.h> <time.h> <error.h> "ftab.h" "deimos.h" "keck.h"
+#	fakemap.x	<math.h> <time.h> <error.h> "ftab.h"  "keck.h"
+#	dsim.x		<math.h> "deimos.h" "dsimulator.h"
+#	dsim2.x		<math.h> "deimos.h" "dsimulator.h"
+#	dsimgraph.x	<math.h> <gset.h> <gim.h> "dsimulator.h" "deimos.h"
+#	simtest.x	<math.h> <gset.h> <gim.h> "deimos.h" "dsimulator.h"
+	refl.x		<math.h>
+#	refr.x		<math.h>
+	trace.x		<math.h> <imhdr.h> "deimos.h" "instrument.h"
+#	msolve.x	<imhdr.h> <math.h> <math/iminterp.h> "instrument.h"
+	qextr.x		<imhdr.h> <math.h> <math/curfit.h> "instrument.h"
+	qtrmap.x	<math.h> "instrument.h"
+	qmodel.x	<math.h> <math/gsurfit.h> "instrument.h"
+#	disteval.x	<math.h> <error.h>
+#	cohu.x		<imhdr.h>
+#	mkmosaic.x	<imhdr.h> <error.h>
+#	ccpkfind.x	<imhdr.h>
+	;

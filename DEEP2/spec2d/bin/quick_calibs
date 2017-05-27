@@ -1,0 +1,15 @@
+#!/usr/bin/perl
+####!/bin/csh -f
+####!/bin/sh
+# Run science quicklook
+
+
+$qpath = $ARGV[0];
+$qlevel=$ARGV[1];
+
+`cd $qpath; set clobber; echo "quick_calibs" | nohup nice -19 /sol/apps2/idl_55/idl_5.5/bin/idl -32 > quick_calibs.log 2>&1 &`;
+
+#`cd $qpath; set clobber; echo "quick_arcqa" | nohup nice -19 /sol/apps2/idl_55/idl_5.5/bin/idl -32 > quick_calibs.log 2>&1 &`;
+
+
+exit

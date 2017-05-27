@@ -1,0 +1,14 @@
+#!/usr/bin/perl
+##!/bin/sh
+###!/bin/csh -f
+
+# Run science quicklook
+
+
+$qpath = $ARGV[0];
+$qlevel=$ARGV[1];
+
+`cd $qpath; set clobber; echo "quick_science, $qlevel" | nohup nice -19 /sol/apps2/idl_55/idl_5.5/bin/idl -32 -nw > quick_science.log 2>&1 &`;
+
+
+#exit

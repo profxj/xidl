@@ -1,0 +1,6 @@
+amap,f,a,,,,"Output file mask<-->alpha mapping"
+bmap,f,a,,,,"Output file beta<-->ICS mapping"
+nx,i,h,50,1,,"number of steps in x (half mask)"
+ny,i,h,50,1,,"number of steps in y"
+nextra,i,h,5,1,,"number of steps outside real boundary"
+mode,s,h,"ql",,,

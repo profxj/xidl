@@ -1,0 +1,20 @@
+Scale and offset positions are for the middle of each chip in the 
+"maskX" direction (row 2048). 
+
+Chipno: 1 Top Scale:  8.5697 (pix/asec)  Xoffs: -4447.946
+Chipno: 1 Bot Scale:  8.5530 (pix/asec)  Xoffs: -4433.684
+Chipno: 2 Top Scale:  8.4739 (pix/asec)  Xoffs: -2270.311
+Chipno: 2 Bot Scale:  8.4744 (pix/asec)  Xoffs: -2267.637
+Chipno: 3 Top Scale:  8.4757 (pix/asec)  Xoffs:  -124.202
+Chipno: 3 Bot Scale:  8.4723 (pix/asec)  Xoffs:  -130.941
+Chipno: 4 Top Scale:  8.5564 (pix/asec)  Xoffs:  2041.517
+Chipno: 4 Bot Scale:  8.5597 (pix/asec)  Xoffs:  2045.264
+
+Chipno: 5 Top Scale:  8.5674 (pix/asec)  Xoffs: -4462.620
+Chipno: 5 Bot Scale:  8.5542 (pix/asec)  Xoffs: -4452.015
+Chipno: 6 Top Scale:  8.4756 (pix/asec)  Xoffs: -2276.344
+Chipno: 6 Bot Scale:  8.4746 (pix/asec)  Xoffs: -2272.837
+Chipno: 7 Top Scale:  8.4755 (pix/asec)  Xoffs:  -148.984
+Chipno: 7 Bot Scale:  8.4762 (pix/asec)  Xoffs:  -148.608
+Chipno: 8 Top Scale:  8.5599 (pix/asec)  Xoffs:  2016.198
+Chipno: 8 Bot Scale:  8.5649 (pix/asec)  Xoffs:  2019.351

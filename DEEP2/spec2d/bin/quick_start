@@ -1,0 +1,47 @@
+#!/usr/bin/perl
+
+# Newman 5/4/03
+#---------------------------------------------------------------
+
+# this routine starts quicklook: quick_science on pohue, quick_calibs on hamoa
+#
+# quick_start complete or quick_start 1 will be slower (perform bsplines)
+# quick_start OR quick_start 2 (or anything else) will be the super-quick 
+# version (no bsplines)
+
+use Cwd;
+chomp($path = `rsh polo outdir`);
+
+$path="/net/polo$path";
+$level = $ARGV[0];
+$_ = $level;
+
+`cd $path`;
+`pwd`;
+if (length($level) <3 && $level != 1) {
+    $level = 2;
+}
+ else {
+#   Expand path name
+     if (m/com/igx) {$level=1;} 
+     else {$level=2;}
+}
+
+`quick_shutdown`;
+
+`rm quick*.log`;
+
+print "running in $path \n";
+print "starting quicklook with level $level \n";
+print "be sure to run quick_shutdown at the end of the night!\n";
+
+system("cd $path; xrsh hamoa quick_calibs $path 1> /dev/null 2>&1");
+
+
+$cmd = sprintf "cd $path; echo 'quick_science, $level' | /sol/apps2/idl_55/idl_5.5/bin/idl -32 -nw";
+
+print $cmd
+system $cmd;
+
+
+

@@ -1,0 +1,30 @@
+Current routines:
+
+cam_distort.pro      ; called by ics_post_grating
+ccd_geom.pro	     ; called by setup
+coll_angle.pro	     ; called by pre_grating
+gen_xfm.pro	     ; general routine for transformations (mat. multiply)
+gsetup.pro	     ; called by qmodel
+ics_to_ccd.pro	     ; called by qmodel
+ics_post_grating.pro ; called by qtrmap
+initdeimos.pro	     ; sets up system variables
+mask_to_proj.pro     ; called by pre_grating
+parsehfiles.pro      ; Processes system variables from .h files, writes 
+			initdeimos.pro
+pre_grating.pro	     ; called by qtrmap
+proj_to_mask.pro     ; utility
+qmodel.pro 	     ; quickly determines lambda(pix)
+qtrmap.pro	     ; writes out files of coefficients for use by qmodel
+refl.pro	     ; does a reflection, utility
+setup.pro	     ; sets up system components, called by qtrmap
+sysinit.pro	     ; sets up sys structure 
+
+
+Example calling procedure:
+; to setup mapping
+sys=sysinit(VARIABLES)
+qtrmap,sys
+
+; to use mapping
+sys=sysinit(VARIABLES)
+qmodel,amap,bmap,xmm,ymm,lambda,xics,yics,xpix,ypix

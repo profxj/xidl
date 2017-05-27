@@ -1,0 +1,56 @@
+#!/usr/bin/perl
+# Newman 5/4/03
+#---------------------------------------------------------------
+
+# search for all spawned-off wfi scripts and kill them
+
+use Cwd;
+chomp($path = `rsh polo outdir`);
+
+$delete = $ARGV[0];
+$_ = $delete;
+
+
+if (length($delete) <3 && $delete != 1) {
+    $delete = 0;
+}
+else {
+#   Expand path name
+    if (m/del/igx) {$delete=1;} 
+    else {$delete=0;}
+}
+
+@flist = `ps -ef | grep "rsh polo wfi"`;
+
+foreach $linestring (@flist) {
+      $pid=substr($linestring,8,6);
+      $status = `kill -9 $pid`;
+}
+
+@flist = `ps -ef | grep "rsh pohue idl"`;
+
+foreach $linestring (@flist) {
+      $pid=substr($linestring,8,6);
+      $status = `kill -9 $pid`;
+}
+
+@flist = `ps -ef | grep "/sol/apps2/idl_55/idl_5.5/bin/bin.solaris2.sparc/idl -32 -nw"`;
+
+foreach $linestring (@flist) {
+      $pid=substr($linestring,8,6);
+      $status = `kill -9 $pid`;
+}
+
+$path = "/s$path";
+`cd $path`;
+`pwd`;
+
+if ($delete) {`/usr/bin/rm -f $path/*/calib*.fits &`;}
+if ($delete) {`/usr/bin/rm -f $path/*/quick*.fits &`;}
+
+$hostname=`hostname`;
+
+$_ = $hostname;
+
+if (m/pohue/igx) {`rsh hamoa quick_shutdown`;}
+

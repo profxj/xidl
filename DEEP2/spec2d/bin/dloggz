@@ -1,0 +1,58 @@
+#!/usr/bin/perl
+# Finkbeiner & Davis, 2002-Jun-4
+#---------------------------------------------------------------
+
+# want the output to look like
+#------------------------------------------------------------------------------
+#Observer: Phillips      Keck II  DEIMOS
+#Directory: /dsk/iraid1/kics/2002jun03
+#
+# Filename     Slit   Exp   Lamps    typ   object
+# --------     ----   ---   -----    ---   ------
+#d0603_0001    1105n  150        Off DmF  1105n Domeflat 150s
+#d0603_0002    1105n  149        Off DmF  1105n Domeflat 150s
+#d0603_0003    1105w  150        Off DmF  1105w Domeflat 150s
+#d0603_0004    1105w  149        Off DmF  1105w Domeflat 150s
+#d0603_0005    1105b  149        Off DmF  1105b Domeflat 150s
+
+# Use the Cwd package
+use Cwd;
+
+# See if a path was passed
+$path = $ARGV[0];
+if ($path eq "") {
+    $path = ".";
+} else {
+#   Expand path name
+    chomp($path = `(cd $path; pwd)`);
+}
+
+#$path = "/dsk/iraid1/kics/2002may19";
+@flist = glob("$path/d[0-9]*.fits.gz");
+chomp($observer = `sxpar $flist[0] observer`);
+chomp($telescope = `sxpar $flist[0] telescop`);
+chomp($inst = `sxpar $flist[0] currinst`);
+
+print "\n-------------------------------------------------------------------------------\n";
+print "Observer: $observer      $telescope  $inst\n";
+print "Directory: $path\n\n";
+
+
+print " Filename     Mask  Grate  Exp   Lamps    typ   object\n";
+print " --------     ----  -----  ---   -----    ---   ------\n";
+
+foreach $file (@flist) {
+    $fshort = (split "/|.fits.gz", $file)[-1];
+    chomp($mask    = `sxpargz $file slmsknam`);
+    chomp($exptime = `sxpargz $file exptime`);
+    $obstype = substr(`sxpargz $file obstype`,0,3);
+    chomp($lamps = `sxpargz $file lamps`);
+    $lamps =~ s/\s+//g;
+    chomp($grating = substr(`sxpargz $file gratenam`,0,5));
+    chomp($object  = `sxpargz $file object`);
+    $str = sprintf "$fshort %8s %5s %4i %10s %3s  $object", $mask, $grating, $exptime+0.5, $lamps, $obstype;
+
+    printf "%s\n", substr($str, 0, 80);
+}
+	
+

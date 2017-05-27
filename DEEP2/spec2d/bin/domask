@@ -1,0 +1,25 @@
+#!/bin/sh
+# Run DEIMOS pipelines
+
+# take plan file name as optional argument
+plan=$1
+
+# if no argument passed, look for *.plan
+if [ "X$plan" = "X" ] ; then
+    plan=`echo *.plan`
+    if [ "X$plan" = "X" ] ; then
+	echo No plan files found
+	exit
+    fi
+fi
+
+# if we still have no plan file, die
+if [ ! -r $plan ] ; then 
+    echo File not found: $plan
+    exit
+fi
+
+# otherwise, run!
+umask 002
+echo "domask,'$plan'" | nohup nice -19 idl -32 > out.log 2>&1 &
+exit

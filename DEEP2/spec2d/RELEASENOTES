@@ -1,0 +1,535 @@
+v1_1_4 (July 10, 2003)
+
+Notable changes:
+
+- At least some longslit data now is successfully reduced by the
+  pipeline.  No guarantees on reduction quality.  Things are probably
+  good enough for standard stars, at least.
+
+- New superdarks have been added for 2003 (FCS intensity has been
+  greatly decreased).  We do not have any new ones for 900-line data -
+  that is needed.  Update your CALIB_DATA files.
+
+- After we implemented the slit-end corrections for v1_1, we figured
+  that it'd be OK to exclude only the outermost 4 pixels on each slit,
+  rather than the outermost 5.  However, the skylines are actually a
+  bit sharper on that 5th pixel than along the rest of the slit; this
+  caused the b-spline sky spectrum to be too sharp, especially on
+  short slits, and accordingly the sky subtraction to yield
+  'hollowed-out', 'donut' residuals (negative in the center of the
+  line, positive on the outside).  Rerunning v1_1 reductions is
+  probably advisable.
+
+- Shifts between science data and flats are now determined robustly
+  when the shifts are >~1.5 pix (via a cross-correlation to get an
+  initial guess, followed by the existing centroid method); that was
+  not true before.  Wavelength solutions in cases with large shifts
+  could definitely be problematic, though..
+
+- In cases where the arc-fitting yields poor results or few lines, we
+  now fall back to the optical model + cross-correlation for
+  wavelength solution and tilts.
+
+- 'optimal' extractions in EXTRACT1D now uses FWHM=10 pixels if FWHM=0
+  is passed to it.  This was a problem in a number of non-DEEP
+  reductions, yielding optimal spectra that were 0 everywhere (boxcar
+  was still OK).
+
+- wavelength scales on the Allslit files are now correct (was a
+  FLOATCOMPRESS issue).
+
+
+
+v1_1_3 (May 19, 2003)
+
+- cosmic-ray handling has been altered: CRs found in 2d are excluded
+  when the data is coadded (rather than just using the temporal
+  variation to find them in the coaddition process), and INFOMASK bit
+  2^3 in spslit structures indicates where cosmic rays have been found
+  (minor speedups result).  This should yield improvements in
+  CR-rejection particularly for cases  with only 2 frames of data.
+
+- We had been under the impression that the TOPDIST/BOTDIST bug (they
+  are inverted from their original definition) in Drew Phillips's mask
+  design software was fixed in mid-October, so the pipeline assumed no
+  fix was needed for masks created after that date.  Instead, Drew
+  opted to leave his code untouched; this means that the pipeline
+  assumed objects were in the wrong position for recently-designed
+  masks (flipped about the center of the slit), with bad consequences
+  for object extraction, sky subtraction, etc.  Masks designed after
+  mid-October and run through the pipeline will need to be rerun.
+
+- "quicklook" data verification routines have been added.  For the
+  moment, at least, they are DEEP- specific.  Missing species in arcs,
+  FCS misalignment/buckling, alignment offsets in the spatial
+  direction, bad or degrading seeing, and signal-to-noise are all
+  evaluated, and audible & pop-up warnings are issued to the user if
+  there are problems.  /QUICK keywords have been added to many of the
+  pipeline routines; setting the keyword will cause the routines to
+  act in less robust, but faster, ways.
+
+- obslog routine added to generate log info on science files in DEEP2
+  logsheet form.  typing 'obslog' at a command prompt in the desired
+  directory  yields a log for all files; 'obslog n', where n is an
+  integer, gives log info on the last n files.
+
+------------------------------------------------------------------
+
+v1_1_2 (April 14, 2003)
+
+- Linelist has been tested for a variety of 600-line scenarios, and
+  tweaked accordingly.
+
+- Previously, CR's on arcs could cause the arc tilt as a function of
+  wavelength to have bad fits.  Two changes to deimos_arcfit have been
+  added to prevent this; hopefully, we will no longer suffer from bad tilts!
+
+- a color table issue with qa_check has been fixed.
+
+--------------------------------------------------------------------
+v1_1_1 (April 11, 2003)
+
+- A number of minor bug fixes have occurred; notably, SLITPA and
+  MASKPA in v1_1 file headers were incorrect.
+
+- Zn has been added to the non-DEEP linelist (lamp_NIST_blue.dat).  A
+  few lines might be helpful in the extreme blue, though ~10-20s
+  exposures might be desirable for picking them up.
+
+--------------------------------------------------------------------
+
+v1_1 (April 1, 2003)
+
+
+Major changes:
+
+
+- Drew Phillip's optical model is now used for initial wavelength
+  guesses.  Large tweaks are sometimes still required (e.g. due to
+  differences in FCS setup from the model), but nevertheless this has
+  proved to be quite successful.
+
+- Arc handling has been totally revamped, allowing good solutions for
+  600-line data; among other changes, a new lamp list,
+  lamp_NIST_blue.dat, should work better than the default
+  lamp_NIST.dat for low-resolution/non-DEEP2 data.  We can now deal
+  with multiple arcs (including combining partially saturated with
+  unsaturated arcs; see COMBINE_ARCS), and can use separate arcs for
+  red side vs. blue.
+
+- Slits overlapping edges of chips are now reduced, not ignored.  This
+  could add as many as 8 objects/mask (~2-6 should be typical).
+  Regions with no data have inverse variance 0 and the 2^2 bit of MASK
+  set to 1.
+
+- The derivative tails at the spatial ends of slits (due to something
+  like sub-pixel shifts between the slitfunction derived from flats
+  and the science data, though that cannot be the actual cause) are
+  now corrected when possible, giving us ~2 more rows per slit for sky.
+
+- Non-local sky subtraction has been greatly improved, and is now used
+  throughout the pipeline (including extractions & spec1d, with
+  non-local results in separate HDUs).
+
+- B-spline breakpoint handling and sky region determination has
+  changed, yielding much better (though still noisy) results for short slits.
+
+- Extractions totally revamped.  Standard extractions are no longer a
+  boxcar with interpolation and a non-inverse variance weighted
+  optimal extraction, but instead a boxcar with bad pixels compensated
+  for based on the fraction of light from the object missing (using
+  the object's profile) and an optimal extraction with inverse
+  variance weighting.  A major bug (which caused the
+  optimal-extraction kernel to be the same for all objects) has been fixed.
+
+- Sky spectra are now stored in the spec1d structures, and the inverse
+  variance in the extracted spectra due to covariant sky subtraction
+  is properly included.
+
+- Positions of serendipitous sources on the sky (RA/dec) are now
+  determined relative to object position using slit PA.  Serendips now
+  have naming convention 'sXXXXXXX[b/c/d/...]' where XXXXXXXX is the label of
+  a source on the same slit, and [b/c/d/...] is a letter, b for the
+  first serendip on a slit, c for the second, etc.
+
+- Flat-fielding, and particularly slit function determination, has
+  been made much more robust; spectral ends of chips are also much 
+  better than before. Additionally, we have greatly improved the behavior of
+  the b-spline at the spectral ends of the array.
+
+- To deal with the time variations in the FCS scattered light, the pipeline
+  now chooses amongst multiple superdarks rather than always using an
+  August one.
+
+- Bad pixel mask has been greatly improved (using superdark data).
+
+- Old QA routines have been updated and replaced with QA_CHECK .
+
+
+More minor changes and fixes:
+
+
+- More keywords saved in FITS headers (including Gaussian sigma of
+  skylines and PAs for rotation curve analysis).
+
+- The SKYIND tag in spslit files has been removed to prevent
+  occasional problems combining spslit structures.
+
+- spec1d structures have been changed (e.g. to include the sky
+  spectra); see documentation.  Extraction width definitions have been
+  unified between boxcar and optimal; the IVARFUDGE parameter is an
+  estimate of how much one might want to multiply the stated IVAR by
+  to match the actual fluctuations in the extracted spectrum (this was
+  added mostly as a diagnostic; it varies significantly from one only
+  for sky slitlets [due to using the same rows for the sky bspline and
+  extraction], bright objects [which violate the assumptions made],
+  and short slits with concomitantly noisy sky subtraction (for which
+  IVARFUDGE reflects the reality).
+
+- Arc lines are now identified as blends based on what lines are
+  actually in a mask's arcs, not based on the complete linelist.
+
+- New .plan file keywords: REDARC, BLUEARC, and LINELIST .
+
+- SPEC1D_ASCII routine to convert spec1d output to ASCII files.
+
+- FLAG_CR now finds CR's iteratively (only used for bsplines)
+
+
+To be done:
+
+- When we have few identified arc lines, if we fit, say, 2 terms in
+  the wavelength solution, fix the 3rd-6th from the optical model and
+  fit the first two, rather than only including 2 terms in the
+  solution total.
+
+- Develop the ability to combine results from different arc frames,
+  rather than combining all frames and then fitting.
+
+- Handle the varying resolution along a slit that comes from big
+  notches in the slit function.  The interim fix might be to only use
+  sky rows with the same slitfn value as the object; longer-term, we
+  might convolve all rows to matching resolution.
+
+- Incorporate atmospheric dispersion and wavelength-dependent seeing
+  into the extractions.  This will probably require a rewrite &
+  generalization of extract1d.
+
+- Flux calibration.
+
+- Re-implement quicklook.
+
+- Frame-by-frame QA diagnostics.
+
+- Time-varying pixflat files, not just superdarks
+
+------------------------------------------------------------------------------
+
+Changes from v1_0 -> v1_0_2 (November 2002):
+
+- Much better handling of vignetting added
+
+- flat fields, esp. 2d slit functions and fringe amplitude, improved.
+
+- minor arcfitting improvements.
+
+------------------------------------------------------------------------------
+v1_0 (Nov. 7, 2002)
+
+Changes:
+
+- nonlocal sky is now implemented in the pipeline! (more tuning is
+  still required, though.)  For slits with <12 rows suitable for
+  measuring the sky spectrum, a 2d, nonlocal-sky-subtracted spectrum 
+  can be found in HDU 3 of the slit.XXXX file (no differences in
+  calibslit or spSlit files).  
+- Extracted 1d spectra based on the nonlocal version of the slit will 
+  then be found in HDUs 5-8 of the spec1d.XXXX file.  
+- Allslit files (nonzero only for those slits where nonlocal sky was
+  performed, to facilitate compression) are also created, named
+  Allslits[0 or 1].XXXX.nonlocal.fits.gz
+
+- an array named INFOMASK has been added (at the end) to the spSlit
+  and slit BINTABLEs.  This array is like MASK, but indicates
+  non-catastrophic problems.  The 2^0th bit is set for all >0% vignetted
+  pixels, and the 2^1 bit for pixels identified as cosmic rays in 2d
+  (with no reference to other frames).
+
+- The bar between slitlets in Allslit files has been enlarged, and now
+  is set to -1000 - slitnum, where slitnum is the slitnumber of the
+  slit _below_ the bar.
+
+- serendip detection is greatly improved - more robust to outlying
+  pixels and background gradients, reducing the number of bogus
+  serendips greatly.
+
+- extractions have been tested with fake 2d spectra inserted on sky
+  slits and extraction widths optimized (1.1*FWHM for boxcar, 
+  +/- 1.75*sigma [1.5*FWHM] for optimal; optimal had definitively better S/N
+
+- QA plots (quality_plots.ps in the /ps subdirectory of each mask)
+  have been improved.  A robust estimate of the S/N per pixel in an
+  extracted spectrum for an R=23.5 object is obtained for each mask,
+  allowing mask-to-mask comparisons.
+
+- all (>0%) vignetted pixels on the red side are now masked
+- scattered light is now removed before the vignetting flat is
+  created.  This yielded only minor improvements.
+- improved vignetting mask in deimos_badchip.
+- improved determination of DLAM when arc lines cross the vignetting 
+transition
+
+
+Problems:
+- insufficient number of sky rows going into the bsplines on short
+  slits, causing artifacts - need nonlocal sky to be optimized.
+- slit edge fix not incorporated into the pipeline yet, though we
+  think we know how
+- wavelength solutions still have problems at sub-pixel level on
+  alignment stars
+- need to look at 4249 Allslit file again when regenerated --
+  looks like a bad column was not fully masked?
+- should make inverse-variance weighted extractions an option
+- need to check if slit number bars in Allslit files are always right
+- serendip identification needs more tuning, need to implement
+  matching to PCAT catalogs
+- more tests of extractions and QA assessments
+
+------------------------------------------------------------------------------
+v0_10 (Oct. 26, 2002)
+
+Changes:
+
+- major changes to slit-edge-finding to improve robustness
+- substantial improvements to flatfield code, including switch to a 2d
+  slit function correction to match our rectification method and much
+  better handling of vignetted regions
+- overhaul of arc-line lists and fit techniques; addition of extra
+ arc line QA info to help us make the next improvements
+- definition of vignetting flat to apply to science data, and
+ implementation of this correction.  Currently 60% correction is applied in
+ the blue, 100% in the red; refinement may be possible, but these look
+ OK for now
+- we now cut at 50% vignetting everywhere, rather than the prior,
+ artificial cuts.  We will likely make that
+ more conservative soon, esp. on the red side.
+- we no longer correct for crosstalk on chip 5 on dates after the
+ crosstalk disappeared
+- we discovered that the science file FITS tables were giving
+ incorrect TOPDIST/BOTDIST on masks processed by Drew after July 24;
+ this caused object positions used to define sky subtraction and for
+ some object extractions to be way off.  The pipeline now
+ transparently fixes these tables.
+- moved to flux-conserving, rather than inverse-variance weighted,
+ extractions (both boxcar/tophat and optimal)
+- we now try to extract serendips, though most are probably false
+ positives right now.
+- improvements to Allslit file generation (wavelength ranges, object
+ numbers on both ends of the slits)
+- lots of bug fixes, additions to QA measurements, etc.
+
+Note that this list does _not_ cover the spec1d (redshift) code, which
+has progressed greatly in the last month.
+
+Problems:
+- insufficient number of sky rows going into the bsplines on short
+      slits, causing artifacts - need nonlocal sky.
+- wavelength solutions still have problems at sub-pixel level on
+      alignment stars
+- non-local sky not integrated into pipeline, pending bug fixes.
+      code has been checked into CVS.
+- slit edge fix not incorporated into the pipeline yet, though we
+      think we know how
+- need to look at 4249 Allslit file again - looks like a bad column
+      was not fully masked.
+- should make inverse-variance weighted extractions an option
+- need improved serendip handling
+
+
+v0_9 (Sep. 27, 2002)
+
+Changes: 
+
+- both boxcar and optimal 1d extractions are automatically performed
+    by domask; spec1d files created
+- emission line redshift determination has been implemented and
+    often works; linewidth determination also implemented 
+    for emission objects
+- quicklook has been implemented, though improvement is desirable
+- pipeline routines have been made more flexible; both POLYFLAG and TRACESET
+    coexist in the same procedures.  The type of lambda array and
+    which chips to reduce can now be controlled via the plan file.
+- _All_ MASK arrays are now of type byte.  BITMASK and MASK in slit
+     files have been replaced by MASK and CRMASK, respectively
+- flatfielding has been greatly improved/made more robust.  We no
+    longer attempt to flatfield or slitfunction-correct alignment stars.
+- pixel-to-pixel response flat has been greatly improved.  The
+    routines now look for 'processed_pix_mult_flat.fits.gz' in
+    $CALIB_DATA .  Download it, it's now ready for prime time!
+- as a consequence of the improved pixflat, we have been able to
+    identify more bad pixels and vignetted regions, leading to
+    modifications in the bad pixel mask.
+- corrections for the glow at chip edges and scattered light in flats
+    have been added to the pipeline
+- deimos_skytweak has been made more robust; it now rejects CRs and
+    vignetted regions, and only uses good pixels in determining the
+    median shift.
+- frames are now corrected to electrons per hour exposure time before
+    combining (in DEIMOS_SPSLIT)
+- better use of vignetting bit in badmask, e.g. now include it in the
+     bitmask in DEIMOS_SPSLIT
+- bintab index file (obj_info.MASKNUMBER.fits.gz) now created
+- extreme CRs are excluded from the bspline sky spectrum
+- A 'superdark' which exhibits the FCS excess light pattern has been
+     created; it, along with a potential constant offset, is now removed
+     from the data in DEIMOS_SPSLIT
+- various disabled and commented out code of ancient origin has been
+     removed from pipeline routines
+- along with the usual bugfixes and minor changes (e.g. the
+     edgefinding for negative-PA masks)
+
+
+Problems:
+- insufficient number of sky rows going into the bsplines on short
+      slits, causing artifacts
+- wavelength solutions still have problems (600 AA off on some
+      alignment stars!, .1-.2 AA issues on ordinary objects)
+- non-local sky not integrated into pipeline, pending improved
+      wavelength solutions.  DEIMOS_SKYTWEAK_VAR has been checked in but
+      not added to the pipeline.
+- slit edge fix not incorporated into the pipeline yet, though we
+      think we know how
+
+
+
+------------------------------------------------------------------------------
+v0_8 (July 22, 2002)
+
+- fink_merge handles sky slits
+- lambda_eval recognizes tracesets
+- more badmask improvements
+- flatfield bugs fixed, now uses djs_median (handles edges better)
+- use tracesets to fit and encode wavelength solutions
+- record wavelength fit residuals for each line/slit
+- avsigclip now rejects upper and lower outliers
+- deimos_badchip can distinguish chip defects (1) from vignetted areas (2)
+- many routines changed to new deimos_badchip convention
+- 5th order polynomial required for good wavelength fit
+- previous line list hopelessly inaccurate.  0.05A problems all over. 
+   now residual is typically < .01 A on blue side ~ .02 A on red side
+- serious bspline bug fixed (users must update idlutils!)
+- do sky fit on coadded image (so we only do bspline_iterfit once)
+- hot pixel near serial on chip 5 makes a mess - cleaned up
+- djs_maskinterp implemented in arcs and sort of for science spectra
+- bitmasks rearranged - bit 2 means "can interpolate over"
+- gauss fit (gfit_line) stuff
+- tweak wavelength solution to sky lines before final sky subtraction
+
+Problems:
+- wavelength solutions still not always good enough
+- still no non-local sky subtraction (B. Gerke working on it)
+- extraction to 1-D spectrum not integrated in pipeline
+- skytweak seems to have broken the star alignment boxes
+
+------------------------------------------------------------------------------
+v0_7 (July 14, 2002)
+
+- sky determined away from object (where possible)
+- flatfield code totally rewritten.  This fixes saturated alignment
+  box flats and numerous other problems. 
+- saturation mask generated in deimos_read_chip
+- masks propagate better to slit* files
+- deimos_arcfit uses everyn again
+- dlam is correct now (confused indices in deimos_arcfit)
+- sky tweak (dlamsky) computed in slitexam but not implemented
+- fixes in fink_merge and deimos_skytweak
+- limit range of lambda evaluation in slitexam
+- if more than 3 flats, use last 3. 
+
+Problems:
+- still have funny business at (spectral) end of each spectrum
+- still no sky tweak implemented, will look at outputs from deimos_skytweak
+- badmask looks like it is still missing a lot of bad CTE columns
+- mask alignment appears to be fixed in spSlit files, but wrong in
+     slit* files (?)
+
+------------------------------------------------------------------------------
+v0_6 (July 13, 2002)
+
+Many changes, resulting from July Keck run
+
+- flatfielding now fixed up (more or less) using modified Marinoni
+  code (splitting pixmask/fringing/slitfn)
+- alignment boxes get a top-hat smooth now for better centroiding
+- better warnings for missing data
+- first attempts at 1-d extraction
+- fink_merge and other merging routines
+- dlog improvements
+- restricted polynomial wavelength solution, evaluated with
+  lambda_eval, modified with dlam.  This stuff nearly works, 
+   failing on long slits. 
+- still no tweaking of wavelength solution to skylines
+- still using all rows to determine sky (instead of masking out
+  object)
+
+------------------------------------------------------------------------------
+v0_5 ?  Somebody forgot to add releasnotes...
+
+------------------------------------------------------------------------------
+v0_4 (June 13, 2002)
+
+- No longer use gzip -8; use compress on badchip file
+- Mask information is updated; is now propagated correctly through
+   spSlit files
+- Use slit width in deimos arcfit (so alignment boxes work)
+- plot / noplot keywords work?
+- domask script runs everything; domask shell script calls it. 
+- clean-up of deimos_spslit
+- still applying flats to wrong place
+- hotpixel mask still needed
+- spslit_combine combines data from multiple exposures, but
+    doesn't refit wavelength to sky or handle anything else by CRs
+    yet.
+- still no 1-d extraction
+- still use everything for sky fit - don't know where objects are!
+
+------------------------------------------------------------------------------
+v0_3 (June 5, 2002)
+
+- Slit names are correct
+- Plan file format changed (rawdatadir, outdatadir)
+- Slit edge finding still hacked up. 
+- Strongly tilted slits are fine. 
+- Changed to polynomial wavelength solution for arcs; will do sky
+    lines with spline?
+
+------------------------------------------------------------------------------
+v0_2 (June 4, 2002)
+
+We now get through the wavelength solution to writing spSlit files. 
+- Wavelength fits are good in general, strongly tilted slits need some 
+   help. 
+- Slit names not read correctly from bintables yet
+- Slit edge finding is a bit hacked up (may revert to 0_1). 
+- Badmask file is now generated if not present
+
+Tomorrow we will split out the spCalib stuff properly
+
+Other than that, we are doing well. 
+
+
+------------------------------------------------------------------------------
+v0_1 (June 3, 2002)  Finkbeiner & Davis
+
+First tag - running with idlutils v4_9_11 (today's CVS version of it)
+Top level routine is deimos_2dreduce.  Still lots of things
+hardwired.  Still has Drew's -1 bug in it. 
+
+Logic goes roughly:
+
+deimos_2dreduce (read all the files)
+  deimos_spslit
+    deimos_traceall
+    deimos_fitwavelength
+    write spslit files
+

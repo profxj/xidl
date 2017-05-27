@@ -1,0 +1,38 @@
+#!/usr/bin/perl
+# Parse FITS header
+# D. Finkbeiner 2001 Dec 20
+
+# Example:
+# sxpar /u/dfink/idR-001331-z1-0278.fit TAI
+
+$fname = $ARGV[0];
+$card  = $ARGV[1];
+$card = uc($card);
+
+if ($fname ne "-") {if (!-e $fname) {die "File not found: $fname\n";}}
+open RLUN, $fname or die "Cannot read file: $fname\n";
+$atend = 0;
+$fits = 0;
+while (! $atend) {
+    for ($i = 1; $i <= 36; $i++) {
+	read RLUN, $buf, 80;
+	($key, $val) = split("=| " , $buf);
+	if ($key eq "SIMPLE") {$fits=1;}
+	if ($key eq "END") {$atend=1;}
+	if (($key eq $card) && ($key eq "COMMENT")) {printf "%s\n", $buf}
+	
+	if (($key eq $card) && ($key ne "COMMENT")) {
+	    ($key, $val, $comment) = split("=|/" , $buf);
+	    $val =~ s/^[\s|\']+//;
+	    $val =~ s/[\s|\']+$//;
+	    printf "%s\n", $val;
+	    close RLUN;
+	    exit;
+	}
+    }
+    if (! $fits) {
+	print STDERR "Corrupted FITS file?  No SIMPLE keyword in header!\n";
+	exit;
+    }
+}
+close RLUN;
