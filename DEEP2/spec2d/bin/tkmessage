@@ -1,0 +1,72 @@
+#!/usr/local/bin/wish 
+#+
+# tkmessage -- post a warning message using Tcl/Tk widget
+#
+# Purpose:
+#       Display an error message on the user's terminal using Tcl/Tk
+#
+# Usage:
+#       tkmessage [-type <type>]
+# 
+# Arguments:
+#       type = [ error | info | question | warning ] 
+#               type of message to deliver.  
+#               This will determine the icon displayed on the message window.
+# 
+# Input:
+#       Error message is delivered on STDIN
+# 
+# Output:
+#       Window displaying the message is placed onto the current
+#       display. 
+# 
+# Restrictions:
+#       DISPLAY must be set appropriately
+# 
+# Exit values:
+#        0 = normal completion
+#        1 = wrong number of arguments
+#
+# Example:
+#       1) Display the text of the file "error_message" on the current display:
+#               tkmessage < error_message
+#-
+# Modification history:
+#       2002-Feb-02     GDW     Original version
+#-----------------------------------------------------------------------
+
+# define defaults...
+set type error
+
+# parse arguments...
+while { [llength $argv] > 0 } {
+    set value [lindex $argv 0]
+    switch -- $value {
+        -type   { 
+                set argv [lreplace $argv 0 0]
+                set type [lindex $argv 0]       
+                set argv [lreplace $argv 0 0]
+                }
+        default { 
+                puts stderr "ERROR: bad option $value"
+                exit 1
+                }
+    }
+}
+
+# read message from standard input...
+set text [read stdin]
+string trim $text
+
+set bigtype [string toupper $type]
+
+# display message...
+wm title . "TkMessage $bigtype"
+. configure -borderwidth 10
+frame .top
+label .top.icon -bitmap $type
+label .top.label -text $bigtype
+pack .top.icon .top.label -side left
+message .msg -text $text -font fixed
+button .button -text OK -command {exit}
+pack .top .msg .button -side top

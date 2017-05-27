@@ -1,0 +1,81 @@
+
+From phillips@ucolick.org Mon Oct 15 15:55:33 2001
+Date: Tue, 9 Oct 2001 13:15:43 -0700
+From: "Andrew C. Phillips" <phillips@ucolick.org>
+To: Jeffrey Newman <jnewman@astron.Berkeley.EDU>
+Subject: Re: A quick question on the model code
+
+(On Mon, Oct 08, 2001 at 03:56:25PM -0700, Jeffrey Newman communicated: )
+> 2 quick questions:
+> 
+> - do you have some sort of makefile for compiling your routines? xc is
+> getting hung up looking for sysruk .
+> 
+> - which routine of yours reads & writes the files you just sent me, so I
+> know what code to focus on?
+
+The mkpkg is attached.  The program "qtrmap" ("quick-trace-map") produces
+the actual mappings needed by qmodel, but you will see in the code they
+call the canned IRAF routines.  
+
+You also asked about msolve, cohu, and (?) -- these are routines that have
+nothing to do with the model, etc, so I removed them.  You will need to do the
+same in x_deimos.x and the attached mkpkg.
+
+Cheers,
+	drew
+
+
+-- 
+Andrew C. Phillips	  UCO/Lick Observatory		831-459-3841 (Office)
+			  Univ. California		831-426-3115 (FAX)
+			  Santa Cruz CA 95064
+--
+
+  [ Part 2: "Attached Text" ]
+
+# Make the DEIMOS package.
+
+$call	relink
+$exit
+
+update:
+	$call	relink
+	$call	install
+	;
+
+relink:
+	$set	LIBS = "-lxtools -liminterp -lsurfit -lgsurfit -lcurfit /opt/extern/tables/bin.ssun/libtbtables.a"
+
+	$update	libpkg.a
+	$omake	x_deimos.x
+	$link	x_deimos.o libpkg.a $(LIBS) -o xx_deimos.e
+	;
+
+install:
+	$move	xx_deimos.e deimosbin$x_deimos.e
+	;
+
+libpkg.a:
+	keck_util.x	<math.h> "keck.h"
+	deimos_util.x	<math.h> "deimos.h" "keck.h"
+	fitsgen.x	<time.h> "ftab.h"
+#	fitsmask.x	<math.h> <time.h> <error.h> "ftab.h"
+#	fitsmap.x	<math.h> <time.h> <error.h> "ftab.h" "deimos.h" "keck.h"
+#	fakemap.x	<math.h> <time.h> <error.h> "ftab.h"  "keck.h"
+	dsim.x		<math.h> "deimos.h" "dsimulator.h"
+	dsim2.x		<math.h> "deimos.h" "dsimulator.h"
+	dsimgraph.x	<math.h> <gset.h> <gim.h> "dsimulator.h" "deimos.h"
+	simtest.x	<math.h> <gset.h> <gim.h> "deimos.h" "dsimulator.h"
+	refl.x		<math.h>
+	refr.x		<math.h>
+	trace.x		<math.h> <imhdr.h> "deimos.h" "instrument.h"
+	msolve.x	<imhdr.h> <math.h> <math/iminterp.h> "instrument.h"
+	qextr.x		<imhdr.h> <math.h> <math/curfit.h> "instrument.h"
+	qtrmap.x	<math.h> "instrument.h"
+	qmodel.x	<math.h> <math/gsurfit.h> "instrument.h"
+	disteval.x	<math.h> <error.h>
+	cohu.x		<imhdr.h>
+	mkmosaic.x	<imhdr.h> <error.h>
+	ccpkfind.x	<imhdr.h>
+	;

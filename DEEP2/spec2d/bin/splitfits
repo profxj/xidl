@@ -1,0 +1,39 @@
+#!/bin/sh
+# Split a fits BINTABLE into its components
+
+if [ $# -lt 1 ]; then
+         echo 1>&2 Usage: splitfits [filename] [frame #(optional)]
+         exit 127
+    fi
+
+# take file name as first argument
+file=$1
+
+#take block number as optional second argument
+block=$2
+
+# if no argument passed, look for *.plan
+if [ "X$block" = "X" ] ; then
+    block=" "
+fi
+
+if [ "$block" -ne " " ]; then
+    block=",$block"
+fi
+
+
+# if we still have no plan file, die
+if [ ! -r $file ] ; then 
+    echo File not found: $file
+    exit
+fi
+
+echo Splitting $file
+
+# otherwise, run!
+umask 002
+echo "splitfits,'$file' $block" | idl -32 
+exit
+
+
+

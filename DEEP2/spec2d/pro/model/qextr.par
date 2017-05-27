@@ -1,0 +1,13 @@
+image,f,a,,,,"Optional image to measure"
+outspec,f,a,,,,"Output file for extraction info"
+xslit,r,h,0.,,,"X(mm) of slit"
+yslit,r,h,68.,,,"Y(mm) of slit"
+objwin,r,h,6.,0.,,"full object window width (pix)"
+skip,r,h,2.,0.,,"skip width (pix)"
+skywin,r,h,0.,0.,,"sky window width (pix)"
+mu,r,h,,,,"Grating tilt (deg)"
+o3,r,h,,,,"3rd yaw angle (deg)"
+roll3,r,h,,,,"Grating roll"
+ghost,b,h,no,,,"Ghost spectrum?"
+dw,r,h,,0.,,"A/pix in output spectrum"
+mode,s,h,"ql",,,

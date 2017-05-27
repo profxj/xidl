@@ -1,0 +1,103 @@
+#!/usr/bin/perl
+# Finkbeiner & Davis, 2002-Jun-4
+#---------------------------------------------------------------
+
+# want the output to look like
+#------------------------------------------------------------------------------
+#Observer: Phillips      Keck II  DEIMOS
+#Directory: /dsk/iraid1/kics/2002jun03
+#
+# Filename     Slit   Exp   Lamps    typ   object
+# --------     ----   ---   -----    ---   ------
+#d0603_0001    1105n  150        Off DmF  1105n Domeflat 150s
+#d0603_0002    1105n  149        Off DmF  1105n Domeflat 150s
+#d0603_0003    1105w  150        Off DmF  1105w Domeflat 150s
+#d0603_0004    1105w  149        Off DmF  1105w Domeflat 150s
+#d0603_0005    1105b  149        Off DmF  1105b Domeflat 150s
+
+# Use the Cwd package
+use Cwd;
+
+# See if a path was passed
+$last = $ARGV[0];
+
+
+#$path = $ARGV[0];
+if ($path eq "") {
+    $path = ".";
+}
+# else {
+#   Expand path name
+    chomp($path = `(cd $path; pwd)`);
+#}
+
+#$path = "/dsk/iraid1/kics/2002may19";
+@flist = glob("$path/d[0-9]*.fits");
+
+$length = 0;
+
+
+foreach $file (@flist) {$length = $length + 1;}
+
+if ($last eq "") {
+    $last = $length;
+}
+
+
+chomp($observer = `sxpar $flist[0] observer`);
+chomp($telescope = `sxpar $flist[0] telescop`);
+chomp($inst = `sxpar $flist[0] currinst`);
+
+print "\n-------------------------------------------------------------------------------\n";
+printf "Project:                                                 UT Date:                      \n\n";
+printf "Observers: %40s      Weather:\n\n",$observer;
+printf "Directory: %40s      Seeing:  \n\n",$path;
+
+
+
+print "Obs  Description      PA      Arclamps   Mask    Grate   Wave  Filter Focus  Exp   Air   Comments\n";
+print "---  ---------------  ------  ---------  ------  ------  ----- ------ ------ ----  ----  --------\n";
+
+foreach $file (@flist[$length-$last..$length-1]) {
+    $fshort = (split "/|.fits", $file)[-1];
+    $sname = substr($fshort,7,3);
+    chomp($mask    = `sxpar $file slmsknam`);
+    chomp($filter    = `sxpar $file dwfilnam`);
+    chomp($exptime = `sxpar $file exptime`);
+    chomp($gpos    = `sxpar $file gratepos`);
+    chomp($skypa    = `sxpar $file rotposn`);
+    $skypa=$skypa + 90.;
+    $skypa=($skypa*100) % 36000.;
+    $skypas=sprintf "%6.2f     ",$skypa/100.;
+    $skypa=substr($skypas,0,6);
+    chomp($focus    = `sxpar $file dwfocval`);
+    chomp($airmass    = `sxpar $file airmass`);
+    chomp($wave3 = `sxpar $file g3tltwav`);
+    chomp($wave4 = `sxpar $file g4tltwav`);
+    if ($gpos == 3 ) {
+	$wave = $wave3;
+    }
+    else {
+       $wave = $wave4;
+   }
+    $obstype = substr(`sxpar $file obstype`,0,3);
+    chomp($lamps = `sxpar $file lamps`);
+    $lamps =~ s/\s+//g;
+    $lampcut=substr($lamps,0,10);
+    chomp($grating = substr(`sxpar $file gratenam`,0,6));
+    chomp($object  = `sxpar $file object`);
+    $objshort = substr($object,0,15);
+    $masklong="$mask            ";
+    $mask = substr($masklong,0,6);
+    $waves=sprintf "%4i     ",$wave;
+    $wave=substr($waves,0,4);
+    $filtlong = "$filter         ";
+    $filter = substr($filtlong,0,6);
+
+    $str = sprintf "$sname  %15s  %6s %10s  %6s  %6s  %4s  %6s %6i %4i  %4.2f", $objshort,$skypa, $lampcut, $mask, $grating, $wave, $filter,$focus,$exptime+0.5, $airmass;
+
+    printf "%s\n", $str;
+#substr($str, 0, 80);
+}
+	
+
