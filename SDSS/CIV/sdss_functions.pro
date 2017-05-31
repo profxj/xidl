@@ -1261,16 +1261,15 @@ pro sdss_pltconti, spec_fil, all=all, norm=norm, zabs=zabs, $
      cfil = sdss_getname(spec_fil,/spec,dir=dir,_extra=extra)
      
      ;; Find continuum file
-     test = file_search(sdssdir+dir+cfil+'*',count=ntest)
-     if ntest eq 0 then $
+     test2 = file_search(sdssdir+dir+cfil+'*',count=ntest2)
+     if ntest2 eq 0 then $
         stop,'sdss_pltconti: continuum file DNE ',dir+cfil
 
      ;; Read in from explicitly stored continuum
      ;; Test kind of file
-     cstrct = xmrdfits(test,0,/silent) ; array or header
-
+     cstrct = xmrdfits(test2,0,/silent) ; array or header
   endif else begin
-     test = spec_fil
+     test = spec_fil 
      prs = strsplit(spec_fil,'/',/extract,count=nprs)
      cfil = strmid(prs[nprs-1],0,strpos(prs[nprs-1],'.',/reverse_search))
      cstrct = xmrdfits(spec_fil,1,/silent)
