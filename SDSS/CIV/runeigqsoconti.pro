@@ -36,7 +36,8 @@
 ;   sdsssum= -- DR7_QSO catalog-formatted FITS file to use 
 ;   eigspecfil= -- eigenspectra to use
 ;   /debug    -- plots fitting information.  IF turned on, then output
-;                files are not written.
+;                files are not written. (If debug > 1,
+;                eigqsoconti's debug accessed too.)
 ;   /clobber -- overwrite files
 ;   istrt= -- index at which to start
 ;   processor= -- two element array of [ith, total] processors for a
@@ -44,6 +45,8 @@
 ;                 where 1 <= ith <= (total <= 4). Overrides istrt=.
 ;   /tcpu -- print information about CPU time used
 ;   /help -- print Syntax
+;   /fit_full -- extrapolate eigenconti to full spectrum (definitely
+;                want /debug to inspect; largely crap)
 ;   _extra= -- passed to subroutines
 ;
 ; OPTIONAL OUTPUTS:
@@ -59,8 +62,9 @@
 ;   x_splot
 ;
 ; MODIFICATION HISTORY:
-;  4 JULY 2011   Written by M. Kao
-;  28 July 2011 Major reorg and overhaul, KLC
+;   4 JUL 2011  Written by M. Kao
+;  28 Jul 2011  Major reorg and overhaul, KLC
+;   6 Jun 2017  Enable extrapolation to larger wavelength range, KLC
 ;
 ;-
 ; Copyright (C) 2011, Melodie Kao
@@ -73,14 +77,14 @@
 @eigqsoconti                    ; must compile since it's a function
 
 
-pro runeigqsoconti, sdsssum=sdsssum, DEBUG=debug, eigspecfil=eigspecfil, $
+pro runeigqsoconti, sdsssum=sdsssum, debug=debug, eigspecfil=eigspecfil, $
                     clobber=clobber, processor=processor, list=list, fits=fits, $
                     istrt=istrt, help=help, tcpu=tcpu, fit_full=fit_full, $
                     _extra=extra
 
   if keyword_set(help) then begin
-     print,'Syntax - runeigqsoconti [sdsssum=/debug, eigspecfil=, /clobber, processor='
-     print,'                         /help, /tcpu, _extra=]'
+     print,'Syntax - runeigqsoconti [sdsssum=, debug=, eigspecfil=, /clobber, processor='
+     print,'                         /list or /fits, istrt=, /help, /tcpu, /fit_full, _extra=]'
      return
   endif 
 
@@ -142,6 +146,11 @@ pro runeigqsoconti, sdsssum=sdsssum, DEBUG=debug, eigspecfil=eigspecfil, $
      endelse                                                   ; /list not set
   endelse                                                      ; not using default
 
+
+  if keyword_set(debug) then $
+     if debug gt 1 then debug_sub = 1 $ ; for eigqsoconti
+     else debug_sub = 0
+
   ;; Use function and set up names consistently
   specfile = sdss_getname(sdsstab, dir=spectrodir, root=qso_name)
   specfile = spectrodir + specfile 
@@ -181,9 +190,11 @@ pro runeigqsoconti, sdsssum=sdsssum, DEBUG=debug, eigspecfil=eigspecfil, $
      ;; Remove Lya portion of spectrum.
      keep = WHERE(waveEmit GE wavebracket[0] AND waveEmit LE wavebracket[1], nkeep, $
                   complement=bad, ncomplement=nbad)
-     IF keyword_set(fit_full) THEN $
-        waveEmit_full = waveEmit $ ; trimmed later
-     else waveEmit_full = 0        ; for wv_full keyword
+     IF keyword_set(fit_full) THEN BEGIN
+        waveEmit_full = waveEmit  ; trimmed later
+        flux_full = flux
+        fluxerr_full = fluxerr
+     ENDIF ELSE  waveEmit_full = 0 ; for wv_full keyword
      waveEmit = waveEmit[keep]
      flux     = flux[keep]
      fluxerr  = fluxerr[keep]
@@ -200,7 +211,7 @@ pro runeigqsoconti, sdsssum=sdsssum, DEBUG=debug, eigspecfil=eigspecfil, $
      eigArr = eigqsoconti(waveEmit,flux,fluxerr,eigenArr, $
                           FITMASK=fitmask, finalmask=finalmask, $
                           NITER=niter, FAIL=fail, STATUS=status, CHI_SQR=chi_sqr, $
-                          STAT_CTOL=stat_ctol, debug=debug, header=hdreig,$
+                          STAT_CTOL=stat_ctol, debug=debug_sub, header=hdreig,$
                           wv_full=waveEmit_full, idx_sub=keep, $
                           _extra=extra) ; /silent
 
@@ -211,14 +222,19 @@ pro runeigqsoconti, sdsssum=sdsssum, DEBUG=debug, eigspecfil=eigspecfil, $
 
      ;; previous nkeep ne 0 check was unnecessary; would have crashed earlier
      IF keyword_set(fit_full) THEN BEGIN
-        finalArr[*,0] = eigArr[*,0]
-        finalArr[*,1] = finalmask ; good place to store it
-        finalArr[*,2] = eigArr[*,1]
-     ENDIF ELSE BEGIN
-        finalArr[keep,0] = eigArr[*,0]
-        finalArr[keep,1] = finalmask ; good place to store it
-        finalArr[keep,2] = eigArr[*,1]
-     ENDELSE
+        keep = lindgen(npix)    ; all
+
+        if keyword_set(debug) then begin
+           nkeep = npix
+           waveEmit = waveEmit_full ; for plotting
+           flux = flux_full
+           fluxerr = fluxerr_full
+        endif
+     ENDIF
+     
+     finalArr[keep,0] = eigArr[*,0]
+     finalArr[keep,1] = finalmask ; good place to store it
+     finalArr[keep,2] = eigArr[*,1]
      
      
      ;; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -248,13 +264,12 @@ pro runeigqsoconti, sdsssum=sdsssum, DEBUG=debug, eigspecfil=eigspecfil, $
      ;; %%%%%%%%%%%%%%%%%%%% END debug plot %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
      ;; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-     IF NOT KEYWORD_SET(debug) THEN BEGIN
-        print,''
-        mwrfits, finalArr, sdssdir+outfile[i], hdreig, /CREATE, /SILENT
-        mwrfits, stat_ctol, sdssdir+outfile[i], /SILENT
-        spawn,'gzip -f '+sdssdir+outfile[i]
-        print,'runeigqsoconti: created ',outfile[i]
-     ENDIF 
+     print,''
+     mwrfits, finalArr, sdssdir+outfile[i], hdreig, /CREATE, /SILENT
+     mwrfits, stat_ctol, sdssdir+outfile[i], /SILENT
+     spawn,'gzip -f '+sdssdir+outfile[i]
+     print,'runeigqsoconti: created ',outfile[i]
+
      print,qso_name[i]+' SUMMARY:'
      print,'Exit Status = '+status,'; Fail = ',strtrim(fail,2)
      print,'# iter = '+strtrim(niter),$

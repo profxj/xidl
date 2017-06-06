@@ -486,13 +486,13 @@ function eigqsoconti, wave, flux, error, eigenArrFull, GAPMAX=gapmax, $
 
 
   ;; Calculate error: and technically should compute chi^2 again...
-  eigerror = 1
+  eigerror = 1                  ; trigger return
   eigflux2 = EIGENRECSTRCT(wave, tempnewflux, tempnewfluxerr, allEigflux, FAIL=fail, $
                           eigerror=eigerror, _extra=extra) 
   bd = where(eigflux2 ne eigflux,nbd)
   if nbd ne 0 then $
      stop,'eigqsoconti stop: WARNING! re-calculated fit with error != original',$
-          nbd,median(eigflux2[bd]-eigflux[bd],/even)
+          nbd,median(eigflux2[bd]/eigflux[bd]-1,/even) ; frac diff
 
   
 
@@ -500,7 +500,7 @@ function eigqsoconti, wave, flux, error, eigenArrFull, GAPMAX=gapmax, $
      ;; Return eigenconti extrapolated to wavelength not included in fit
      ;; (e.g., Lya forest)
      npix_full = (size(wv_full,/dim))[0]
-     IF npix_full LE npix THEN $
+     IF npix_full LT npix THEN $
         stop,'eigqsoconti stop: wv_full smaller than wave'
 
 
@@ -523,15 +523,16 @@ function eigqsoconti, wave, flux, error, eigenArrFull, GAPMAX=gapmax, $
      tempfullfluxerr[idx_sub] = tempnewfluxerr
 
      ;; New "fit" (see caveates above)
-     eigflux_full = EIGENRECSTRCT(wv_full, tempfullflux, tempfullfluxerr. $
+     eigerror_full =  1         ; trigger return
+     eigflux_full = EIGENRECSTRCT(wv_full, tempfullflux, tempfullfluxerr, $
                                   newEigflux, FAIL=fail_full, $
                                   eigerror=eigerror_full, _extra=extra)
 
      ;; Sanity check
      bd = where(eigflux_full[idx_sub] ne eigflux,nbd)
      if nbd ne 0 then $
-        stop,'eigqsoconti stop: WARNING! extrapolated fit with error != original',$
-             nbd,median(eigflux_full[idx_sub[bd]]-eigflux[bd],/even)
+        print,'eigqsoconti stop: WARNING! extrapolated fit with error != original',$
+             nbd,median(eigflux_full[idx_sub[bd]]/eigflux[bd]-1.,/even) ; frac diff
 
      ;; Return values; chi_sqr, status, and fail set previously
      finaleig      = DBLARR(npix_full, 2, /nozero)
