@@ -725,7 +725,7 @@ end                             ; sdss_genprof_mc()
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-pro sdss_genprof_plot, vpstrct, civ_fil=civ_fil
+pro sdss_genprof_plot, vpstrct, civ_fil=civ_fil, ewlim=ewlim
   ;; Purely generic plot of profiles
   ;; can also just instantiate EW
   if n_params() ne 1 then begin
@@ -748,6 +748,21 @@ pro sdss_genprof_plot, vpstrct, civ_fil=civ_fil
   wave = wvmnx[0]*10.^(dindgen(npix)*pixscale/alog(10))
 
   index_sys = where(vpstrct.id_comp eq 0 and vpstrct.id_lin eq 1,nsys)
+  if keyword_set(ewlim) then begin
+     case n_elements(ewlim) of
+        1: gd = where(vpstrct[index_sys].ew_sys ge ewlim,ngd)
+        2: gd = where(vpstrct[index_sys].ew_sys ge ewlim[0] and $
+                      vpstrct[index_sys].ew_sys lt ewlim[1],ngd)
+        else: stop,'sdss_genprof_plot stop: n_elements(ewlim) invalid'
+     endcase
+     if ngd eq 0 then $
+        print,'sdss_genprof_plot: WARNING! no profiles meeting ewlim cut; using all' $
+     else begin
+        ;; Trim
+        nsys = ngd
+        index_sys = index_sys[gd]
+     endelse
+  endif 
 
   for jj=0L,nsys-1 do begin
      nlin = vpstrct[index_sys[jj]].ncomp + 1
