@@ -75,7 +75,8 @@
 
 pro runeigqsoconti, sdsssum=sdsssum, DEBUG=debug, eigspecfil=eigspecfil, $
                     clobber=clobber, processor=processor, list=list, fits=fits, $
-                    istrt=istrt, help=help, tcpu=tcpu, _extra=extra
+                    istrt=istrt, help=help, tcpu=tcpu, fit_full=fit_full, $
+                    _extra=extra
 
   if keyword_set(help) then begin
      print,'Syntax - runeigqsoconti [sdsssum=/debug, eigspecfil=, /clobber, processor='
@@ -144,7 +145,7 @@ pro runeigqsoconti, sdsssum=sdsssum, DEBUG=debug, eigspecfil=eigspecfil, $
   ;; Use function and set up names consistently
   specfile = sdss_getname(sdsstab, dir=spectrodir, root=qso_name)
   specfile = spectrodir + specfile 
-  outfile = sdss_getname(sdsstab, /eig, dir=contidir)
+  outfile = sdss_getname(sdsstab, /eig, extrap=fit_full, dir=contidir)
   outfile = contidir+outfile
 
   ;; Timing
@@ -171,7 +172,7 @@ pro runeigqsoconti, sdsssum=sdsssum, DEBUG=debug, eigspecfil=eigspecfil, $
      ;; Input spectrum information (KLC: use function already written)
      parse_sdss, sdssdir+specfile[i], flux, waveObs, sig=fluxerr, npix=npix, $
                  head=hdreig
-     zQSO     = sdsstab[i].z    ;; don't trust header
+     zQSO     = sdsstab[i].z    ; don't trust header
      waveEmit = waveObs/(1.0+zQSO)
      
      ;; Spectrum portions to actually be fitten and written to file
@@ -179,16 +180,17 @@ pro runeigqsoconti, sdsssum=sdsssum, DEBUG=debug, eigspecfil=eigspecfil, $
      
      ;; Remove Lya portion of spectrum.
      keep = WHERE(waveEmit GE wavebracket[0] AND waveEmit LE wavebracket[1], nkeep, $
-                 complement=bad, ncomplement=nbad)
-     IF nkeep NE 0 THEN BEGIN
-        waveEmit    = waveEmit[keep]
-        flux    = flux[keep]
-        fluxerr = fluxerr[keep]
-     ENDIF
+                  complement=bad, ncomplement=nbad)
+     IF keyword_set(fit_full) THEN $
+        waveEmit_full = waveEmit $ ; trimmed later
+     else waveEmit_full = 0        ; for wv_full keyword
+     waveEmit = waveEmit[keep]
+     flux     = flux[keep]
+     fluxerr  = fluxerr[keep]
      IF nbad NE 0 THEN BEGIN
-        finalArr[bad,0]  = !VALUES.F_NAN   ;; For arrays to be outputted, 
-        finalArr[bad,1]  = 1               ; masked out
-        finalArr[bad,2]  = !VALUES.F_NAN   ;; make the Lya region NaN rather
+        finalArr[bad,0]  = !VALUES.F_NAN    ; For arrays to be outputted, 
+        finalArr[bad,1]  = 1                ; masked out
+        finalArr[bad,2]  = !VALUES.F_NAN    ; make the Lya region NaN rather
      ENDIF
      
      ;; ***********************************************************************
@@ -199,6 +201,7 @@ pro runeigqsoconti, sdsssum=sdsssum, DEBUG=debug, eigspecfil=eigspecfil, $
                           FITMASK=fitmask, finalmask=finalmask, $
                           NITER=niter, FAIL=fail, STATUS=status, CHI_SQR=chi_sqr, $
                           STAT_CTOL=stat_ctol, debug=debug, header=hdreig,$
+                          wv_full=waveEmit_full, idx_sub=keep, $
                           _extra=extra) ; /silent
 
 
@@ -206,12 +209,16 @@ pro runeigqsoconti, sdsssum=sdsssum, DEBUG=debug, eigspecfil=eigspecfil, $
      ;; ******************** END eigenfitting *********************************
      ;; ***********************************************************************
 
-     
-     IF nkeep NE 0 THEN BEGIN
+     ;; previous nkeep ne 0 check was unnecessary; would have crashed earlier
+     IF keyword_set(fit_full) THEN BEGIN
+        finalArr[*,0] = eigArr[*,0]
+        finalArr[*,1] = finalmask ; good place to store it
+        finalArr[*,2] = eigArr[*,1]
+     ENDIF ELSE BEGIN
         finalArr[keep,0] = eigArr[*,0]
         finalArr[keep,1] = finalmask ; good place to store it
         finalArr[keep,2] = eigArr[*,1]
-     ENDIF
+     ENDELSE
      
      
      ;; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

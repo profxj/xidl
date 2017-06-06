@@ -71,6 +71,9 @@
 ;  chforce=  -- Boolean (i.e., just set it): force instantiating the
 ;               prefitmask with the "chunk" masking even if FITMASK is
 ;               also set.
+;  wv_full=  -- Wavelength range for final eigenconti (extrapolated
+;               from wave)
+;  idx_sub=  -- Indices in wv_full to which wave applies
 ;
 ; OPTIONAL OUTPUTS:
 ;  CHI_SQR= -- [chi^2, DOF, P(chi^2,/DOF)]
@@ -80,7 +83,7 @@
 ;  FAIL= -- error matrix status
 ;  STATUS= -- exit status
 ;  finalmask= -- final mask used
-
+;
 ; COMMENTS:
 ;  PLOT INFORMATION:
 ;      
@@ -100,10 +103,11 @@
 ;   legend.pro (IDLUTILS)
 ;
 ; REVISION HISTORY:
-;   10 July 2011 Written by M. Kao 
-;   28 July 2011 Major reorg and overhaul, KLC
+;   10 Jul 2011 Written by M. Kao 
+;   28 Jul 2011 Major reorg and overhaul, KLC
 ;   31 Dec 2014  Enable FITMASK and "chunk" mask, KLC
 ;   15 Jul 2015  Correct growing prefitmask for absorption, KLC
+;    6 Jun 2017  Enable extrapolation to larger wavelength range, KLC
 ;
 ;-
 ; Copyright (C) 2011, Melodie Kao
@@ -117,20 +121,20 @@
 @eigenrecstrct                  ; compile b/c function and want eigentrecstrct_mij
 
 function eigqsoconti, wave, flux, error, eigenArrFull, GAPMAX=gapmax, $
-                      FITMASK=fitmask, DEBUG=debug, header=header, $
+                      FITMASK=fitmask, DEBUG=debug, HEADER=header, $
                       FINALMASK=finalmask, WEIGHT=weight, TOPMARG=topmarg,    $
                       LOWMARG=lowmarg, MAXITER=maxiter, NITER=niter, GROWMARG1=growmarg1,  $
                       CHUNKSZ=chunksz, FCHUNK=fchunk, CHFORCE=chforce, $
-                      CTOL=ctol,  FAIL=fail, $
+                      CTOL=ctol,  FAIL=fail, WV_FULL=wv_full, IDX_SUB=idx_sub, $
                       STATUS=status, CHI_SQR=chi_sqr, STAT_CTOL=stat_ctol, _EXTRA=extra
   
   IF  N_PARAMS() LT 4  THEN BEGIN 
-     ;; KLC: Show that this is a function with the parans in the Syntax
+     ;; KLC: Show that this is a function with the params in the Syntax
      print,'Syntax - ' + $
-           'eigqsoconti( wave, flux, error, eigspecfil, [FITMASK=, WEIGHT=,'
-     print,'               FINALMASK=, TOPMARG=, LOWMARG=, MAXITER=, '
+           'eigqsoconti( wave, flux, error, eigspecfil, [GAPMAX=, FITMASK=, WEIGHT=,'
+     print,'               HEADER=, FINALMASK=, TOPMARG=, LOWMARG=, MAXITER=, '
      print,'               GROWMARG1=, CHUNKSZ=, FCHUNK=, CHFORCE=, CTOL=, FAIL=, STAT_CTOL=,'
-     PRINT,'               NITER=, CHI_SQR=, STATUS=, /DEBUG, _EXTRA=   ] ) '
+     PRINT,'               NITER=, CHI_SQR=, STATUS=, STAT_CTOL=, /DEBUG, _EXTRA=   ] ) '
      return, -1
   ENDIF
   sdssdir = sdss_getsdssdir()
@@ -143,7 +147,7 @@ function eigqsoconti, wave, flux, error, eigenArrFull, GAPMAX=gapmax, $
   IF NOT KEYWORD_SET(maxiter)   THEN maxiter   =  10
   IF NOT KEYWORD_SET(growmarg1) THEN growmarg1 =  2.5 ; increase bounds on this low sigma clip
   IF NOT KEYWORD_SET(chunksz)   THEN chunksz   =  50.0
-  IF NOT KEYWORD_SET(fchunk)    THEN fchunk     =  0.3 ; 30%
+  IF NOT KEYWORD_SET(fchunk)    THEN fchunk    =  0.3 ; 30%
   if NOT KEYWORD_SET(ctol)      THEN ctol      =  1.e-4
 
 
@@ -486,10 +490,66 @@ function eigqsoconti, wave, flux, error, eigenArrFull, GAPMAX=gapmax, $
   eigflux2 = EIGENRECSTRCT(wave, tempnewflux, tempnewfluxerr, allEigflux, FAIL=fail, $
                           eigerror=eigerror, _extra=extra) 
   bd = where(eigflux2 ne eigflux,nbd)
-  if bd[0] ne -1 then begin
-     stop,'eigqsoconti: WARNING! re-calculated fit with error != original',$
-           nbd,median(eigflux2[bd]-eigflux[bd],/even)
-  endif 
+  if nbd ne 0 then $
+     stop,'eigqsoconti stop: WARNING! re-calculated fit with error != original',$
+          nbd,median(eigflux2[bd]-eigflux[bd],/even)
+
+  
+
+  IF keyword_set(wv_full) THEN BEGIN
+     ;; Return eigenconti extrapolated to wavelength not included in fit
+     ;; (e.g., Lya forest)
+     npix_full = (size(wv_full,/dim))[0]
+     IF npix_full LE npix THEN $
+        stop,'eigqsoconti stop: wv_full smaller than wave'
+
+
+     IF NOT keyword_set(idx_sub) THEN BEGIN
+        print,'eigqsoconti: WARNING!!! Assuming extrapolating eigenconti blueward'
+        idx_sub = lindgen(npix_full-npix) ; [0:npix_new-npix-1]
+     ENDIF
+
+     IF n_elements(idx_sub) NE npix THEN $
+        stop,'eigqsoconti stop: idx_sub not same size as wave'
+
+     ;; re-interpolate PCA spectra; _extra= includes: modes=, zQSO=, zin=
+     newEigflux = eigenrecstrct_mij_interpspec(eigenArrFull, wv_full, _extra=extra)
+
+     ;; expand arrays
+     tempfullflux = replicate(!VALUES.D_NAN,npix_full)
+     tempfullfluxerr = dblarr(npix_full) ; err = 0 is sign to make weight = 0
+
+     tempfullflux[idx_sub] = tempnewflux
+     tempfullfluxerr[idx_sub] = tempnewfluxerr
+
+     ;; New "fit" (see caveates above)
+     eigflux_full = EIGENRECSTRCT(wv_full, tempfullflux, tempfullfluxerr. $
+                                  newEigflux, FAIL=fail_full, $
+                                  eigerror=eigerror_full, _extra=extra)
+
+     ;; Sanity check
+     bd = where(eigflux_full[idx_sub] ne eigflux,nbd)
+     if nbd ne 0 then $
+        stop,'eigqsoconti stop: WARNING! extrapolated fit with error != original',$
+             nbd,median(eigflux_full[idx_sub[bd]]-eigflux[bd],/even)
+
+     ;; Return values; chi_sqr, status, and fail set previously
+     finaleig      = DBLARR(npix_full, 2, /nozero)
+     finaleig[*,0] = eigflux_full
+     finaleig[*,1] = eigerror_full
+     tmpmask       = intarr(npix)
+     if npostfitmask ne 0 then tmpmask[postfitmask] = 1 ; masked!
+     finalmask     = replicate(1,npix_full)
+     finalmask[idx_sub] = tmpmask
+  ENDIF ELSE BEGIN
+     
+     ;; Return values; chi_sqr, status, and fail set previously
+     finaleig      = DBLARR(npix, 2, /nozero)
+     finaleig[*,0] = eigflux
+     finaleig[*,1] = eigerror
+     finalmask     = intarr(npix)
+     if npostfitmask ne 0 then finalmask[postfitmask] = 1 ; masked!
+  ENDELSE                                                 ; wv_full = 0
 
   
   if keyword_set(sav_flux) then begin
@@ -498,12 +558,6 @@ function eigqsoconti, wave, flux, error, eigenArrFull, GAPMAX=gapmax, $
      error = sav_error
   endif
 
-  ;; Return values; chi_sqr, status, and fail set previously
-  finaleig      = DBLARR(npix, 2, /nozero)
-  finaleig[*,0] = eigflux
-  finaleig[*,1] = eigerror
-  finalmask     = intarr(npix)
-  if npostfitmask ne 0 then finalmask[postfitmask] = 1 ; masked!
 
 
   ;; Header
@@ -522,6 +576,8 @@ function eigqsoconti, wave, flux, error, eigenArrFull, GAPMAX=gapmax, $
      sxaddpar, header, 'CHISQR', chi_sqr[0], 'chisqr of continuum fit to flux'
      sxaddpar, header, 'CHISQDOF', chi_sqr[1], 'chisqr degrees of freedom'
      sxaddpar, header, 'PCHISQR', chi_sqr[2], 'chisqr probability'
+     if keyword_set(wv_full) then $
+        sxaddpar, header, 'WV_FULL', npix, 'number of fit pixels; extrapolated'
   endif 
 
   RETURN, finaleig

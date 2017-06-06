@@ -61,9 +61,10 @@ end                             ; sdss_getsdssdir()
 
 
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-function sdss_getname,sdsstab,strct=strct,spec=spec,hdr=hdr,eig=eig,spl=spl,abslin=abslin, $
-                      hyb=hyb, clean=clean, gz=gz, mc=mc, quick=quick, user=user,$
-                      plate=plate, root=root, dir=dir
+function sdss_getname,sdsstab,strct=strct,spec=spec,hdr=hdr,$
+                      eig=eig, spl=spl, hyb=hyb, extrap=extrap, $
+                      abslin=abslin, clean=clean, gz=gz, mc=mc, $
+                      quick=quick, user=user, plate=plate, root=root, dir=dir
   ;; Return the spSpec-jjjjj-pppp-fff*.fits for given structure or
   ;; header 
   if n_params() ne 1 then begin
@@ -139,19 +140,25 @@ function sdss_getname,sdsstab,strct=strct,spec=spec,hdr=hdr,eig=eig,spl=spl,absl
      stop,'sdss_getname(): cannot have all keywords (/eig, /spl, /abslin, /hyb) set'
   if keyword_set(eig) then begin
      dir = 'conti/'
-     name = name+'-eigconti'
+     if keyword_set(extrap) then tmp = '-eigxconti' $ ; extrapolated
+     else tmp = '-eigconti'
+     name = name+tmp
   endif 
   if keyword_set(spl) then begin
      dir = 'conti/'
-     name = name+'-splconti'
+     if keyword_set(extrap) then tmp = '-splxconti' $ ; extrapolated
+     else tmp = '-splconti'
+     name = name+tmp
+  endif 
+  if keyword_set(hyb) then begin
+     dir = 'conti/'
+     if keyword_set(extrap) then tmp = '-hybxconti' $ ; extrapolated
+     else tmp = '-hybconti'
+     name = name+tmp
   endif 
   if keyword_set(abslin) then begin
      dir = 'abslin/'
      name = name+'-abslin'
-  endif 
-  if keyword_set(hyb) then begin
-     dir = 'conti/'
-     name = name+'-hybconti'
   endif 
   if keyword_set(clean) then begin
      dir = 'cleanspec/'
