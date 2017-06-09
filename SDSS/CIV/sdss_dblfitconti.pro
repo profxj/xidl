@@ -379,14 +379,15 @@ function sdss_dblfitconti_fithybrid, wave, flux, sigma, $
         er_qso = extrap.error $
      else er_qso = 0            ; keyword_set(er_qso) == 0
 
-     ;; Determine scale
-     med_obs = median(hybconti[cstrct.ipix0:*,0],/even) ; actual conti
+     ;; Determine normalization
+     rslt_obs = linfit(wave[cstrct.ipix0:*],hybconti[cstrct.ipix0:*,0])
+
      gd = where(wvobs_qso ge wave[cstrct.ipix0] and $
                 wvobs_qso le wave[npix-1],ngd)
      if ngd eq 0 then $
         stop,'sdss_dblfitconit_fithybrid() stop: template does not span QSO'
-     med_qso = median(fx_qso[gd],/even)
-     fx_qso = fx_qso*med_obs/med_qso ; scaling
+     rslt_qso = linfit(wvobs_qso[gd], fx_qso[gd])
+     fx_qso = fx_qso*rslt_obs[1]/rslt_qso[1] ; scaling
      
 
      x_splot,wave,flux,psym1=10,ytwo=hybconti,$
