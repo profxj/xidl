@@ -373,7 +373,6 @@ function sdss_dblfitconti_fithybrid, wave, flux, sigma, $
      cum = total(flux[srt],/cum)/total(flux[srt])
      mn25 = min(cum-0.25,imn25,/abs)
      mn75 = min(cum-0.75,imn75,/abs)
-;     fxlim_obs = [flux[srt[imn25]], flux[srt[imn75]]]
      med_obs = median(hybconti[cstrct.ipix0:*,0],/even)
 
      ;; Rename pertinent template parts
@@ -404,11 +403,15 @@ function sdss_dblfitconti_fithybrid, wave, flux, sigma, $
      rslt_corr = fltarr(ntest,2,/nozero) ; [scale, Pearson corr coeff]
      rslt_corr[*,0] = flux[srt[imn25:imn75]]/med_qso
      for cc=0,ntest-1 do begin
-        rslt_corr[cc,1] = c_correlate(flux[cstrct.ipix0:*],$
-                                    fx_qso_interp*rslt_corr[cc,0],0) ; lag=0
+        ;; Chi^2 
+        rslt_corr[cc,1] = sqrt(mean((fx_qso_interp*rslt_corr[cc,0] - $
+                                     flux[cstrct.ipix0:*])^2))
+        ;; Should do a check that I've actually passed through chi^2 min
      endfor                     ; loop cc=ntest
-     mx = max(rslt_corr[*,1],imx) ; add to header
-     fx_qso = fx_qso * rslt_corr[imx,0]
+     mn = min(rslt_corr[*,1],imn) ; add to header
+     ;; Check:
+     ;; x_splot,rslt_corr[*,0],rslt_corr[*,1],psym
+     fx_qso = fx_qso * rslt_corr[imn,0]
 
      x_splot,wave,flux,psym1=10,ytwo=hybconti,$
              xthr=wvobs_qso,ythr=fx_qso,psym3=-3,$
