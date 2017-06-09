@@ -380,7 +380,7 @@ function sdss_dblfitconti_fithybrid, wave, flux, sigma, $
      else er_qso = 0            ; keyword_set(er_qso) == 0
 
      ;; Determine normalization
-;     rslt_obs = linfit(wave[cstrct.ipix0:*],hybconti[cstrct.ipix0:*,0])
+     rslt_obs = linfit(wave[cstrct.ipix0:*],hybconti[cstrct.ipix0:*,0])
      med_obs = median(hybconti[cstrct.ipix0:*,0],/even)
      gd = where(wvobs_qso ge wave[cstrct.ipix0] and $
                 wvobs_qso le wave[npix-1],ngd)
@@ -388,7 +388,7 @@ function sdss_dblfitconti_fithybrid, wave, flux, sigma, $
         stop,'sdss_dblfitconit_fithybrid() stop: template does not span QSO'
      med_qso = median(fx_qso[gd],/even)
      fx_qso_test = fx_qso * med_obs/med_qso
-;     rslt_qso = linfit(wvobs_qso[gd], fx_qso[gd])
+     rslt_qso = linfit(wvobs_qso[gd], fx_qso[gd])
      ;; default is linear; _extra= includes /lsquadratic, /nan,
      ;; /quadratic, /spline
      fx_qso_interp = interpol(fx_qso,wvobs_qso,wave[cstrct.ipix0:*],_extra=extra)
@@ -400,28 +400,30 @@ function sdss_dblfitconti_fithybrid, wave, flux, sigma, $
 ;     er_qso_interp = interpol(er_qso,wvobs_qso[gd],wave[cstrct.ipix0:*],_extra=extra)
      ;; better to center around zero to avoid leverage/fit issue:
      ;; f_qso = rslt[0] + rslt[1]*(f_obs - med_obs)
-;     rslt = linfit(flux[cstrct.ipix0:*]-med_obs,fx_qso_interp)
+     rslt = linfit(flux[cstrct.ipix0:*]-med_obs,fx_qso_interp)
      ;; Check:
      ;; x_splot,flux[cstrct.ipix0:*],fx_qso_interp,psym1=4,ytwo=rslt[0]+rslt[1]*(flux[cstrct.ipix0:*]-med_obs),psym2=4
-     rslt = poly_fit(flux[cstrct.ipix0:*],fx_qso_interp,2)
-     ;; Check:
-     ;; x_splot,flux[cstrct.ipix0:*],fx_qso_interp,psym1=4,ytwo=rslt[2]*flux[cstrct.ipix0:*]^2 + rslt[1]*flux[cstrct.ipix0:*] + rslt[0],psym2=4
-
      ;; Want f_qso ~ f_obs so invert relation above:
      ;; linear: f_obs = (f_qso - rslt[0])/rslt[1] + med_obs
-;     fx_qso = (fx_qso-rslt[0])/rslt[1] + med_obs ; scaling
-     ;; Root for quadratic: rslt[0]-f_qso + rslt[1]*f_obs +
-     ;; rslt[2]*f_obs^2 = 0
-     a = rslt[2]
-     b = rslt[1]
-     c = rslt[0]-fx_qso
-     fx_qso = (-b + sqrt(b^2 - 4*a*c))/(2*a)
+     fx_qso = (fx_qso-rslt[0])/rslt[1] + med_obs ; scaling
+
+;     rslt = poly_fit(flux[cstrct.ipix0:*],fx_qso_interp,2)
+;     ;; Check:
+;     ;; x_splot,flux[cstrct.ipix0:*],fx_qso_interp,psym1=4,ytwo=rslt[2]*flux[cstrct.ipix0:*]^2 + rslt[1]*flux[cstrct.ipix0:*] + rslt[0],psym2=4
+;
+;     ;; Root for quadratic: rslt[0]-f_qso + rslt[1]*f_obs +
+;     ;; rslt[2]*f_obs^2 = 0
+;     a = rslt[2]
+;     b = rslt[1]
+;     c = rslt[0]-fx_qso
+;     fx_qso = (-b + sqrt(b^2 - 4*a*c))/(2*a)
      
 
      x_splot,wave,flux,psym1=10,ytwo=hybconti,$
              xthr=wvobs_qso,ythr=fx_qso,psym3=-3,$
              xfou=wvobs_qso,yfou=fx_qso_test,psym4=-3,$
-             lgnd=['Spectrum','Hybconti','Norm. Templt.','Linear scale'],/block
+             xfiv=wvobs_qso,yfiv=fx_qso*rslt_obs[0]/rslt_qso[0],psym5=-3,$
+             lgnd=['Spectrum','Hybconti','Fit Scale','Med. Scale','Linfit Scale'],/block
 
      test = where(stregex(tags,'source',/boolean,/fold_case),ntest)
      if ntest eq 1 then $
