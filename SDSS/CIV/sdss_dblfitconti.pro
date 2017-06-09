@@ -380,7 +380,8 @@ function sdss_dblfitconti_fithybrid, wave, flux, sigma, $
      else er_qso = 0            ; keyword_set(er_qso) == 0
 
      ;; Determine normalization
-     rslt_obs = linfit(wave[cstrct.ipix0:*],hybconti[cstrct.ipix0:*,0])
+     wv_med = median(wave[cstrct.ipix0:*])
+     rslt_obs = linfit(wave[cstrct.ipix0:*]-wv_med,hybconti[cstrct.ipix0:*,0])
      med_obs = median(hybconti[cstrct.ipix0:*,0],/even)
      gd = where(wvobs_qso ge wave[cstrct.ipix0] and $
                 wvobs_qso le wave[npix-1],ngd)
@@ -388,7 +389,7 @@ function sdss_dblfitconti_fithybrid, wave, flux, sigma, $
         stop,'sdss_dblfitconit_fithybrid() stop: template does not span QSO'
      med_qso = median(fx_qso[gd],/even)
      fx_qso_test = fx_qso * med_obs/med_qso
-     rslt_qso = linfit(wvobs_qso[gd], fx_qso[gd])
+     rslt_qso = linfit(wvobs_qso[gd]-wv_med, fx_qso[gd])
      ;; default is linear; _extra= includes /lsquadratic, /nan,
      ;; /quadratic, /spline
      fx_qso_interp = interpol(fx_qso,wvobs_qso,wave[cstrct.ipix0:*],_extra=extra)
