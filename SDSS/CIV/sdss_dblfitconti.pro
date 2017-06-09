@@ -368,9 +368,21 @@ function sdss_dblfitconti_fithybrid, wave, flux, sigma, $
      if size(extrap,/type) ne 8 then $
         stop,'sdss_dblfitconti_fithybrid() stop: extrap= should be structure of {wave, flux, [error, source]}'
 
-     ;; Rename pertinent parts
+     ;; Find 25th and 75th percentiles of observations for scaling
+     srt = sort(flux[cstrct.ipix0:*]) + cstrct.ipix0
+     cum = total(flux[srt],/cum)/total(flux[srt])
+     mn25 = min(cum-0.25,imn25,/abs)
+     mn75 = min(cum-0.75,imn75,/abs)
+;     fxlim_obs = [flux[srt[imn25]], flux[srt[imn75]]]
+     med_obs = median(hybconti[cstrct.ipix0:*,0],/even)
+
+     ;; Rename pertinent template parts
      wvr_qso = extrap.wave
      wvobs_qso = wvr_qso*(1+cstrct.z_qso)
+     gd = where(wvobs_qso ge wave[cstrct.ipix0] and $
+                wvobs_qso le wave[npix-1],ngd)
+     if ngd eq 0 then $
+        stop,'sdss_dblfitconit_fithybrid() stop: template does not span QSO'
      npix_qso = (size(wvr_qso,/dim))[0]
      fx_qso = extrap.flux
      tags = tag_names(extrap)
@@ -379,52 +391,28 @@ function sdss_dblfitconti_fithybrid, wave, flux, sigma, $
         er_qso = extrap.error $
      else er_qso = 0            ; keyword_set(er_qso) == 0
 
-     ;; Determine normalization
-     wv_med = median(wave[cstrct.ipix0:*])
-     rslt_obs = linfit(wave[cstrct.ipix0:*]-wv_med,hybconti[cstrct.ipix0:*,0])
-     med_obs = median(hybconti[cstrct.ipix0:*,0],/even)
-     gd = where(wvobs_qso ge wave[cstrct.ipix0] and $
-                wvobs_qso le wave[npix-1],ngd)
-     if ngd eq 0 then $
-        stop,'sdss_dblfitconit_fithybrid() stop: template does not span QSO'
-     med_qso = median(fx_qso[gd],/even)
-     fx_qso_test = fx_qso * med_obs/med_qso
-     rslt_qso = linfit(wvobs_qso[gd]-wv_med, fx_qso[gd])
-     ;; default is linear; _extra= includes /lsquadratic, /nan,
-     ;; /quadratic, /spline
+     ;; Interpolate template onto SDSS scale (assumes template
+     ;; higher-res than SDSS); default is linear; _extra= includes
+     ;; /lsquadratic, /nan, /quadratic, /spline
      fx_qso_interp = interpol(fx_qso,wvobs_qso,wave[cstrct.ipix0:*],_extra=extra)
      ;; Check:
      ;; x_splot,wvobs_qso,extrap.flux,xtwo=wave[cstrct.ipix0:*],ytwo=fx_qso_interp
 
-     ;; if use measure_errors= in linfit() will favor emission lines
-     ;; (SNR propto sqrt(flux)) but don't actually want that
-;     er_qso_interp = interpol(er_qso,wvobs_qso[gd],wave[cstrct.ipix0:*],_extra=extra)
-     ;; better to center around zero to avoid leverage/fit issue:
-     ;; f_qso = rslt[0] + rslt[1]*(f_obs - med_obs)
-     rslt = linfit(flux[cstrct.ipix0:*]-med_obs,fx_qso_interp)
-     ;; Check:
-     ;; x_splot,flux[cstrct.ipix0:*],fx_qso_interp,psym1=4,ytwo=rslt[0]+rslt[1]*(flux[cstrct.ipix0:*]-med_obs),psym2=4
-     ;; Want f_qso ~ f_obs so invert relation above:
-     ;; linear: f_obs = (f_qso - rslt[0])/rslt[1] + med_obs
-     fx_qso = (fx_qso-rslt[0])/rslt[1] + med_obs ; scaling
-
-;     rslt = poly_fit(flux[cstrct.ipix0:*],fx_qso_interp,2)
-;     ;; Check:
-;     ;; x_splot,flux[cstrct.ipix0:*],fx_qso_interp,psym1=4,ytwo=rslt[2]*flux[cstrct.ipix0:*]^2 + rslt[1]*flux[cstrct.ipix0:*] + rslt[0],psym2=4
-;
-;     ;; Root for quadratic: rslt[0]-f_qso + rslt[1]*f_obs +
-;     ;; rslt[2]*f_obs^2 = 0
-;     a = rslt[2]
-;     b = rslt[1]
-;     c = rslt[0]-fx_qso
-;     fx_qso = (-b + sqrt(b^2 - 4*a*c))/(2*a)
-     
+     ;; Determine "optimal" normalization (highest correlation coeff)
+     med_qso = median(fx_qso[gd],/even)
+     ntest = imn75 - imn25 + 1           ; seems reasonable for now
+     rslt_corr = fltarr(ntest,2,/nozero) ; [scale, Pearson corr coeff]
+     rslt_corr[*,0] = flux[srt[imn25:imn75]]/med_qso
+     for cc=0,ntest-1 do begin
+        rslt_corr[cc,1] = c_correlate(flux[cstrct.ipix0:*],$
+                                    fx_qso_interp*rslt_corr[cc,0],0) ; lag=0
+     endfor                     ; loop cc=ntest
+     mx = max(rslt_corr[*,1],imx) ; add to header
+     fx_qso = fx_qso * rslt_corr[imx,0]
 
      x_splot,wave,flux,psym1=10,ytwo=hybconti,$
              xthr=wvobs_qso,ythr=fx_qso,psym3=-3,$
-             xfou=wvobs_qso,yfou=fx_qso_test,psym4=-3,$
-             xfiv=wvobs_qso,yfiv=fx_qso*rslt_obs[0]/rslt_qso[0],psym5=-3,$
-             lgnd=['Spectrum','Hybconti','Fit Scale','Med. Scale','Linfit Scale'],/block
+             lgnd=['Spectrum','Hybconti','Tmplt. Scaled'],/block
 
      test = where(stregex(tags,'source',/boolean,/fold_case),ntest)
      if ntest eq 1 then $
