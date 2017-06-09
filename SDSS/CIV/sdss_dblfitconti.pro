@@ -243,7 +243,8 @@ function sdss_dblfitconti_fithybrid, wave, flux, sigma, $
                                      cstrct_fil, eigconti=eigconti, $ 
                                      sigrej=sigrej, snr_cut=snr_cut, $
                                      silent=silent, debug=debug, plot=plot, $
-                                     contihdr=contihdr, _extra=extra
+                                     contihdr=contihdr, $
+                                     extrap=extrap, _extra=extra
   ;; Does the actually fitting (easier to call by other routines,
   ;; e.g. sdss_completeness), modeled after sdss_fndlin_fitspline()
   ;; _extra includes what's passed to sdss_fndlin_fitspline()
@@ -360,7 +361,45 @@ function sdss_dblfitconti_fithybrid, wave, flux, sigma, $
      hybconti[*,1] = bsplmask eq 0 ; invert from 1 = good; 0 = bad
      hybconti[*,2] = sqrt( eigconti[*,2]^2 + splconti[*,2]^2 )
      sxaddpar,contihdr,'CONTITYP','HYBRID','high S/N; new eigen+spline'
-  endelse 
+  endelse
+
+  if keyword_set(extrap) then begin
+     ;; Use whatever is the extrapolated spectrum
+     if size(extrap,/type) ne 8 then $
+        stop,'sdss_dblfitconti_fithybrid() stop: extrap= should be structure of {wave, flux, [error, source]}'
+
+     ;; Rename pertinent parts
+     wvr_qso = extrap.wave
+     wvobs_qso = wvr_qso*(1+cstrct.z_qso)
+     npix_qso = (size(wvr_qso,/dim))[0]
+     fx_qso = extrap.flux
+     tags = tag_names(extrap)
+     test = where(stregex(tags,'error',/boolean,/fold_case),ntest)
+     if ntest eq 1 then $
+        er_qso = extrap.error $
+     else er_qso = 0            ; keyword_set(er_qso) == 0
+
+     ;; Determine scale
+     med_obs = median(hybconti[cstrct.ipix0:*,0],/even) ; actual conti
+     gd = where(wvobs_qso ge wave[cstrct.ipix0] and $
+                wvobs_qso le wave[npix-1],ngd)
+     if ngd eq 0 then $
+        stop,'sdss_dblfitconit_fithybrid() stop: template does not span QSO'
+     med_qso = median(fx_qso[gd],/even)
+     fx_qso = fx_qso*med_obs/med_qso ; scaling
+     
+
+     x_splot,wave,flux,psym1=10,ytwo=hybconti,$
+             xthr=wvobs_qso,ythr=fx_qso,psym3=-3,$
+             lgnd=['Spectrum','Hybconti','Template'],/block
+
+     test = where(stregex(tags,'source',/boolean,/fold_case),ntest)
+     if ntest eq 1 then $
+        source = extrap.source $
+     else source = 0            ; keyword_set(source) == 0
+
+     stop
+  endif                         ; /extrap
 
   ;; Shift values around to store new ones
   sxaddpar,contihdr,'SNRCUT',snr_cut,'S/N threshold for hybrid conti'
@@ -422,8 +461,6 @@ function sdss_dblfitconti_fithybrid, wave, flux, sigma, $
 
   endif                         ; /plot or /debug
 
-
-
   return, hybconti
 end                             ; sdss_dblfitconti_fithybrid()
 
@@ -437,7 +474,8 @@ end                             ; sdss_dblfitconti_fithybrid()
 pro sdss_dblfitconti, sdss_list, sdsssum, pca_fil=pca_fil, $
                       clobber=clobber, istrt=istrt, silent=silent, $
                       processor=processor, snr_cut=snr_cut, $
-                      snrstrct_fil=snrstrct_fil,dblt_name=dblt_name,_extra=extra
+                      snrstrct_fil=snrstrct_fil,dblt_name=dblt_name,$
+                      extrap=extrap,_extra=extra
   if n_params() ne 2 then begin
      print,'Syntax - sdss_dblfitconti, sdss_list, sdsssum, [pca_fil=, /plot, /clobber,'
      print,'                           /debug, /silent, _extra=]'
@@ -471,7 +509,7 @@ pro sdss_dblfitconti, sdss_list, sdsssum, pca_fil=pca_fil, $
   eig_fil = sdss_getname(spec_fil,/spec,/eig,dir=cdir,plate=plate,$
                          root=qso_name)
   eig_fil = cdir + eig_fil
-  hyb_fil = sdss_getname(spec_fil,/spec,/hyb) ; output name
+  hyb_fil = sdss_getname(spec_fil,/spec,/hyb,extrap=extrap) ; output name
   if outdir ne 'abslin/' and outdir ne 'conti/' then $
      outdir = outdir + '1d_26/' + plate + '/1d/' $
   else outdir = cdir
@@ -546,7 +584,7 @@ pro sdss_dblfitconti, sdss_list, sdsssum, pca_fil=pca_fil, $
                                    pca_head=pca_head, $
                                    contihdr=contihdr, $ ; to be modified
                                    xmnx=wvobs_lim[ss,*], $
-                                   _extra=extra)
+                                   extrap=extrap, _extra=extra)
 
 
      ;; Write out and already ran checks earlier for file existing
