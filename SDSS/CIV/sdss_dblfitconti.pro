@@ -368,13 +368,6 @@ function sdss_dblfitconti_fithybrid, wave, flux, sigma, $
      if size(extrap,/type) ne 8 then $
         stop,'sdss_dblfitconti_fithybrid() stop: extrap= should be structure of {wave, flux, [error, source]}'
 
-     ;; Find 25th and 75th percentiles of observations for scaling
-     srt = sort(flux[cstrct.ipix0:*]) + cstrct.ipix0
-     cum = total(flux[srt],/cum)/total(flux[srt])
-     mn25 = min(cum-0.25,imn25,/abs)
-     mn75 = min(cum-0.75,imn75,/abs)
-     med_obs = median(hybconti[cstrct.ipix0:*,0],/even)
-
      ;; Rename pertinent template parts
      wvr_qso = extrap.wave
      wvobs_qso = wvr_qso*(1+cstrct.z_qso)
@@ -389,32 +382,61 @@ function sdss_dblfitconti_fithybrid, wave, flux, sigma, $
      if ntest eq 1 then $
         er_qso = extrap.error $
      else er_qso = 0            ; keyword_set(er_qso) == 0
+     med_qso = median(fx_qso[gd],/even)
 
      ;; Interpolate template onto SDSS scale (assumes template
      ;; higher-res than SDSS); default is linear; _extra= includes
      ;; /lsquadratic, /nan, /quadratic, /spline
-     fx_qso_interp = interpol(fx_qso,wvobs_qso,wave[cstrct.ipix0:*],_extra=extra)
+     fx_qso_interp = interpol(fx_qso,wvobs_qso,wave,_extra=extra)
      ;; Check:
      ;; x_splot,wvobs_qso,extrap.flux,xtwo=wave[cstrct.ipix0:*],ytwo=fx_qso_interp
 
+     ;; Establish normalization range to test
+     ncorr = 1000               ; 1000 tests
+     rslt_corr = fltarr(ncorr,2,/nozero) ; [scale, RMS]
+     mn_conti = min(hybconti[cstrct.ipix0:*,0],max=mx_conti) 
+     rslt_corr[*,0] = (mn_conti + $
+                       (mx_conti-mn_conti)/(ncorr-1.)*findgen(ncorr))/$
+                      med_qso
+;     med_conti = median(hybconti[cstrct.ipix0:*,0],/even)
+     
+
      ;; Determine "optimal" normalization (highest correlation coeff)
-     med_qso = median(fx_qso[gd],/even)
-     ntest = imn75 - imn25 + 1           ; seems reasonable for now
-     rslt_corr = fltarr(ntest,2,/nozero) ; [scale, Pearson corr coeff]
-     rslt_corr[*,0] = flux[srt[imn25:imn75]]/med_qso
-     for cc=0,ntest-1 do begin
+     for cc=0,ncorr-1 do begin
         ;; Chi^2 
-        rslt_corr[cc,1] = sqrt(mean((fx_qso_interp*rslt_corr[cc,0] - $
+        rslt_corr[cc,1] = sqrt(mean((fx_qso_interp[cstrct.ipix0:*]*$
+                                     rslt_corr[cc,0] - $
                                      flux[cstrct.ipix0:*])^2))
         ;; Should do a check that I've actually passed through chi^2 min
-     endfor                     ; loop cc=ntest
+     endfor                     ; loop cc=ncorr
      mn = min(rslt_corr[*,1],imn) ; add to header
-     ;; Check:
-     ;; x_splot,rslt_corr[*,0],rslt_corr[*,1],psym
-     fx_qso = fx_qso * rslt_corr[imn,0]
+     if imn eq 0 or imn eq ncorr-1 then $
+        stop,'sdss_dblfitconti_fithybrid() stop: RMS min outside of range'
+        ;; Check:
+        ;; x_splot,rslt_corr[*,0],rslt_corr[*,1],psym1=4
+     fx_qso_interp = fx_qso_interp * rslt_corr[imn,0]
 
-     x_splot,wave,flux,psym1=10,ytwo=hybconti,$
-             xthr=wvobs_qso,ythr=fx_qso,psym3=-3,$
+     ;; Now for stitching the two; first find where closest in 20 Ang
+     ;; window
+     dpix = 20. ; Ang
+     mn = min(wave[cstrct.ipix0]+dpix-wave[cstrct.ipix0:*],ilim,/abs)
+     ilim = ilim + cstrct.ipix0
+     mn = min((fx_qso_interp-hybconti)[cstrct.ipix0:ilim],iclosest,/abs)
+     hybconti[0:cstrct.ipix0-1] = fx_qso_interp[0:cstrct.ipix0-1]
+     if iclosest ge 1 then begin ; 0 or 1 pixel is a line
+        ;; Connect linearly; fix the observed flux point as redward
+        ;; (iclosest) and the QSO template as appropriate bluward of
+        ;; cstrct.ipix0
+        iclosest = iclosest + cstrct.ipix0
+        slope = (hybconti[iclosest]-fx_qso_interp[cstrct.ipix0])/$
+                (wave[iclosest]-wave[cstrct.ipix0])
+        intercept = fx_qso_interp[cstrct.ipix0] - slope*wave[cstrct.ipix0]
+        hybconti[cstrct.ipix0:iclosest] = intercept + $
+                                          slope*wave[cstrct.ipix0:iclosest]
+     endif
+
+     x_splot,wave,flux,psym1=10,ytwo=hybconti,psym2=-3,$
+             ythr=fx_qso_interp,psym3=-3,$
              lgnd=['Spectrum','Hybconti','Tmplt. Scaled'],/block
 
      test = where(stregex(tags,'source',/boolean,/fold_case),ntest)
