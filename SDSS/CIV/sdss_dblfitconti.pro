@@ -413,7 +413,8 @@ function sdss_dblfitconti_fithybrid, wave, flux, sigma, $
      mn = min(rslt_corr[*,1],imn) ; add to header
      ;; Check that actually spanned min(RMS)
      if imn eq 0 or imn eq ncorr-1 then $
-        stop,'sdss_dblfitconti_fithybrid() stop: RMS min outside of range'
+        stop,'sdss_dblfitconti_fithybrid() stop: RMS min outside of range: ',$
+             cstrct.qso_name,cstrct.z_qso,cstrct.ipix0
         ;; Check: x_splot,rslt_corr[*,0],rslt_corr[*,1],psym1=4
      
      ;; Might be good to do a second pass to make sure the template
