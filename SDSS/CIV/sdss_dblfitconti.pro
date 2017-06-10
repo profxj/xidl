@@ -412,10 +412,15 @@ function sdss_dblfitconti_fithybrid, wave, flux, sigma, $
                                      flux[cstrct.ipix0:*])^2))
      mn = min(rslt_corr[*,1],imn) ; add to header
      ;; Check that actually spanned min(RMS)
-     if imn eq 0 or imn eq ncorr-1 then $
-        stop,'sdss_dblfitconti_fithybrid() stop: RMS min outside of range: ',$
-             cstrct.qso_name,cstrct.z_qso,cstrct.ipix0
+     if imn eq 0 or imn eq ncorr-1 then begin
+        print,'sdss_dblfitconti_fithybrid() stop: RMS min outside of range: ',$
+              cstrct.qso_name,cstrct.z_qso,cstrct.ipix0
+        if imn eq 0 then msg = 'MIN_HYB' $
+        else msg = 'MAX_HYB'
         ;; Check: x_splot,rslt_corr[*,0],rslt_corr[*,1],psym1=4
+     endif else msg = 'INTER_HYB'
+     sxaddpar,contihdr,'TMPLT_RMS',msg,$
+              'Lya-forest template scaling msg for hyb conti'
      
      ;; Might be good to do a second pass to make sure the template
      ;; flux in the Lya forest isn't below the top 10% or 25%
