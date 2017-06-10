@@ -12,6 +12,7 @@
 ;   25 Jul 2011  Created by KLC
 ;      Aug 2011  Jointly updated by RAS, KLC
 ;   27 Sep 2011  Major revamp to have more functions, KLC
+;   9  Jun 2017  Enable extrapolation of template to Lya forest, KLC
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 @sdss_fndlin                    ; resolve sdss_fndlin_fitspline()
@@ -363,88 +364,110 @@ function sdss_dblfitconti_fithybrid, wave, flux, sigma, $
      sxaddpar,contihdr,'CONTITYP','HYBRID','high S/N; new eigen+spline'
   endelse
 
-  if keyword_set(extrap) then begin
-     ;; Use whatever is the extrapolated spectrum
+  if keyword_set(extrap) and cstrct.ipix0 ne 0 then begin
+     ;; Use whatever provided template to extrapolate continuum fit to
+     ;; < wvlya_cut
      if size(extrap,/type) ne 8 then $
         stop,'sdss_dblfitconti_fithybrid() stop: extrap= should be structure of {wave, flux, [error, source]}'
 
      ;; Rename pertinent template parts
-     wvr_qso = extrap.wave
-     wvobs_qso = wvr_qso*(1+cstrct.z_qso)
+     wvobs_qso = extrap.wave*(1+cstrct.z_qso)
      gd = where(wvobs_qso ge wave[cstrct.ipix0] and $
                 wvobs_qso le wave[npix-1],ngd)
      if ngd eq 0 then $
-        stop,'sdss_dblfitconit_fithybrid() stop: template does not span QSO'
-     npix_qso = (size(wvr_qso,/dim))[0]
+        stop,'sdss_dblfitconit_fithybrid() stop: template does not span SDSS spec'
      fx_qso = extrap.flux
      tags = tag_names(extrap)
      test = where(stregex(tags,'error',/boolean,/fold_case),ntest)
      if ntest eq 1 then $
         er_qso = extrap.error $
      else er_qso = 0            ; keyword_set(er_qso) == 0
-     med_qso = median(fx_qso[gd],/even)
+     test = where(stregex(tags,'source',/boolean,/fold_case),ntest)
+     if ntest eq 1 then source = extrap.source $
+     else source = 'UNKOWN'
+     sxaddpar,contihdr,'TMPLT_SRC',source,$
+              'Lya-forest template source for hybrid conti' 
 
      ;; Interpolate template onto SDSS scale (assumes template
      ;; higher-res than SDSS); default is linear; _extra= includes
      ;; /lsquadratic, /nan, /quadratic, /spline
      fx_qso_interp = interpol(fx_qso,wvobs_qso,wave,_extra=extra)
+     if keyword_set(er_qso) then $
+        er_qso_interp = interpol(er_qso,wvobs_qso,wave,_extra=extra)
      ;; Check:
      ;; x_splot,wvobs_qso,extrap.flux,xtwo=wave[cstrct.ipix0:*],ytwo=fx_qso_interp
 
-     ;; Establish normalization range to test
-     ncorr = 1000               ; 1000 tests
+     ;; Establish normalization range (linearly sampled) to test
+     ncorr = 1000               ; 1000 sample point (magic number)
      rslt_corr = fltarr(ncorr,2,/nozero) ; [scale, RMS]
      mn_conti = min(hybconti[cstrct.ipix0:*,0],max=mx_conti) 
      rslt_corr[*,0] = (mn_conti + $
                        (mx_conti-mn_conti)/(ncorr-1.)*findgen(ncorr))/$
-                      med_qso
-;     med_conti = median(hybconti[cstrct.ipix0:*,0],/even)
-     
+                      median(fx_qso[gd],/even)
 
-     ;; Determine "optimal" normalization (highest correlation coeff)
-     for cc=0,ncorr-1 do begin
-        ;; Chi^2 
+     ;; Determine "optimal" normalization (lowest RMS)
+     for cc=0,ncorr-1 do $
         rslt_corr[cc,1] = sqrt(mean((fx_qso_interp[cstrct.ipix0:*]*$
                                      rslt_corr[cc,0] - $
                                      flux[cstrct.ipix0:*])^2))
-        ;; Should do a check that I've actually passed through chi^2 min
-     endfor                     ; loop cc=ncorr
      mn = min(rslt_corr[*,1],imn) ; add to header
+     ;; Check that actually spanned min(RMS)
      if imn eq 0 or imn eq ncorr-1 then $
         stop,'sdss_dblfitconti_fithybrid() stop: RMS min outside of range'
-        ;; Check:
-        ;; x_splot,rslt_corr[*,0],rslt_corr[*,1],psym1=4
+        ;; Check: x_splot,rslt_corr[*,0],rslt_corr[*,1],psym1=4
+     
+     ;; Might be good to do a second pass to make sure the template
+     ;; flux in the Lya forest isn't below the top 10% or 25%
+     ;; of pixels there (or could count those pixels as 10% or 25% of
+     ;; the RMS "power")
      fx_qso_interp = fx_qso_interp * rslt_corr[imn,0]
+     if keyword_set(er_qso) then $
+        er_qso_interp = er_qso_interp * rslt_corr[imn,0]
+     sxaddpar,contihdr,'TMPLT_SCL',rslt_corr[imn,0],$
+              'Lya-forest template scaling for hybrid conti'
+
+     ;; Store re-scaled template blueward of cstrct.ipix0 (wvlya_cut)
+     hybconti[0:cstrct.ipix0-1,0] = fx_qso_interp[0:cstrct.ipix0-1]
+     ;; going to allow pixel mask to stay as is (plotting purposes)
+     ;; but may harm other things "upstream"
+     if keyword_set(er_qso) then $
+        hybconti[0:cstrct.ipix0-1,2] = er_qso_interp[0:cstrct.ipix0-1] $
+     else begin
+        print,'sdss_dblfitconti_fithybrid(): WWARNING! No error on Lya-template; adopting SDSS error'
+        hybconti[0:cstrct.ipix0-1,2] = sigma[0:cstrct.ipix0-1]
+     endelse
+
 
      ;; Now for stitching the two; first find where closest in 20 Ang
      ;; window
-     dpix = 20. ; Ang
-     mn = min(wave[cstrct.ipix0]+dpix-wave[cstrct.ipix0:*],ilim,/abs)
+     dwav = 20. ; Ang (magic number but nod to CIV searched after 1250 Ang)
+     mn = min(wave[cstrct.ipix0]+dwav-wave[cstrct.ipix0:*],ilim,/abs)
      ilim = ilim + cstrct.ipix0
-     mn = min((fx_qso_interp-hybconti)[cstrct.ipix0:ilim],iclosest,/abs)
-     hybconti[0:cstrct.ipix0-1] = fx_qso_interp[0:cstrct.ipix0-1]
-     if iclosest ge 1 then begin ; 0 or 1 pixel is a line
+     mn = min((fx_qso_interp-hybconti[*,0])[cstrct.ipix0:ilim],iclosest,/abs)
+     iclosest = iclosest + cstrct.ipix0
+     if iclosest-cstrct.ipix0 ge 1 then begin ; 0 or 1 pixel is a line
         ;; Connect linearly; fix the observed flux point as redward
         ;; (iclosest) and the QSO template as appropriate bluward of
         ;; cstrct.ipix0
-        iclosest = iclosest + cstrct.ipix0
-        slope = (hybconti[iclosest]-fx_qso_interp[cstrct.ipix0])/$
+        slope = (hybconti[iclosest,0]-fx_qso_interp[cstrct.ipix0])/$
                 (wave[iclosest]-wave[cstrct.ipix0])
         intercept = fx_qso_interp[cstrct.ipix0] - slope*wave[cstrct.ipix0]
-        hybconti[cstrct.ipix0:iclosest] = intercept + $
-                                          slope*wave[cstrct.ipix0:iclosest]
+        hybconti[cstrct.ipix0:iclosest,0] = intercept + $
+                                            slope*wave[cstrct.ipix0:iclosest]
+        ;; Add error in quadrature in the seam
+        hybconti[cstrct.ipix0:iclosest,2] = $
+           sqrt(hybconti[cstrct.ipix0:iclosest,2]^2 + $
+                sigma[cstrct.ipix0:iclosest]^2)
      endif
 
-     x_splot,wave,flux,psym1=10,ytwo=hybconti,psym2=-3,$
-             ythr=fx_qso_interp,psym3=-3,$
-             lgnd=['Spectrum','Hybconti','Tmplt. Scaled'],/block
-
-     test = where(stregex(tags,'source',/boolean,/fold_case),ntest)
-     if ntest eq 1 then $
-        source = extrap.source $
-     else source = 0            ; keyword_set(source) == 0
-
-     stop
+     if keyword_set(debug) then begin
+        x_splot,wave,flux,psym1=10,ytwo=hybconti[*,0],psym2=-3,$
+                ythr=fx_qso_interp,psym3=-3,$
+                xfou=wave[cstrct.ipix0:iclosest],$
+                yfou=hybconti[cstrct.ipix0:iclosest,0],psym4=4,$
+                title='Applying tmplt QSO spec blueward of '+strtrim(wvlya_cut,2),$
+                lgnd=['Spectrum','Hybconti','Tmplt. Scaled','Seam'],/block
+     endif
   endif                         ; /extrap
 
   ;; Shift values around to store new ones
@@ -464,7 +487,6 @@ function sdss_dblfitconti_fithybrid, wave, flux, sigma, $
 
   ;; Want S/N exactly as used otherwise
   if keyword_set(plot) or keyword_set(debug) then begin
-     clr = getcolor(/load)
      ttl = strtrim(cstrct.qso_name,2)+': zqso = '+ $
            string(cstrct.z_qso,format='(f7.5)') + $
            ': S/N = '+strtrim(snr_spec,2)
@@ -478,29 +500,22 @@ function sdss_dblfitconti_fithybrid, wave, flux, sigma, $
      if bd[0] ne -1 then mask[bd] = flux[bd]
      
      ;; All plots
-     sdss_chkconti,wave,flux,psym1=10, title=ttl, $
-                   ytwo=sigma,psym2=10, $
-                   color2=clr.red,$
-                   ythr=hybconti[*,0],psym3=-3, color3=clr.limegreen, $
-                   /block, ymnx=[min([sigma,flux],/nan,max=mx),mx], $
-                   yfou=mask,psym4=4,color4=clr.limegreen,$
-                   yfiv=mask2,psym5=1,color5=clr.purple,$
-                   lgnd=['flux','sigma',$
-                         'hybconti','newmask','premask'], $
-                   _extra=extra
-
-
-     ;; new_err = sqrt(sigma^2*hybconti[*,0]^2 + hybconti[*,2]^2*flux^2)/hybconti[*,0]^2
+     x_splot,wave,flux,psym1=10, title=ttl, $
+             ytwo=sigma,psym2=10, ythr=hybconti[*,0],psym3=-3, $
+             yfou=mask,psym4=4,yfiv=mask2,psym5=1,$
+             lgnd=['flux','sigma','hybconti','newmask','premask'], $
+;             ymnx=[min([sigma,flux],/nan,max=mx),mx], $
+             /block, _extra=extra
+     
+     ;; Normalize and plot
      new_err = sdss_calcnormerr(flux,sigma,hybconti)
 
-     sdss_chkconti,wave,flux/hybconti[*,0],psym1=10, title=ttl, $ 
-                   ytwo=new_err,psym2=10, $
-                   color2=clr.red,$
-                   /block, ymnx=[min([new_err,flux/hybconti[*,0]],/nan,max=mx),mx], $
-                   ythr=mask/hybconti[*,0],psym3=4,color3=clr.limegreen,$
-                   yfou=mask2/hybconti[*,0],psym4=1,color4=clr.purple,$
-                   lgnd=['norm flux','total error','newmask','premask'], $
-                   _extra=extra
+     x_splot,wave,flux/hybconti[*,0],psym1=10, title=ttl, $ 
+             ytwo=new_err,psym2=10, ythr=mask/hybconti[*,0],psym3=4,$
+             yfou=mask2/hybconti[*,0],psym4=1,$
+             lgnd=['norm flux','total error','newmask','premask'], $
+;             ymnx=[min([new_err,flux/hybconti[*,0]],/nan,max=mx),mx], $
+             /block, _extra=extra
 
      if keyword_set(debug) then $
         stop,'sdss_dblfitconti_fithybrid() debug: stopping before next iteration'
@@ -629,7 +644,7 @@ pro sdss_dblfitconti, sdss_list, sdsssum, pca_fil=pca_fil, $
                                    eigbasis=eigbasis, pca_fil=pca, $
                                    pca_head=pca_head, $
                                    contihdr=contihdr, $ ; to be modified
-                                   xmnx=wvobs_lim[ss,*], $
+;                                   xmnx=wvobs_lim[ss,*], $
                                    extrap=extrap, _extra=extra)
 
 
