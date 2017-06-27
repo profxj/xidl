@@ -567,7 +567,8 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
   ;; Get spectra names
   spec_fil = sdss_getname(civstr,/strct,dir=specdir)
   if keyword_set(conti) then $  ; get continuum names for normalized-then-stack
-     conti_fil = sdss_getname(civstr,/strct,dir=cdir,/abslin)
+     ;; _extra may include /extrap to get *abslinx.fit
+     conti_fil = sdss_getname(civstr,/strct,dir=cdir,/abslin,_extra=extra)
 
 
   ;; Should sort QSOs to save time in reading in

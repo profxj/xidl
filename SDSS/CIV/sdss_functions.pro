@@ -158,7 +158,9 @@ function sdss_getname,sdsstab,strct=strct,spec=spec,hdr=hdr,$
   endif 
   if keyword_set(abslin) then begin
      dir = 'abslin/'
-     name = name+'-abslin'
+     if keyword_set(extrap) then tmp = '-abslinx' $ ; extrapolated
+     else tmp = '-abslin'
+     name = name+tmp
   endif 
   if keyword_set(clean) then begin
      dir = 'cleanspec/'
