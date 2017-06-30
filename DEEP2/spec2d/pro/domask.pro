@@ -11,6 +11,8 @@
 pro domask, planfile, chiplist=chiplist, nlsky=nlsky
 
   if n_elements(nlsky) eq 0 then nlsky = 1
+  ;; JFH default nlsky = as default
+  nlsky=0
 
   if n_params() eq 0 then begin
     planfile = findfile('*.plan')
@@ -57,27 +59,29 @@ pro domask, planfile, chiplist=chiplist, nlsky=nlsky
   if trans eq -1 then trans = floor(nfiles/2)
 
 ; Make simple 2d images, 2 per mask
-  epos = strpos(slitfiles[0], '.fits')
-  masknumber = strmid(slitfiles[0], 4, epos-4-4) ;get mask name '.xxxx.'
-  image = slit_merge_lambda(slitfiles[0:trans], hdr,blue=bluelim)
-  writefits, 'Allslits0'+masknumber+'fits', image, hdr
-  if trans gt 1 then begin
-    image = slit_merge_lambda(slitfiles[trans+1:nfiles-1], $
-                              hdr, blue = bluelim)
-    writefits, 'Allslits1'+masknumber+'fits', image, hdr
-  endif
+  IF KEYWORD_SET(DO_ALL) THEN BEGIN 
+     epos = strpos(slitfiles[0], '.fits')
+     masknumber = strmid(slitfiles[0], 4, epos-4-4) ;get mask name '.xxxx.'
+     image = slit_merge_lambda(slitfiles[0:trans], hdr,blue=bluelim)
+     writefits, 'Allslits0'+masknumber+'fits', image, hdr
+     if trans gt 1 then begin
+        image = slit_merge_lambda(slitfiles[trans+1:nfiles-1], $
+                                  hdr, blue = bluelim)
+        writefits, 'Allslits1'+masknumber+'fits', image, hdr
+     endif
 
+     ;; make non-local allslits.
+     if keyword_set(nlsky) then begin
+        img = slit_merge_lambda(slitfiles[0:trans], hdr, /nonlocal,blue=bluelim)
+        writefits, 'Allslits0' + masknumber + 'nonlocal.fits', img, hdr
+        if trans gt 1 then begin
+           img = slit_merge_lambda(slitfiles[trans+1:nfiles-1], $
+                                   hdr, /nonlocal, blue = bluelim)
+           writefits, 'Allslits1' + masknumber + 'nonlocal.fits', img, hdr
+        endif
+     endif
+  ENDIF
 
-; make non-local allslits.
-  if keyword_set(nlsky) then begin
-    img = slit_merge_lambda(slitfiles[0:trans], hdr, /nonlocal,blue=bluelim)
-    writefits, 'Allslits0' + masknumber + 'nonlocal.fits', img, hdr
-    if trans gt 1 then begin
-      img = slit_merge_lambda(slitfiles[trans+1:nfiles-1], $
-                              hdr, /nonlocal, blue = bluelim)
-      writefits, 'Allslits1' + masknumber + 'nonlocal.fits', img, hdr
-    endif
-  endif
 
 ; do 1d extraction.
   deimos_isdeep, isdeep, maskname
