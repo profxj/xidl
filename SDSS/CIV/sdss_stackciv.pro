@@ -65,6 +65,7 @@
 ;   29 Jul 2014  use MAD instead of std err on median, KLC
 ;   30 Jul 2014  MAD doesn't work; hack something else, KLC
 ;   31 Jul 2014  Create functions to stack and MC error, KLC
+;   11 Jul 2017  Rebin variance; change e.g., sigma ne 0. to gt 0., KLC
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 @sdss_fndlin                    ; resolve sdss_fndlin_fitspl()
 
@@ -616,8 +617,10 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
         if keyword_set(cflg) then cstrct.cflg = cflg ; could normalize by other continuum model 
 
         cindx = fix(alog(cstrct.cflg)/alog(2))
-        gdpix = where(sigma ne 0. and $ ; avoid floating point errors
-                      cstrct.conti[0:cstrct.npix-1,cindx] ne 0.,ngdpix) 
+        gdpix = where(sigma gt 0. and $ ; avoid floating point errors
+                      cstrct.conti[0:cstrct.npix-1,cindx] gt 0.,ngdpix)
+        ;; Note: should never have conti be negative (but
+        ;; /eig,/extrap could) but going to call this non-physical
         nwsig = sdss_calcnormerr(flux,sigma,cstrct)
         nwfx = flux * 0.        ; set array
         nwfx[gdpix] = flux[gdpix]/cstrct.conti[gdpix,cindx]
@@ -625,7 +628,7 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
         ;; Copy over
         flux = nwfx
         sigma = nwsig
-     endif else gdpix = where(sigma ne 0.,ngdpix) ; avoid floating point errors
+     endif else gdpix = where(sigma gt 0.,ngdpix) ; avoid floating point errors
 
 
      if keyword_set(wvnrm) then begin
@@ -637,7 +640,7 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
         rwv_qso = wave / (1. + civstr[ff].z_qso)
         gdnrm = where(rwv_qso[gdpix] ge wvnrm[0] and $
                       rwv_qso[gdpix] le wvnrm[1] and $
-                      sigma ne 0., $ ; excl. wvmsk and bad conti
+                      sigma gt 0., $ ; excl. wvmsk and bad conti
                       ngdnrm)
         count = 0
         while ngdnrm lt 10 do begin
@@ -677,14 +680,15 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
      invvar = sigma * 0. 
      invvar[gdpix] = 1./sigma[gdpix]^2     
 
-
      ;; Rebin (faster than x_specrebin())
      fxnew = rebin_spectrum(flux[gdpix], rwave[gdpix], gstrct.gwave)
-     invvarnew = rebin_spectrum(invvar[gdpix], rwave[gdpix], gstrct.gwave)
-
+     varnew = rebin_spectrum(sigma[gdpix]^2, rwave[gdpix], gstrct.gwave)
+     gd = where(varnew gt 0.)
+     invvarnew = varnew*0.      ; make right size
+     invvarnew[gd] = 1./varnew[gd]
 
      ;; "Light-Weighting": normalize inverse variance to median 1.
-     ;; Like Weiner et al. (2009) 
+     ;; Like Weiner et al. (2009)
      if keyword_set(litwgt) then $
         medinvvar = median(invvar[gdpix],/even) $ ; go back to original
      else medinvvar = 1.
@@ -707,7 +711,7 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
      endif 
      
      ;; Add to global arrays
-     gdvar = where(invvarnew ne 0.,complement=bdvar) ; avoid infinite values
+     gdvar = where(invvarnew gt 0.,complement=bdvar) ; avoid infinite values
 
      gstrct.gweight[gdvar,ff] = weight[gdvar]
      gstrct.gflux[gdvar,ff] = fxnew[gdvar]
@@ -716,7 +720,7 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
      
      ;; Store for later; sub should never fail so long as working
      ;; with metal-line systems outside Lya forest
-     sub = where(invvarnew ne 0. and $
+     sub = where(invvarnew gt 0. and $
                  gstrct.gwave*(1.+civstr[ff].zabs_orig[0])/(1.+civstr[ff].z_qso) $
                  ge 1250.)            ; match sdss_fndlin
      if sub[0] eq -1 then sub = gdvar ; fall back
@@ -745,7 +749,7 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
                              percentile=percentile, $ 
                              wvnrm=wvnrm) ; fudging
 
-  ;; Trim leading and trailing
+  ;; Trim leading and trailing (fdat[*,1] is number of spectra per pixel)
   gd = where(fdat[*,1] ne 0. and finite(fdat[*,2])) ; spectra added to pixels
   if gd[0] ne -1 then begin
      gapstrt = where(gd ne shift(gd,1)+1, ngap)
