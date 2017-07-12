@@ -24,16 +24,16 @@
 ;   /conti -- normalize each spectrum by its continuum fit. 
 ;   cflg= -- overrides the sdsscontistrct value to select continuum
 ;   cmplt_fil= -- completeness structure(s) used to weight spectra
-;                 by completeness fraction; combines with
-;                 "light-weighting" if /litwgt set. Must be one
-;                 file per ndblt.
+;                 by completeness fraction; does not work with
+;                 /ivarwgt or /litwgt. Must be one file per ndblt.
 ;   /civobs_corr -- use civstrct to exclude pathlength blocked
 ;                   by absorbers. Only works with cmplt_fil=.
 ;   /litwgt -- "light-weight" by normalizing median
-;              inverse variance to unity. Not allowed with /median. 
+;              inverse variance to unity.
+;   /ivarwgt -- inverse-variance weighted mean/median.
 ;   /median -- median flux per pixel instead of weighted mean;
-;              re-binned input spectra can be weighted by completeness
-;              but not inverse variance or /litwgt.
+;              re-binned input spectra can be weighted by completeness,
+;              /ivarwgt, or /litwgt.
 ;   percentile= -- 2-element array with percentiles to store for
 ;                  median stack [default: 25th and 75th]
 ;   /refit -- re-normalize and find lines; calls sdss_stackciv_stack() 
@@ -65,7 +65,8 @@
 ;   29 Jul 2014  use MAD instead of std err on median, KLC
 ;   30 Jul 2014  MAD doesn't work; hack something else, KLC
 ;   31 Jul 2014  Create functions to stack and MC error, KLC
-;   11 Jul 2017  Rebin variance; change e.g., sigma ne 0. to gt 0., KLC
+;   11 Jul 2017  Rebin variance; change e.g., sigma ne 0. to gt 0.,
+;                enable ivarwgt, change median /qerr, KLC
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 @sdss_fndlin                    ; resolve sdss_fndlin_fitspl()
 
@@ -300,14 +301,16 @@ function sdss_stackciv_stack, gstrct, median=median, percentile=percentile, $
               ;; MAD (and yes, this doesn't have units of flux
               ;; but it has properties of interest and MC/bootstrap
               ;; will supercede).
-              if keyword_set(wvnrm) then $ ; b/c won't be ~1
+              ;; KLC changed 11 Jul 2017 to just be MAD; now work with
+              ;; /conti,/extra
+;              if keyword_set(wvnrm) then $ ; b/c won't be ~1
                  fdat[pp,2] = sdss_medianw($
                               reform(abs(gstrct.gflux[pp,gd]-fdat[pp,0])), $
-                              reform(gstrct.gweight[pp,gd]),/even,/silent) $
-              else $
-                 fdat[pp,2] = sdss_medianw($
-                              reform(abs(gstrct.gflux[pp,gd]/gstrct.medsnr_spec[gd,0]-1.)), $
-                              reform(gstrct.gweight[pp,gd]),/even,/silent)
+                              reform(gstrct.gweight[pp,gd]),/even,/silent) ;$
+;              else $
+;                 fdat[pp,2] = sdss_medianw($
+;                              reform(abs(gstrct.gflux[pp,gd]/gstrct.medsnr_spec[gd,0]-1.)), $
+;                              reform(gstrct.gweight[pp,gd]),/even,/silent)
 
               ;; For testing various error estimates method
 ;              print,gstrct.gwave[pp],fdat[pp,0],fdat[pp,2],$
@@ -336,6 +339,8 @@ function sdss_stackciv_stack, gstrct, median=median, percentile=percentile, $
      ;; weight could be 1's and hence just an average 
      ;; fbar = sum(fi*wi)/sum(wi)
      ;; Propogate errors and var(fbar) = sum(var(fi)*wi^2)/(sum(wi))^2
+     ;; If /ivarwgt wasn't set in sdss_stackciv, this reduces to
+     ;; just mean.
      fdat = dblarr(ngpix,5,/nozero)
      twgt = 1. / total(gstrct.gweight,2)
      fdat[*,0] = total(gstrct.gflux*gstrct.gweight,2,/nan) * twgt
@@ -433,6 +438,7 @@ end                             ; sdss_stackciv_errmc()
 pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
                    gwave=gwave, wvmnx=wvmnx, wvnrm=wvnrm, final=final,$
                    wvmsk=wvmsk, cmplt_fil=cmplt_fil, litwgt=litwgt, $
+                   ivarwgt=ivarwgt,$
                    civobs_corr=civobs_corr, conti=conti, cflg=cflg, $
                    median=median, percentile=percentile, refit=refit, $
                    ndblt=ndblt, reerr=reerr, qerr=qerr, _extra=extra
@@ -441,7 +447,7 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
      print,'Syntax - sdss_stackciv, civstrct_fil, outfil, [/debug, /clobber, '
      print,'                   gwave=, wvmnx=, wvnrm=, /final, wvmsk=, '
      print,'                   cmplt_fil=, /civobs_corr, /conti, cflg=, /litwgt, '
-     print,'                   /median, percentile=, /refit, /reerr, ndblt=, /qerr, _extra=]' 
+     print,'                   /ivarwgt, /median, percentile=, /refit, /reerr, ndblt=, /qerr, _extra=]' 
      return
   endif 
 
@@ -480,6 +486,12 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
   endelse
 
   if keyword_set(cmplt_fil) then begin
+     ;; Sanity check
+     if keyword_set(ivarwgt) or keyword_set(litwgt) then begin
+        print,'sdss_stackciv: WARNING!!! does not seem sensible to completeness-weight *and* /ivarwgt or /litwgt; stopping'
+        stop
+     endif
+     
      ;; Completeness correct each absorber... probably only works when
      ;; *not* normalizing the spectra
      ;; _extra= includes /grid, /ewmax
@@ -552,16 +564,6 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
            gnspec:fltarr(ngpix,nciv,/nozero) $ ; counter and may divide
            }
 
-  if keyword_set(median) then begin
-     ;; Check options are logical
-     if keyword_set(litwgt) then begin
-        ;; not that the median is harmed by this... error
-        ;; doesn't even rely on it
-        print,''
-        print,'sdss_stackciv: /litwgt not allowed with /median. Aborting.'
-        return                  ; EXIT
-     endif
-  endif                         ;else begin
   if keyword_set(wvmsk) then nwvmsk = (size(wvmsk[*,0],/dim))[0] > 1
 
   
@@ -677,25 +679,26 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
      sigma = sigma * norm
 
      ;; Inverse variance for weighting
-     invvar = sigma * 0. 
-     invvar[gdpix] = 1./sigma[gdpix]^2     
+     ivar = sigma * 0. 
+     ivar[gdpix] = 1./sigma[gdpix]^2     
 
      ;; Rebin (faster than x_specrebin())
      fxnew = rebin_spectrum(flux[gdpix], rwave[gdpix], gstrct.gwave)
      varnew = rebin_spectrum(sigma[gdpix]^2, rwave[gdpix], gstrct.gwave)
-     gd = where(varnew gt 0.)
-     invvarnew = varnew*0.      ; make right size
-     invvarnew[gd] = 1./varnew[gd]
+     gdpixnew = where(varnew gt 0.,ngdpixnew)
+     ivarnew = varnew*0.      ; make right size
+     ivarnew[gdpixnew] = 1./varnew[gdpixnew]
 
+     ;; Instantiate weights (for mean and median stacks)
+     if keyword_set(ivarwgt) then weight = ivarnew $   
+     else weight = replicate(1.,ngdpixnew)
+     
      ;; "Light-Weighting": normalize inverse variance to median 1.
      ;; Like Weiner et al. (2009)
      if keyword_set(litwgt) then $
-        medinvvar = median(invvar[gdpix],/even) $ ; go back to original
-     else medinvvar = 1.
-     if keyword_set(median) then $
-        weight = replicate(1.,ngpix) $ ; never want to invvar weight median
-     else $
-        weight = invvarnew / medinvvar ; median of this won't necessarily be 1 ...
+        medivar = median(ivar[gdpix],/even) $ ; go back to original
+     else medivar = 1.
+     weight = weight / medivar ; median of this won't necessarily be 1...
 
      if keyword_set(cmplt_fil) then begin
         ;; Median or weighted mean can get here
@@ -709,18 +712,18 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
            weight = weight / cwgt ; completeness-weighted
         endelse
      endif 
-     
+
      ;; Add to global arrays
-     gdvar = where(invvarnew gt 0.,complement=bdvar) ; avoid infinite values
+     gdvar = where(ivarnew gt 0.,complement=bdvar) ; avoid infinite values
 
      gstrct.gweight[gdvar,ff] = weight[gdvar]
      gstrct.gflux[gdvar,ff] = fxnew[gdvar]
-     gstrct.gvariance[gdvar,ff] = 1./invvarnew[gdvar]
+     gstrct.gvariance[gdvar,ff] = 1./ivarnew[gdvar]
      gstrct.gnspec[gdvar,ff] = 1
      
      ;; Store for later; sub should never fail so long as working
      ;; with metal-line systems outside Lya forest
-     sub = where(invvarnew gt 0. and $
+     sub = where(ivarnew gt 0. and $
                  gstrct.gwave*(1.+civstr[ff].zabs_orig[0])/(1.+civstr[ff].z_qso) $
                  ge 1250.)            ; match sdss_fndlin
      if sub[0] eq -1 then sub = gdvar ; fall back
@@ -787,15 +790,17 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
   sxaddpar,header,'EWMAX',mx,'Max ion rest EW'
 
   ;; Options
-  sxaddpar,header,'MEDIAN',keyword_set(median),'0: weighted mean; 1: median flux'
+  sxaddpar,header,'MEDIAN',keyword_set(median),'0: mean; 1: median flux'
   ;; Normalized?
   sxaddpar,header,'WVNRM',keyword_set(wvnrm),'Normalize spectra at wavelength region'
   if keyword_set(wvnrm) then begin
      sxaddpar,header,'WVNRM0',wvnrm[0],'Lower norm wave bound'
      sxaddpar,header,'WVNRM1',wvnrm[1],'Upper norm wave bound'
-  endif 
+  endif
+  ;; Inverse-variance weighted
+  sxaddpar,header,'IVARWGT',keyword_set(ivarwgt),'0: not inverse-var weighted; 1: is'
   ;; "Light-weighted"
-  sxaddpar,header,'LITWGT',keyword_set(litwgt),'Norm med invvar to 1'
+  sxaddpar,header,'LITWGT',keyword_set(litwgt),'Norm med inverse-var to 1'
   if size(cmplt_fil,/type) eq 7 then begin
      for dd=0,ndblt-1 do begin
         prs = strsplit(cmplt_fil[dd],'/',/extract,count=nprs)
