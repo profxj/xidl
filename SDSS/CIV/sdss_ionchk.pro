@@ -196,9 +196,9 @@ pro sdss_ionchk, civfil,dblt_name=dblt_name,NEWCIVFIL=newcivfil,    $
   ;; %%%%%%                                                            %%%%%%
   IF KEYWORD_SET(debug) THEN BEGIN 
      print, ''
-     print, 'Index #','Ion #','ion_rest','z_ion','z_'+dblt.ion,'dvabs',  $
+     print, 'i'+dblt.ion,'iIon','ion_rest','z_ion','z_'+dblt.ion,'dvabs',  $
             'dv_blue','dv_red', $
-            format='(a5,1x,a2,2x,a9,2(1x,a7),1x,3(a7,1x))'
+            format='(a5,1x,a4,2x,a9,2(1x,a7),1x,3(a7,1x))'
   ENDIF
   ;; %%%%%%                                                            %%%%%%
   ;; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -293,6 +293,7 @@ pro sdss_ionchk, civfil,dblt_name=dblt_name,NEWCIVFIL=newcivfil,    $
               civstr[icivstr].ew_orig[iflg] = abslin.ew_orig[match]*cnst
               civstr[icivstr].sigew_orig[iflg] = abslin.sigew_orig[match]*cnst
               civstr[icivstr].wvlim_orig[iflg,*] = abslin.wvlim_orig[match,*]
+              civstr[icivstr].ewflg[iflg] = sdss_getewflg(/custom) ; 64 to indicate questionable
            endif 
            
            
@@ -302,11 +303,12 @@ pro sdss_ionchk, civfil,dblt_name=dblt_name,NEWCIVFIL=newcivfil,    $
            IF KEYWORD_SET(debug) THEN BEGIN
               print, icivstr, iflg, civstr[icivstr].wrest[iflg], $
                      civstr[icivstr].zabs_orig[iflg], zabs, $
-                     (ctrdrest[match]-ionlist[iion])*2.998e5 / $
-                     abslin.centroid[match,cindx], $
+                     (civstr[icivstr].zabs_orig[iflg] - zabs)/(1+zabs)*2.998e5,$
+;                     (ctrdrest[match]-ionlist[iion])*2.998e5 / $
+;                     abslin.centroid[match,cindx], $
                      -1.0*blue_tol*2.998e5 / abslin.centroid[match,cindx], $
                      red_tol* 2.998e5 / abslin.centroid[match,cindx], $
-                     format='(i5,1x,i2,2x,f9.4,2(1x,f7.5),1x,3(f7.2,1x))'
+                     format='(i5,1x,i4,2x,f9.4,2(1x,f7.5),1x,3(f7.2,1x))'
               
               if iflg+1 eq nionmax and iion+1 ne ionsize then $
                  print,'sdss_ionchk debug: out of room but not done with ions'
