@@ -54,9 +54,9 @@
 ;
 ; OUTPUTS:
 ;   A FIT file (replacing original input file) of all input systems, 
-;   with additional information stored in obj.wrest and obj.zabs_orig. 
+;   with additional information stored in obj.wrest and obj.zabs_orig/final. 
 ;   The .wrest tag stores the rest wavelengths of ions that matched 
-;   detected centroids, USING INDICES [2:10].  The .zabs_orig tag
+;   detected centroids, USING INDICES [2:10].  The .zabs_orig/final tag
 ;   stores the z of the detected ion-centroid matches, USING INDICES [2:10].
 ;
 ;
@@ -78,6 +78,8 @@
 ;                width wave limits (therefore nonsymmetric tolerances
 ;                are ok) are accepted as a match. (Default: 150 km/s)
 ;
+;   /final    -- use zabs_final and ew_final instead of *orig
+;
 ;   /DEBUG    -- For each ion-centroid match found, prints out:
 ;                  Index #      
 ;                  Ion #
@@ -91,9 +93,9 @@
 ; OPTIONAL OUTPUTS:
 ;    A new FIT file (name defined by optional input newcivfil)
 ;    of all input systems, with additional information
-;    stored in obj.wrest and obj.zabs_orig.  The .wrest tag stores the
+;    stored in obj.wrest and obj.zabs_orig/final.  The .wrest tag stores the
 ;    rest wavelengths of ions that matched detected centroids, USING
-;    INDICES [2:10].  The .zabs_orig tag stores the z of the detected
+;    INDICES [2:10].  The .zabs_orig/final tag stores the z of the detected
 ;    ion-centroid matches, USING INDICES [2:10].
 ;
 ; COMMENTS: 
@@ -122,11 +124,12 @@
 
 
 pro sdss_ionchk, civfil,dblt_name=dblt_name,NEWCIVFIL=newcivfil,    $
-                 DVTOL=dvtol, use_cflg=use_cflg, DEBUG=debug, ionlist=ionlist
+                 DVTOL=dvtol, use_cflg=use_cflg, DEBUG=debug, ionlist=ionlist, $
+                 final=final
   
   if  N_params() LT 1  then begin 
      print,'Syntax - sdss_ionchk, civfil, [dblt_name=,newcivfil=,dvtol=,'
-     print,'                      use_cflg=, /debug]'
+     print,'                      use_cflg=, /debug, ionlist=, /final]'
      return
   endif 
   sdssdir = sdss_getsdssdir()
@@ -191,10 +194,34 @@ pro sdss_ionchk, civfil,dblt_name=dblt_name,NEWCIVFIL=newcivfil,    $
   ncivstr = (SIZE(civstr, /DIM))[0]
   nionmax = (size(civstr.wrest,/dim))[0]
 
+  ;; Use the right fields for input and output
+  tags = tag_names(civstr)
+  if keyword_set(final) then begin
+     ;; Use final zabs and wvlim
+     ztag = where(tags eq 'ZABS_FINAL')
+     ewtag = where(tags eq 'EW_FINAL') ;  assume sigewtag = ewtag+1
+     wvlimtag = where(tags eq 'WVLIM_FINAL')
+  endif else begin
+     ;; Use original zabs and wvlim
+     ztag = where(tags eq 'ZABS_ORIG')
+     ewtag = where(tags eq 'EW_ORIG')
+     wvlimtag = where(tags eq 'WVLIM_ORIG')
+  endelse 
+  
+  ;; Allow dblt_name to be the reference *not* in the first field (but
+  ;; *is* in same location down the whole structure)
+  idblt = where(abs(dblt.wvI-civstr.wrest) lt 1e-6,nmtch)
+  if nmtch eq 0 then $
+     stop,'sdss_ionchk stop: no '+strtrim(dblt.wvI,2)+' in civfil'
+  idblt = idblt[0]              ;  could check there isn't two
+
   ;; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   ;; %%%%%%%%%%%%%%%%%%%%%%%%%% DEBUG INFO %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   ;; %%%%%%                                                            %%%%%%
-  IF KEYWORD_SET(debug) THEN BEGIN 
+  IF KEYWORD_SET(debug) THEN BEGIN
+     print, ''
+     print, 'Using idblt = '+strtrim(idblt,2)+' to match '+dblt.ion+' '+$
+            floor(dblt.wvI)
      print, ''
      print, 'i'+dblt.ion,'iIon','ion_rest','z_ion','z_'+dblt.ion,'dvabs',  $
             'dv_blue','dv_red', $
@@ -231,23 +258,20 @@ pro sdss_ionchk, civfil,dblt_name=dblt_name,NEWCIVFIL=newcivfil,    $
      
 
      ;; Figure out which wrest index to start at
-     iflg = WHERE( civstr[icivstr].wrest EQ 0.00, nflg)
+     isav = WHERE( civstr[icivstr].wrest le 0., nflg)
      IF nflg EQ 0 THEN begin
         print, "sdss_ionchk: No space to store match information: ",$
                civstr[icivstr].qso_name,$
-               string("zabs=",civstr[icivstr].zabs_orig[0],format='(a,f7.5)')
+               string("zabs=",civstr[icivstr].(ztag)[idblt],format='(a,f7.5)')
         continue                ; EXIT
      endif 
+     isav = isav[0]
 
-
-     iflg = iflg[0]
-     IF civstr[icivstr].zabs_final[0] GT 0. THEN                        $
-        zabs = civstr[icivstr].zabs_final[0]                              $
-     ELSE zabs = civstr[icivstr].zabs_orig[0]
-     ctrdrest = abslin.centroid[0:abslin.ncent[cindx]-1,cindx] / (1.0 + zabs)
+     zabs = civstr[icivstr].(ztag)[idblt] ; fix
+     ctrdrest = abslin.centroid[0:abslin.ncent[cindx]-1,cindx] / (1.0 + zabs) ; assume
      
      iion = 0
-     while iion lt ionsize and iflg lt nionmax do begin
+     while iion lt ionsize and isav lt nionmax do begin
         ;; Test if ion already found and saved
         match = where(abs(civstr[icivstr].wrest-ionlist[iion]) lt 1.e-4)
         if match[0] ne -1 then begin
@@ -261,13 +285,10 @@ pro sdss_ionchk, civfil,dblt_name=dblt_name,NEWCIVFIL=newcivfil,    $
         ;; higher bound (blue_tol and red_tol, respectively).
         ;; Define each as the greater of either the wavelength
         ;; limits that determine the EW or dvtol
-        IF civstr[icivstr].wvlim_final[0,0] GT 0. THEN BEGIN
-           blue_tol = ABS(dblt.wvI*(1.0+zabs)-civstr[icivstr].wvlim_final[0,0])
-           red_tol  = ABS(dblt.wvI*(1.0+zabs)-civstr[icivstr].wvlim_final[0,1])
-        ENDIF ELSE BEGIN    $
-           blue_tol = ABS(dblt.wvI*(1.0+zabs)-civstr[icivstr].wvlim_orig[0,0])
-           red_tol  = ABS(dblt.wvI*(1.0+zabs)-civstr[icivstr].wvlim_orig[0,1])
-        END
+        blue_tol = ABS(dblt.wvI*(1.0+zabs)-$
+                       civstr[icivstr].(wvlimtag)[idblt,0])
+        red_tol  = ABS(dblt.wvI*(1.0+zabs)-$
+                       civstr[icivstr].(wvlimtag)[idblt,1])
         default_tol = ionlist[iion]*cinv*dvtol
         blue_tol = default_tol > blue_tol
         red_tol  = default_tol > red_tol
@@ -279,21 +300,21 @@ pro sdss_ionchk, civfil,dblt_name=dblt_name,NEWCIVFIL=newcivfil,    $
            ;; Even if there are multiple matches, we only need one
            ;; match.  Select the abslin centroid closest to the
            ;; ion wavelength.
-           civstr[icivstr].wrest[iflg]     =  ionlist[iion]
+           civstr[icivstr].wrest[isav]     =  ionlist[iion]
            bestmatch = MIN( ABS(ctrdrest[match]-ionlist[iion]), imatch)
            match = match[imatch]
-           civstr[icivstr].zabs_orig[iflg] = $
+           civstr[icivstr].(ztag)[isav] = $
               abslin.centroid[match,cindx] / ionlist[iion] - 1
 
            if cflg_mismtch eq 0 then begin
               ;; Able to save this information because input structure
               ;; and desired use_cflg match
               ;; So store and turn in to rest EW
-              cnst = 1./(1. + civstr[icivstr].zabs_orig[iflg])
-              civstr[icivstr].ew_orig[iflg] = abslin.ew_orig[match]*cnst
-              civstr[icivstr].sigew_orig[iflg] = abslin.sigew_orig[match]*cnst
-              civstr[icivstr].wvlim_orig[iflg,*] = abslin.wvlim_orig[match,*]
-              civstr[icivstr].ewflg[iflg] = sdss_getewflg(/custom) ; 64 to indicate questionable
+              cnst = 1./(1. + civstr[icivstr].(ztag)[isav])
+              civstr[icivstr].(ewtag)[isav] = abslin.(ewtag)[match]*cnst
+              civstr[icivstr].(ewtag+1)[isav] = abslin.(ewtag+1)[match]*cnst
+              civstr[icivstr].(wvlimtag)[isav,*] = abslin.(wvtaglim)[match,*]
+              civstr[icivstr].ewflg[isav] = sdss_getewflg(/custom) ; 64 to indicate questionable
            endif 
            
            
@@ -301,16 +322,16 @@ pro sdss_ionchk, civfil,dblt_name=dblt_name,NEWCIVFIL=newcivfil,    $
            ;; %%%%%%%%%%%%%%%%%%%%% DEBUG INFO %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
            ;; %%%%%%                                                  %%%%%%
            IF KEYWORD_SET(debug) THEN BEGIN
-              print, icivstr, iflg, civstr[icivstr].wrest[iflg], $
-                     civstr[icivstr].zabs_orig[iflg], zabs, $
-                     (civstr[icivstr].zabs_orig[iflg] - zabs)/(1+zabs)*2.998e5,$
+              print, icivstr, isav, civstr[icivstr].wrest[isav], $
+                     civstr[icivstr].(ztag)[isav], zabs, $
+                     (civstr[icivstr].(ztag)[isav] - zabs)/(1+zabs)*2.998e5,$
 ;                     (ctrdrest[match]-ionlist[iion])*2.998e5 / $
 ;                     abslin.centroid[match,cindx], $
                      -1.0*blue_tol*2.998e5 / abslin.centroid[match,cindx], $
                      red_tol* 2.998e5 / abslin.centroid[match,cindx], $
                      format='(i5,1x,i4,2x,f9.4,2(1x,f7.5),1x,3(f7.2,1x))'
               
-              if iflg+1 eq nionmax and iion+1 ne ionsize then $
+              if isav+1 eq nionmax and iion+1 ne ionsize then $
                  print,'sdss_ionchk debug: out of room but not done with ions'
               
            ENDIF 
@@ -320,7 +341,7 @@ pro sdss_ionchk, civfil,dblt_name=dblt_name,NEWCIVFIL=newcivfil,    $
            
            
            ;; Increment
-           iflg++
+           isav++
         ENDIF                   ; If ion matches are found
 
         iion++
