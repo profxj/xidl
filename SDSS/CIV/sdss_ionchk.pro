@@ -111,6 +111,7 @@
 ;  15 Jul 2011   Written by M. Kao
 ;  13 Sep 2011   Revamped a bit, KLC
 ;   7 Jul 2014   Updated, KLC
+;  18 Jul 2017   Enabled /final and flexible reference doublet
 ;
 ;-
 ; Copyright (C) 2011, Melodie Kao
@@ -311,9 +312,9 @@ pro sdss_ionchk, civfil,dblt_name=dblt_name,NEWCIVFIL=newcivfil,    $
               ;; and desired use_cflg match
               ;; So store and turn in to rest EW
               cnst = 1./(1. + civstr[icivstr].(ztag)[isav])
-              civstr[icivstr].(ewtag)[isav] = abslin.(ewtag)[match]*cnst
-              civstr[icivstr].(ewtag+1)[isav] = abslin.(ewtag+1)[match]*cnst
-              civstr[icivstr].(wvlimtag)[isav,*] = abslin.(wvtaglim)[match,*]
+              civstr[icivstr].(ewtag)[isav] = abslin.ew_orig[match]*cnst
+              civstr[icivstr].(ewtag+1)[isav] = abslin.sigew_orig[match]*cnst
+              civstr[icivstr].(wvlimtag)[isav,*] = abslin.wvlim_orig[match,*]
               civstr[icivstr].ewflg[isav] = sdss_getewflg(/custom) ; 64 to indicate questionable
            endif 
            
