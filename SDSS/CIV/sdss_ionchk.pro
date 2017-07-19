@@ -78,6 +78,10 @@
 ;                width wave limits (therefore nonsymmetric tolerances
 ;                are ok) are accepted as a match. (Default: 150 km/s)
 ;
+;   dvmax=    -- set the max offset for matching, otherwise will just
+;                obey matching within wavelength bounds (can get quite
+;                big)
+;
 ;   /final    -- use zabs_final and ew_final instead of *orig
 ;
 ;   /DEBUG    -- For each ion-centroid match found, prints out:
@@ -91,6 +95,9 @@
 ;                  red_tol     [km/s]
 ;
 ; OPTIONAL OUTPUTS:
+;
+;    logfil   -- string array of /debug messages
+;
 ;    A new FIT file (name defined by optional input newcivfil)
 ;    of all input systems, with additional information
 ;    stored in obj.wrest and obj.zabs_orig/final.  The .wrest tag stores the
@@ -126,17 +133,19 @@
 
 pro sdss_ionchk, civfil,dblt_name=dblt_name,NEWCIVFIL=newcivfil,    $
                  DVTOL=dvtol, use_cflg=use_cflg, DEBUG=debug, ionlist=ionlist, $
-                 final=final
+                 final=final, dvmax=dvmax, logfil=logfil,_extra=extra
   
   if  N_params() LT 1  then begin 
      print,'Syntax - sdss_ionchk, civfil, [dblt_name=,newcivfil=,dvtol=,'
-     print,'                      use_cflg=, /debug, ionlist=, /final]'
+     print,'                      use_cflg=, /debug, ionlist=, /final, dvmax=, '
+     print,'                      logfil=, _extra=]'
      return
   endif 
   sdssdir = sdss_getsdssdir()
 
   ;; Set initial values
-  cinv = 1./2.998e5
+  c = 299792.458                ; km/s
+  cinv = 1./c
   IF NOT KEYWORD_SET(dvtol) THEN dvtol = 150.0 ; km/s
   IF NOT KEYWORD_SET(newcivfil) THEN BEGIN
      print, 'sdss_ionchk: Overwrite existing file?: y(es), n(o).'
@@ -219,14 +228,13 @@ pro sdss_ionchk, civfil,dblt_name=dblt_name,NEWCIVFIL=newcivfil,    $
   ;; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   ;; %%%%%%%%%%%%%%%%%%%%%%%%%% DEBUG INFO %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   ;; %%%%%%                                                            %%%%%%
-  IF KEYWORD_SET(debug) THEN BEGIN
-     print, ''
-     print, 'Using idblt = '+strtrim(idblt,2)+' to match '+dblt.ion+' '+$
-            floor(dblt.wvI)
-     print, ''
-     print, 'i'+dblt.ion,'iIon','ion_rest','z_ion','z_'+dblt.ion,'dvabs',  $
-            'dv_blue','dv_red', $
-            format='(a5,1x,a4,2x,a9,2(1x,a7),1x,3(a7,1x))'
+  IF KEYWORD_SET(debug) or keyword_set(logfil) THEN BEGIN
+     logstr = ['Using idblt = '+strtrim(idblt,2)+' to match '+dblt.ion+' '+$
+               strtrim(floor(dblt.wvI),2),'']
+     logstr = [logstr,$
+               string('i'+dblt.ion,'iIon','ion_rest','z_ion','z_'+dblt.ion,$
+                      'dvabs','dv_blue','dv_red', $
+                      format='(a5,1x,a4,2x,a9,2(1x,a7),1x,3(a7,1x))')]
   ENDIF
   ;; %%%%%%                                                            %%%%%%
   ;; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -276,8 +284,9 @@ pro sdss_ionchk, civfil,dblt_name=dblt_name,NEWCIVFIL=newcivfil,    $
         ;; Test if ion already found and saved
         match = where(abs(civstr[icivstr].wrest-ionlist[iion]) lt 1.e-4)
         if match[0] ne -1 then begin
-           if keyword_set(debug) then $
-              print,'sdss_ionchk debug: ion already in structure ',ionlist[iion]
+           if keyword_set(debug) or keyword_set(logfil) then $
+              logstr = [logstr,$
+                        'sdss_ionchk debug: ion already in structure '+ionlist[iion]]
            iion++
            continue
         endif 
@@ -295,15 +304,32 @@ pro sdss_ionchk, civfil,dblt_name=dblt_name,NEWCIVFIL=newcivfil,    $
         red_tol  = default_tol > red_tol
         
         ;; Find where potential ion matches are detected
-        match = WHERE( ctrdrest-ionlist[iion] GE -1.0*blue_tol AND        $
-                       ctrdrest-ionlist[iion] LE red_tol     , nmatch)
+        match = WHERE( ctrdrest GE ionlist[iion]-blue_tol AND        $
+                       ctrdrest LE ionlist[iion]+red_tol     , nmatch)
         IF nmatch NE 0 THEN BEGIN
            ;; Even if there are multiple matches, we only need one
            ;; match.  Select the abslin centroid closest to the
            ;; ion wavelength.
-           civstr[icivstr].wrest[isav]     =  ionlist[iion]
-           bestmatch = MIN( ABS(ctrdrest[match]-ionlist[iion]), imatch)
+           bestmatch = MIN( ctrdrest[match]-ionlist[iion], imatch, /abs)
            match = match[imatch]
+
+           if keyword_set(dvmax) then begin
+              zmatch = abslin.centroid[match,cindx] / ionlist[iion] - 1
+              dvabs = (zmatch-civstr[icivstr].(ztag)[idblt])/$
+                      (1+civstr[icivstr].(ztag)[idblt])*c
+              if abs(dvabs) gt dvmax then begin
+                 if keyword_set(debug) or keyword_set(logfil) then begin
+                    logstr = [logstr,$
+                              string(icivstr,isav,ionlist[iion],zmatch,zabs,$
+                                     dvabs,$
+                                     '> '+strtrim(dvmax,2)+' --> rejected',$
+                                     format='(i5,1x,i4,2x,f9.4,2(1x,f7.5),1x,f7.2,1x,a)')]
+                 endif
+                 iion++         ; must increment
+                 continue ; skip rest
+              endif
+           endif
+           civstr[icivstr].wrest[isav]     =  ionlist[iion]
            civstr[icivstr].(ztag)[isav] = $
               abslin.centroid[match,cindx] / ionlist[iion] - 1
 
@@ -322,18 +348,20 @@ pro sdss_ionchk, civfil,dblt_name=dblt_name,NEWCIVFIL=newcivfil,    $
            ;; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
            ;; %%%%%%%%%%%%%%%%%%%%% DEBUG INFO %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
            ;; %%%%%%                                                  %%%%%%
-           IF KEYWORD_SET(debug) THEN BEGIN
-              print, icivstr, isav, civstr[icivstr].wrest[isav], $
-                     civstr[icivstr].(ztag)[isav], zabs, $
-                     (civstr[icivstr].(ztag)[isav] - zabs)/(1+zabs)*2.998e5,$
-;                     (ctrdrest[match]-ionlist[iion])*2.998e5 / $
+           IF KEYWORD_SET(debug) or keyword_set(logfil) THEN BEGIN
+              logstr = [logstr,$
+                        string(icivstr, isav, civstr[icivstr].wrest[isav], $
+                               civstr[icivstr].(ztag)[isav], zabs, $
+                               (civstr[icivstr].(ztag)[isav] - zabs)/(1+zabs)*c,$
+;                     (ctrdrest[match]-ionlist[iion])*c / $
 ;                     abslin.centroid[match,cindx], $
-                     -1.0*blue_tol*2.998e5 / abslin.centroid[match,cindx], $
-                     red_tol* 2.998e5 / abslin.centroid[match,cindx], $
-                     format='(i5,1x,i4,2x,f9.4,2(1x,f7.5),1x,3(f7.2,1x))'
+                               -1.0*blue_tol*c / abslin.centroid[match,cindx], $
+                               red_tol* c / abslin.centroid[match,cindx], $
+                               format='(i5,1x,i4,2x,f9.4,2(1x,f7.5),1x,3(f7.2,1x))')]
               
               if isav+1 eq nionmax and iion+1 ne ionsize then $
-                 print,'sdss_ionchk debug: out of room but not done with ions'
+                 logstr = [logstr,$
+                           'sdss_ionchk debug: out of room but not done with ions']
               
            ENDIF 
            ;; %%%%%%                                                  %%%%%%
@@ -349,8 +377,19 @@ pro sdss_ionchk, civfil,dblt_name=dblt_name,NEWCIVFIL=newcivfil,    $
      ENDWHILE                   ; Loop through ions
 
   ENDFOR                        ; Looping through all of the candidates
-  
-  
+
+  ;; Handle outputs
+  if keyword_set(debug) then print,['',logstr,''],format='(a)'
+  if keyword_set(logfil) then begin
+     if size(logfil,/type) eq 7 and n_elements(logfil) eq 1 then begin
+        openw,1,logfil,_extra=extra ; incl. /append
+        printf,1,logstr,format='(a)'
+        close,1
+        print,'sdss_ionchk: created/appended '+logfil
+     endif else logfil = logstr
+  endif
+
+  ;; Save to file or return to input
   if size(outcivfil,/type) eq 7 then begin
      mwrfits, civstr, outcivfil, /create, /silent
      spawn,'gzip -f '+outcivfil
