@@ -369,8 +369,18 @@ pro sdss_ionchk, civfil,dblt_name=dblt_name,NEWCIVFIL=newcivfil,    $
            ;; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
            
            
-           ;; Increment
-           isav++
+           ;; Figure out which wrest index to start at
+           isav = WHERE( civstr[icivstr].wrest le 0., nflg)
+           IF nflg EQ 0 THEN begin
+              print, "sdss_ionchk: No space to store match information: ",$
+                     civstr[icivstr].qso_name,$
+                     string("zabs=",civstr[icivstr].(ztag)[idblt],$
+                            format='(a,f7.5)')
+              break          ; EXIT WHILE LOOP
+           endif 
+           isav = isav[0]
+;           ;; Increment (assumes everything *after* is free)
+;           isav++
         ENDIF                   ; If ion matches are found
 
         iion++
