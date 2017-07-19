@@ -52,6 +52,14 @@ function dblt_retrieve,dblt_name
   siiv.fII = 0.262 
   siiv.gammaII = 8.656e8
 
+  fuiv = { doubletstrct }
+  fuiv.ion = 'FuIV'             ; faux doublet for testing
+  fuiv.wvI = 1393.755 - 0.6
+  fuiv.fI = 0.5280
+  fuiv.gammaI = 8.825e8
+  fuiv.wvII = 1402.770 + 1.7
+  fuiv.fII = 0.262 
+  fuiv.gammaII = 8.656e8
 
   civ = { doubletstrct }
   civ.ion = 'CIV'
@@ -132,6 +140,7 @@ function dblt_retrieve,dblt_name
         'ovi': return,ovi
         'nv': return,nv
         'siiv': return,siiv
+        'fuiv': return,fuiv
         'civ': return,civ
         'fkiv': return,fkiv     ; fake
         'lya': return,lya
@@ -153,6 +162,7 @@ function dblt_retrieve,dblt_name
             ['ovi',string(ovi.wvi)],$
             ['nv',string(nv.wvi)],$
             ['siiv',string(siiv.wvi)],$
+            ['fuiv',string(fuiv.wvi)],$
             ['civ',string(civ.wvi)],$
             ['fkiv',string(fkiv.wvi)],$
             ['lya',string(lya.wvi)],$
