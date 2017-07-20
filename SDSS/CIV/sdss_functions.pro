@@ -3030,11 +3030,11 @@ function sdss_cpstrct, oldstrct_fil, newstrct_tmplt, excl_tag=excl_tag, $
                              ;; e.g., wrap beginning to end
 
                              if ndim2_old eq 1 then $
-                                newstrct.(tt)[(nshift-ee) mod ndim_old] = $
-                                oldstrct.(mtch[0])[ee] $
+                                newstrct.(tt)[ee] = $
+                                oldstrct.(mtch[0])[ndim_old-nshift-ee] $
                              else $
-                                newstrct.(tt)[(nshift-ee) mod ndim_old,ff] = $
-                                oldstrct.(mtch[0])[ee,ff] 
+                                newstrct.(tt)[ee] = $
+                                oldstrct.(mtch[0])[ndim_old-nshift-ee,ff] 
 
                           endif else begin
 
@@ -3044,13 +3044,11 @@ function sdss_cpstrct, oldstrct_fil, newstrct_tmplt, excl_tag=excl_tag, $
                                 ;; e.g., wrap end to beginning
                                 
                                 if ndim2_old eq 1 then $
-                                   newstrct.(tt)[ee] = $
-                                   oldstrct.(mtch[0])[(ee-nshift) mod $
-                                                      ndim_old] $
+                                   newstrct.(tt)[(ee-nshift) mod ndim_old] = $
+                                   oldstrct.(mtch[0])[ee] $
                                 else $
-                                   newstrct.(tt)[ee,ff] = $
-                                   oldstrct.(mtch[0])[(ee-nshift) mod $
-                                                      ndim_old,ff] 
+                                   newstrct.(tt)[(ee-nshift) mod ndim_old,ff] = $
+                                   oldstrct.(mtch[0])[ee,ff] 
                              
                              endif else begin
                                 ;; 0 <= ee-nshift <= ndim_new-1
