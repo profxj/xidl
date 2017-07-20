@@ -82,6 +82,8 @@
 ;                obey matching within wavelength bounds (can get quite
 ;                big)
 ;
+;   /fix_order - even if an ionlist is not found, leave "its" loc blank
+;
 ;   /final    -- use zabs_final and ew_final instead of *orig
 ;
 ;   /DEBUG    -- For each ion-centroid match found, prints out:
@@ -133,12 +135,13 @@
 
 pro sdss_ionchk, civfil,dblt_name=dblt_name,NEWCIVFIL=newcivfil,    $
                  DVTOL=dvtol, use_cflg=use_cflg, DEBUG=debug, ionlist=ionlist, $
-                 final=final, dvmax=dvmax, logfil=logfil,_extra=extra
+                 final=final, dvmax=dvmax, logfil=logfil, fix_order=fix_order, $
+                 _extra=extra
   
   if  N_params() LT 1  then begin 
      print,'Syntax - sdss_ionchk, civfil, [dblt_name=,newcivfil=,dvtol=,'
      print,'                      use_cflg=, /debug, ionlist=, /final, dvmax=, '
-     print,'                      logfil=, _extra=]'
+     print,'                      logfil=, /fix_order, _extra=]'
      return
   endif 
   sdssdir = sdss_getsdssdir()
@@ -288,6 +291,20 @@ pro sdss_ionchk, civfil,dblt_name=dblt_name,NEWCIVFIL=newcivfil,    $
               logstr = [logstr,$
                         'sdss_ionchk debug: ion already in structure '+ionlist[iion]]
            iion++
+           if keyword_set(fix_order) then begin
+              isav++ ; even if skipping ionlist[iion], increment storage loc
+              ;; Check not full
+              if civstrct[icivstr].wrest[isav] gt 0. then begin
+                 isav = WHERE( civstr[icivstr].wrest le 0., nflg)
+                 IF nflg EQ 0 THEN begin
+                    print, "sdss_ionchk: No space to store match information: ",$
+                           civstr[icivstr].qso_name,$
+                           string("zabs=",civstr[icivstr].(ztag)[idblt],format='(a,f7.5)')
+                    continue    ; EXIT
+                 endif 
+                 isav = isav[0] ; ok to skip to next free spot
+              endif             ; new isav
+           endif                ; /fix_order
            continue
         endif 
 
@@ -326,6 +343,20 @@ pro sdss_ionchk, civfil,dblt_name=dblt_name,NEWCIVFIL=newcivfil,    $
                                      format='(i5,1x,i4,2x,f9.4,2(1x,f7.5),1x,f7.2,1x,a)')]
                  endif
                  iion++         ; must increment
+                 if keyword_set(fix_order) then begin
+                    isav++   ; even if skipping ionlist[iion], increment storage loc
+                    ;; Check not full
+                    if civstrct[icivstr].wrest[isav] gt 0. then begin
+                       isav = WHERE( civstr[icivstr].wrest le 0., nflg)
+                       IF nflg EQ 0 THEN begin
+                          print, "sdss_ionchk: No space to store match information: ",$
+                                 civstr[icivstr].qso_name,$
+                                 string("zabs=",civstr[icivstr].(ztag)[idblt],format='(a,f7.5)')
+                          continue ; EXIT
+                       endif 
+                       isav = isav[0] ; ok to skip to next free spot
+                    endif       ; new isav
+                 endif          ; /fix_order
                  continue ; skip rest
               endif
            endif
@@ -370,6 +401,7 @@ pro sdss_ionchk, civfil,dblt_name=dblt_name,NEWCIVFIL=newcivfil,    $
            
            
            ;; Figure out which wrest index to start at
+           ;; (shouldn't have ot check fix_order)
            isav = WHERE( civstr[icivstr].wrest le 0., nflg)
            IF nflg EQ 0 THEN begin
               print, "sdss_ionchk: No space to store match information: ",$
@@ -379,8 +411,6 @@ pro sdss_ionchk, civfil,dblt_name=dblt_name,NEWCIVFIL=newcivfil,    $
               break          ; EXIT WHILE LOOP
            endif 
            isav = isav[0]
-;           ;; Increment (assumes everything *after* is free)
-;           isav++
         ENDIF                   ; If ion matches are found
 
         iion++
