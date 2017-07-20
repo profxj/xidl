@@ -294,7 +294,7 @@ pro sdss_ionchk, civfil,dblt_name=dblt_name,NEWCIVFIL=newcivfil,    $
            if keyword_set(fix_order) then begin
               isav++ ; even if skipping ionlist[iion], increment storage loc
               ;; Check not full
-              if civstrct[icivstr].wrest[isav] gt 0. then begin
+              if civstr[icivstr].wrest[isav] gt 0. then begin
                  isav = WHERE( civstr[icivstr].wrest le 0., nflg)
                  IF nflg EQ 0 THEN begin
                     print, "sdss_ionchk: No space to store match information: ",$
@@ -346,7 +346,7 @@ pro sdss_ionchk, civfil,dblt_name=dblt_name,NEWCIVFIL=newcivfil,    $
                  if keyword_set(fix_order) then begin
                     isav++   ; even if skipping ionlist[iion], increment storage loc
                     ;; Check not full
-                    if civstrct[icivstr].wrest[isav] gt 0. then begin
+                    if civstr[icivstr].wrest[isav] gt 0. then begin
                        isav = WHERE( civstr[icivstr].wrest le 0., nflg)
                        IF nflg EQ 0 THEN begin
                           print, "sdss_ionchk: No space to store match information: ",$
