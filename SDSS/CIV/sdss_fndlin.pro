@@ -60,6 +60,7 @@
 ;   30-Jul-2014 Expand abslin structure if necessary, KLC
 ;   15-Jul-2015 Explicitly round gpk; don't let x_findgauss "tune", KLC
 ;   10-Aug-2016 Make nfind optional input, KLC
+;   21-Jul-2017 Sanity check to have no negative/zero centroids, KLC
 ;-
 ;------------------------------------------------------------------------------
 
@@ -199,9 +200,12 @@ function sdss_fndlin_srch, contistrct_fil, cflg, wave=wave, flux=flux, $
      ;; Interpolate fractional pixels to wavelength array and
      ;; figure out the average uncertainty (knowing that SDSS
      ;; pixels aren't equal in Angstroms)
-     cstrct.centroid[0:cstrct.ncent[cindx]-1,cindx] = $
-        interpol(wave, indx, gpk)
-     
+     wvcent = interpol(wave, indx, gpk)
+
+     ;; Last sanity check (induced by error with a sdss_stackciv spec)
+     test = where(wvcent gt 0,ntest)
+     cstrct.ncent[cindx] = ntest
+     cstrct.centroid[0:cstrct.ncent[cindx]-1,cindx] = wvcent[test]
   endif                         ; ngood ne 0 for S/N cut
   
   if keyword_set(ipix0_orig) then cstrct.ipix0 = ipix0_orig ; restore
