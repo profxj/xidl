@@ -300,7 +300,7 @@ pro sdss_ionchk, civfil,dblt_name=dblt_name,NEWCIVFIL=newcivfil,    $
                     print, "sdss_ionchk: No space to store match information: ",$
                            civstr[icivstr].qso_name,$
                            string("zabs=",civstr[icivstr].(ztag)[idblt],format='(a,f7.5)')
-                    continue    ; EXIT
+                    break       ; EXIT
                  endif 
                  isav = isav[0] ; ok to skip to next free spot
               endif             ; new isav
@@ -352,7 +352,7 @@ pro sdss_ionchk, civfil,dblt_name=dblt_name,NEWCIVFIL=newcivfil,    $
                           print, "sdss_ionchk: No space to store match information: ",$
                                  civstr[icivstr].qso_name,$
                                  string("zabs=",civstr[icivstr].(ztag)[idblt],format='(a,f7.5)')
-                          continue ; EXIT
+                          break ; EXIT
                        endif 
                        isav = isav[0] ; ok to skip to next free spot
                     endif       ; new isav
@@ -401,21 +401,35 @@ pro sdss_ionchk, civfil,dblt_name=dblt_name,NEWCIVFIL=newcivfil,    $
            
            
            ;; Figure out which wrest index to start at
-           ;; (shouldn't have ot check fix_order)
+           ;; (shouldn't have to check fix_order?)
+           if keyword_set(fix_order) then begin
+              isav++            ; next open location
+              if civstr[icivstr].wrest[isav] gt 0. then begin
+                 isav = WHERE( civstr[icivstr].wrest le 0., nflg)
+                 IF nflg EQ 0 THEN begin
+                    print, "sdss_ionchk: No space to store match information: ",$
+                           civstr[icivstr].qso_name,$
+                           string("zabs=",civstr[icivstr].(ztag)[idblt],$
+                                  format='(a,f7.5)')
+                    break       ; EXIT WHILE LOOP
+                 endif 
+                 isav = isav[0]
+              endif
+           ENDIF                ; If ion matches are found
+        endif else begin        ; /fix_order
            isav = WHERE( civstr[icivstr].wrest le 0., nflg)
            IF nflg EQ 0 THEN begin
               print, "sdss_ionchk: No space to store match information: ",$
                      civstr[icivstr].qso_name,$
                      string("zabs=",civstr[icivstr].(ztag)[idblt],$
                             format='(a,f7.5)')
-              break          ; EXIT WHILE LOOP
+              break             ; EXIT WHILE LOOP
            endif 
            isav = isav[0]
-        ENDIF                   ; If ion matches are found
-
+        endelse
         iion++
      ENDWHILE                   ; Loop through ions
-
+     
   ENDFOR                        ; Looping through all of the candidates
 
   ;; Handle outputs
