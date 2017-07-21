@@ -103,21 +103,38 @@ function sdss_stackciv_fitconti, spec_fil, wave=wave, nlmax=nlmax,$
   cindx = sdss_getcflg(/spl,/index)
 
   gdpix = where(sigma gt 0.)
-  cstrct.snr_conv[gdpix,cindx] = flux[gdpix]/sigma[gdpix] 
+  cstrct.snr_conv[gdpix,cindx] = flux[gdpix]/sigma[gdpix] ; sleight of hand
 
   ;; Mask out lines and record "centroids"
   premask = replicate(1,npix)
   dlim = dvlin / c
   for ll=0,nlin-1 do begin
-     sub = where(abs(wave-linstr[ll].wave) lt dlim*linstr[ll].wave)
+     if abs(linstr[ll].wave-1215.6701) lt 1e-4 then $ ; wider for Lya
+        sub = where(abs(wave-linstr[ll].wave) lt 2*dlim*linstr[ll].wave) $
+     else sub = where(abs(wave-linstr[ll].wave) lt dlim*linstr[ll].wave)
      if sub[0] ne -1 then premask[sub] = 0
   endfor
 
   ;; _extra= includes everyn=, sset=, maxrej=, lower=, upper=, nord=,
-  ;; /groupbadpix, /sticky, bsplmask=, /debug, /silent
+  ;; /groupbadpix, bsplmask=, /debug, /silent
+  ;; Force bsline_iterfit() to keep premask b/c we *know* where the
+  ;; lines are to avoid.
+  everyn_lcl = 75 ; wider breakpoint spacing; "stiffer"
+  if keyword_set(_extra) then begin
+     extra0 = extra             ; preserve originl
+     
+     ;; Unless the user explicitly passed in values, pass in values
+     ;; better suited to stack normalization than
+     ;; sdss_fndlin_fitspline() defaults
+     tags = tag_names(extra)
+     if not stregex(tags,'EVERYN',/boolean) then $
+        extra = create_struct(extra0,'EVERYN',everyn_lcl)  
+  endif else extra = {EVERYN:everyn_lcl}
   cstrct = sdss_fndlin_fitspline(wave, flux, sigma, 0.0, $
-                                 premask=premask, /nopca, $
+                                 premask=premask, /nopca, /sticky, $
                                  cstrct_fil=cstrct, _extra=extra)
+  if keyword_set(extra0) then extra = extra0 $ ; restore
+  else undefine, extra                         ; remove from downstream
 
   ;; Find absorption lines
   ;; _extra= includes lsnr=, /debug
@@ -128,6 +145,7 @@ function sdss_stackciv_fitconti, spec_fil, wave=wave, nlmax=nlmax,$
   fx = flux * ivconti
   sig = sdss_calcnormerr(flux, sigma, cstrct, cflg=cstrct.cflg, $
                          baderrval=9.e9)
+  ;; _extra includes lsnr=, /debug, nfind=
   cstrct = sdss_fndlin_srch(cstrct, cstrct.cflg, wave=wave, flux=fx, $
                             sigma=sig, mask=mask, _extra=extra)
 
@@ -176,7 +194,6 @@ function sdss_stackciv_fitconti, spec_fil, wave=wave, nlmax=nlmax,$
   
   ;; Another check might be that all lines in linstr have a
   ;; corresponding centroid... 
-
   if cstrct.ncent[cindx] eq 0 then $
      print,'sdss_stackciv_fitconti(): WARNING!!!: should find lines.'
 
@@ -190,23 +207,23 @@ end                             ; sdss_stackciv_fitconti()
 
 
 function sdss_stackciv_stack, gstrct, median=median, percentile=percentile, $
-                              wvnrm=wvnrm, fonly=fonly
+                              fonly=fonly
 
   if n_params() ne 1 then begin
      print,'Syntax - sdss_stackciv_stack( gstrct, [/median, percentile=, '
-     print,'                              /wvnrm, /fonly] )'
+     print,'                             /fonly] )'
      return, -1
   endif
 
   ;; Collapse
-  ;; Going to follow SDSS (pre-SDSS-III) spSpec format (ext=0, what
-  ;; parse_sdss can handle):
+  ;; Going to follow SDSS (pre-SDSS-III) spSpec format, differences
+  ;; noted in square brackets (ext=0, what parse_sdss can handle):
   ;; fdat[*,0] = flux
-  ;; fdat[*,1] = number of spectra per pixe [not continuum-subtracted
+  ;; fdat[*,1] = number of spectra per pixel [not continuum-subtracted
   ;;             spectrum] 
   ;; fdat[*,2] = 1-sigma uncertainty; inverse-variance weighted error
-  ;;              propogation (very small) if weighted stack or
-  ;;              standard error on the median if median stack
+  ;;             propogation (very small) if mean stack or
+  ;;             median absolute deviation (MAD) if median stack
   ;; fdat[*,3] = weight (or median weight) [not mask array]
   ;; fdat[*,4] = continuum [not in SDSS spSpec]
   ;; fdat[*,5] = lower percentile if median stack [not in SDSS spSpec]
@@ -227,26 +244,27 @@ function sdss_stackciv_stack, gstrct, median=median, percentile=percentile, $
 
      ;; Estimate error straight from the statistics
      for pp=0L,ngpix-1 do begin
-        gd = where(finite(gstrct.gflux[pp,*]),ngd) ; and finite(gstrct.gweight[pp,*]),ngd)
+        ;; Use only CIV that contribute meaninful to this pixel
+        gdciv = where(finite(gstrct.gflux[pp,*]),ngdciv) 
 
-        if ngd eq 0 then begin
+        if ngdciv eq 0 then begin
            fdat[pp,[0,2,3,5,6]] = 0. ; must instantiate flux
-           ;; 4 is continuum
+           ;; [4] is continuum
         endif else begin
 
-           if ngd eq 1 then begin
-              fdat[pp,0] = gstrct.gflux[pp,gd]
+           if ngdciv eq 1 then begin
+              fdat[pp,0] = gstrct.gflux[pp,gdciv]
 
               if keyword_set(fonly) then continue; save time
 
-              fdat[pp,2] = sqrt(gstrct.gvariance[pp,gd]) ; lack of better to do
-              fdat[pp,3] = gstrct.gweight[pp,gd]
+              fdat[pp,2] = sqrt(gstrct.gvariance[pp,gdciv]) ; lack of better to do
+              fdat[pp,3] = gstrct.gweight[pp,gdciv]
               ;; 4 is continuum
               fdat[pp,[5,6]] = 0 ; percentiles not calculable
            endif else begin
 
-              fdat[pp,0] = sdss_medianw(reform(gstrct.gflux[pp,gd]),$
-                                        reform(gstrct.gweight[pp,gd]),/even,$
+              fdat[pp,0] = sdss_medianw(reform(gstrct.gflux[pp,gdciv]),$
+                                        reform(gstrct.gweight[pp,gdciv]),/even,$
                                         /silent)
 
               if keyword_set(fonly) then continue ; save time
@@ -254,77 +272,22 @@ function sdss_stackciv_stack, gstrct, median=median, percentile=percentile, $
 
               ;; median weight per pix... hope to be something related to
               ;; completeness or 1 
-              fdat[pp,3] = median(reform(gstrct.gweight[pp,gd]),/even) 
+              fdat[pp,3] = median(reform(gstrct.gweight[pp,gdciv]),/even) 
 
-;              ;; http://davidmlane.com/hyperstat/A106993.html
-;              ;; sigma_med = 1.253 * stddev() / sqrt(N)
-;              ;; And standard deviation on a weighted quantity is:
-;              ;; http://www.itl.nist.gov/div898/software/dataplot/refman2/ch2/weightsd.pdf
-;              ;; sd_w = sqrt( ( SUM( w_i*(x_i - X_w)^2 ) / ( (N-1)/N *
-;              ;;                                SUM( w_i ) ) )
-;              gstrct.gflux_w = gstrct.gflux[pp,gd]*gstrct.gweight[pp,gd]
-;              twgt = total(gstrct.gweight[pp,gd],/double)
-;              mean_w = total(gstrct.gflux_w,/double)/twgt
-;              stddev_w_numer = total(gstrct.gweight[pp,gd]*(gstrct.gflux[pp,gd] - mean_w)^2,$
-;                                     /double)
-;              stddev_w_denom = (ngd-1)/float(ngd) * twgt
-;              stddev_w = sqrt( stddev_w_numer / stddev_w_denom )
-;              fdat[pp,2] = 1.253 * stddev_w / sqrt(ngd)
-
-
-              ;; The standard error on a median isn't robust to outliers
-              ;; and non-normal distributions (as the website declares),
-              ;; let's try something like the median-absolute
-              ;; deviation which *is* robust but have to handle the
-              ;; weighted business. I figure that I want to pull the
-              ;; MAD statistics towards the absolute deviations based
-              ;; on weight... have to think about this
-              ;; MAD = < | x_i - <x_i> | >, which actually is pretty
-              ;; close to the 25th and 75th percentiles
-;              fdat[pp,2] = sdss_medianw(reform(abs(gstrct.gflux[pp,gd]-fdat[pp,0])), $
-;                                        reform(gstrct.gweight[pp,gd]),/even,/silent)
-;              ;; The MAD on the weighted median flux is very large
-;              ;; (nearly the quartiles)
-;              ;; Let's assess on the variance
-;              var_w = sdss_medianw(reform(gstrct.gvariance[pp,gd]),$
-;                                   reform(gstrct.gweight[pp,gd]),/even,/silent)
-;              fdat[pp,2] = sdss_medianw(reform(abs(gstrct.gvariance[pp,gd]-$
-;                                                   var_w)),$
-;                                        reform(gstrct.gweight[pp,gd]),/even,/silent)
-;              fdat[pp,2] = sqrt(fdat[pp,2])
-              ;; That's really larger, worse than the MAD of
-              ;; the weighted median flux.
-              ;; Since the fundamental problem is the large dispersion
-              ;; of absolute flux of un-normalized sightlines,
-              ;; let's pseudo-normalize them by their median
-              ;; flux (included in the stack) then take the weighted
-              ;; MAD (and yes, this doesn't have units of flux
-              ;; but it has properties of interest and MC/bootstrap
-              ;; will supercede).
-              ;; KLC changed 11 Jul 2017 to just be MAD; now work with
+              ;; KLC changed 11 Jul 2017 to just be median absolute
+              ;; deviation (MAD)---weighted as needed; now works with
               ;; /conti,/extra
-;              if keyword_set(wvnrm) then $ ; b/c won't be ~1
-                 fdat[pp,2] = sdss_medianw($
-                              reform(abs(gstrct.gflux[pp,gd]-fdat[pp,0])), $
-                              reform(gstrct.gweight[pp,gd]),/even,/silent) ;$
-;              else $
-;                 fdat[pp,2] = sdss_medianw($
-;                              reform(abs(gstrct.gflux[pp,gd]/gstrct.medsnr_spec[gd,0]-1.)), $
-;                              reform(gstrct.gweight[pp,gd]),/even,/silent)
-
-              ;; For testing various error estimates method
-;              print,gstrct.gwave[pp],fdat[pp,0],fdat[pp,2],$
-;                    sdss_medianw(reform(abs(gstrct.gflux[pp,gd]-fdat[pp,0])), $
-;                           reform(gstrct.gweight[pp,gd]),/even,/silent),$
-;                    format='(f9.5,2x,3(f9.5,1x))'
+              fdat[pp,2] = sdss_medianw($
+                           reform(abs(gstrct.gflux[pp,gdciv]-fdat[pp,0])), $
+                           reform(gstrct.gweight[pp,gdciv]),/even,/silent) ;$
 
               ;; Percentiles for error
-              fdat[pp,5] = sdss_medianw(reform(gstrct.gflux[pp,gd]),$
-                                        reform(gstrct.gweight[pp,gd]),$
+              fdat[pp,5] = sdss_medianw(reform(gstrct.gflux[pp,gdciv]),$
+                                        reform(gstrct.gweight[pp,gdciv]),$
                                         /even,percent=percentile[0],$
                                         /silent)
-              fdat[pp,6] = sdss_medianw(reform(gstrct.gflux[pp,gd]),$
-                                        reform(gstrct.gweight[pp,gd]),$
+              fdat[pp,6] = sdss_medianw(reform(gstrct.gflux[pp,gdciv]),$
+                                        reform(gstrct.gweight[pp,gdciv]),$
                                         /even,percent=percentile[1],$
                                         /silent)
 
@@ -361,11 +324,11 @@ end                             ; sdss_stackciv_stack()
 
 
 
-function sdss_stackciv_errmc, fdat, gstrct0, fexcl=fexcl, $
-                              niter=niter, seed=seed, oseed=oseed
+function sdss_stackciv_errmc, fdat, gstrct0, fexcl=fexcl, sigew=sigew, $
+                              niter=niter, seed=seed, oseed=oseed, _extra=extra
   if n_params() ne 2 then begin
-     print,'Syntax -- sdss_stackciv_errmc(fdat, gstrct0, [fexcl=, '
-     print,'                              niter=, seed=, oseed=])'
+     print,'Syntax -- sdss_stackciv_errmc(fdat, gstrct0, [fexcl=, /sigew, '
+     print,'                              niter=, seed=, oseed=, _extra=])'
      return, -1
   endif
 
@@ -378,7 +341,26 @@ function sdss_stackciv_errmc, fdat, gstrct0, fexcl=fexcl, $
   ngpix = n_elements(fdat[*,0])
   if ngpix ne n_elements(gstrct0.gwave) then $
      stop,'sdss_stackciv_esterr() stop: input have different number of pixels'
-
+  if keyword_set(sigew) then begin
+     if size(sigew,/type) eq 8 then cstrct0 = sigew $ ; assume
+     else cstrct0 = $
+        sdss_stackciv_fitconti(fdat, wave=gstrct0.gwave, _extra=extra)
+     ;; _extra includes lin_fil=, dvlin=, and lots of other stuff
+     ;; (see function)
+     
+     ;; Force lsnr=0.1 because we want to find lines maximally (even
+     ;; with hokey error estimate, as happens with median-stacks w/o
+     ;; this function)
+     lsnr_lcl = 0.1
+     if keyword_set(_extra) then begin
+        extra0 = extra          ;  preserve original
+        tags = tag_names(extra)
+        test = where(stregex(extra,'LSNR',/boolean),ntest) ; might be LSNR2=
+        if ntest ne 0 then extra.lsnr = lsnr_lcl $
+        else extra = create_struct(extra0,'LSNR',lsnr_lcl) ; append
+     endif else extra = {LSNR:lsnr_lcl}
+  endif
+  
   nspec = max(fdat[*,1])         ; largest number of spectra per pixel
   if fexcl lt 1 then nexcl = round(fexcl*nspec) $
   else nexcl = fexcl
@@ -394,7 +376,7 @@ function sdss_stackciv_errmc, fdat, gstrct0, fexcl=fexcl, $
      iexcl = sort(randomu(oseed,nspec))
      iresmpl = sort(randomu(oseed,nspec))
 
-     ;; Replace
+     ;; Replace (have to loop; don't know why)
      for rr=0L,nexcl-1 do begin
         gstrct.gflux[*,iexcl[rr]] = gstrct0.gflux[*,iresmpl[rr]]
         gstrct.gvariance[*,iexcl[rr]] = gstrct0.gvariance[*,iresmpl[rr]]
@@ -403,8 +385,19 @@ function sdss_stackciv_errmc, fdat, gstrct0, fexcl=fexcl, $
         gstrct.medsnr_spec[iexcl[rr],*] = gstrct0.medsnr_spec[iresmpl[rr],*]
      endfor                     ; loop rr=nloop
 
-     new_fdat = sdss_stackciv_stack(gstrct, /fonly, $
+     ;; need error array for fitting continuum and finding lines
+     ;; (passing in percentile= shouldn't matter)
+     new_fdat = sdss_stackciv_stack(gstrct, fonly=(keyword_set(sigew) eq 0), $
                                     median=gstrct.median)
+
+     if keyword_set(sigew) then begin
+        ;; _extra includes lin_fil=, dvlin=, and lots of other stuff
+        ;; (see function)... but definitely includes LSNR = lsnr_lcl
+        cstrct = sdss_stackciv_fitconti(new_fdat, wave=gstrct0.gwave, $
+                                        _extra=extra)
+        if ii eq 0 then cstrct_resmpl = cstrct $
+        else cstrct_resmpl = [cstrct_resmpl,cstrct] ; wonder how RAM intensive this is 
+     endif                      ; /sigew
 
      fx_resmpl[*,ii] = new_fdat[*,0] ; save just the flux
      
@@ -416,8 +409,9 @@ function sdss_stackciv_errmc, fdat, gstrct0, fexcl=fexcl, $
   flux = rebin(tmp,ngpix,niter) ; dupliclate to get right dimensionality
   error = median( abs(fx_resmpl - flux), dim=2, /even)
   
-  oseed = oseed[0]
+  oseed = oseed[0]              ; for next iteration
 
+  ;; Modify output
   gstrct0 = create_struct(gstrct0,'FLUX_RESAMPLE',fx_resmpl)
   
 ;  x_splot,gstrct.gwave,fdat[*,0],ytwo=fdat[*,2],psym1=10,psym2=10,ythr=error,psym3=10,/block
@@ -425,7 +419,13 @@ function sdss_stackciv_errmc, fdat, gstrct0, fexcl=fexcl, $
 ;  idx = lindgen(10)
 ;  x_splot,gstrct.gwave,fdat[*,0],psym1=10,ytwo=fx_resmpl[*,idx[0]],psym2=10,ythr=fx_resmpl[*,idx[1]],psym3=10,yfou=fx_resmpl[*,idx[2]],psym4=10,yfiv=fx_resmpl[*,idx[3]],psym5=10,ysix=fx_resmpl[*,idx[4]],psym6=10,ysev=fx_resmpl[*,idx[5]],psym7=10,yeig=fx_resmpl[*,idx[6]],psym8=10
 
-;   stop
+  if keyword_set(sigew) then begin
+     
+     
+     stop
+     if keyword_set(extra0) then extra = extra0 ; restore unchanged
+  endif
+
   return, error
 
 end                             ; sdss_stackciv_errmc()
@@ -866,7 +866,8 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
 
 
   ;; Conti
-  ;; _extra= includes lin_fil=, dvlin=, and lots of other stuff
+  ;; _extra= includes lin_fil=, dvlin=, and lots of other stuff (see
+  ;; function) 
   cstrct = sdss_stackciv_fitconti( fdat, wave=gstrct.gwave, debug=debug, $
                                    _extra=extra)
   fdat[*,4] = cstrct.conti[0:cstrct.npix-1,fix(alog(cstrct.cflg)/alog(2))]
