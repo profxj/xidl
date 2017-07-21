@@ -269,20 +269,21 @@ pro sdss_ionchk, civfil,dblt_name=dblt_name,NEWCIVFIL=newcivfil,    $
      endif 
      
 
-     ;; Figure out which wrest index to start at
-     isav = WHERE( civstr[icivstr].wrest le 0., nflg)
-     IF nflg EQ 0 THEN begin
+     ;; Figure out which wrest index to start at and, in case of
+     ;; /fix_order, save whole array
+     iion = 0
+     isav_arr = WHERE( civstr[icivstr].wrest le 0., nsav_arr)
+     IF nsav_arr EQ 0 THEN begin
         print, "sdss_ionchk: No space to store match information: ",$
                civstr[icivstr].qso_name,$
                string("zabs=",civstr[icivstr].(ztag)[idblt],format='(a,f7.5)')
         continue                ; EXIT
      endif 
-     isav = isav[0]
+     isav = isav_arr[iion]
 
      zabs = civstr[icivstr].(ztag)[idblt] ; fix
      ctrdrest = abslin.centroid[0:abslin.ncent[cindx]-1,cindx] / (1.0 + zabs) ; assume
      
-     iion = 0
      while iion lt ionsize and isav lt nionmax do begin
         ;; Test if ion already found and saved
         match = where(abs(civstr[icivstr].wrest-ionlist[iion]) lt 1.e-4)
@@ -292,19 +293,9 @@ pro sdss_ionchk, civfil,dblt_name=dblt_name,NEWCIVFIL=newcivfil,    $
                         'sdss_ionchk debug: ion already in structure '+ionlist[iion]]
            iion++
            if keyword_set(fix_order) then begin
-              isav++ ; even if skipping ionlist[iion], increment storage loc
-              ;; Check not full
-              if civstr[icivstr].wrest[isav] gt 0. then begin
-                 isav = WHERE( civstr[icivstr].wrest le 0., nflg)
-                 IF nflg EQ 0 THEN begin
-                    print, "sdss_ionchk: No space to store match information: ",$
-                           civstr[icivstr].qso_name,$
-                           string("zabs=",civstr[icivstr].(ztag)[idblt],format='(a,f7.5)')
-                    break       ; EXIT
-                 endif 
-                 isav = isav[0] ; ok to skip to next free spot
-              endif             ; new isav
-           endif                ; /fix_order
+              if iion eq nsav_arr then isav++ $ ; while-loop handles overflow
+              else isav = isav_arr[iion]        ; preserve order
+           endif else isav++                    
            continue
         endif 
 
@@ -344,26 +335,16 @@ pro sdss_ionchk, civfil,dblt_name=dblt_name,NEWCIVFIL=newcivfil,    $
                  endif
                  iion++         ; must increment
                  if keyword_set(fix_order) then begin
-                    isav++   ; even if skipping ionlist[iion], increment storage loc
-                    ;; Check not full
-                    if civstr[icivstr].wrest[isav] gt 0. then begin
-                       isav = WHERE( civstr[icivstr].wrest le 0., nflg)
-                       IF nflg EQ 0 THEN begin
-                          print, "sdss_ionchk: No space to store match information: ",$
-                                 civstr[icivstr].qso_name,$
-                                 string("zabs=",civstr[icivstr].(ztag)[idblt],format='(a,f7.5)')
-                          break ; EXIT
-                       endif 
-                       isav = isav[0] ; ok to skip to next free spot
-                    endif       ; new isav
-                 endif          ; /fix_order
-                 continue ; skip rest
+                    if iion eq nsav_arr then isav++ $ ; while-loop handles overflow
+                    else isav = isav_arr[iion]        ; preserve order
+                 endif else isav++                    
+                 continue       ; skip rest
               endif
            endif
            civstr[icivstr].wrest[isav]     =  ionlist[iion]
            civstr[icivstr].(ztag)[isav] = $
               abslin.centroid[match,cindx] / ionlist[iion] - 1
-
+           
            if cflg_mismtch eq 0 then begin
               ;; Able to save this information because input structure
               ;; and desired use_cflg match
@@ -384,8 +365,6 @@ pro sdss_ionchk, civfil,dblt_name=dblt_name,NEWCIVFIL=newcivfil,    $
                         string(icivstr, isav, civstr[icivstr].wrest[isav], $
                                civstr[icivstr].(ztag)[isav], zabs, $
                                (civstr[icivstr].(ztag)[isav] - zabs)/(1+zabs)*c,$
-;                     (ctrdrest[match]-ionlist[iion])*c / $
-;                     abslin.centroid[match,cindx], $
                                -1.0*blue_tol*c / abslin.centroid[match,cindx], $
                                red_tol* c / abslin.centroid[match,cindx], $
                                format='(i5,1x,i4,2x,f9.4,2(1x,f7.5),1x,3(f7.2,1x))')]
@@ -400,38 +379,18 @@ pro sdss_ionchk, civfil,dblt_name=dblt_name,NEWCIVFIL=newcivfil,    $
            ;; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
            
            
-           ;; Figure out which wrest index to start at
-           ;; (shouldn't have to check fix_order?)
-           if keyword_set(fix_order) then begin
-              isav++            ; next open location
-              if civstr[icivstr].wrest[isav] gt 0. then begin
-                 isav = WHERE( civstr[icivstr].wrest le 0., nflg)
-                 IF nflg EQ 0 THEN begin
-                    print, "sdss_ionchk: No space to store match information: ",$
-                           civstr[icivstr].qso_name,$
-                           string("zabs=",civstr[icivstr].(ztag)[idblt],$
-                                  format='(a,f7.5)')
-                    break       ; EXIT WHILE LOOP
-                 endif 
-                 isav = isav[0]
-              endif
-           ENDIF                ; If ion matches are found
-        endif else begin        ; /fix_order
-           isav = WHERE( civstr[icivstr].wrest le 0., nflg)
-           IF nflg EQ 0 THEN begin
-              print, "sdss_ionchk: No space to store match information: ",$
-                     civstr[icivstr].qso_name,$
-                     string("zabs=",civstr[icivstr].(ztag)[idblt],$
-                            format='(a,f7.5)')
-              break             ; EXIT WHILE LOOP
-           endif 
-           isav = isav[0]
-        endelse
+        ENDIF                   ; nmatch ne 0
+
         iion++
+        if keyword_set(fix_order) then begin
+           if iion eq nsav_arr then isav++ $ ; while-loop handles overflow
+           else isav = isav_arr[iion]        ; preserve order
+        endif else isav++                    
+
      ENDWHILE                   ; Loop through ions
      
   ENDFOR                        ; Looping through all of the candidates
-
+  
   ;; Handle outputs
   if keyword_set(debug) then print,['',logstr,''],format='(a)'
   if keyword_set(logfil) then begin
