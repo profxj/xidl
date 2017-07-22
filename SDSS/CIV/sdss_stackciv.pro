@@ -37,10 +37,12 @@
 ;   percentile= -- 2-element array with percentiles to store for
 ;                  median stack [default: 15.9%, 84.1% (like +/-1
 ;                  Gaussian sigma]
-;   /refit -- re-normalize and find lines; calls sdss_stackciv_stack() 
-;   /qerr -- quick error analysis (not correct)
-;   /reerr -- re-analyze the error from Monte Carlo bootstrapping
-;             function sdss_stackciv_errmc()
+;   /reflux -- re-collapse the stack with sdss_stackciv_stack() and
+;              does what /refit does
+;   /refit -- re-normalize and find lines; calls sdss_stackciv_fitconti()
+;   /reerr -- re-analyze the error from Monte-Carlo bootstrapping with
+;             function sdss_stackciv_errmc() (unless /qerr also set)
+;   /qerr -- quick error analysis (not reasonable for median)
 ;   ndblt= -- number of doublets that were selected for the sample 
 ;             and so have to explicitly loop for wvmsk= and 
 ;             cmplt_fil=. Doublets assumped to be in elements with
@@ -68,6 +70,7 @@
 ;   31 Jul 2014  Create functions to stack and MC error, KLC
 ;   11 Jul 2017  Rebin variance; change e.g., sigma ne 0. to gt 0.,
 ;                enable ivarwgt, change median /qerr, KLC
+;   21 Jul 2017  Revamp to enable /sigew in *errmc(), KLC
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 @sdss_fndlin                    ; resolve sdss_fndlin_fitspl()
 
@@ -321,7 +324,8 @@ function sdss_stackciv_stack, gstrct, median=median, percentile=percentile, $
            if ngdciv le 1 then fdat[pp,[5,6]] = 0. $ ; like /median
            else begin
               ;; Going to be real stupid for low ngdciv... basically
-              ;; assuming 
+              ;; assuming almost line or something (and this is not
+              ;; quite even with median, which uses the weights)
               srt = gdciv[sort(gstrct.gflux[pp,gdciv])]
               cumhist = lindgen(ngdciv)/float(ngdciv)
               fprob = interpol(gstrct.gflux[pp,srt], cumhist, percentile)
@@ -345,7 +349,9 @@ end                             ; sdss_stackciv_stack()
 
 
 function sdss_stackciv_errmc, fdat, gstrct0, fexcl=fexcl, sigew=sigew, $
-                              niter=niter, seed=seed, oseed=oseed, _extra=extra
+                              cstrct_resmpl=cstrct_resmpl, $
+                              niter=niter, seed=seed, oseed=oseed, $
+                              _extra=extra
   if n_params() ne 2 then begin
      print,'Syntax -- sdss_stackciv_errmc(fdat, gstrct0, [fexcl=, /sigew, '
      print,'                              niter=, seed=, oseed=, _extra=])'
@@ -360,7 +366,7 @@ function sdss_stackciv_errmc, fdat, gstrct0, fexcl=fexcl, sigew=sigew, $
   
   ngpix = n_elements(fdat[*,0])
   if ngpix ne n_elements(gstrct0.gwave) then $
-     stop,'sdss_stackciv_esterr() stop: input have different number of pixels'
+     stop,'sdss_stackciv_errmc() stop: input have different number of pixels'
   if keyword_set(sigew) then begin
      if size(sigew,/type) eq 8 then cstrct0 = sigew $ ; assume
      else cstrct0 = $
@@ -388,14 +394,33 @@ function sdss_stackciv_errmc, fdat, gstrct0, fexcl=fexcl, sigew=sigew, $
   ;; Need to save the values of the flux from the stack
   fx_resmpl = fltarr(ngpix,niter+2,/nozero) ; last two are extremum
 
-  for ii=0L,niter-1 do begin
+  ;; Bootstrapping
+  for ii=0L,niter+2-1 do begin
 
      gstrct = gstrct0           ; reset
 
-     ;; Exclude and re-sample with replacement
-     iexcl = sort(randomu(oseed,nspec))
-     iresmpl = sort(randomu(oseed,nspec))
+     if ii ge niter then begin
+        if (size(gstrct0.ewabs,/dim))[0] gt 1 then $
+           stop,'sdss_stackciv_errmc() stop: Monte-Carlo bootstrap does not work for more than one doublet-based stacks'
+        srt = sort(gstrct0.ewabs[0,*]) ; don't know how to handle doublets yet
+        if ii eq niter then begin
+           ;; exclude *top* quartile of input absorbers and resample
+           ;; for remaining 75% to probe *lower* extreme of equivalent
+           ;; widths
+           srt = srt[0:nspec-nexcl-1]
+        endif else begin
+           ;; ii == niter+1 --> exclude *bottom* quartile
+           srt = sort[nexcl:nspec-1]
+        endelse
+        iexcl = srt[sort(randomu(oseed,nspec-nexcl))] ; indexes gstrct0
+        iresmpl = srt[sort(randomu(oseed,nspec-nexcl))]
+     endif else begin
+        ;; Exclude and re-sample with replacement
+        iexcl = sort(randomu(oseed,nspec))
+        iresmpl = sort(randomu(oseed,nspec))
+     endelse
 
+     
      ;; Replace (have to loop; don't know why)
      for rr=0L,nexcl-1 do begin
         gstrct.gflux[*,iexcl[rr]] = gstrct0.gflux[*,iresmpl[rr]]
@@ -405,47 +430,44 @@ function sdss_stackciv_errmc, fdat, gstrct0, fexcl=fexcl, sigew=sigew, $
         gstrct.medsnr_spec[iexcl[rr],*] = gstrct0.medsnr_spec[iresmpl[rr],*]
      endfor                     ; loop rr=nloop
 
-     ;; need error array for fitting continuum and finding lines
-     ;; (passing in percentile= shouldn't matter)
-     new_fdat = sdss_stackciv_stack(gstrct, fonly=(keyword_set(sigew) eq 0), $
-                                    median=gstrct.median)
+     new_fdat = sdss_stackciv_stack(gstrct, /fonly, median=gstrct.median)
 
      if keyword_set(sigew) then begin
+        ;; need error array for fitting continuum and finding lines
+        ;; so have to get it
+        new_fdat[*,2] = sdss_stackciv_errmc(new_fdat, gstrct, $
+                                            sigew=0, fonly=0, $
+                                            fexcl=fexcl, niter=niter, $
+                                            seed=oseed, oseed=oseed)
+        
+
         ;; _extra includes lin_fil=, dvlin=, and lots of other stuff
         ;; (see function)... but definitely includes LSNR = lsnr_lcl
         cstrct = sdss_stackciv_fitconti(new_fdat, wave=gstrct0.gwave, $
                                         _extra=extra)
         if ii eq 0 then cstrct_resmpl = cstrct $
         else cstrct_resmpl = [cstrct_resmpl,cstrct] ; wonder how RAM intensive this is 
-     endif                      ; /sigew
-
+     endif                                          ; /sigew
+        
      fx_resmpl[*,ii] = new_fdat[*,0] ; save just the flux
      
-  endfor                        ; loop ii=niter
+  endfor                        ; loop ii=niter+2
 
   ;; Analyze just the distribution of the flux
   ;; now use the MAD
   tmp = reform(fdat[*,0])
   flux = rebin(tmp,ngpix,niter) ; dupliclate to get right dimensionality
-  error = median( abs(fx_resmpl[*,0:niter-3] - flux), dim=2, /even) ; excl extremum
+  error = median( abs(fx_resmpl[*,0:niter-1] - flux), dim=2, /even) ; excl extremum
   
   oseed = oseed[0]              ; for next iteration
 
   ;; Modify output
-  gstrct0 = create_struct(gstrct0,'FLUX_RESAMPLE',fx_resmpl)
+  gstrct0 = create_struct(gstrct0,'GFLUX_RESAMPLE',fx_resmpl)
   
 ;  x_splot,gstrct.gwave,fdat[*,0],ytwo=fdat[*,2],psym1=10,psym2=10,ythr=error,psym3=10,/block
 ;
 ;  idx = lindgen(10)
 ;  x_splot,gstrct.gwave,fdat[*,0],psym1=10,ytwo=fx_resmpl[*,idx[0]],psym2=10,ythr=fx_resmpl[*,idx[1]],psym3=10,yfou=fx_resmpl[*,idx[2]],psym4=10,yfiv=fx_resmpl[*,idx[3]],psym5=10,ysix=fx_resmpl[*,idx[4]],psym6=10,ysev=fx_resmpl[*,idx[5]],psym7=10,yeig=fx_resmpl[*,idx[6]],psym8=10
-
-  if keyword_set(sigew) then begin
-     stacksummstr = sdss_mkstacksumm([cstrct0,cstrct_resmpl])
-
-     
-     stop
-     if keyword_set(extra0) then extra = extra0 ; restore unchanged
-  endif
 
   return, error
 
@@ -459,23 +481,25 @@ end                             ; sdss_stackciv_errmc()
 pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
                    gwave=gwave, wvmnx=wvmnx, wvnrm=wvnrm, final=final,$
                    wvmsk=wvmsk, cmplt_fil=cmplt_fil, litwgt=litwgt, $
-                   ivarwgt=ivarwgt,$
+                   ivarwgt=ivarwgt, ndblt=ndblt, $ 
                    civobs_corr=civobs_corr, conti=conti, cflg=cflg, $
-                   median=median, percentile=percentile, refit=refit, $
-                   ndblt=ndblt, reerr=reerr, qerr=qerr, _extra=extra
+                   median=median, percentile=percentile, reflux=reflux, $
+                   refit=refit, reerr=reerr, qerr=qerr, _extra=extra
 
   if N_params() LT 2 then begin 
      print,'Syntax - sdss_stackciv, civstrct_fil, outfil, [/debug, /clobber, '
      print,'                   gwave=, wvmnx=, wvnrm=, /final, wvmsk=, '
      print,'                   cmplt_fil=, /civobs_corr, /conti, cflg=, /litwgt, '
-     print,'                   /ivarwgt, /median, percentile=, /refit, /reerr, ndblt=, /qerr, _extra=]' 
+     print,'                   /ivarwgt, /median, percentile=, /reflux, /refit,'
+     print,'                   /reerr, ndblt=, /qerr, _extra=]' 
      return
   endif 
 
   ;; Check file and clobber option
   test = file_search(outfil+'*',count=ntest)
   if ntest ne 0 and not keyword_set(clobber) then begin
-     if keyword_set(refit) then goto, begin_fit $ ; SKIP
+     if keyword_set(refit) or keyword_set(reflux) or keyword_set(reerr) then $
+        goto, begin_fit $       ; SKIP
      else begin
         print,'sdss_stackciv: file exists; will not clobber ',outfil
         return                  ; EXIT
@@ -553,12 +577,13 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
            print,''
            print,'sdss_stackciv: WARNING!!! 0 or non-finite C(z,W):'
            printcol,civcorr[test].qso_name,civcorr[test].wrest[0],$
-                    civcorr[test].zabs_orig[0],civcorr[test].ew_orig[0],$
+                    civcorr[test].(ztag)[0],civcorr[test].(ewtag)[0],$
                     czw[test,dd],format='(5x,a14,1x,f9.4,1x,f7.5,1x,f5.2,f5.3)'
            print,''
            czw[test,dd] = !values.f_nan
         endif
      endfor                     ; loop dd=ndblt
+
   endif 
   
   
@@ -577,7 +602,9 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
   ;; This is memory intensive; try floats for now
   gstrct = {$
            median:keyword_set(median),$ ; whatever sdss_stackciv_errmc() needs
-           percentile:fltarr(2),$ ; stored in fdat[*,[5,6]]
+           percentile:fltarr(2),$       ; stored in fdat[*,[5,6]]
+           ewabs:civstr.(ewtag)[2*indgen(ndblt)],$ ; [ndblt, nabs]
+           zabs:civstr.(ztag)[2*indgen(ndblt)],$
            gwave:gwave,$
            gflux:fltarr(ngpix,nciv,/nozero),$
            medsnr_spec:fltarr(nciv,3,/nozero),$ ; [<f>,<sig>,<f/sig>]
@@ -746,7 +773,7 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
      ;; Store for later; sub should never fail so long as working
      ;; with metal-line systems outside Lya forest
      sub = where(ivarnew gt 0. and $
-                 gstrct.gwave*(1.+civstr[ff].zabs_orig[0])/(1.+civstr[ff].z_qso) $
+                 gstrct.gwave*(1.+civstr[ff].(ztag)[0])/(1.+civstr[ff].z_qso) $
                  ge 1250.)            ; match sdss_fndlin
      if sub[0] eq -1 then sub = gdvar ; fall back
      sig_tmp = sqrt(gstrct.gvariance[sub,ff])
@@ -771,8 +798,7 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
 
   ;; Collapse and do faux-error assessment because want percentiles
   fdat = sdss_stackciv_stack(gstrct, median=gstrct.median, $
-                             percentile=percentile, $ 
-                             wvnrm=wvnrm) ; fudging
+                             percentile=percentile)
 
   ;; Trim leading and trailing (fdat[*,1] is number of spectra per pixel)
   gd = where(fdat[*,1] ne 0. and finite(fdat[*,2])) ; spectra added to pixels
@@ -861,8 +887,13 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
   sxaddhist,'Sixth dimen is upper percentile',header,/comment
 
 
-  begin_fit: 
-  if keyword_set(refit) then begin
+  begin_fit:
+  if keyword_set(reflux) then begin
+     gstrct = xmrdfits(outfil,2,/silent) 
+     print,'sdss_stackciv: re-collapsing the stack and finding in ',outfil
+     fdat = sdss_stackciv_stack(gstrct, median=gstrct.median, $
+                                percentile=gstrct.percentile) 
+  endif else if keyword_set(refit) or keyword_set(reerr) then begin
      ;; Read in
      fdat = xmrdfits(outfil,0,header,/silent)
 ;     civstr = xmrdfits(outfil,2,/silent)
@@ -870,22 +901,28 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
      print,'sdss_stackciv: re-fitting and finding in ',outfil
   endif
 
-  if not keyword_set(qerr) or keyword_set(reerr) then begin
-     if keyword_set(reerr) then $
-        print,'sdss_stackciv: Monte Carlo error re-estimate'
-     if not keyword_set(niter) then niter = 1000
-     if not keyword_set(fexcl) then fexcl = 0.25 ; 25%
-     ;; _extra= includes seed=, oseed=
-     error = sdss_stackciv_errmc(fdat, gstrct, niter=niter, $
-                                 fexcl=fexcl, _extra=extra)
-     fdat[*,2] = error
+  if keyword_set(reerr) then begin
+     if keyword_set(qerr) then $
+        print,"sdss_stackciv: /reerr with /qerr doesn't do anything" $
+     else begin
+        print,'sdss_stackciv: Monte-Carlo bootstrap error (re-)estimate'
+        if not keyword_set(niter) then niter = 1000
+        if not keyword_set(fexcl) then fexcl = 0.25 ; 25%
+        ;; _extra= includes seed=, oseed=, sigew=, and stuff for
+        ;; sdss_stackciv_fitconti()
+        fdat[*,2] = sdss_stackciv_errmc(fdat, gstrct, niter=niter, $
+                                        fexcl=fexcl, cstrct_resmpl=cstrct_resmpl, $
+                                        _extra=extra)
+        ;; cstrct_resmpl only returned if _extra= includes sigew=
+        ;; can be passed to sdss_mkstacksumm() for further analysis
+        
+        sxaddpar,header,'NITER',niter,'Number of MC iterations'
+        sxaddpar,header,'FEXCL',fexcl,'Frac or num exclude each iter'
+     endelse
+  endif                         ; /reerr
 
-     sxaddpar,header,'NITER',niter,'Number of MC iterations'
-     sxaddpar,header,'FEXCL',fexcl,'Frac or num exclude each iter'
-  endif                         ; /mcerr
 
-
-  ;; Conti
+  ;; Conti and line-finding always done with /reflux, /refit, /reerr
   ;; _extra= includes lin_fil=, dvlin=, and lots of other stuff (see
   ;; function) 
   cstrct = sdss_stackciv_fitconti( fdat, wave=gstrct.gwave, debug=debug, $
@@ -895,8 +932,10 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
   ;; Write
   mwrfits,fdat,outfil,header,/create,/silent ; ext = 0
   mwrfits,cstrct,outfil,/silent              ; ext = 1
-;  mwrfits,civstr,outfil,/silent              ; ext = 2
-  mwrfits,gstrct,outfil,/silent              ; ext = 3
+;  mwrfits,civstr,outfil,/silent              ; ext = ...
+  mwrfits,gstrct,outfil,/silent ; ext = 2
+  if keyword_set(cstrct_resmpl) then $
+     mwrfits,cstrct_resmpl,outfil,/silent ; ext = 3 
   spawn,'gzip -f '+outfil
   print,'sdss_stackciv: created ',outfil
 
