@@ -423,6 +423,8 @@ function sdss_stackciv_errmc, fdat, gstrct0, fexcl=fexcl, sigew=sigew, $
      
      ;; Replace (have to loop; don't know why)
      for rr=0L,nexcl-1 do begin
+        gstrct.ewabs[*,iexcl[rr]] = gstrct0.ewabs[*,iresmpl[rr]]
+        gstrct.zabs[*,iexcl[rr]] = gstrct0.zabs[*,iresmpl[rr]]
         gstrct.gflux[*,iexcl[rr]] = gstrct0.gflux[*,iresmpl[rr]]
         gstrct.gvariance[*,iexcl[rr]] = gstrct0.gvariance[*,iresmpl[rr]]
         gstrct.gweight[*,iexcl[rr]] = gstrct0.gweight[*,iresmpl[rr]]
@@ -435,8 +437,7 @@ function sdss_stackciv_errmc, fdat, gstrct0, fexcl=fexcl, sigew=sigew, $
      if keyword_set(sigew) then begin
         ;; need error array for fitting continuum and finding lines
         ;; so have to get it
-        new_fdat[*,2] = sdss_stackciv_errmc(new_fdat, gstrct, $
-                                            sigew=0, fonly=0, $
+        new_fdat[*,2] = sdss_stackciv_errmc(new_fdat, gstrct, sigew=0, $
                                             fexcl=fexcl, niter=niter, $
                                             seed=oseed, oseed=oseed)
         
@@ -599,7 +600,8 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
      gwave = 10.^(alog10(wvmnx[0]) + dindgen(ngpix)*pixscale)
   endelse 
   
-  ;; This is memory intensive; try floats for now
+  ;; This is memory intensive; try floats for now (update changes here
+  ;; to trimmed gstrct = tmp below)
   gstrct = {$
            median:keyword_set(median),$ ; whatever sdss_stackciv_errmc() needs
            percentile:fltarr(2),$       ; stored in fdat[*,[5,6]]
@@ -809,9 +811,12 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
      istop = gd[gapstop[ngap-1]]
      ngpix = istop - istrt + 1
      fdat = fdat[istrt:istop,*]
-     ;; save space by triming
+     ;; save space by trimming (keep synched with gstrct = {} def above)
      tmp = {$
            median:gstrct.median,$ ; whatever sdss_stackciv_errmc() needs
+           percentile:gstrct.percentile,$
+           ewabs:gstrct.ewabs,$
+           zabs:gstrct.zabs,$
            gwave:gstrct.gwave[istrt:istop,*],$
            gflux:gstrct.gflux[istrt:istop,*],$
            medsnr_spec:gstrct.medsnr_spec,$ ; [<f>,<sig>,<f/sig>]
