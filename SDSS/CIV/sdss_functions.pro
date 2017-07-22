@@ -8371,7 +8371,7 @@ function sdss_mkstacksumm, inp_fil, outfil=outfil, list=list, lin_fil=lin_fil, $
 
   if keyword_set(list) then $
      readcol,inp_fil,stack_fil,format='a',/silent $
-  else stack_fil = inp_fil
+  else stack_fil = inp_fil      ; may be array of cstrct/abslin structures
   nfil = (size(stack_fil,/dim))[0] > 1
 
   ;; "Ave" tags are [mean,median]
@@ -8383,24 +8383,28 @@ function sdss_mkstacksumm, inp_fil, outfil=outfil, list=list, lin_fil=lin_fil, $
              NCOLM:fltarr(nlin),SIGNCOLM:fltarr(nlin) $ ; don't actually have these
              }    
   strct = replicate(tmpltstr,nfil)
-  strct.stack_fil = stack_fil
+  if size(stack_fil,/type) eq 7 then strct.stack_fil = stack_fil $
+  else strct.stack_fil = 'Input Structure'
 
   for ff=0,nfil-1 do begin
-     ;; Copy meta-information
-     hdr = xheadfits(strct[ff].stack_fil)
-     strct[ff].nabs = sxpar(hdr,'NABS')
-     strct[ff].wvion = sxpar(hdr,'WVION')
-     strct[ff].zave[0] = sxpar(hdr,'ZMEAN')
-     strct[ff].zave[1] = sxpar(hdr,'ZMED')
-     strct[ff].zlim[0] = sxpar(hdr,'ZMIN')
-     strct[ff].zlim[1] = sxpar(hdr,'ZMAX')
-     strct[ff].ewave[0] = sxpar(hdr,'EWMEAN')
-     strct[ff].ewave[1] = sxpar(hdr,'EWMED')
-     strct[ff].ewlim[0] = sxpar(hdr,'EWMIN')
-     strct[ff].ewlim[1] = sxpar(hdr,'EWMAX')
+     if size(strct_fil,/type) eq 7 then begin
+        ;; Copy meta-information
+        hdr = xheadfits(strct[ff].stack_fil)
+        strct[ff].nabs = sxpar(hdr,'NABS')
+        strct[ff].wvion = sxpar(hdr,'WVION')
+        strct[ff].zave[0] = sxpar(hdr,'ZMEAN')
+        strct[ff].zave[1] = sxpar(hdr,'ZMED')
+        strct[ff].zlim[0] = sxpar(hdr,'ZMIN')
+        strct[ff].zlim[1] = sxpar(hdr,'ZMAX')
+        strct[ff].ewave[0] = sxpar(hdr,'EWMEAN')
+        strct[ff].ewave[1] = sxpar(hdr,'EWMED')
+        strct[ff].ewlim[0] = sxpar(hdr,'EWMIN')
+        strct[ff].ewlim[1] = sxpar(hdr,'EWMAX')
 
-     ;; Read in conti structure
-     cstrct = xmrdfits(strct[ff].stack_fil,1,/silent)
+        ;; Read in conti structure
+        cstrct = xmrdfits(strct[ff].stack_fil,1,/silent)
+     endif else cstrct = stack_fil[ff]
+     
      cindx = fix(alog(cstrct.cflg)/alog(2))
      strct[ff].lsnr = cstrct.snr_conv[cstrct.npix,cindx]
 

@@ -35,7 +35,8 @@
 ;              re-binned input spectra can be weighted by completeness,
 ;              /ivarwgt, or /litwgt.
 ;   percentile= -- 2-element array with percentiles to store for
-;                  median stack [default: 25th and 75th]
+;                  median stack [default: 15.9%, 84.1% (like +/-1
+;                  Gaussian sigma]
 ;   /refit -- re-normalize and find lines; calls sdss_stackciv_stack() 
 ;   /qerr -- quick error analysis (not correct)
 ;   /reerr -- re-analyze the error from Monte Carlo bootstrapping
@@ -215,32 +216,32 @@ function sdss_stackciv_stack, gstrct, median=median, percentile=percentile, $
      return, -1
   endif
 
+  ngpix = (size(gstrct.gwave,/dim))[0] > 1
+
   ;; Collapse
+  fdat = fltarr(ngpix,7,/nozero)
+  fdat[*,1] = total(gstrct.gnspec,2)
   ;; Going to follow SDSS (pre-SDSS-III) spSpec format, differences
   ;; noted in square brackets (ext=0, what parse_sdss can handle):
   ;; fdat[*,0] = flux
   ;; fdat[*,1] = number of spectra per pixel [not continuum-subtracted
   ;;             spectrum] 
-  ;; fdat[*,2] = 1-sigma uncertainty; inverse-variance weighted error
+  ;; fdat[*,2] = 1-sigma uncertainty; weighted error
   ;;             propogation (very small) if mean stack or
-  ;;             median absolute deviation (MAD) if median stack
+  ;;             median absolute deviation (MAD; badness!) if median stack
   ;; fdat[*,3] = weight (or median weight) [not mask array]
   ;; fdat[*,4] = continuum [not in SDSS spSpec]
-  ;; fdat[*,5] = lower percentile if median stack [not in SDSS spSpec]
-  ;; fdat[*,6] = upper percentile if median stack [not in SDSS spSpec]
-
-  ngpix = (size(gstrct.gwave,/dim))[0] > 1
+  ;; fdat[*,5] = lower percentile [not in SDSS spSpec]
+  ;; fdat[*,6] = upper percentile [not in SDSS spSpec]
+  if not keyword_set(percentile) then begin
+     ;; Consider these like "errors" but just alternate percentiles
+     ;; to save (where median is 50%)
+     percentile = replicate(gauss_pdf(1.),2) ; ~84.1%; +1 Gaussian sigma
+     percentile[0] = 1. - percentile[0]      ; ~15.9%; -1 Gaussian sigma
+;     percentile = [0.25,0.75]
+  endif
 
   if keyword_set(median) then begin
-     if not keyword_set(percentile) then begin
-        ;; Consider these like "errors" but just alternate percentiles
-        ;; to save (where median is 50%)
-;        percentile = replicate(gauss_pdf(1.),2) ; ~84.1%; +1 Gaussian sigma
-;        percentile[0] = 1. - percentile[0]      ; ~15.9%; -1 Gaussian sigma
-        percentile = [0.25,0.75]
-     endif
-     fdat = fltarr(ngpix,7,/nozero)
-     fdat[*,1] = total(gstrct.gnspec,2)
 
      ;; Estimate error straight from the statistics
      for pp=0L,ngpix-1 do begin
@@ -254,12 +255,12 @@ function sdss_stackciv_stack, gstrct, median=median, percentile=percentile, $
 
            if ngdciv eq 1 then begin
               fdat[pp,0] = gstrct.gflux[pp,gdciv]
-
+              ;; [1] is number of spec set above
               if keyword_set(fonly) then continue; save time
 
               fdat[pp,2] = sqrt(gstrct.gvariance[pp,gdciv]) ; lack of better to do
               fdat[pp,3] = gstrct.gweight[pp,gdciv]
-              ;; 4 is continuum
+              ;; [4] is continuum
               fdat[pp,[5,6]] = 0 ; percentiles not calculable
            endif else begin
 
@@ -302,21 +303,40 @@ function sdss_stackciv_stack, gstrct, median=median, percentile=percentile, $
      ;; weight could be 1's and hence just an average 
      ;; fbar = sum(fi*wi)/sum(wi)
      ;; Propogate errors and var(fbar) = sum(var(fi)*wi^2)/(sum(wi))^2
-     ;; If /ivarwgt wasn't set in sdss_stackciv, this reduces to
-     ;; just mean.
-     fdat = dblarr(ngpix,5,/nozero)
+     ;; If /ivarwgt and /litwgt weren't set in sdss_stackciv, this 
+     ;; reduces to the regular mean.
      twgt = 1. / total(gstrct.gweight,2)
      fdat[*,0] = total(gstrct.gflux*gstrct.gweight,2,/nan) * twgt
-     
+     ;; [1] is number of spec set above
      if not keyword_set(fonly) then begin ; save time
-        fdat[*,1] = total(gstrct.gnspec,2) ; number of spectra per pixel
         fdat[*,2] = total(gstrct.gvariance*gstrct.gweight^2,2,/nan) * twgt^2
         fdat[*,2] = sqrt(fdat[*,2])
         fdat[*,3] = total(gstrct.gweight,2) ; weight
+        ;; [4] is continuum
+        
+        for pp=0L,ngpix-1 do begin
+           ;; Use only CIV that contribute meaninful to this pixel
+           gdciv = where(finite(gstrct.gflux[pp,*]),ngdciv) 
+
+           if ngdciv le 1 then fdat[pp,[5,6]] = 0. $ ; like /median
+           else begin
+              ;; Going to be real stupid for low ngdciv... basically
+              ;; assuming 
+              srt = gdciv[sort(gstrct.gflux[pp,gdciv])]
+              cumhist = lindgen(ngdciv)/float(ngdciv)
+              fprob = interpol(gstrct.gflux[pp,srt], cumhist, percentile)
+              fdat[pp,5] = fprob[0]
+              fdat[pp,6] = fprob[1]
+           endelse              ; ngdciv > 0
+        endfor                  ; pp=ngpix
+        
      endif
 
   endelse 
-                             
+
+  if not keyword_set(fonly) then $
+     gstrct.percentile = percentile ; posterity
+  
   ;; fdat[*,4] = conti in sdss_stackciv (main)
 
   return, fdat
@@ -366,7 +386,7 @@ function sdss_stackciv_errmc, fdat, gstrct0, fexcl=fexcl, sigew=sigew, $
   else nexcl = fexcl
 
   ;; Need to save the values of the flux from the stack
-  fx_resmpl = fltarr(ngpix,niter,/nozero)
+  fx_resmpl = fltarr(ngpix,niter+2,/nozero) ; last two are extremum
 
   for ii=0L,niter-1 do begin
 
@@ -407,7 +427,7 @@ function sdss_stackciv_errmc, fdat, gstrct0, fexcl=fexcl, sigew=sigew, $
   ;; now use the MAD
   tmp = reform(fdat[*,0])
   flux = rebin(tmp,ngpix,niter) ; dupliclate to get right dimensionality
-  error = median( abs(fx_resmpl - flux), dim=2, /even)
+  error = median( abs(fx_resmpl[*,0:niter-3] - flux), dim=2, /even) ; excl extremum
   
   oseed = oseed[0]              ; for next iteration
 
@@ -420,7 +440,8 @@ function sdss_stackciv_errmc, fdat, gstrct0, fexcl=fexcl, sigew=sigew, $
 ;  x_splot,gstrct.gwave,fdat[*,0],psym1=10,ytwo=fx_resmpl[*,idx[0]],psym2=10,ythr=fx_resmpl[*,idx[1]],psym3=10,yfou=fx_resmpl[*,idx[2]],psym4=10,yfiv=fx_resmpl[*,idx[3]],psym5=10,ysix=fx_resmpl[*,idx[4]],psym6=10,ysev=fx_resmpl[*,idx[5]],psym7=10,yeig=fx_resmpl[*,idx[6]],psym8=10
 
   if keyword_set(sigew) then begin
-     
+     stacksummstr = sdss_mkstacksumm([cstrct0,cstrct_resmpl])
+
      
      stop
      if keyword_set(extra0) then extra = extra0 ; restore unchanged
@@ -556,6 +577,7 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
   ;; This is memory intensive; try floats for now
   gstrct = {$
            median:keyword_set(median),$ ; whatever sdss_stackciv_errmc() needs
+           percentile:fltarr(2),$ ; stored in fdat[*,[5,6]]
            gwave:gwave,$
            gflux:fltarr(ngpix,nciv,/nozero),$
            medsnr_spec:fltarr(nciv,3,/nozero),$ ; [<f>,<sig>,<f/sig>]
@@ -833,12 +855,10 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
   sxaddhist,'Second dimen is sigma',header,/comment
   sxaddhist,'Third dimen is weight per pix',header,/comment     
   sxaddhist,'Fourth dimen is continuum',header,/comment
-  if keyword_set(median) then begin
-     sxaddpar,header,'PERLOW',percentile[0],'Lower percentile in fifth dimen'
-     sxaddpar,header,'PERHIGH',percentile[1],'Upper percentile in sixth dimen'
-     sxaddhist,'Fifth dimen is lower percentile',header,/comment
-     sxaddhist,'Sixth dimen is upper percentile',header,/comment
-  endif 
+  sxaddpar,header,'PERLOW',percentile[0],'Lower percentile in fifth dimen'
+  sxaddpar,header,'PERHIGH',percentile[1],'Upper percentile in sixth dimen'
+  sxaddhist,'Fifth dimen is lower percentile',header,/comment
+  sxaddhist,'Sixth dimen is upper percentile',header,/comment
 
 
   begin_fit: 
