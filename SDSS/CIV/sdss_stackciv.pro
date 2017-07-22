@@ -889,6 +889,7 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
 
   begin_fit:
   if keyword_set(reflux) then begin
+     header = xheadfits(outfil,/silent)
      gstrct = xmrdfits(outfil,2,/silent) 
      print,'sdss_stackciv: re-collapsing the stack and finding in ',outfil
      fdat = sdss_stackciv_stack(gstrct, median=gstrct.median, $
@@ -901,25 +902,27 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
      print,'sdss_stackciv: re-fitting and finding in ',outfil
   endif
 
-  if keyword_set(reerr) then begin
-     if keyword_set(qerr) then $
-        print,"sdss_stackciv: /reerr with /qerr doesn't do anything" $
-     else begin
-        print,'sdss_stackciv: Monte-Carlo bootstrap error (re-)estimate'
-        if not keyword_set(niter) then niter = 1000
-        if not keyword_set(fexcl) then fexcl = 0.25 ; 25%
-        ;; _extra= includes seed=, oseed=, sigew=, and stuff for
-        ;; sdss_stackciv_fitconti()
-        fdat[*,2] = sdss_stackciv_errmc(fdat, gstrct, niter=niter, $
-                                        fexcl=fexcl, cstrct_resmpl=cstrct_resmpl, $
-                                        _extra=extra)
-        ;; cstrct_resmpl only returned if _extra= includes sigew=
-        ;; can be passed to sdss_mkstacksumm() for further analysis
-        
-        sxaddpar,header,'NITER',niter,'Number of MC iterations'
-        sxaddpar,header,'FEXCL',fexcl,'Frac or num exclude each iter'
-     endelse
-  endif                         ; /reerr
+  if keyword_set(qerr) then begin
+     if keyword_set(reerr) then begin
+        print,"sdss_stackciv: /reerr with /qerr doesn't do anything" 
+        sxdelpar,header,'NITER' ; no longer applicable, if exists
+        sxdelpar,header,'FEXCL'
+     endif
+  endif else begin
+     print,'sdss_stackciv: Monte-Carlo bootstrap error (re-)estimate'
+     if not keyword_set(niter) then niter = 1000
+     if not keyword_set(fexcl) then fexcl = 0.25 ; 25%
+     ;; _extra= includes seed=, oseed=, sigew=, and stuff for
+     ;; sdss_stackciv_fitconti()
+     fdat[*,2] = sdss_stackciv_errmc(fdat, gstrct, niter=niter, $
+                                     fexcl=fexcl, cstrct_resmpl=cstrct_resmpl, $
+                                     _extra=extra)
+     ;; cstrct_resmpl only returned if _extra= includes sigew=
+     ;; can be passed to sdss_mkstacksumm() for further analysis
+     
+     sxaddpar,header,'NITER',niter,'Number of MC iterations'
+     sxaddpar,header,'FEXCL',fexcl,'Frac or num exclude each iter'
+  endelse
 
 
   ;; Conti and line-finding always done with /reflux, /refit, /reerr
