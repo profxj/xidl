@@ -351,7 +351,7 @@ end                             ; sdss_stackciv_stack()
 function sdss_stackciv_errmc, fdat, gstrct0, fexcl=fexcl, sigew=sigew, $
                               cstrct_resmpl=cstrct_resmpl, $
                               niter=niter, seed=seed, oseed=oseed, $
-                              _extra=extra
+                              maxmin=maxmin, _extra=extra
   if n_params() ne 2 then begin
      print,'Syntax -- sdss_stackciv_errmc(fdat, gstrct0, [fexcl=, /sigew, '
      print,'                              niter=, seed=, oseed=, _extra=])'
@@ -361,6 +361,7 @@ function sdss_stackciv_errmc, fdat, gstrct0, fexcl=fexcl, sigew=sigew, $
   ;; fexcl= fraction to exclude (if < 1) else total number
 
   if not keyword_set(niter) then niter = 1000
+  if keyword_set(maxmin) then niter_xtr = 2 else niter_xtr = 0
   if not keyword_set(fexcl) then fexcl = 0.25 ; 25%
   if keyword_set(seed) then oseed = seed
   
@@ -392,10 +393,10 @@ function sdss_stackciv_errmc, fdat, gstrct0, fexcl=fexcl, sigew=sigew, $
   else nexcl = fexcl
 
   ;; Need to save the values of the flux from the stack
-  fx_resmpl = fltarr(ngpix,niter+2,/nozero) ; last two are extremum
+  fx_resmpl = fltarr(ngpix,niter+niter_xtr,/nozero) ; last two are extremum
 
   ;; Bootstrapping
-  for ii=0L,niter+2-1 do begin
+  for ii=0L,niter+niter_xtr-1 do begin
 
      gstrct = gstrct0           ; reset
 
@@ -410,7 +411,7 @@ function sdss_stackciv_errmc, fdat, gstrct0, fexcl=fexcl, sigew=sigew, $
            srt = srt[0:nspec-nexcl-1]
         endif else begin
            ;; ii == niter+1 --> exclude *bottom* quartile
-           srt = sort[nexcl:nspec-1]
+           srt = srt[nexcl:nspec-1]
         endelse
         iexcl = srt[sort(randomu(oseed,nspec-nexcl))] ; indexes gstrct0
         iresmpl = srt[sort(randomu(oseed,nspec-nexcl))]
@@ -437,7 +438,8 @@ function sdss_stackciv_errmc, fdat, gstrct0, fexcl=fexcl, sigew=sigew, $
      if keyword_set(sigew) then begin
         ;; need error array for fitting continuum and finding lines
         ;; so have to get it
-        new_fdat[*,2] = sdss_stackciv_errmc(new_fdat, gstrct, sigew=0, $
+        new_fdat[*,2] = sdss_stackciv_errmc(new_fdat, gstrct, $
+                                            sigew=0, maxmin=0, $
                                             fexcl=fexcl, niter=niter, $
                                             seed=oseed, oseed=oseed)
         
@@ -470,6 +472,7 @@ function sdss_stackciv_errmc, fdat, gstrct0, fexcl=fexcl, sigew=sigew, $
 ;  idx = lindgen(10)
 ;  x_splot,gstrct.gwave,fdat[*,0],psym1=10,ytwo=fx_resmpl[*,idx[0]],psym2=10,ythr=fx_resmpl[*,idx[1]],psym3=10,yfou=fx_resmpl[*,idx[2]],psym4=10,yfiv=fx_resmpl[*,idx[3]],psym5=10,ysix=fx_resmpl[*,idx[4]],psym6=10,ysev=fx_resmpl[*,idx[5]],psym7=10,yeig=fx_resmpl[*,idx[6]],psym8=10
 
+  if keyword_set(sigew) then stop
   return, error
 
 end                             ; sdss_stackciv_errmc()
