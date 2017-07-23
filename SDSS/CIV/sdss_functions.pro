@@ -3028,7 +3028,6 @@ function sdss_cpstrct, oldstrct_fil, newstrct_tmplt, excl_tag=excl_tag, $
                              ;; nshift > 0 
                              ;; ee --> ndim_old-(ee-nshift)
                              ;; e.g., wrap beginning to end
-
                              if ndim2_old eq 1 then $
                                 newstrct.(tt)[ee] = $
                                 oldstrct.(mtch[0])[ndim_old-nshift-ee] $
@@ -3042,13 +3041,12 @@ function sdss_cpstrct, oldstrct_fil, newstrct_tmplt, excl_tag=excl_tag, $
                                 ;; nshift < 0
                                 ;; ndim_old-(ee-nshift) --> ee
                                 ;; e.g., wrap end to beginning
-                                
                                 if ndim2_old eq 1 then $
-                                   newstrct.(tt)[(ee-nshift) mod ndim_old] = $
-                                   oldstrct.(mtch[0])[ee] $
+                                   newstrct.(tt)[ee] = $
+                                   oldstrct.(mtch[0])[(ee-nshift) mod ndim_old] $
                                 else $
-                                   newstrct.(tt)[(ee-nshift) mod ndim_old,ff] = $
-                                   oldstrct.(mtch[0])[ee,ff] 
+                                   newstrct.(tt)[ee,ff] = $
+                                   oldstrct.(mtch[0])[(ee-nshift) mod ndim_old,ff] 
                              
                              endif else begin
                                 ;; 0 <= ee-nshift <= ndim_new-1
@@ -3086,7 +3084,8 @@ function sdss_cpstrct, oldstrct_fil, newstrct_tmplt, excl_tag=excl_tag, $
 
         endif else if keyword_set(verbose) then $
            print,'sdss_cpstrct(): excluding tag '+excl_tag[test[0]]
-     endelse  
+     endelse
+
   endfor                        ; loop tt=ntags
 
   return, newstrct
