@@ -457,14 +457,20 @@ function sdss_stackciv_errmc, fdat, gstrct0, fexcl=fexcl, sigew=sigew, $
   endfor                        ; loop ii=niter+2
 
   ;; Analyze just the distribution of the flux
-  ;; now use the MAD
-  tmp = reform(fdat[*,0])
-  flux = rebin(tmp,ngpix,niter) ; dupliclate to get right dimensionality
-  error = median( abs(fx_resmpl[*,0:niter-1] - flux), dim=2, /even) ; excl extremum
+  if keyword_set(gstrct0.median) then begin
+     ;; now use the MAD
+     tmp = reform(fdat[*,0])
+     flux = rebin(tmp,ngpix,niter)                                     ; dupliclate to get right dimensionality
+     error = median( abs(fx_resmpl[*,0:niter-1] - flux), dim=2, /even) ; excl extrema
+  endif else $
+     error = stddev( fx_resmpl[*,0:niter-1], dim=2 )
+
+  ;; Should we do the percentiles? 
   
   oseed = oseed[0]              ; for next iteration
 
-  ;; Modify output
+  ;; Modify output (cannot save structures within structure, so
+  ;; cstrct_resmpl returned separately)
   gstrct0 = create_struct(gstrct0,'GFLUX_RESAMPLE',fx_resmpl)
   
 ;  x_splot,gstrct.gwave,fdat[*,0],ytwo=fdat[*,2],psym1=10,psym2=10,ythr=error,psym3=10,/block
