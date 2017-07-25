@@ -1369,6 +1369,7 @@ pro sdss_chkciv_llist, state
      'CIV': llist = getenv('XIDL_DIR')+'/SDSS/CIV/sdss_civ.lst'
      'FkIV': llist = getenv('XIDL_DIR')+'/SDSS/CIV/sdss_fkiv.lst'
      'SiIV': llist = getenv('XIDL_DIR')+'/SDSS/SiIV/sdss_siiv.lst'
+     'FuIV': llist = getenv('XIDL_DIR')+'/SDSS/SiIV/sdss_fuiv.lst'
      'MgII': llist = getenv('XIDL_DIR')+'/SDSS/MgII/sdss_mgii.lst'
      'FkII': llist = getenv('XIDL_DIR')+'/SDSS/MgII/sdss_fkii.lst'
      'CaII': llist = getenv('XIDL_DIR')+'/SDSS/CaII/sdss_caii.lst'
