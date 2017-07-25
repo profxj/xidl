@@ -449,7 +449,15 @@ function sdss_stackciv_errmc, fdat, gstrct0, fexcl=fexcl, sigew=sigew, $
         cstrct = sdss_stackciv_fitconti(new_fdat, wave=gstrct0.gwave, $
                                         _extra=extra)
         if ii eq 0 then cstrct_resmpl = cstrct $
-        else cstrct_resmpl = [cstrct_resmpl,cstrct] ; wonder how RAM intensive this is 
+        else begin
+           cstrct_resmpl = [cstrct_resmpl,cstrct] ; wonder how RAM intensive this is
+           if (ii mod 50) eq 0 then begin
+              print,'sdss_stackciv_errmc(/sigew): iter = ',ii+1
+              save,/all,filename='sdss_stackciv_errmc_sigew'+$
+                   string(ii+1,format='(i05)')+'.sav'
+           endif
+        endelse
+
      endif                                          ; /sigew
         
      fx_resmpl[*,ii] = new_fdat[*,0] ; save just the flux
