@@ -1598,7 +1598,7 @@ pro sdss_chkciv, qalfil, civfil, dblt_name=dblt_name, multi=multi, $
            dbltchk2 = dblt_retrieve('SiIV')
            dbltchk3 = dblt_retrieve('FeII')
         end
-        'FkIV': begin; Fake doublet
+        'FkIV': begin ; Fake doublet
            dbltchk1 = dblt_retrieve('SiIV')
            dbltchk2 = dblt_retrieve('FeII')
            dbltchk3 = dblt_retrieve('CIV')
@@ -1606,6 +1606,11 @@ pro sdss_chkciv, qalfil, civfil, dblt_name=dblt_name, multi=multi, $
         'SiIV': begin
            dbltchk1 = dblt_retrieve('CaII')
            dbltchk2 = dblt_retrieve('FeII')
+        end
+        'FuIV': begin ; Fake doublet
+           dbltchk1 = dblt_retrieve('CaII')
+           dbltchk2 = dblt_retrieve('FeII')
+           dbltchk3 = dblt_retrieve('CIV')
         end
         'CaII': begin
            dbltchk1 = dblt_retrieve('SiIV')
