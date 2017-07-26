@@ -963,10 +963,16 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
   mwrfits,cstrct,outfil,/silent              ; ext = 1
 ;  mwrfits,civstr,outfil,/silent              ; ext = ...
   mwrfits,gstrct,outfil,/silent ; ext = 2
-  if keyword_set(cstrct_resmpl) then $
-     mwrfits,cstrct_resmpl,outfil,/silent ; ext = 3 
+;  mwrfits,cstrct_resmpl,outfil,/silent ; ext = 3  ; when writable to FITS
   spawn,'gzip -f '+outfil
   print,'sdss_stackciv: created ',outfil
+
+  if keyword_set(cstrct_resmpl) then begin
+     ;; Can't save array of structures to FITS
+     tmpfil = strmid(outfil,0,strpos(outfil,'.',/reverse_search))+'_cstrct_resmpl.sav'
+     save,cstrct_resmpl,filename=tmpfil
+     print,'sdss_stackciv: created ',cstrct_resmpl
+  endif
 
   ;; plot
   if keyword_set(debug) then begin
