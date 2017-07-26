@@ -351,7 +351,7 @@ end                             ; sdss_stackciv_stack()
 function sdss_stackciv_errmc, fdat, gstrct0, fexcl=fexcl, sigew=sigew, $
                               cstrct_resmpl=cstrct_resmpl, $
                               niter=niter, seed=seed, oseed=oseed, $
-                              maxmin=maxmin, _extra=extra
+                              minmax=minmax, _extra=extra
   if n_params() ne 2 then begin
      print,'Syntax -- sdss_stackciv_errmc(fdat, gstrct0, [fexcl=, /sigew, '
      print,'                              niter=, seed=, oseed=, _extra=])'
@@ -361,7 +361,11 @@ function sdss_stackciv_errmc, fdat, gstrct0, fexcl=fexcl, sigew=sigew, $
   ;; fexcl= fraction to exclude (if < 1) else total number
 
   if not keyword_set(niter) then niter = 1000
-  if keyword_set(maxmin) then niter_xtr = 2 else niter_xtr = 0
+  ;; /minmax stores the resampled flux array when top-fexcl of the
+  ;; input sample (gstrct0.ewabs) are excluded in the second-to-last
+  ;; spectrum in gstrct0.gflux_resample and similar for the
+  ;; bottom-fexcl in the last spectrum 
+  if keyword_set(minmax) then niter_xtr = 2 else niter_xtr = 0
   if not keyword_set(fexcl) then fexcl = 0.25 ; 25%
   if keyword_set(seed) then oseed = seed
   
@@ -439,7 +443,7 @@ function sdss_stackciv_errmc, fdat, gstrct0, fexcl=fexcl, sigew=sigew, $
         ;; need error array for fitting continuum and finding lines
         ;; so have to get it
         new_fdat[*,2] = sdss_stackciv_errmc(new_fdat, gstrct, $
-                                            sigew=0, maxmin=0, $
+                                            sigew=0, minmax=0, $
                                             fexcl=fexcl, niter=niter, $
                                             seed=oseed, oseed=oseed)
         
