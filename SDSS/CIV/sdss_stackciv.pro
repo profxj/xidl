@@ -450,7 +450,7 @@ function sdss_stackciv_errmc, fdat, gstrct0, fexcl=fexcl, sigew=sigew, $
 
         ;; _extra includes lin_fil=, dvlin=, and lots of other stuff
         ;; (see function)... but definitely includes LSNR = lsnr_lcl
-        cstrct = sdss_stackciv_fitconti(new_fdat, wave=gstrct0.gwave, $
+        cstrct = sdss_stackciv_fitconti(new_fdat, wave=gstrct0.gwave, $w
                                         _extra=extra)
         if ii eq 0 then cstrct_resmpl = cstrct $
         else begin
@@ -494,6 +494,157 @@ function sdss_stackciv_errmc, fdat, gstrct0, fexcl=fexcl, sigew=sigew, $
   return, error
 
 end                             ; sdss_stackciv_errmc()
+
+
+pro sdss_stackciv_jackknife, stack_fil, oroot, fjk=fjk, _extra=extra
+  if n_params() ne 2 then begin
+     print,'Syntax -- sdss_stackciv_jackknife, stack_fil, oroot, [fjk=, _extra=]'
+     return
+  endif
+  
+  if not keyword_set(fjk) then fjk = 0.1 ; 10%; can't be fexcl
+
+  ;; Read in (shortcut on the processing)
+  fdat0 = xmrdfits(stack_fil,0,hdr0,/silent)
+  cstrct0 = xmrdfits(stack_fil,1,/silent)
+  gstrct0 = xmrdfits(stack_fil,2,/silent)
+  srt0 = gstrct0.ewabs
+
+  nabs = fxpar(hdr0, 'NABS')    ; = (size(gstrct0.ewabs,/dim))[0]
+  nexcl = round(fjk*nabs)       ; round() fairest down the line
+  nloop = ceil(1/fjk)           ; definitely make it to the end
+  istart = 0L
+
+  for ii=0L,nloop-1 do begin
+     istop = (istart + nexcl - 1)
+     if ii eq niter-1 then istop = nabs - 1 ; all the way to end
+
+     ;; Extract information
+     sub = srt0[istart:istop]
+     gstrct = {$                        ; this has to match what's in gstrct
+              median:gstrct.median,$    ; whatever sdss_stackciv_errmc() needs
+              percentile:gstrct.percentile,$
+              ewabs:gstrct.ewabs[sub],$
+              zabs:gstrct.zabs[sub],$
+              gwave:gstrct.gwave[*,sub],$
+              gflux:gstrct.gflux[*,sub],$
+              medsnr_spec:gstrct.medsnr_spec,$ ; [<f>,<sig>,<f/sig>]
+              gvariance:gstrct.gvariance[*,sub],$
+              gweight:gstrct.gweight[*,sub],$
+              gnspec:gstrct.gnspec[*,sub] $ ; counter and may divide
+              }                             ; will end up gflux_resample too
+     
+     
+     ;; _extra= includes fexcl=, niter=, seed=, oseed=
+     fdat = sdss_stackciv_stack(gstrct, median=subgstrct.median, $
+                                sigew=0, minmax=0, _extra=extra)
+     ;; _extra includes lin_fil=, dvlin=, and lots of other stuff
+     ;; (see function)
+     cstrct = sdss_stackciv_fitconti(fdat, wave=gstrct.gwave, $
+                                     _extra=extra)
+     
+     ewmin = min(gstrct.ewabs,max=ewmax)
+     ofil = oroot+string(ewmin,'w',ewmax,'n',istop-istart+1,$
+                         format="('_',f4.2,'w',f4.2,'_n',i05)")+'.fit'
+     ;; Update header
+     hdr = hdr0
+     sxaddpar,hdr,'NABS',nabs
+     sxaddpar,hdr,'ZMED',median(gstrct.zabs,/even)
+     sxaddpar,hdr,'ZMEAN',mean(gstrct.zabs)
+     sxaddpar,hdr,'ZMIN',min(gstrct.zabs,max=mx)
+     sxaddpar,hdr,'ZMAX',mx
+     sxaddpar,hdr,'EWMED',median(gstrct.ewabs,/even)
+     sxaddpar,hdr,'EWMEAN',mean(gstrct.ewabs)
+     sxaddpar,hdr,'EWMIN',ewmin
+     sxaddpar,hdr,'EWMAX',ewmax
+
+     ;; Write file (must match sdss_stackciv output)
+     mwrfits,fdat,ofil,header,/create,/silent ; ext = 0
+     mwrfits,cstrct,ofil,/silent              ; ext = 1
+     mwrfits,gstrct,ofil,/silent              ; ext = 2
+     spawn,'gzip -f '+ofil
+     print,'sdss_stackciv_jackknife: created ',outfil
+
+     ;; Setup for next loop
+     istart = istop + 1         ; non-overlapping
+  endfor                        ; loop ii=nloop
+  
+end                             ; sdss_stackciv_jackknife
+
+
+function sdss_stackciv_jackknife_stats, stack_list, lin_fil=lin_fil, _extra=extra
+
+  if n_param() ne then begin
+     print,'Syntax -- sdss_stackciv_jackknife_stats(stack_list)'
+     return,-1
+  endif
+
+  if not keyword_set(lin_fil) then $
+     lin_fil = getenv('XIDL_DIR')+'/Spec/Lines/Lists/lls_stack.lst'
+  linstr = x_setllst(lin_fil,0) ; lls.lst for
+  nlin = (size(linstr,/dim))[0] > 1
+
+  if n_elements(stack_fil) eq 1 then $
+     readcol,stack_list,stack_fil,format='(a)',/silent $
+  else stack_fil = stack_list
+  nfil = (size(stack_fil,/dim))[0]
+
+  ;; Setup output (dynamically sized)
+  rslt = {stack_fil:stack_fil, $
+          lin_fil:lin_fil, $
+          ion:linstr.name, $
+          wrest:linstr.wave, $
+          ewion:fltarr(nlin,nfil), $
+          ewion_excl:fltarr(nlin,nfil,0), $ ; excluding current; mean & var
+          ewion_est:fltarr(nlin,2), $       ; estimate of mean and its variance
+          ewion_bias:fltarr(nlin,2), $      ; bias estimate of above
+          ewion_estcorr:fltarr(nlin,2) $    ; bias-corrected estimators
+         }
+
+  stacksumm = sdss_mkstacksum(stack_fil, lin_fil=lin_fil, _extra=extra)
+
+  for ll=0,nlin-1 do begin
+     ;; Using median of objects in stack (zabs[1]) and extracting
+     ;; _extra= includes zrng=, dztol=, dwvtol=
+     iondat = sdss_getstackdat(stacksumm, stacksumm.zabs[1], linstr[ll].name, $
+                               mean=0, skip_null=0, /nosort, _extra=extra
+
+     rslt.ewion[ll,*] = iondat.ydat
+
+     for ff=0,nfil-1 do begin
+        if ff eq 0 then rng = 1 + lindgen(nfil-1) $ ; [1:*]
+        else begin
+           if ff eq nfil-1 then rng = lindgen(nfil-1) $     ; [0:nfil-1]
+           else rng = [lindgen(ff),ff+1+lindgen(nfil-ff-1)] ; gap
+        endelse
+
+        ;; Mean estimator
+        ;; <x_i> = 1/(n-1) SUM( x_j, j != i, n )
+        ;; before the final dividing by (n-1), let's define:
+        ;; x_i' = SUM( x_j, j != i, n )
+        rslt.ewion_excl[ll,ff,0] = mean(rslt.ewion[ll,rng]) ; what about zeros?
+
+        ;; Variance estimation
+        ;; Var = (n-1)/n SUM( (<x_i> - <x>)^2 , i, n )
+        ;; where x_i leaves out i-th sample
+        ;; But since we're saving (n-1)<x_i> as we go, can rearrange:
+        ;; Var = (n-1)^2/(n(n-1)) SUM( (<x_i> - <x>)^2 , i, n )
+        ;;     = 1/(n(n-1)) SUM( ( (n-1)(<x_i> - <x>) )^2, i, n )
+        ;;     = 1/(n(n-1)) SUM( ( x_i' - (n-1)<x> )^2, i, n )
+        ;; where x_i' is saved above, so we can sum and divide later
+        ;; for the variance as well
+
+        ;; nfil-2 to be variance of sample
+        rslt.ewion_excl[ll,ff,1] = total((rslt.ewion[ll,rng] - $
+                                          rslt.ewion_excl[ll,ff,0])^2)/(nfil-2.)
+     endfor                                        ; loop ff=nfil
+     rslt.ewion_est[ll,0] = total(rslt.ewion_excl[ll,*])/(nfil-1.)
+     rslt.ewion_est[ll,1] = (nfil-1)*mean((rslt.ewion_excl[ll,*] - $
+                                           mean(iondat.ydat))^2)
+  endfor                        ; loop ll=nlin
+         
+  return, rslt
+end                             ; sdss_stackciv_jackknife_stats
 
 
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
