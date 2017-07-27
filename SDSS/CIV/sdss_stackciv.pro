@@ -595,6 +595,8 @@ function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
           lin_fil:lin_fil, $
           ion:linstr.name, $
           wrest:linstr.wave, $
+          ewref:fltarr(nlin,2), $ ; EW, variance
+          nabs:lonarr(nlin), $
           ewion:fltarr(nlin,nfil), $
           ewion_excl:fltarr(nlin,nfil,2), $ ; excluding current; mean & var
           ewion_est:fltarr(nlin,2), $       ; estimate of mean and its variance
@@ -604,13 +606,18 @@ function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
 
   ;; _extra= includes dwvtol=
   stacksumm_ref = sdss_mkstacksumm(refstack_fil, lin_fil=lin_fil, _extra=extra)
+  rslt.ewref[*,0] = stacksumm_ref.ew
+  rslt.ewref[*,1] = stacksumm_ref.sigew^2
   stacksumm = sdss_mkstacksumm(stack_fil, lin_fil=lin_fil, _extra=extra)
+  rslt.nabs = stacksumm.nabs 
 
   for ll=0,nlin-1 do begin
      ;; Using median of objects in stack (zabs[1]) and extracting
      ;; _extra= includes zrng=, dztol=, dwvtol=
-     iondat = sdss_getstackdat(stacksumm, stacksumm.zabs[1], linstr[ll].name, $
-                               mean=0, skip_null=0, /nosrt, _extra=extra)
+     iondat = sdss_getstackdat(stacksumm, stacksumm.zave[1], linstr[ll].name, $
+                               mean=0, skip_null=0, /nosrt, $
+                               dztol=max(stacksumm.zabs[1],min=mn)-mn,$
+                               _extra=extra)
 
      rslt.ewion[ll,*] = iondat.ydat
 
@@ -646,15 +653,15 @@ function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
      ;; where <x_j> is the verage of the "leave-one-out" estimates and
      ;; x_ref 
      rslt.ewion_bias[ll,0] = (nfil-1)*( mean(rslt.ewion_excl[ll,*,0]) - $
-                                        stacksumm_ref.ew[ll] )
+                                        rslt.ewref[ll,0] )
      rslt.ewion_bias[ll,1] = (nfil-1)*( mean(rslt.ewion_excl[ll,*,1]) - $
-                                        stacksumm_ref.sigew[ll]^2 )
+                                        rslt.ewref[ll,1]^2 )
 
      ;; Jackknife bias-corrected estiamtes
      ;; <x> = n x_ref - (n - 1) <x_j>
-     rslt.ewion_estcoor[ll,0] = nfil*stacksumm_ref.ew[ll] - $
+     rslt.ewion_estcorr[ll,0] = nfil*rslt.ewref[ll,0] - $
                                 (nfil-1.)*mean(rslt.ewion_excl[ll,*,0])
-     rslt.ewion_estcoor[ll,1] = nfil*stacksumm_ref.sigew[ll]^2 - $
+     rslt.ewion_estcorr[ll,1] = nfil*rslt.ewref[ll,1]^2 - $
                                 (nfil-1.)*mean(rslt.ewion_excl[ll,*,1])
   endfor                        ; loop ll=nlin
          
