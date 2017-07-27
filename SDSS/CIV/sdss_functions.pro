@@ -4983,7 +4983,12 @@ function sdss_getewclim, cmplt_fil, clim=clim, grid=grid, nlosmax=nlosmax, $
         ;; May have dip at beginning 
         bd = where(gd ne shift(gd,1)+1,nbd) ; not consecutive with prev (always first one)
         if nbd gt 1 then begin
-           iend = gd[bd[nbd-1]] 
+           iend = gd[bd[nbd-1]]
+           if iend+1 eq cmpltstr.newbin then begin
+              ;; Funny dip below clim at high ew_global
+              print,'sdss_getewclim(): WARNING!!! dip below clim at high EW'
+              iend = gd[0]      ; asusme OK
+           endif
         endif else iend = gd[0]
         ;; Interpolate
         ;; _extra includes /lsquadratic, /quadratic, /spline
@@ -8375,7 +8380,8 @@ function sdss_mkstacksumm, inp_fil, outfil=outfil, list=list, lin_fil=lin_fil, $
 
   ;; "Ave" tags are [mean,median]
   tmpltstr = {$
-             STACK_FIL:'',NABS:0L,WVION:0.,ZAVE:dblarr(2),ZLIM:dblarr(2),$
+             STACK_FIL:'',MEDIAN:-1,NABS:0L,WVION:0.,$
+             ZAVE:dblarr(2),ZLIM:dblarr(2),$
              EWAVE:fltarr(2),EWLIM:fltarr(2),ION:linstr.name,LSNR:0.,$
              WREST:linstr.wave,ZABS:fltarr(nlin),WVLIM:fltarr(nlin,2),$
              EW:fltarr(nlin),SIGEW:fltarr(nlin),$
@@ -8389,6 +8395,7 @@ function sdss_mkstacksumm, inp_fil, outfil=outfil, list=list, lin_fil=lin_fil, $
      if size(stack_fil,/type) eq 7 then begin
         ;; Copy meta-information
         hdr = xheadfits(strct[ff].stack_fil)
+        strct[ff].median = sxpar(hdr,'MEDAIAN') ; 0: mean; 1: median
         strct[ff].nabs = sxpar(hdr,'NABS')
         strct[ff].wvion = sxpar(hdr,'WVION')
         strct[ff].zave[0] = sxpar(hdr,'ZMEAN')

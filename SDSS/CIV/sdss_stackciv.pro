@@ -497,13 +497,20 @@ end                             ; sdss_stackciv_errmc()
 
 
 pro sdss_stackciv_jackknife, stack_fil, oroot, fjk=fjk, _extra=extra
+  ;; "Deleted-d jackknife" or "group jackknife" which is more robust
+  ;; for non-smooth estimators like median
+  ;; (http://www.stat.berkeley.edu/~hhuang/STAT152/Jackknife-Bootstrap.pdf
+  ;; and
+  ;; https://web.as.uky.edu/statistics/users/pbreheny/621/F12/notes/9-6.pdf).
+  ;; But really this isn't a true "deleted-d jackknife" because
+  ;; it does not excise *every* subsample of size f_jk*n_obj.
+  ;; This instead systematically removes f_jk*n_obj in increasing rest
+  ;; equivalent widths.
   if n_params() ne 2 then begin
      print,'Syntax -- sdss_stackciv_jackknife, stack_fil, oroot, [fjk=, _extra=]'
      return
   endif
   
-  if not keyword_set(fjk) then fjk = 0.1 ; 10%; can't be fexcl
-
   ;; Read in (shortcut on the processing)
   fdat0 = xmrdfits(stack_fil,0,hdr0,/silent)
   cstrct0 = xmrdfits(stack_fil,1,/silent)
@@ -511,7 +518,12 @@ pro sdss_stackciv_jackknife, stack_fil, oroot, fjk=fjk, _extra=extra
   srt0 = gstrct0.ewabs
 
   nabs = fxpar(hdr0, 'NABS')    ; = (size(gstrct0.ewabs,/dim))[0]
-  nexcl = round(fjk*nabs)       ; round() fairest down the line
+  if not keyword_set(fjk) then begin
+     ;; Optimal choice is sqrt(nabs) < nexcl < nabs
+     nexcl = ceil(sqrt(nabs))   ; ceil() to ensure above lower limit
+     fjk = nexcl/float(nabs)    ; posterity, should be roughly 1/sqrt(nabs) 
+  endif else $
+     nexcl = round(fjk*nabs)    ; round() fairest down the line
   nloop = ceil(1/fjk)           ; definitely make it to the end
   istart = 0L
 
@@ -592,14 +604,16 @@ function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
 
   ;; Setup output (dynamically sized)
   rslt = {stack_fil:stack_fil, $
+          median:-1, $          ; 0: mean, 1: median
           lin_fil:lin_fil, $
           ion:linstr.name, $
           wrest:linstr.wave, $
-          ewref:fltarr(nlin,2), $ ; EW, variance
-          nabs:lonarr(nlin), $
+          ewref:fltarr(nlin,2), $ ; [EW, variance]
+          nref:0L, $
+          nabs:lonarr(nlin), $  ; will use average
           ewion:fltarr(nlin,nfil), $
-          ewion_excl:fltarr(nlin,nfil,2), $ ; excluding current; mean & var
-          ewion_est:fltarr(nlin,2), $       ; estimate of mean and its variance
+          ewion_excl:fltarr(nlin,nfil,2), $ ; excluding current;  mean & variance
+          ewion_est:fltarr(nlin,2), $       ; estimate of mean & variance
           ewion_bias:fltarr(nlin,2), $      ; bias estimate of above
           ewion_estcorr:fltarr(nlin,2) $    ; bias-corrected estimators
          }
@@ -608,12 +622,29 @@ function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
   stacksumm_ref = sdss_mkstacksumm(refstack_fil, lin_fil=lin_fil, _extra=extra)
   rslt.ewref[*,0] = stacksumm_ref.ew
   rslt.ewref[*,1] = stacksumm_ref.sigew^2
+  rslt.nref = stacksumm_ref.nabs
   stacksumm = sdss_mkstacksumm(stack_fil, lin_fil=lin_fil, _extra=extra)
-  rslt.nabs = stacksumm.nabs 
+  rslt.nabs = stacksumm.nabs
 
+  ;; Sanity check on uniformity
+  unq = uniq(stacksumm.median)
+  if n_elements(unq) ne 1 then begin
+     print,'sdss_stackciv_jackknife_stats(): ERROR!!! stacks not all mean or median; exiting.'
+     return,-1
+  end
+  if stacksumm_ref.median ne stacksumm[0].median then begin
+     print,'sdss_stackciv_jackknife_stats(): ERROR!!! reference stack and jackknife stacks not all mean or median; exiting.'
+     return,-1
+  endif
+  rslt.median = stacksumm_ref.median
+
+  
+  ;; Aggregate statistics per line
   for ll=0,nlin-1 do begin
      ;; Using median of objects in stack (zabs[1]) and extracting
      ;; _extra= includes zrng=, dztol=, dwvtol=
+     ;; Use skip_null=0 to (1) ensure all lines accounted for in order
+     ;; and (2) zeros *are* information for the estimators
      iondat = sdss_getstackdat(stacksumm, stacksumm.zave[1], linstr[ll].name, $
                                mean=0, skip_null=0, /nosrt, $
                                dztol=max(stacksumm.zabs[1],min=mn)-mn,$
@@ -621,6 +652,7 @@ function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
 
      rslt.ewion[ll,*] = iondat.ydat
 
+     ;; Look at statistics excluding one stack each time
      for ff=0,nfil-1 do begin
         if ff eq 0 then rng = 1 + lindgen(nfil-1) $ ; [1:*]
         else begin
@@ -628,41 +660,71 @@ function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
            else rng = [lindgen(ff),ff+1+lindgen(nfil-ff-1)] ; gap
         endelse
 
-        ;; Following Wikipedia entry:
-        
-        ;; Estimator (i.e., mean) x_j of excluding i-th subsample
-        rslt.ewion_excl[ll,ff,0] = mean(rslt.ewion[ll,rng]) ; what about zeros?
+        ;; Following Wikipedia entry but also see _The Jackknife, the
+        ;; Bootstrap, and Other Resampling Plans_ by Bradley Efron
+        ;; (1982):
 
-        ;; Variance estimation (nfil-2 to be variance of *sample* population)
-        rslt.ewion_excl[ll,ff,1] = total((rslt.ewion[ll,rng] - $
-                                          rslt.ewion_excl[ll,ff,0])^2)/(nfil-2.)
+        ;; Estimator (e.g., mean) <x_(i)> of excluding i-th subsample
+        ;; and variance estimation (e.g., MAD) (this latter may not be
+        ;; statistically sound)
+        if stacksumm[ff].median then begin
+           rslt.ewion_excl[ll,ff,0] = median(rslt.ewion[ll,rng],/even) 
+           rslt.ewion_excl[ll,ff,1] = median(abs(rslt.ewion[ll,rng] - $
+                                                 rslt.ewion_excl[ll,ff,0]),/even)
+        endif else begin
+           ;; mean() will be divide by (nfil-1)
+           rslt.ewion_excl[ll,ff,0] = mean(rslt.ewion[ll,rng]) 
+           ;; (nfil-2 to be variance of *sample* population)
+           rslt.ewion_excl[ll,ff,1] = total((rslt.ewion[ll,rng] - $
+                                             rslt.ewion_excl[ll,ff,0])^2)/(nfil-2.)
+        endelse
+
      endfor                     ; loop ff=nfil
-     
-     ;; Mean estimator
-     ;; <x_i> = 1/(n-1) SUM( x_j, j != i, n )
-     rslt.ewion_est[ll,0] = total(rslt.ewion_excl[ll,*,0])/(nfil-1.)
-     
-     ;; Variance estimator
-     ;; Var = (n-1)/n SUM( (x_j - <x_all>)^2, 1, n )
-     ;; where <x_all> is the estimator (mean) from all subsamles.
-     rslt.ewion_est[ll,1] = (nfil-1)*mean((rslt.ewion_excl[ll,*,0] - $
-                                           mean(iondat.ydat))^2)
 
-     ;; Bias estimator for mean and variance
-     ;; Bias = (n - 1) ( <x_j> - x_ref )
-     ;; where <x_j> is the verage of the "leave-one-out" estimates and
-     ;; x_ref 
-     rslt.ewion_bias[ll,0] = (nfil-1)*( mean(rslt.ewion_excl[ll,*,0]) - $
-                                        rslt.ewref[ll,0] )
-     rslt.ewion_bias[ll,1] = (nfil-1)*( mean(rslt.ewion_excl[ll,*,1]) - $
-                                        rslt.ewref[ll,1]^2 )
+     ;; Jackknife statistics (most comments in mean-estimator section)
+     if stacksumm[ff].median then begin
+        ;; Estimator of expectation value is median of whole sample
+        rslt.ewion_est[ll,0] = median(rslt.ewion_excl[ll,*,0],/even)
 
-     ;; Jackknife bias-corrected estiamtes
-     ;; <x> = n x_ref - (n - 1) <x_j>
-     rslt.ewion_estcorr[ll,0] = nfil*rslt.ewref[ll,0] - $
-                                (nfil-1.)*mean(rslt.ewion_excl[ll,*,0])
-     rslt.ewion_estcorr[ll,1] = nfil*rslt.ewref[ll,1]^2 - $
-                                (nfil-1.)*mean(rslt.ewion_excl[ll,*,1])
+;        ;; Estimator of variance (need some kind of scaling wrt nfil?
+;        ;; or should this be the same equation as the mean-estimator
+;        ;; section? yes)
+;        rslt.ewion_est[ll,1] = median(abs(rslt.ewion_excl[ll,*,0] - $
+;                                          rslt.ewion_est[ll,0]),/even)
+        
+     endif else begin
+        ;; Jackknife estimator of expectation value (e.g., mean:
+        ;; <x_(.)> = 1/n SUM( <x_(i)>, i=1, n ) )
+        ;; Mean or median of deleted averages; should equal estimator
+        ;; of whole sample.
+        rslt.ewion_est[ll,0] = mean(rslt.ewion_excl[ll,*,0])
+        
+        ;; Bias estimator for mean and variance
+        ;; Bias = (n - 1) ( <x_j> - x_ref )
+        ;; where <x_j> is the verage of the "leave-one-out" estimates and
+        ;; x_ref 
+        rslt.ewion_bias[ll,0] = (nfil-1)*( mean(rslt.ewion_excl[ll,*,0]) - $
+                                           rslt.ewref[ll,0] )
+        rslt.ewion_bias[ll,1] = (nfil-1)*( mean(rslt.ewion_excl[ll,*,1]) - $
+                                           rslt.ewref[ll,1]^2 )
+        
+        ;; Jackknife bias-corrected estiamtes
+        ;; <x> = n x_ref - (n - 1) <x_j>
+        rslt.ewion_estcorr[ll,0] = nfil*rslt.ewref[ll,0] - $
+                                   (nfil-1.)*mean(rslt.ewion_excl[ll,*,0])
+        rslt.ewion_estcorr[ll,1] = nfil*rslt.ewref[ll,1]^2 - $
+                                   (nfil-1.)*mean(rslt.ewion_excl[ll,*,1])
+     endelse
+
+     ;; Jackknife estimator of variance 
+     ;; Var = (n-d)/d SUM( (<x_(i)> - <x_(.)>)^2, i=1, n )
+     ;; where d is number excluded
+     if stacksummm
+     ;; or coefficient is (n-1)/n
+     rslt.ewion_est[ll,1] = (rslt.nabs-)/*mean((rslt.ewion_excl[ll,*,0] - $
+                                           rslt.ewion_est[ll,0])^2)
+     
+     
   endfor                        ; loop ll=nlin
          
   return, rslt
