@@ -8386,7 +8386,7 @@ function sdss_mkstacksumm, inp_fil, outfil=outfil, list=list, lin_fil=lin_fil, $
   else strct.stack_fil = 'Input Structure'
 
   for ff=0,nfil-1 do begin
-     if size(strct_fil,/type) eq 7 then begin
+     if size(stack_fil,/type) eq 7 then begin
         ;; Copy meta-information
         hdr = xheadfits(strct[ff].stack_fil)
         strct[ff].nabs = sxpar(hdr,'NABS')
