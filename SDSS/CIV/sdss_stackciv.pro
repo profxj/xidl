@@ -563,8 +563,8 @@ pro sdss_stackciv_jackknife, stack_fil, oroot, fjk=fjk, _extra=extra
      cstrct = sdss_stackciv_fitconti(fdat, wave=gstrct.gwave, $
                                      _extra=extra)
      
-     ewmin = min(gstrct.ewabs,max=ewmax)
-     ofil = oroot+string(ewmin,'w',ewmax,'n',istop-istart+1,$
+     ewmin = min(gstrct0.ewabs[istart:istop],max=ewmax)
+     ofil = oroot+string(ewmin,ewmax,istop-istart+1,$
                          format="('_',f4.2,'w',f4.2,'_n',i05)")+'.fit'
      ;; Update header
      hdr = hdr0
