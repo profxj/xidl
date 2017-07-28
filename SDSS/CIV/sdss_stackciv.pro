@@ -712,8 +712,8 @@ function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
 ;     else d = mean(rslt.nref-rslt.median) 
      ;; or coefficient is (n-1)/n (and this is hard to reconcile
      ;; with (n-d)/d in limit d goes to 1)
-     rslt.ewion_est[ll,1] = (nfil-1)/float(nfil)*mean((rslt.ewion_excl[ll,*,0] - $
-                                                       rslt.ewion_est[ll,0])^2)
+     rslt.ewion_est[ll,1] = (nfil-1)*mean((rslt.ewion_excl[ll,*,0] - $
+                                           rslt.ewion_est[ll,0])^2)
      
      ;; Bias estimator for mean and variance
      ;; Bias = (n - 1) ( <x_(.)> - x_ref )
