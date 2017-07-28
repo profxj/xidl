@@ -5656,6 +5656,8 @@ function sdss_calcdndx, civstrct_fil, cmplt_fil, ewlim, final=final, dz=dz, $
                czn_cmplt:keyword_set(cmpltstr.czn), $
                zcenter:fltarr(cmpltstr.nzbin,/nozero), $
                sigzcenter:fltarr(cmpltstr.nzbin,2,/nozero), $
+               zmed:fltarr(cmpltstr.nzbin,/nozero), $ ; from discrete data (cmplt weighted)
+               sigzmed:fltarr(cmpltstr.nzbin,2,/nozero), $
                numtot0:fltarr(cmpltstr.nzbin,/nozero), $
                signumtot0:fltarr(cmpltstr.nzbin,2,/nozero), $
                numtot:fltarr(cmpltstr.nzbin,/nozero), $
@@ -5736,6 +5738,8 @@ function sdss_calcdndx, civstrct_fil, cmplt_fil, ewlim, final=final, dz=dz, $
                           _extra=extra) ; included in sdss_calcncmplt() now
      if ngd eq 0 then begin
         ;; must instantiate
+        dndx_strct.zmed[zz] = dndx_strct.zcenter[zz] ; default 
+        dndx_strct.sigzmed[zz,*] = dndx_strct.sigzmed[zz,*] 
         dndx_strct.numtot[zz] = dndx_strct.numtot0[zz]
         dndx_strct.signumtot[zz,*] = dndx_strct.signumtot0[zz,*]
         dndx_strct.dxtot[zz] = dxwmax[zz] 
@@ -5747,6 +5751,16 @@ function sdss_calcdndx, civstrct_fil, cmplt_fil, ewlim, final=final, dz=dz, $
         dndx_strct.sigdndx[zz,1] = dndx_strct.signumtot[zz,1] / $
                                    dndx_strct.dxtot[zz] 
      endif else begin
+        ;; Weighted redshift
+        dndx_strct.zmed[zz] = sdss_medianw(civstr[gd].(ztag)[0],1/cxw_civ[gd],/even)
+        dndx_strct.sigzmed[zz,0] = dndx_strct.zmed[zz] - $
+                                   (dndx_strct.zcenter[zz] - $
+                                    dndx_strct.sigzcenter[zz,0]) ; handles best
+        dndx_strct.sigzmed[zz,1] = (dndx_strct.zcenter[zz] + $
+                                    dndx_strct.sigzcenter[zz,1]) - $
+                                   dndx_strct.zmed[zz] 
+                                   
+
         ;; Using completeness in numerator
         ;; Completeness-corrected number which includes lump Poisson error
         dndx_strct.numtot[zz] = sdss_calcncmplt(cxw_civ[gd],sigcxw_civ[gd,*],$
@@ -6898,6 +6912,8 @@ function sdss_calcfxw, civstrct_fil, cmplt_fil, zlim, ewbinsize=ewbinsize, $
               czn_cmplt:keyword_set(cmpltstr.czn), $
               ewcenter:(ew_global+0.5*dew_global), $
               sigewcenter:rebin(0.5*dew_global,newbin,2), $ ; inflate
+              ewmed:fltarr(newbin,/nozero), $               ; from discrete data (cmplt weighted)
+              sigewmed:fltarr(newbin,2,/nozero), $
               numtot0:fltarr(newbin,/nozero), $ ; straight-up number in bin
               signumtot0:fltarr(newbin,2,/nozero), $
               numtot:fltarr(newbin,/nozero), $ ; completeness corrected #
@@ -7040,8 +7056,8 @@ function sdss_calcfxw, civstrct_fil, cmplt_fil, zlim, ewbinsize=ewbinsize, $
      endif else begin           ; /use_flg
         gd = gddef
         ngd = ngddef
-     endelse 
-     
+     endelse
+
      ;; Save all values generally
      fxw_strct.numtot0[ee] = ngd
      ;; _extra= includes sigma=, cl=; already included in sdss_calcncmplt()
@@ -7051,6 +7067,8 @@ function sdss_calcfxw, civstrct_fil, cmplt_fil, zlim, ewbinsize=ewbinsize, $
 
      if ngd eq 0 then begin
         ;; must instantiate
+        fxw_strct.ewmed[ee] = fxw_strct.ewcenter[ee] ; default
+        fxw_strct.sigewmed[ee,*] = fxw_strct.ewcenter[ee,*]
         fxw_strct.numtot[ee] = fxw_strct.numtot0[ee] ; yes, it's just 0
         fxw_strct.signumtot[ee,*] = fxw_strct.signumtot0[ee,*]
         fxw_strct.fxw[ee] = 0. 
@@ -7100,9 +7118,12 @@ function sdss_calcfxw, civstrct_fil, cmplt_fil, zlim, ewbinsize=ewbinsize, $
 
      endif else begin
         ;; Can actually calculate
+        
         if keyword_set(c_ech) then begin
-           ;; Up-weight the numbers to reflect completeness; includes
-           ;; lump Poisson error
+           ;; Up-weight the numbers to reflect completeness
+           fxw_strct.ewmed[ee] = sdss_medianw(civstr[gd].(ewtag)[0], cxw_civ[gd])
+           
+           ;; includes lump Poisson error
            fxw_strct.numtot[ee] = sdss_calcncmplt(cxw_civ[gd],sigcxw_civ[gd,*],$
                                                   signcmplt=signumtot)
            ;; Errors just in Number = sum(1 / C(W))
@@ -7122,11 +7143,22 @@ function sdss_calcfxw, civstrct_fil, cmplt_fil, zlim, ewbinsize=ewbinsize, $
 ;              endelse 
            endif                ; /czn
 
+           ;; Can't weight individually (whole bin assumed to have same)
+           fxw_strct.ewmed[ee] = median(civstr[gd].(ewtag)[0],/even)
+
            ;; Since dX(W) reflects average completeness, keep the real
            ;; numbers in numerator
            fxw_strct.numtot[ee] = fxw_strct.numtot0[ee]
            fxw_strct.signumtot[ee,*] = fxw_strct.signumtot0[ee,*]
-        endelse 
+        endelse                 ; c_ech = 0
+        ;; Finish median EW 
+        fxw_strct.sigewmed[ee,0] = fxw_strct.ewmed[ee] - $
+                                   (fxw_strct.ewcenter[ee] - $
+                                    fxw_strct.sigewcenter[ee,0]) ; handles best
+        fxw_strct.sigewmed[ee,1] = (fxw_strct.ewcenter[ee] + $
+                                    fxw_strct.sigewcenter[ee,1]) - $
+                                   fxw_strct.ewmed[ee] 
+        
         
         ;; f(X,W) = Number / (dW * dX(W))
         if keyword_set(czn) then $                      ; log
