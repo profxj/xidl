@@ -8485,13 +8485,13 @@ end                             ; sdss_printratedsumm
 
 
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-function sdss_getstackdat, stackstrct_fil, z_ion, ion, zrng=zrng, mean=mean, $
+function sdss_getstackdat, stackstrct_fil, z_ion, ion, zrng=zrng, $
                            dztol=dztol, dwvtol=dwvtol, skip_null=skip_null, $
                            count=count, nosrt=nosrt
   ;; Either get all the ions at one redshift or all the redshifts for
   ;; one ion 
   if n_params() ne 3 then begin
-     print,'Syntax - sdss_getstackdat( stackstrct_fil, z_ion, ion, [/zrng, /mean, '
+     print,'Syntax - sdss_getstackdat( stackstrct_fil, z_ion, ion, [/zrng, '
      print,'                           dztol=, dwvtol=, /skip_null, count=, /nosrt])'
      return,-1
   endif 
@@ -8504,7 +8504,14 @@ function sdss_getstackdat, stackstrct_fil, z_ion, ion, zrng=zrng, mean=mean, $
   nz_ion = (size(z_ion,/dim))[0] > 1
   nion = (size(ion,/dim))[0] > 1
 
-  if keyword_set(mean) then iave = 0 else iave = 1
+  ;; Sanity ckeck on uniformity
+  unq = uniq(stackstr.median)
+  if n_elements(unq) ne 1 then begin
+     print,'sdss_getstackdat(): ERROR!!! stacks not all mean or median; exiting.'
+     return,-1
+  endif
+  if keyword_set(stackstr[0].median) then iave = 1 else iave = 0
+
   if not keyword_set(dwvtol) then dwvtol = 1.e-2 ; Ang
   if not keyword_set(dztol) then dztol = 250./2.998e5 ; 250 km/s
   if nion gt 1 and nz_ion gt 1 then begin

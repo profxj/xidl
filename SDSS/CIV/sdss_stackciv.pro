@@ -619,24 +619,24 @@ function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
          }
 
   ;; _extra= includes dwvtol=
-  stacksumm_ref = sdss_mkstacksumm(refstack_fil, lin_fil=lin_fil, _extra=extra)
-  rslt.ewref[*,0] = stacksumm_ref.ew
-  rslt.ewref[*,1] = stacksumm_ref.sigew^2
-  rslt.nref = stacksumm_ref.nabs
-  stacksumm = sdss_mkstacksumm(stack_fil, lin_fil=lin_fil, _extra=extra)
-  rslt.nabs = stacksumm.nabs
+  stackstr_ref = sdss_mkstacksumm(refstack_fil, lin_fil=lin_fil, _extra=extra)
+  rslt.ewref[*,0] = stackstr_ref.ew
+  rslt.ewref[*,1] = stackstr_ref.sigew^2
+  rslt.nref = stackstr_ref.nabs
+  stackstr = sdss_mkstacksumm(stack_fil, lin_fil=lin_fil, _extra=extra)
+  rslt.nabs = stackstr.nabs
 
   ;; Sanity check on uniformity
-  unq = uniq(stacksumm.median)
+  unq = uniq(stackstr.median)
   if n_elements(unq) ne 1 then begin
      print,'sdss_stackciv_jackknife_stats(): ERROR!!! stacks not all mean or median; exiting.'
      return,-1
   end
-  if stacksumm_ref.median ne stacksumm[0].median then begin
+  if stackstr_ref.median ne stackstr[0].median then begin
      print,'sdss_stackciv_jackknife_stats(): ERROR!!! reference stack and jackknife stacks not all mean or median; exiting.'
      return,-1
   endif
-  rslt.median = stacksumm_ref.median
+  rslt.median = stackstr_ref.median
 
   ;; Aggregate statistics per line
   for ll=0,nlin-1 do begin
@@ -644,9 +644,9 @@ function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
      ;; _extra= includes zrng=, dztol=, dwvtol=
      ;; Use skip_null=0 to (1) ensure all lines accounted for in order
      ;; and (2) zeros *are* information for the estimators
-     iondat = sdss_getstackdat(stacksumm, stacksumm.zave[1], linstr[ll].name, $
-                               mean=0, skip_null=0, /nosrt, $
-                               dztol=max(stacksumm.zabs[1],min=mn)-mn,$
+     iondat = sdss_getstackdat(stackstr, stackstr.zave[1], linstr[ll].name, $
+                               skip_null=0, /nosrt, $
+                               dztol=max(stackstr.zabs[1],min=mn)-mn,$
                                _extra=extra)
 
      rslt.ewion[ll,*] = iondat.ydat
