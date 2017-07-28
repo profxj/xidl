@@ -496,7 +496,7 @@ function sdss_stackciv_errmc, fdat, gstrct0, fexcl=fexcl, sigew=sigew, $
 end                             ; sdss_stackciv_errmc()
 
 
-pro sdss_stackciv_jackknife, stack_fil, oroot, fjk=fjk, _extra=extra
+pro sdss_stackciv_jackknife, stack_fil, oroot, fjk=fjk, clobber=clobber, _extra=extra
   ;; "Deleted-d jackknife" or "group jackknife" which is more robust
   ;; for non-smooth estimators like median
   ;; (http://www.stat.berkeley.edu/~hhuang/STAT152/Jackknife-Bootstrap.pdf
@@ -507,7 +507,7 @@ pro sdss_stackciv_jackknife, stack_fil, oroot, fjk=fjk, _extra=extra
   ;; This instead systematically removes f_jk*n_obj in increasing rest
   ;; equivalent widths.
   if n_params() ne 2 then begin
-     print,'Syntax -- sdss_stackciv_jackknife, stack_fil, oroot, [fjk=, _extra=]'
+     print,'Syntax -- sdss_stackciv_jackknife, stack_fil, oroot, [fjk=, /clobber, _extra=]'
      return
   endif
   
@@ -536,6 +536,16 @@ pro sdss_stackciv_jackknife, stack_fil, oroot, fjk=fjk, _extra=extra
      else if istop eq nabs-1 then sub = srt0[0:istart-1] $
      else sub = [srt0[0:istart-1],srt0[istop+1:*]]
 
+     ewmin = min(gstrct0.ewabs[srt0[istart:istop]],max=ewmax)
+     ofil = oroot+string(ewmin,ewmax,istop-istart+1,$
+                         format="('_',f4.2,'w',f4.2,'_n',i04)")+'.fit'
+     test = file_search(ofil+'*',count=ntest)
+     if ntest ne 0 and not keyword_set(clobber) then begin
+        print,'sdss_stackciv_jackknife: will not clobber ',ofil
+        istart = istop + 1      ; next loop 
+        continue                ; skip write
+     endif
+     
      gstrct = {$                        ; this has to match what's in gstrct
               median:gstrct0.median,$    ; whatever sdss_stackciv_errmc() needs
               percentile:gstrct0.percentile,$
@@ -562,10 +572,7 @@ pro sdss_stackciv_jackknife, stack_fil, oroot, fjk=fjk, _extra=extra
      ;; (see function)
      cstrct = sdss_stackciv_fitconti(fdat, wave=gstrct.gwave, $
                                      _extra=extra)
-     
-     ewmin = min(gstrct0.ewabs[istart:istop],max=ewmax)
-     ofil = oroot+string(ewmin,ewmax,istop-istart+1,$
-                         format="('_',f4.2,'w',f4.2,'_n',i05)")+'.fit'
+          
      ;; Update header
      hdr = hdr0
      sxaddpar,hdr,'NABS',nabs
@@ -583,7 +590,7 @@ pro sdss_stackciv_jackknife, stack_fil, oroot, fjk=fjk, _extra=extra
      mwrfits,cstrct,ofil,/silent              ; ext = 1
      mwrfits,gstrct,ofil,/silent              ; ext = 2
      spawn,'gzip -f '+ofil
-     print,'sdss_stackciv_jackknife: created ',outfil
+     print,'sdss_stackciv_jackknife: created ',ofil
 
      ;; Setup for next loop
      istart = istop + 1         ; non-overlapping
