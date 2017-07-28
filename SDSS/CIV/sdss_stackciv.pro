@@ -428,8 +428,8 @@ function sdss_stackciv_errmc, fdat, gstrct0, fexcl=fexcl, sigew=sigew, $
      
      ;; Replace (have to loop; don't know why)
      for rr=0L,nexcl-1 do begin
-        gstrct.ewabs[*,iexcl[rr]] = gstrct0.ewabs[*,iresmpl[rr]]
-        gstrct.zabs[*,iexcl[rr]] = gstrct0.zabs[*,iresmpl[rr]]
+        gstrct.ewabs[iexcl[rr]] = gstrct0.ewabs[iresmpl[rr]]
+        gstrct.zabs[iexcl[rr]] = gstrct0.zabs[iresmpl[rr]]
         gstrct.gflux[*,iexcl[rr]] = gstrct0.gflux[*,iresmpl[rr]]
         gstrct.gvariance[*,iexcl[rr]] = gstrct0.gvariance[*,iresmpl[rr]]
         gstrct.gweight[*,iexcl[rr]] = gstrct0.gweight[*,iresmpl[rr]]
@@ -529,27 +529,35 @@ pro sdss_stackciv_jackknife, stack_fil, oroot, fjk=fjk, _extra=extra
 
   for ii=0L,nloop-1 do begin
      istop = (istart + nexcl - 1)
-     if ii eq niter-1 then istop = nabs - 1 ; all the way to end
+     if ii eq nloop-1 then istop = nabs - 1 ; all the way to end
 
      ;; Extract information
-     sub = srt0[istart:istop]
+     if istart eq 0 then sub = srt0[istop+1:*] $ ; exclude istart:istop
+     else if istop eq nabs-1 then sub = srt0[0:istart-1] $
+     else sub = [srt0[0:istart-1],srt0[istop+1:*]]
+
      gstrct = {$                        ; this has to match what's in gstrct
-              median:gstrct.median,$    ; whatever sdss_stackciv_errmc() needs
-              percentile:gstrct.percentile,$
-              ewabs:gstrct.ewabs[sub],$
-              zabs:gstrct.zabs[sub],$
-              gwave:gstrct.gwave[*,sub],$
-              gflux:gstrct.gflux[*,sub],$
-              medsnr_spec:gstrct.medsnr_spec,$ ; [<f>,<sig>,<f/sig>]
-              gvariance:gstrct.gvariance[*,sub],$
-              gweight:gstrct.gweight[*,sub],$
-              gnspec:gstrct.gnspec[*,sub] $ ; counter and may divide
+              median:gstrct0.median,$    ; whatever sdss_stackciv_errmc() needs
+              percentile:gstrct0.percentile,$
+              ewabs:gstrct0.ewabs[sub],$
+              zabs:gstrct0.zabs[sub],$
+              gwave:gstrct0.gwave,$
+              gflux:gstrct0.gflux[*,sub],$
+              medsnr_spec:gstrct0.medsnr_spec,$ ; [<f>,<sig>,<f/sig>]
+              gvariance:gstrct0.gvariance[*,sub],$
+              gweight:gstrct0.gweight[*,sub],$
+              gnspec:gstrct0.gnspec[*,sub] $ ; counter and may divide
               }                             ; will end up gflux_resample too
      
      
-     ;; _extra= includes fexcl=, niter=, seed=, oseed=
-     fdat = sdss_stackciv_stack(gstrct, median=subgstrct.median, $
-                                sigew=0, minmax=0, _extra=extra)
+     ;; _extra= includes percentile=, /fonly
+     fdat = sdss_stackciv_stack(gstrct, median=gstrct.median, $
+                                _extra=extra)
+     ;; _extra= includes fexcl=, niter=, seed=, oseed= and others
+     ;; passed through (typically when /sigew)
+     fdat[*,2] = sdss_stackciv_errmc(fdat, gstrct, sigew=0, minmax=0, $
+                                     _extra=extra)
+     
      ;; _extra includes lin_fil=, dvlin=, and lots of other stuff
      ;; (see function)
      cstrct = sdss_stackciv_fitconti(fdat, wave=gstrct.gwave, $
@@ -1079,7 +1087,7 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
            percentile:gstrct.percentile,$
            ewabs:gstrct.ewabs,$
            zabs:gstrct.zabs,$
-           gwave:gstrct.gwave[istrt:istop,*],$
+           gwave:gstrct.gwave[istrt:istop],$
            gflux:gstrct.gflux[istrt:istop,*],$
            medsnr_spec:gstrct.medsnr_spec,$ ; [<f>,<sig>,<f/sig>]
            gvariance:gstrct.gvariance[istrt:istop,*],$
