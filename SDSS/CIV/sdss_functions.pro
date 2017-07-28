@@ -8575,7 +8575,7 @@ function sdss_getstackdat, stackstrct_fil, z_ion, ion, zrng=zrng, mean=mean, $
      
      if sub eq -1 then stop,'sdss_getstackdat() stop: no matching ions'
      
-     stackion = stackstr[match[0]].wvion ; don't lose what defines stack
+     stackion = stackstr[mtch[0]].wvion ; don't lose what defines stack
      ewlim = fltarr(count,2,/nozero)
      ewlim[*,0] = stackstr[mtch[0]].ewlim[0]
      ewlim[*,1] = stackstr[mtch[0]].ewlim[1]
