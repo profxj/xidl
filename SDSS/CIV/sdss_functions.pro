@@ -8395,7 +8395,7 @@ function sdss_mkstacksumm, inp_fil, outfil=outfil, list=list, lin_fil=lin_fil, $
      if size(stack_fil,/type) eq 7 then begin
         ;; Copy meta-information
         hdr = xheadfits(strct[ff].stack_fil)
-        strct[ff].median = sxpar(hdr,'MEDAIAN') ; 0: mean; 1: median
+        strct[ff].median = sxpar(hdr,'MEDIAN') ; 0: mean; 1: median
         strct[ff].nabs = sxpar(hdr,'NABS')
         strct[ff].wvion = sxpar(hdr,'WVION')
         strct[ff].zave[0] = sxpar(hdr,'ZMEAN')
@@ -8564,7 +8564,7 @@ function sdss_getstackdat, stackstrct_fil, z_ion, ion, zrng=zrng, mean=mean, $
         count = nlin
      endif else begin
         mask = intarr(nlin)
-        for ii=0,nions-1 do begin
+        for ii=0,nion-1 do begin
            if size(ion,/type) eq 7 then $
               gd = where(stackstr[mtch[0]].ion eq ion[ii]) $
            else gd = where(abs(stackstr[mtch[0]].wrest-ion[ii]) lt dwvtol)

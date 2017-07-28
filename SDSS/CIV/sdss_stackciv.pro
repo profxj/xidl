@@ -638,7 +638,6 @@ function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
   endif
   rslt.median = stacksumm_ref.median
 
-  
   ;; Aggregate statistics per line
   for ll=0,nlin-1 do begin
      ;; Using median of objects in stack (zabs[1]) and extracting
@@ -699,8 +698,10 @@ function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
         ;; Mean or median of deleted averages; should equal estimator
         ;; of whole sample.
         rslt.ewion_est[ll,0] = mean(rslt.ewion_excl[ll,*,0])
-        
+
+        ;; If had median-specific <varx_jk>, would need one here too
      endelse
+;     print,rslt.ion[ll],median(rslt.ewion_excl[ll,*,0],/even),mean(rslt.ewion_excl[ll,*,0])
 
      ;; Jackknife estimator of variance
      ;; <varx_jk> = (n-d)/d SUM( (<x_(i)> - <x_(.)>)^2, i=1, n )
