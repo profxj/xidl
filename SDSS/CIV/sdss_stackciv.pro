@@ -515,7 +515,7 @@ pro sdss_stackciv_jackknife, stack_fil, oroot, fjk=fjk, clobber=clobber, _extra=
   fdat0 = xmrdfits(stack_fil,0,hdr0,/silent)
   cstrct0 = xmrdfits(stack_fil,1,/silent)
   gstrct0 = xmrdfits(stack_fil,2,/silent)
-  srt0 = gstrct0.ewabs
+  srt0 = sort(gstrct0.ewabs)
 
   nabs = fxpar(hdr0, 'NABS')    ; = (size(gstrct0.ewabs,/dim))[0]
   if not keyword_set(fjk) then begin
