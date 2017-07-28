@@ -8548,6 +8548,7 @@ function sdss_getstackdat, stackstrct_fil, z_ion, ion, zrng=zrng, $
      ewlim = fltarr(count,2,/nozero)
      ewlim[*,0] = stackstr[sub].ewlim[0]
      ewlim[*,1] = stackstr[sub].ewlim[1]
+     ewabs = stackstr[sub].ewave[iave]
      wrest = stackstr[sub].wrest[mtch[0]]
      wvlim = stackstr[sub].wvlim[mtch[0],*]
      zbin = stackstr[sub].zave[iave]
@@ -8586,6 +8587,7 @@ function sdss_getstackdat, stackstrct_fil, z_ion, ion, zrng=zrng, $
      ewlim = fltarr(count,2,/nozero)
      ewlim[*,0] = stackstr[mtch[0]].ewlim[0]
      ewlim[*,1] = stackstr[mtch[0]].ewlim[1]
+     ewabs = stackstr[mtch[0]].ewave[iave]
      wrest = stackstr[mtch[0]].wrest[sub]
      zbin = stackstr[sub].zave[iave]
      zabs = stackstr[mtch[0]].zabs[sub] ; more like a delta z
@@ -8601,6 +8603,7 @@ function sdss_getstackdat, stackstrct_fil, z_ion, ion, zrng=zrng, $
      if count ne 0 then begin
         stackion = stackion[gd]
         ewlim = ewlim[gd,*]
+        ewabs = ewabs[gd]
         wrest = wrest[gd]
         zbin = zbin[gd]
         wvlim = wvlim[gd,*]
@@ -8614,9 +8617,10 @@ function sdss_getstackdat, stackstrct_fil, z_ion, ion, zrng=zrng, $
   if keyword_set(nosrt) then srt = lindgen(count) $
   else srt = sort(xdat)
   ostrct = {stackion:stackion,$ ; rest wavelength
+            median:iave, $      ; 0: mean; 1: median
             zion:z_ion, ion:ion, mean:keyword_set(mean),$
             dztol:dztol, dwvtol:dwvtol, zrng:keyword_set(zrng), $
-            ewlim:ewlim[srt,*], wrest:wrest[srt], $
+            ewlim:ewlim[srt,*], ewabs:ewabs[srt], wrest:wrest[srt], $
             zabs:zabs, zbin:zbin, wvlim:wvlim[srt,*], $
             xdat:xdat[srt], sigxdat:sigxdat[srt,*], $
             ydat:ydat[srt], sigydat:sigydat[srt,*]}
