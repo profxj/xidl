@@ -510,6 +510,9 @@ pro sdss_stackciv_jackknife, stack_fil, oroot, fjk=fjk, clobber=clobber, _extra=
      print,'Syntax -- sdss_stackciv_jackknife, stack_fil, oroot, [fjk=, /clobber, _extra=]'
      return
   endif
+
+  ;; Timing
+  tstart = systime(/seconds)
   
   ;; Read in (shortcut on the processing)
   fdat0 = xmrdfits(stack_fil,0,hdr0,/silent)
@@ -595,6 +598,14 @@ pro sdss_stackciv_jackknife, stack_fil, oroot, fjk=fjk, clobber=clobber, _extra=
      ;; Setup for next loop
      istart = istop + 1         ; non-overlapping
   endfor                        ; loop ii=nloop
+
+  ;; Final messages
+  if not keyword_set(silent) then $
+     print, 'sdss_stackciv_jackknife: All done!'
+  tlast = systime(/seconds)
+  dt = tlast - tstart
+  print,'sdss_stackciv: Elapsed clock time for '+strtrim(nloop,2)+$
+        ' iterations (m) = ',dt/60.
   
 end                             ; sdss_stackciv_jackknife
 
@@ -771,7 +782,10 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
      print,'                   /ivarwgt, /median, percentile=, /reflux, /refit,'
      print,'                   /reerr, ndblt=, /qerr, _extra=]' 
      return
-  endif 
+  endif
+
+  ;; Timing
+  tstart = systime(/seconds)
 
   ;; Check file and clobber option
   test = file_search(outfil+'*',count=ntest)
@@ -1230,7 +1244,14 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
      print,'sdss_stackciv: created ',cstrct_resmpl
   endif
 
-  ;; plot
+  ;; Final messages
+  if not keyword_set(silent) then $
+     print, 'sdss_stackciv: All done!'
+  tlast = systime(/seconds)
+  dt = tlast - tstart
+  print,'sdss_stackciv: Elapsed clock time (m) = ',dt/60.
+
+  ;; Plot
   if keyword_set(debug) then begin
      x_specplot, outfil, ytwo=fdat[*,4], inflg=5, /lls, zin=1.e-6,/block
      stop
