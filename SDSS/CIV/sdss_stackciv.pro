@@ -586,7 +586,7 @@ pro sdss_stackciv_jackknife, stack_fil, oroot, fjk=fjk, clobber=clobber, _extra=
      sxaddpar,hdr,'EWMAX',ewmax
 
      ;; Write file (must match sdss_stackciv output)
-     mwrfits,fdat,ofil,header,/create,/silent ; ext = 0
+     mwrfits,fdat,ofil,hdr,/create,/silent ; ext = 0
      mwrfits,cstrct,ofil,/silent              ; ext = 1
      mwrfits,gstrct,ofil,/silent              ; ext = 2
      spawn,'gzip -f '+ofil
