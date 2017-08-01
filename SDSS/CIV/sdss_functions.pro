@@ -8437,7 +8437,7 @@ function sdss_mkstacksumm, inp_fil, outfil=outfil, list=list, lin_fil=lin_fil, $
         strct[ff].zlim[1] = sxpar(hdr,'ZMAX')
         strct[ff].ewave[0] = sxpar(hdr,'EWMEAN')
         strct[ff].ewave[1] = sxpar(hdr,'EWMED')
-        strct[ff].ewave[2] = sxpar(hdr,'EWMEAN_JK')
+        strct[ff].ewave[2] = sxpar(hdr,'EWAVE_JK') ; "EWMEAN_JK" too long
         strct[ff].ewave[3] = sxpar(hdr,'EWMED_JK')
         strct[ff].ewlim[0] = sxpar(hdr,'EWMIN')
         strct[ff].ewlim[1] = sxpar(hdr,'EWMAX')
