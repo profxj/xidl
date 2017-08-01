@@ -8415,7 +8415,7 @@ function sdss_mkstacksumm, inp_fil, outfil=outfil, list=list, lin_fil=lin_fil, $
              STACK_FIL:'',MEDIAN:-1,NABS:0L,WVION:0.,$
              ZAVE:dblarr(2),ZLIM:dblarr(2),$
              EWAVE:fltarr(4),EWLIM:fltarr(4),$ ; if sdss_stackciv_jackknife output, indices 3,4 contain info of excluded sample
-             ION:linstr.name,LSNR:0.,$
+             ION:linstr.name,LSNR:0.,FVAL:linstr.fval,$ ; store oscillator strength
              WREST:linstr.wave,ZABS:fltarr(nlin),WVLIM:fltarr(nlin,2),$
              EW:fltarr(nlin),SIGEW:fltarr(nlin),$
              NCOLM:fltarr(nlin),SIGNCOLM:fltarr(nlin) $ ; don't actually have these
@@ -8524,12 +8524,12 @@ end                             ; sdss_printratedsumm
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 function sdss_getstackdat, stackstrct_fil, z_ion, ion, zrng=zrng, $
                            dztol=dztol, dwvtol=dwvtol, skip_null=skip_null, $
-                           count=count, nosrt=nosrt
+                           count=count, nosrt=nosrt, fnorm=fnorm
   ;; Either get all the ions at one redshift or all the redshifts for
   ;; one ion 
   if n_params() ne 3 then begin
      print,'Syntax - sdss_getstackdat( stackstrct_fil, z_ion, ion, [/zrng, '
-     print,'                           dztol=, dwvtol=, /skip_null, count=, /nosrt])'
+     print,'                           dztol=, dwvtol=, /skip_null, count=, /nosrt, /fnorm])'
      return,-1
   endif 
   if size(stackstrct_fil,/type) eq 7 then $ ; from sdss_mkstacksumm()
@@ -8540,6 +8540,12 @@ function sdss_getstackdat, stackstrct_fil, z_ion, ion, zrng=zrng, $
   nlin = (size(stackstr.ion,/dim))[0] > 1
   nz_ion = (size(z_ion,/dim))[0] > 1
   nion = (size(ion,/dim))[0] > 1
+
+  if keyword_set(fnorm) then begin
+     ;; Normalize all equivalent widths by oscillator strength
+     for ss=0,nstack-1 do $
+        stackstr[ss].ew *= 1/stackstr[ss].fval
+  endif
 
   ;; Sanity ckeck on uniformity
   unq = uniq(stackstr.median)
@@ -8663,6 +8669,7 @@ function sdss_getstackdat, stackstrct_fil, z_ion, ion, zrng=zrng, $
   else srt = sort(xdat)
   ostrct = {stackion:stackion,$ ; rest wavelength
             median:iave, $      ; 0: mean; 1: median
+            fnorm:keyword_set(fnorm),$ ; 0: rest EWs; 1: scalled by f_osc
             zion:z_ion, ion:ion, mean:keyword_set(mean),$
             dztol:dztol, dwvtol:dwvtol, zrng:keyword_set(zrng), $
             ewlim:ewlim[srt,*], ewabs:ewabs[srt,*], wrest:wrest[srt], $
