@@ -585,13 +585,19 @@ pro sdss_stackciv_jackknife, stack_fil, oroot, fjk=fjk, clobber=clobber, _extra=
      sxaddpar,hdr,'ZMAX',mx
      sxaddpar,hdr,'EWMED',median(gstrct.ewabs,/even)
      sxaddpar,hdr,'EWMEAN',mean(gstrct.ewabs)
-     sxaddpar,hdr,'EWMIN',ewmin
-     sxaddpar,hdr,'EWMAX',ewmax
+     sxaddpar,hdr,'EWMIN',min(gstrct.ewabs,max=mx) ; incl. in stack
+     sxaddpar,hdr,'EWMAX',mx
+     sxaddpar,hdr,'EWMED_JK',median(gstrct0.ewabs[istart:istop],/even),$
+              'Mean EW excluded in jackknife' ; new keywords
+     sxaddpar,hdr,'EWMEAN_JK',mean(gstrct0.ewabs[istart:istop]),$
+              'Median EW excluded in jackknife'
+     sxaddpar,hdr,'EWMIN_JK',ewmin,'Min EW excluded in jackknife'
+     sxaddpar,hdr,'EWMAX_JK',ewmax,'Max EW excluded in jackknife'
 
      ;; Write file (must match sdss_stackciv output)
      mwrfits,fdat,ofil,hdr,/create,/silent ; ext = 0
-     mwrfits,cstrct,ofil,/silent              ; ext = 1
-     mwrfits,gstrct,ofil,/silent              ; ext = 2
+     mwrfits,cstrct,ofil,/silent           ; ext = 1
+     mwrfits,gstrct,ofil,/silent           ; ext = 2
      spawn,'gzip -f '+ofil
      print,'sdss_stackciv_jackknife: created ',ofil
 
