@@ -587,9 +587,9 @@ pro sdss_stackciv_jackknife, stack_fil, oroot, fjk=fjk, clobber=clobber, _extra=
      sxaddpar,hdr,'EWMEAN',mean(gstrct.ewabs)
      sxaddpar,hdr,'EWMIN',min(gstrct.ewabs,max=mx) ; incl. in stack
      sxaddpar,hdr,'EWMAX',mx
-     sxaddpar,hdr,'EWAVE_JK',mean(gstrct0.ewabs[srt0[istart:istop]],/even),$
+     sxaddpar,hdr,'EWAVE_JK',mean(gstrct0.ewabs[srt0[istart:istop]]),$
               'Mean EW excluded in jackknife' ; new keywords; "EWMEAN_JK" too long
-     sxaddpar,hdr,'EWMED_JK',median(gstrct0.ewabs[srt0[istart:istop]]),$
+     sxaddpar,hdr,'EWMED_JK',median(gstrct0.ewabs[srt0[istart:istop]],/even),$
               'Median EW excluded in jackknife'
      sxaddpar,hdr,'EWMIN_JK',ewmin,'Min EW excluded in jackknife'
      sxaddpar,hdr,'EWMAX_JK',ewmax,'Max EW excluded in jackknife'
