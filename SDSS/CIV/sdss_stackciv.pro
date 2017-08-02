@@ -636,15 +636,18 @@ function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
 
   ;; Setup output (dynamically sized)
   rslt = {stack_fil:stack_fil, $
-          median:-1, $          ; 0: mean, 1: median
+          nabs:lonarr(nfil), $  ; will use average
+          ewave:fltarr(nfil,2), $ ; [mean,median] of excluded in jackknife
+          ewlim:fltarr(nfil,2), $ ; [min,max] of excluded
+          median:-1, $            ; 0: mean, 1: median
           lin_fil:lin_fil, $
           ion:linstr.name, $
           wrest:linstr.wave, $
           ewref:fltarr(nlin,2), $ ; [EW, variance]
           nref:0L, $
-          nabs:lonarr(nlin), $  ; will use average
           ewion:fltarr(nlin,nfil), $
-          ewion_excl:fltarr(nlin,nfil,2), $ ; excluding current;  mean & variance
+          sigewion:fltarr(nlin,2,nfil), $
+          ewion_excl:fltarr(nlin,nfil,2), $ ; excluding current; mean & variance
           ewion_est:fltarr(nlin,2), $       ; estimate of mean & variance
           ewion_bias:fltarr(nlin,2), $      ; bias estimate of above
           ewion_estcorr:fltarr(nlin,2) $    ; bias-corrected estimators
@@ -657,6 +660,8 @@ function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
   rslt.nref = stackstr_ref.nabs
   stackstr = sdss_mkstacksumm(stack_fil, lin_fil=lin_fil, _extra=extra)
   rslt.nabs = stackstr.nabs
+  rslt.ewave = transpose(stackstr.ewave[2:3]) ; from EWAVE_JK and EWMED_JK header keywords
+  rslt.ewlim = transpose(stackstr.ewlim[2:3]) ; from EWMIN_JK and EWMAX_JK
 
   ;; Sanity check on uniformity
   unq = uniq(stackstr.median)
@@ -669,6 +674,7 @@ function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
      return,-1
   endif
   rslt.median = stackstr_ref.median
+  if rslt.median then iave = 1 else iave = 0
 
   ;; Aggregate statistics per line
   for ll=0,nlin-1 do begin
@@ -676,12 +682,14 @@ function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
      ;; _extra= includes zrng=, dztol=, dwvtol=
      ;; Use skip_null=0 to (1) ensure all lines accounted for in order
      ;; and (2) zeros *are* information for the estimators
-     iondat = sdss_getstackdat(stackstr, stackstr.zave[1], linstr[ll].name, $
+     iondat = sdss_getstackdat(stackstr, stackstr.zave[iave], linstr[ll].name, $
                                skip_null=0, /nosrt, $
-                               dztol=max(stackstr.zabs[1],min=mn)-mn,$
+                               dztol=max(stackstr.zabs[iave],min=mn)-mn,$
                                _extra=extra)
 
      rslt.ewion[ll,*] = iondat.ydat
+     rslt.sigewion[ll,0,*] = iondat.sigydat[*,0]
+     rslt.sigewion[ll,1,*] = iondat.sigydat[*,1]
 
      ;; Look at statistics excluding one stack each time
      ;; Following Wikipedia entry but also see _The Jackknife, the
