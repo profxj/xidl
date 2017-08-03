@@ -644,12 +644,12 @@ function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
           lin_fil:lin_fil, $
           ion:linstr.name, $
           wrest:linstr.wave, $
-          ewref:fltarr(nlin,2), $ ; [EW, variance]
+          ewref:fltarr(nlin,2), $ ; [EW, variance] --> sigma at end
           nref:0L, $
           ewion:fltarr(nlin,nfil), $
           sigewion:fltarr(nlin,2,nfil), $
-          ewion_excl:fltarr(nlin,nfil,2), $ ; excluding current; mean & variance
-          ewion_est:fltarr(nlin,2), $       ; estimate of mean & variance
+          ewion_excl:fltarr(nlin,nfil,2), $ ; excluding current; mean & variance --> sigma at end
+          ewion_est:fltarr(nlin,2), $       ; estimate of mean & variance -- sigma at end
           ewion_bias:fltarr(nlin,2), $      ; bias estimate of above
           ewion_estcorr:fltarr(nlin,2) $    ; bias-corrected estimators
          }
@@ -657,7 +657,7 @@ function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
   ;; _extra= includes dwvtol=
   stackstr_ref = sdss_mkstacksumm(refstack_fil, lin_fil=lin_fil, _extra=extra)
   rslt.ewref[*,0] = stackstr_ref.ew
-  rslt.ewref[*,1] = stackstr_ref.sigew^2
+  rslt.ewref[*,1] = stackstr_ref.sigew^2 
   rslt.nref = stackstr_ref.nabs
   stackstr = sdss_mkstacksumm(stack_fil, lin_fil=lin_fil, _extra=extra)
   rslt.nabs = stackstr.nabs
@@ -706,7 +706,7 @@ function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
         ;; Estimator (e.g., mean) <x_(i)> of excluding i-th subsample
         ;; and variance estimation (e.g., MAD) (this latter may not be
         ;; statistically sound)
-        if keyword_set(rslt.median) then begin
+        if rslt.median then begin
            ;; <x_(i)>
            rslt.ewion_excl[ll,ff,0] = median(rslt.ewion[ll,rng],/even)
            ;; <varx_(i)>
@@ -773,7 +773,16 @@ function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
                                 (nfil-1)*rslt.ewion_est[ll,1]
      
   endfor                        ; loop ll=nlin
-         
+
+  ;; Turn all variances to sigma
+  rslt0 = rslt                  ; preserve for debugging
+  rslt.ewref[*,1] = sqrt(rslt.ewref[*,1])
+  if not rslt.median then $ ; don't sqrt MAD
+     rslt.ewion_excl[*,*,1] = sqrt(rslt.ewref_excl[*,*,1])
+  rslt.ewion_est[*,1] = sqrt(rslt.ewion_est[*,1])
+  rslt.ewion_bias[*,1] = sqrt(rslt.ewion_bias[*,1]) ; is this fair?
+  rslt.ewion_estcorr[*,1] = sqrt(rslt.ewion_estcorr[*,1])
+  
   return, rslt
 end                             ; sdss_stackciv_jackknife_stats
 
