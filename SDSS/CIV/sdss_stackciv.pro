@@ -557,7 +557,7 @@ pro sdss_stackciv_jackknife, stack_fil, oroot, fjk=fjk, clobber=clobber, _extra=
               zabs:gstrct0.zabs[sub],$
               gwave:gstrct0.gwave,$
               gflux:gstrct0.gflux[*,sub],$
-              medsnr_spec:gstrct0.medsnr_spec,$ ; [<f>,<sig>,<f/sig>]
+              medsnr_spec:gstrct0.medsnr_spec[sub,*],$ ; [<f>,<sig>,<f/sig>]
               gvariance:gstrct0.gvariance[*,sub],$
               gweight:gstrct0.gweight[*,sub],$
               gnspec:gstrct0.gnspec[*,sub] $ ; counter and may divide
