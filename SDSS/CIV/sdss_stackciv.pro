@@ -538,6 +538,7 @@ pro sdss_stackciv_jackknife, stack_fil, oroot, fjk=fjk, clobber=clobber, _extra=
      if istart eq 0 then sub = srt0[istop+1:*] $ ; exclude istart:istop
      else if istop eq nabs-1 then sub = srt0[0:istart-1] $
      else sub = [srt0[0:istart-1],srt0[istop+1:*]]
+     nsub = nabs - (istop-istart+1) 
 
      ewmin = min(gstrct0.ewabs[srt0[istart:istop]],max=ewmax)
      ofil = oroot+string(ewmin,ewmax,istop-istart+1,$
@@ -578,7 +579,7 @@ pro sdss_stackciv_jackknife, stack_fil, oroot, fjk=fjk, clobber=clobber, _extra=
           
      ;; Update header
      hdr = hdr0
-     sxaddpar,hdr,'NABS',nabs
+     sxaddpar,hdr,'NABS',nsub   ; not whole set
      sxaddpar,hdr,'ZMED',median(gstrct.zabs,/even)
      sxaddpar,hdr,'ZMEAN',mean(gstrct.zabs)
      sxaddpar,hdr,'ZMIN',min(gstrct.zabs,max=mx)
@@ -636,7 +637,7 @@ function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
 
   ;; Setup output (dynamically sized)
   rslt = {stack_fil:stack_fil, $
-          nabs:lonarr(nfil), $  ; will use average
+          nabs:lonarr(nfil), $    ; will use average
           ewave:fltarr(nfil,2), $ ; [mean,median] of excluded in jackknife
           ewlim:fltarr(nfil,2), $ ; [min,max] of excluded
           median:-1, $            ; 0: mean, 1: median
@@ -762,13 +763,13 @@ function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
      rslt.ewion_bias[ll,0] = (nfil-1)*( rslt.ewion_est[ll,0] - $
                                         rslt.ewref[ll,0] )
      rslt.ewion_bias[ll,1] = (nfil-1)*( rslt.ewion_est[ll,1] - $
-                                        rslt.ewref[ll,1]^2 )
+                                        rslt.ewref[ll,1] )
      
      ;; Jackknife bias-corrected estiamtes
      ;; <x> = n x_ref - (n - 1) <x_(.)>
      rslt.ewion_estcorr[ll,0] = nfil*rslt.ewref[ll,0] - $
                                 (nfil-1)*rslt.ewion_est[ll,0]
-     rslt.ewion_estcorr[ll,1] = nfil*rslt.ewref[ll,1]^2 - $
+     rslt.ewion_estcorr[ll,1] = nfil*rslt.ewref[ll,1] - $
                                 (nfil-1)*rslt.ewion_est[ll,1]
      
   endfor                        ; loop ll=nlin
