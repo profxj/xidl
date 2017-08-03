@@ -618,10 +618,10 @@ end                             ; sdss_stackciv_jackknife
 
 
 function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
-                                        lin_fil=lin_fil, _extra=extra
-
+                                        lin_fil=lin_fil, wrt_ref=wrt_ref,$
+                                        _extra=extra
   if n_params() ne 2 then begin
-     print,'Syntax -- sdss_stackciv_jackknife_stats(stack_list)'
+     print,'Syntax -- sdss_stackciv_jackknife_stats(stack_list, refstack_fil, [lin_fil=, /wrt_ref, _extra=])'
      return,-1
   endif
 
@@ -646,6 +646,9 @@ function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
           wrest:linstr.wave, $
           ewref:fltarr(nlin,2), $ ; [EW, variance] --> sigma at end
           nref:0L, $
+          percentile:fltarr(2), $ ; be consistent with sdss_stackciv
+          wrt_ref:keyword_set(wrt_ref), $ 
+          ewcdf:fltarr(nlin,3), $ ; [ewref or mean/median(EW), low-, high-sigma]
           ewion:fltarr(nlin,nfil), $
           sigewion:fltarr(nlin,2,nfil), $
           ewion_excl:fltarr(nlin,nfil,2), $ ; excluding current; mean & variance --> sigma at end
@@ -657,25 +660,32 @@ function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
   ;; _extra= includes dwvtol=
   stackstr_ref = sdss_mkstacksumm(refstack_fil, lin_fil=lin_fil, _extra=extra)
   rslt.ewref[*,0] = stackstr_ref.ew
-  rslt.ewref[*,1] = stackstr_ref.sigew^2 
+  rslt.ewref[*,1] = stackstr_ref.sigew^2
   rslt.nref = stackstr_ref.nabs
+  if keyword_set(wrt_ref) then $
+     rslt.ewcdf[*,0] = rslt.ewref[*,0]
+  rslt.percentile = stackstr_ref.percentile 
   stackstr = sdss_mkstacksumm(stack_fil, lin_fil=lin_fil, _extra=extra)
   rslt.nabs = stackstr.nabs
   rslt.ewave = transpose(stackstr.ewave[2:3]) ; from EWAVE_JK and EWMED_JK header keywords
   rslt.ewlim = transpose(stackstr.ewlim[2:3]) ; from EWMIN_JK and EWMAX_JK
 
-  ;; Sanity check on uniformity
-  unq = uniq(stackstr.median)
-  if n_elements(unq) ne 1 then begin
-     print,'sdss_stackciv_jackknife_stats(): ERROR!!! stacks not all mean or median; exiting.'
-     return,-1
-  end
+  ;; Sanity check on uniformity (stackstr uniformity handled by
+  ;; sdss_mkstacksumm())
   if stackstr_ref.median ne stackstr[0].median then begin
      print,'sdss_stackciv_jackknife_stats(): ERROR!!! reference stack and jackknife stacks not all mean or median; exiting.'
      return,-1
   endif
   rslt.median = stackstr_ref.median
   if rslt.median then iave = 1 else iave = 0
+
+  if stackstr_ref.percentile[0] ne stackstr[0].percentile[0] or $
+     stackstr_ref.percentile[1] ne stackstr[0].percentile[1] then begin
+     print,'sdss_stackciv_jackknife_stats(): ERROR!!! reference stack and jackknife stacks do not use same percentile; exiting.'
+     return,-1
+  endif
+  rslt.percentile = stackstr_ref.percentile
+        
 
   ;; Aggregate statistics per line
   for ll=0,nlin-1 do begin
@@ -689,7 +699,16 @@ function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
                                _extra=extra)
 
      rslt.ewion[ll,*] = iondat.ydat
-     rslt.sigewion[ll,0,*] = iondat.sigydat[*,0]
+     if not keyword_set(wrt_ref) then begin
+        ;; weighted by number bin
+        wgt = rslt.nref-rslt.nabs
+        val = transpose(rslt.ewion[ll,*])
+        if rslt.median then $
+           rslt.ewcdf[ll,0] = sdss_medianw(val,wgt,/even) $
+        else $
+           rslt.ewcdf[ll,0] = total(val*wgt)/total(wgt)
+     endif 
+     rslt.sigewion[ll,0,*] = iondat.sigydat[*,0] ; likely symmetric
      rslt.sigewion[ll,1,*] = iondat.sigydat[*,1]
 
      ;; Look at statistics excluding one stack each time
@@ -771,17 +790,43 @@ function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
                                 (nfil-1)*rslt.ewion_est[ll,0]
      rslt.ewion_estcorr[ll,1] = nfil*rslt.ewref[ll,1] - $
                                 (nfil-1)*rslt.ewion_est[ll,1]
-     
+
+
+     ;; CDF manually constructed around references (has failure modes)
+     ewrng = [0.99*min(rslt.ewion[ll,*]-sqrt(rslt.sigewion[ll,0,*])),$
+              1.01*max(rslt.ewion[ll,*]+sqrt(rslt.sigewion[ll,1,*]))]     
+     dloc = (ewrng[1]-ewrng[0])/(nfil-1.) 
+     loc = dloc*findgen(nfil) + ewrng[0] ; matches what histogram(loc=) would return
+     hist = lonarr(nfil)                    ; zeros
+     for ff=0,nfil-1 do begin
+        sub = where(rslt.ewion[ll,*] ge loc[ff] and $
+                    rslt.ewion[ll,*] lt loc[ff]+dloc,nsub)
+        if nsub eq 0 then continue
+        hist[ff] += total(rslt.nref-rslt.nabs[sub]) ; number contributing
+     endfor                                         ; loop ff=nfil
+     cdf_ion = total(hist,/cum)/float(rslt.nref)
+     ;; OR 
+;     srt_ewion = sort(rslt.ewion[ll,*])
+;     cdf_ion = total(rslt.nref-rslt.nabs[srt_ewion],/cum)/float(rslt.nref) ; 1/nabs to 1.
+;     loc = rslt.ewion[ll,srt_ewion]
+     ;; if /wrt_ref, then ewcdf finds error estimate with respect to
+     ;; reference, otherwise, with respect to mean/median of jackknife
+     ;; sample
+     fprob = interpol(loc, cdf_ion, rslt.percentile)
+     rslt.ewcdf[ll,1] = rslt.ewcdf[ll,0] - fprob[0]
+     rslt.ewcdf[ll,2] = fprob[1] - rslt.ewcdf[ll,0]
+
   endfor                        ; loop ll=nlin
 
-  ;; Turn all variances to sigma
+  ;; Turn all variances to sigma (does not apply to CDF)
   rslt0 = rslt                  ; preserve for debugging
   rslt.ewref[*,1] = sqrt(rslt.ewref[*,1])
   if not rslt.median then $ ; don't sqrt MAD
-     rslt.ewion_excl[*,*,1] = sqrt(rslt.ewref_excl[*,*,1])
+     rslt.ewion_excl[*,*,1] = sqrt(rslt.ewion_excl[*,*,1])
   rslt.ewion_est[*,1] = sqrt(rslt.ewion_est[*,1])
   rslt.ewion_bias[*,1] = sqrt(rslt.ewion_bias[*,1]) ; is this fair?
   rslt.ewion_estcorr[*,1] = sqrt(rslt.ewion_estcorr[*,1])
+  ;; rslt.ewcdf[*,1:2] already sigma
   
   return, rslt
 end                             ; sdss_stackciv_jackknife_stats

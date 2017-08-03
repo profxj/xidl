@@ -8413,7 +8413,8 @@ function sdss_mkstacksumm, inp_fil, outfil=outfil, list=list, lin_fil=lin_fil, $
 
   ;; "Ave" tags are [mean,median]
   tmpltstr = {$
-             STACK_FIL:'',MEDIAN:-1,NABS:0L,WVION:0.,$
+             STACK_FIL:'',MEDIAN:-1, PERCENTILE:fltarr(2),$
+             NABS:0L,WVION:0.,$
              ZAVE:dblarr(2),ZLIM:dblarr(2),$
              EWAVE:fltarr(4),EWLIM:fltarr(4),$ ; if sdss_stackciv_jackknife output, indices 3,4 contain info of excluded sample
              ION:linstr.name,LSNR:0.,FVAL:linstr.fval,$ ; store oscillator strength
@@ -8430,6 +8431,8 @@ function sdss_mkstacksumm, inp_fil, outfil=outfil, list=list, lin_fil=lin_fil, $
         ;; Copy meta-information
         hdr = xheadfits(strct[ff].stack_fil)
         strct[ff].median = sxpar(hdr,'MEDIAN') ; 0: mean; 1: median
+        strct[ff].percentile[0] = sxpar(hdr,'PERLOW')
+        strct[ff].percentile[1] = sxpar(hdr,'PERHIGH')
         strct[ff].nabs = sxpar(hdr,'NABS')
         strct[ff].wvion = sxpar(hdr,'WVION')
         strct[ff].zave[0] = sxpar(hdr,'ZMEAN')
@@ -8562,6 +8565,14 @@ function sdss_getstackdat, stackstrct_fil, z_ion, ion, zrng=zrng, $
   endif
   if keyword_set(stackstr[0].median) then iave = 1 else iave = 0
 
+  unqlo = uniq(stackstr.percentile[0])
+  unqhi = uniq(stackstr.percentile[1])
+  if n_elements(unqlo) ne 1 or n_elements(unqhi) ne 1 then begin
+     print,'sdss_getstackdat(): ERROR!!! stacks not all same percentile; exiting.'
+     return,-1
+  endif
+  percentile = stackstr[0].percentile ; conveyance of info
+
   if not keyword_set(dwvtol) then dwvtol = 1.e-2 ; Ang
   if not keyword_set(dztol) then dztol = 250./2.998e5 ; 250 km/s
   if nion gt 1 and nz_ion gt 1 then begin
@@ -8676,6 +8687,7 @@ function sdss_getstackdat, stackstrct_fil, z_ion, ion, zrng=zrng, $
   else srt = sort(xdat)
   ostrct = {stackion:stackion,$ ; rest wavelength
             median:iave, $      ; 0: mean; 1: median
+            percentile:percentile, $ ; [low,high]
             fnorm:keyword_set(fnorm),$ ; 0: rest EWs; 1: scalled by f_osc
             zion:z_ion, ion:ion, mean:keyword_set(mean),$
             dztol:dztol, dwvtol:dwvtol, zrng:keyword_set(zrng), $
