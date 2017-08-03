@@ -1334,11 +1334,12 @@ pro sdss_pltconti, spec_fil, all=all, norm=norm, zabs=zabs, $
      conti = 0
   endif 
 
-  ;; Plot
+  ;; Plot; _extra= include xrange=, etc
   if keyword_set(zabs) then zin = zabs else zin = zqso
   x_specplot,fx,er,wav=wv,inflg=4,ytwo=conti,psym2=-3,$
              ythr=altconti,psym3=psym3,zin=zin,/lls,$
-             title=cfil+' zqso = '+string(zqso,format='(f8.5)'), /block
+             title=cfil+' zqso = '+string(zqso,format='(f8.5)'),$
+             _extra=extra, /block
 end                             ; sdss_pltconti
 
 
@@ -8417,7 +8418,7 @@ function sdss_mkstacksumm, inp_fil, outfil=outfil, list=list, lin_fil=lin_fil, $
              EWAVE:fltarr(4),EWLIM:fltarr(4),$ ; if sdss_stackciv_jackknife output, indices 3,4 contain info of excluded sample
              ION:linstr.name,LSNR:0.,FVAL:linstr.fval,$ ; store oscillator strength
              WREST:linstr.wave,ZABS:fltarr(nlin),WVLIM:fltarr(nlin,2),$
-             EW:fltarr(nlin),SIGEW:fltarr(nlin),$
+             EW:fltarr(nlin),SIGEW:fltarr(nlin),$ ;EWMINMAX:fltarr(nlin,2),$
              NCOLM:fltarr(nlin),SIGNCOLM:fltarr(nlin) $ ; don't actually have these
              }    
   strct = replicate(tmpltstr,nfil)
@@ -8446,6 +8447,9 @@ function sdss_mkstacksumm, inp_fil, outfil=outfil, list=list, lin_fil=lin_fil, $
 
         ;; Read in conti structure
         cstrct = xmrdfits(strct[ff].stack_fil,1,/silent)
+;        if keyword_set(sxpar(hdr,'NITER')) then $
+;           ;; for min/max EW if ran sdss_stackciv_errmc()
+;           gstrct = xmrdfits(strct[ff].stack_fil,2,/silent) 
      endif else cstrct = stack_fil[ff]
      
      cindx = fix(alog(cstrct.cflg)/alog(2))
@@ -8468,6 +8472,9 @@ function sdss_mkstacksumm, inp_fil, outfil=outfil, list=list, lin_fil=lin_fil, $
         strct[ff].wvlim[sub[ss],*] = cstrct.wvlim_orig[mtch,*] 
         strct[ff].ew[sub[ss]] = cstrct.ew_orig[mtch] / (1 + strct[ff].zabs[sub[ss]])
         strct[ff].sigew[sub[ss]] = cstrct.sigew_orig[mtch] / (1 + strct[ff].zabs[sub[ss]])
+;        if keyword_set(gstrct) then begin
+;           stop,'sdss_mkstacksumm() stop: currently EWMINMAX not calculable'
+;        endif
      endfor                     ; ss=nsub
      
   endfor                        ; loop ff=nfil
