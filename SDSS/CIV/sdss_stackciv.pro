@@ -804,8 +804,25 @@ function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
         if nsub eq 0 then continue
         hist[ff] += total(rslt.nref-rslt.nabs[sub]) ; number contributing
      endfor                                         ; loop ff=nfil
+;     ilo = reverse(where(loc lt rslt.ewcdf[ll,0]))
+;     ihi = where(loc gt rslt.ewcdf[ll,0])
+;     ;; get fraction of prob in center pixel
+;     nfloor_lo = (rslt.ewcdf[ll,0]-loc[ilo[0]])/dloc*$
+;                 (rslt.nref-rslt.nabs[ilo[0]])
+;     nfloor_hi = (loc[ihi[0]]-rslt.ewcdf[ll,0])/dloc*$
+;                 (rslt.nref-rslt.nabs[ihi[0]])
+;     ;; sum "outwards"; total probability left/right of ewcdf[ll,0]
+;     cdf_lo = total([nfloor_lo,hist[ilo]],/cum)/$
+;              (total(hist[ilo])+nfloor_lo)
+;     cdf_hi = total([nfloor_hi,hist[ihi]],/cum)/$
+;              (total(hist[ihi])+nfloor_hi)
+;     dprob = 0.5*(rslt.percentile[1] - rslt.percentile[0]) ; "area"
+;     fprob = fltarr(2)
+;     fprob[0] = interpol([rslt.ewcdf[ll,0],loc[ilo]], cdf_lo, dprob)
+;     fprob[1] = interpol([rslt.ewcdf[ll,0],loc[ihi]], cdf_hi, dprob)
+     ;; OR (more traditionally)
      cdf_ion = total(hist,/cum)/float(rslt.nref)
-     ;; OR 
+     ;; OR (even more traditionally) 
 ;     srt_ewion = sort(rslt.ewion[ll,*])
 ;     cdf_ion = total(rslt.nref-rslt.nabs[srt_ewion],/cum)/float(rslt.nref) ; 1/nabs to 1.
 ;     loc = rslt.ewion[ll,srt_ewion]
@@ -813,6 +830,7 @@ function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
      ;; reference, otherwise, with respect to mean/median of jackknife
      ;; sample
      fprob = interpol(loc, cdf_ion, rslt.percentile)
+     
      rslt.ewcdf[ll,1] = rslt.ewcdf[ll,0] - fprob[0]
      rslt.ewcdf[ll,2] = fprob[1] - rslt.ewcdf[ll,0]
 
