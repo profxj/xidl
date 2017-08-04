@@ -813,7 +813,7 @@ function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
 ;                 (rslt.nref-rslt.nabs[ihi[0]])
 ;     ;; sum "outwards"; total probability left/right of ewcdf[ll,0]
 ;     cdf_lo = total([nfloor_lo,hist[ilo]],/cum)/$
-;              (total(hist[ilo])+nfloor_lo)
+;              (total(hist[ilo])+nfloor_lo) ; should this be total(hist)?
 ;     cdf_hi = total([nfloor_hi,hist[ihi]],/cum)/$
 ;              (total(hist[ihi])+nfloor_hi)
 ;     dprob = 0.5*(rslt.percentile[1] - rslt.percentile[0]) ; "area"

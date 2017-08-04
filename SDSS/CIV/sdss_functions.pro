@@ -376,8 +376,12 @@ pro sdss_getqsoinlist,list_fil, sdsssum, snrstrct_fil, snr=snr,$
   sdsstab = sdss_getqsostrct(_extra=extra)
   tmp = sdss_getname(sdsstab,root=qso_name)
 
-  if keyword_set(snr) or keyword_set(snrstrct_fil) then $
-     snrstrct = sdss_getsnrstrct(_extra=extra)
+  if keyword_set(snr) or keyword_set(snrstrct_fil) then begin
+     if keyword_set(snr) then begin
+        if size(snr,/type) eq 8 then snrstrct = snr $
+        else snrstrct = sdss_getsnrstrct(_extra=extra)
+     endif
+  endif
   if keyword_set(snr) then begin
      sdsstab = snrstrct
      qso_name = snrstrct.qso_name
