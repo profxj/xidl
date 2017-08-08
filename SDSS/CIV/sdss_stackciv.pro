@@ -619,9 +619,11 @@ end                             ; sdss_stackciv_jackknife
 
 function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
                                         lin_fil=lin_fil, wrt_ref=wrt_ref,$
+                                        append=append,clobber=clobber,$
                                         _extra=extra
   if n_params() ne 2 then begin
-     print,'Syntax -- sdss_stackciv_jackknife_stats(stack_list, refstack_fil, [lin_fil=, /wrt_ref, _extra=])'
+     print,'Syntax -- sdss_stackciv_jackknife_stats(stack_list, refstack_fil,'
+     print,'                  [lin_fil=, /wrt_ref, /append, /clobber, _extra=])'
      return,-1
   endif
 
@@ -658,6 +660,8 @@ function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
          }
 
   ;; _extra= includes dwvtol=
+  if size(refstack_fil,/type) ne 7 then $
+     stop,'sdss_stackciv_jackknife_stats() stop: refstack_fil must be file name'
   stackstr_ref = sdss_mkstacksumm(refstack_fil, lin_fil=lin_fil, _extra=extra)
   rslt.ewref[*,0] = stackstr_ref.ew
   rslt.ewref[*,1] = stackstr_ref.sigew^2
@@ -791,19 +795,23 @@ function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
      rslt.ewion_estcorr[ll,1] = nfil*rslt.ewref[ll,1] - $
                                 (nfil-1)*rslt.ewion_est[ll,1]
 
-
-     ;; CDF manually constructed around references (has failure modes)
-     ewrng = [0.99*min(rslt.ewion[ll,*]-sqrt(rslt.sigewion[ll,0,*])),$
-              1.01*max(rslt.ewion[ll,*]+sqrt(rslt.sigewion[ll,1,*]))]     
-     dloc = (ewrng[1]-ewrng[0])/(nfil-1.) 
-     loc = dloc*findgen(nfil) + ewrng[0] ; matches what histogram(loc=) would return
-     hist = lonarr(nfil)                    ; zeros
-     for ff=0,nfil-1 do begin
-        sub = where(rslt.ewion[ll,*] ge loc[ff] and $
-                    rslt.ewion[ll,*] lt loc[ff]+dloc,nsub)
-        if nsub eq 0 then continue
-        hist[ff] += total(rslt.nref-rslt.nabs[sub]) ; number contributing
-     endfor                                         ; loop ff=nfil
+     ;; CDF traditional
+     srt_ewion = sort(rslt.ewion[ll,*])
+     loc = rslt.ewion[ll,srt_ewion]
+     cdf_ion = total(rslt.nref-rslt.nabs[srt_ewion],/cum)/float(rslt.nref) ; 1/nabs to 1.
+     
+;     ;; CDF manually constructed around references (has failure modes)
+;     ewrng = [0.99*min(rslt.ewion[ll,*]-sqrt(rslt.sigewion[ll,0,*])),$
+;              1.01*max(rslt.ewion[ll,*]+sqrt(rslt.sigewion[ll,1,*]))]     
+;     dloc = (ewrng[1]-ewrng[0])/(nfil-1.) 
+;     loc = dloc*findgen(nfil) + ewrng[0] ; matches what histogram(loc=) would return
+;     hist = lonarr(nfil)                    ; zeros
+;     for ff=0,nfil-1 do begin
+;        sub = where(rslt.ewion[ll,*] ge loc[ff] and $
+;                    rslt.ewion[ll,*] lt loc[ff]+dloc,nsub)
+;        if nsub eq 0 then continue
+;        hist[ff] += total(rslt.nref-rslt.nabs[sub]) ; number contributing
+;     endfor                                         ; loop ff=nfil
 ;     ilo = reverse(where(loc lt rslt.ewcdf[ll,0]))
 ;     ihi = where(loc gt rslt.ewcdf[ll,0])
 ;     ;; get fraction of prob in center pixel
@@ -820,12 +828,12 @@ function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
 ;     fprob = fltarr(2)
 ;     fprob[0] = interpol([rslt.ewcdf[ll,0],loc[ilo]], cdf_lo, dprob)
 ;     fprob[1] = interpol([rslt.ewcdf[ll,0],loc[ihi]], cdf_hi, dprob)
-     ;; OR (more traditionally)
-     cdf_ion = total(hist,/cum)/float(rslt.nref)
-     ;; OR (even more traditionally) 
-;     srt_ewion = sort(rslt.ewion[ll,*])
-;     cdf_ion = total(rslt.nref-rslt.nabs[srt_ewion],/cum)/float(rslt.nref) ; 1/nabs to 1.
-;     loc = rslt.ewion[ll,srt_ewion]
+;    ;; OR (more traditionally)
+;     cdf_ion = total(hist,/cum)/float(rslt.nref)
+;;     ;; OR (even more traditionally) 
+;;     srt_ewion = sort(rslt.ewion[ll,*])
+;;     cdf_ion = total(rslt.nref-rslt.nabs[srt_ewion],/cum)/float(rslt.nref) ; 1/nabs to 1.
+;;     loc = rslt.ewion[ll,srt_ewion]
      ;; if /wrt_ref, then ewcdf finds error estimate with respect to
      ;; reference, otherwise, with respect to mean/median of jackknife
      ;; sample
@@ -845,6 +853,28 @@ function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
   rslt.ewion_bias[*,1] = sqrt(rslt.ewion_bias[*,1]) ; is this fair?
   rslt.ewion_estcorr[*,1] = sqrt(rslt.ewion_estcorr[*,1])
   ;; rslt.ewcdf[*,1:2] already sigma
+
+  if keyword_set(append) then begin
+     ;; Append to/overwrite ext = 3
+     ext3strct = xmrdfits(refstack_fil,3,/silent) ; 0 or a structure
+     if size(ext3strct,/type) eq 8 and not keyword_set(clobber) then $
+        stop,'sdss_stackciv_jackknife_stats() stop: will not clobber ext=3 of ',refstack_fil 
+
+     ;; Read in
+     fdat = xmrdfits(refstack_fil,0,hdr,/silent) ; SDSS-formatted spectrum
+     cstrct = xmrdfits(refstack_fil,1,/silent) ; cstrct
+     gstrct = xmrdfits(refstack_fil,2,/silent) ; gstrct
+
+     ;; Write out
+     mwrfits,fdat,refstack_fil,hdr,/create,/silent
+     mwrfits,cstrct,refstack_fil,/silent
+     mwrfits,gstrct,refstack_fil,/silent
+     mwrfits,rslt,refstack_fil,/silent
+     spawn,'gzip -f '+refstac_fil
+
+     print,'sdss_stackciv_jackknife_stats(): wrote results to ext=3 of ',$
+           refstack_fil
+  endif
   
   return, rslt
 end                             ; sdss_stackciv_jackknife_stats
@@ -1280,7 +1310,6 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
   endif else if keyword_set(refit) or keyword_set(reerr) then begin
      ;; Read in
      fdat = xmrdfits(outfil,0,header,/silent)
-;     civstr = xmrdfits(outfil,2,/silent)
      gstrct = xmrdfits(outfil,2,/silent) 
      print,'sdss_stackciv: re-fitting and finding in ',outfil
   endif
@@ -1320,7 +1349,7 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
   mwrfits,cstrct,outfil,/silent              ; ext = 1
 ;  mwrfits,civstr,outfil,/silent              ; ext = ...
   mwrfits,gstrct,outfil,/silent ; ext = 2
-;  mwrfits,cstrct_resmpl,outfil,/silent ; ext = 3  ; when writable to FITS
+  ;; ext=3 may be sdss_stackciv_jackknife_stats()
   spawn,'gzip -f '+outfil
   print,'sdss_stackciv: created ',outfil
 

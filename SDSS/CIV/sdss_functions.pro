@@ -8423,7 +8423,8 @@ function sdss_mkstacksumm, inp_fil, outfil=outfil, list=list, lin_fil=lin_fil, $
              EWAVE:fltarr(4),EWLIM:fltarr(4),$ ; if sdss_stackciv_jackknife output, indices 3,4 contain info of excluded sample
              ION:linstr.name,LSNR:0.,FVAL:linstr.fval,$ ; store oscillator strength
              WREST:linstr.wave,ZABS:fltarr(nlin),WVLIM:fltarr(nlin,2),$
-             EW:fltarr(nlin),SIGEW:fltarr(nlin),$ ;EWMINMAX:fltarr(nlin,2),$
+             EW:fltarr(nlin),SIGEW:fltarr(nlin,2),$ ;EWMINMAX:fltarr(nlin,2),$
+             EWALT:fltarr(nlin),SIGEWALT:fltarr(nlin,2), $ ; e.g., from sdss_stackciv_jackknife_stats()
              NCOLM:fltarr(nlin),SIGNCOLM:fltarr(nlin) $ ; don't actually have these
              }    
   strct = replicate(tmpltstr,nfil)
@@ -8456,7 +8457,8 @@ function sdss_mkstacksumm, inp_fil, outfil=outfil, list=list, lin_fil=lin_fil, $
         cstrct = xmrdfits(strct[ff].stack_fil,1,/silent)
 ;        if keyword_set(sxpar(hdr,'NITER')) then $
 ;           ;; for min/max EW if ran sdss_stackciv_errmc()
-;           gstrct = xmrdfits(strct[ff].stack_fil,2,/silent) 
+;           gstrct = xmrdfits(strct[ff].stack_fil,2,/silent)
+        jkrslt = xmrdfits(strct[ff].stack_fil,3,/silent) ; may not exist
      endif else cstrct = stack_fil[ff]
      
      cindx = fix(alog(cstrct.cflg)/alog(2))
@@ -8478,10 +8480,24 @@ function sdss_mkstacksumm, inp_fil, outfil=outfil, list=list, lin_fil=lin_fil, $
         strct[ff].zabs[sub[ss]] = cstrct.centroid[mtch,cindx] / strct[ff].wrest[sub[ss]] - 1.
         strct[ff].wvlim[sub[ss],*] = cstrct.wvlim_orig[mtch,*] 
         strct[ff].ew[sub[ss]] = cstrct.ew_orig[mtch] / (1 + strct[ff].zabs[sub[ss]])
-        strct[ff].sigew[sub[ss]] = cstrct.sigew_orig[mtch] / (1 + strct[ff].zabs[sub[ss]])
+        strct[ff].sigew[sub[ss],0] = cstrct.sigew_orig[mtch] / (1 + strct[ff].zabs[sub[ss]])
+        strct[ff].sigew[sub[ss],1] = strct[ff].sigew[sub[ss],0] ; symmetric for now
 ;        if keyword_set(gstrct) then begin
 ;           stop,'sdss_mkstacksumm() stop: currently EWMINMAX not calculable'
 ;        endif
+
+        if keyword_set(jkrslt) then begin
+           ;; Can save alternative value (ewcdf)
+           mtch = where(abs(strct[ff].wrest[sub[ss]]-jkrslt.wrest) lt dwvtol,nmtch)
+           if ntmch eq 0 then continue ; no match
+           if ntmch gt 1 then begin
+              mn = min(strct[ff].wrest[sub[ss]]-jkrslt.wrest[mtch],imn,/abs)
+              mtch = mtch[imn]
+           endif else mtch = mtch[0]
+           strct[ff].ewalt[sub[ss]] = jkrslt.ewcdf[mtch,0] ; may be /wrt_ref, so == strct[ff].ew[sub[ss]]
+           strct[ff].sigewalt[sub[ss],0] = jkrslt.ewcdf[mtch,1] ; low sigma
+           strct[ff].sigewalt[sub[ss],1] = jkrslt.ewcdf[mtch,2] ; high
+        endif
      endfor                     ; ss=nsub
      
   endfor                        ; loop ff=nfil
@@ -8538,7 +8554,7 @@ end                             ; sdss_printratedsumm
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 function sdss_getstackdat, stackstrct_fil, z_ion, ion, zrng=zrng, $
                            dztol=dztol, dwvtol=dwvtol, skip_null=skip_null, $
-                           count=count, nosrt=nosrt, fnorm=fnorm
+                           count=count, nosrt=nosrt, fnorm=fnorm, use_alt=use_alt
   ;; Either get all the ions at one redshift or all the redshifts for
   ;; one ion 
   if n_params() ne 3 then begin
@@ -8549,6 +8565,14 @@ function sdss_getstackdat, stackstrct_fil, z_ion, ion, zrng=zrng, $
   if size(stackstrct_fil,/type) eq 7 then $ ; from sdss_mkstacksumm()
      stackstr = xmrdfits(stackstrct_fil,1,/silent) $
   else stackstr = stackstrct_fil
+  tags = tag_names(stackstr)
+  if keyword_set(use_alt) then begin
+     ewtag = (where(tags eq 'EWALT'))[0]
+     sigewtag = (where(tags eq 'SIGEWALT'))[0]
+  endif else begin
+     ewtag = (where(tags eq 'EW'))[0]
+     sigewtag = (where(tags eq 'SIGEW'))[0]
+  endelse
   stackstr.ion = strtrim(stackstr.ion,2)
   nstack = (size(stackstr,/dim))[0] > 1
   nlin = (size(stackstr.ion,/dim))[0] > 1
@@ -8558,7 +8582,7 @@ function sdss_getstackdat, stackstrct_fil, z_ion, ion, zrng=zrng, $
   if keyword_set(fnorm) then begin
      ;; Normalize all equivalent widths by oscillator strength
      for ss=0,nstack-1 do $
-        stackstr[ss].ew *= 1/stackstr[ss].fval
+        stackstr[ss].(ewtag) *= 1/stackstr[ss].fval
   endif
 
   ;; Sanity ckeck on uniformity
@@ -8626,10 +8650,11 @@ function sdss_getstackdat, stackstrct_fil, z_ion, ion, zrng=zrng, $
      sigxdat = fltarr(count,2,/nozero)
      sigxdat[*,0] = xdat-stackstr[sub].zlim[0]
      sigxdat[*,1] = stackstr[sub].zlim[1]-xdat
-     ydat = stackstr[sub].ew[mtch[0]]
-     if count gt 1 then $
-        sigydat = rebin(stackstr[sub].sigew[mtch[0]],count,2) $
-     else sigydat = replicate(stackstr[sub].sigew[mtch[0]],1,2)
+     ydat = stackstr[sub].(ewtag)[mtch[0]]
+;     if count gt 1 then $
+;        sigydat = rebin(stackstr[sub].(sigewtag)[mtch[0]],count,2) $
+;     else sigydat = replicate(stackstr[sub].(sigewtag)[mtch[0]],1,2)
+     sigydat = stackstr[sub].(sigewtag)[mtch[0],*]
   endif else begin
      ;; Return set of ion EW at one redshift
      mtch = where(abs(stackstr.zave[iave]-z_ion) lt dztol,nmtch)
@@ -8667,8 +8692,9 @@ function sdss_getstackdat, stackstrct_fil, z_ion, ion, zrng=zrng, $
      wvlim = stackstr[mtch[0]].wvlim[sub,*]
      xdat = wrest
      sigxdat = fltarr(count,2,/nozero)   ; no error
-     ydat = stackstr[mtch[0]].ew[sub]
-     sigydat = rebin(stackstr[mtch[0]].sigew[sub],nstack,2)
+     ydat = stackstr[mtch[0]].(ewtag)[sub]
+;     sigydat = rebin(stackstr[mtch[0]].(sigewtag)[sub],nstack,2)
+     sigydat = stackstr[mtch[0]].(sigewtag)[sub,*]
   endelse 
   
   if keyword_set(skip_null) then begin
@@ -8692,6 +8718,7 @@ function sdss_getstackdat, stackstrct_fil, z_ion, ion, zrng=zrng, $
   ostrct = {stackion:stackion,$ ; rest wavelength
             median:iave, $      ; 0: mean; 1: median
             percentile:percentile, $ ; [low,high]
+            use_alt:keyword_set(use_alt), $ ; EW vs EWALT
             fnorm:keyword_set(fnorm),$ ; 0: rest EWs; 1: scalled by f_osc
             zion:z_ion, ion:ion, mean:keyword_set(mean),$
             dztol:dztol, dwvtol:dwvtol, zrng:keyword_set(zrng), $
