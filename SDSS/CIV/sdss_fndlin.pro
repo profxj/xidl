@@ -529,6 +529,31 @@ function sdss_fndlin_fitspline, wave, flux, sigma, zqso, premask=premask, chi_sq
      chi_sqr[0] = total((flux[gd]-cstrct.conti[gd,sdss_getcflg(/spl,/index)])^2/sigma[gd]^2)
      chi_sqr[1] = ngd - n_elements(sset.fullbkpt) - nord ; not size() b/c may be 1 element
      chi_sqr[2] = chisqr_pdf(chi_sqr[0],chi_sqr[1])
+  endif
+
+  if keyword_set(debug) then begin
+     ;; Show results
+     bdmsk = where(bsplmask eq 0)
+     xsix = wave[bdmsk]
+     ysix = flux[bdmsk]
+     xfiv = [0]
+     yfiv = [0]
+     if keyword_set(premask) then begin
+        bdmsk = where(premask eq 0,nbdmsk)
+        if nbdmsk ne 0 then begin
+           xfiv = wave[bdmsk]
+           yfiv = flux[bdmsk]
+        endif
+     endif
+     x_splot,wave,flux,psym1=10,ytwo=sigma,psym2=10,$
+             ythr=cstrct.conti[0:cstrct.npix-1,sdss_getcflg(/spl,/index)],psym3=-3,$
+             yfou=cstrct.sigconti[0:cstrct.npix-1,sdss_getcflg(/spl,/index)],psym4=-3,$
+             xfiv=xfiv,yfiv=yfiv,psym5=4,$ ; open diamond
+             xsix=xsix,ysix=ysix,psym6=7,$ ; cross
+             xtitle='Observed Wavelength (Ang)',$
+             ytitle='Flux',title='sdss_fndlin_fitspline() debug',$
+             lgnd=['Flux','Flux Err','Conti','Conti Err','Bsplmask','Premask'],$
+             /block
   endif 
 
   return, cstrct

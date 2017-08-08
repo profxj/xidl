@@ -124,7 +124,7 @@ function sdss_stackciv_fitconti, spec_fil, wave=wave, nlmax=nlmax,$
   ;; Force bsline_iterfit() to keep premask b/c we *know* where the
   ;; lines are to avoid.
   everyn_lcl = 75 ; wider breakpoint spacing; "stiffer"
-  if keyword_set(_extra) then begin
+  if keyword_set(extra) then begin
      extra0 = extra             ; preserve originl
      
      ;; Unless the user explicitly passed in values, pass in values
@@ -383,7 +383,7 @@ function sdss_stackciv_errmc, fdat, gstrct0, fexcl=fexcl, sigew=sigew, $
      ;; with hokey error estimate, as happens with median-stacks w/o
      ;; this function)
      lsnr_lcl = 0.1
-     if keyword_set(_extra) then begin
+     if keyword_set(extra) then begin
         extra0 = extra          ;  preserve original
         tags = tag_names(extra)
         test = where(stregex(extra,'LSNR',/boolean),ntest) ; might be LSNR2=
