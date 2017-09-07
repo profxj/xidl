@@ -131,7 +131,8 @@ function sdss_stackciv_fitconti, spec_fil, wave=wave, nlmax=nlmax,$
      ;; better suited to stack normalization than
      ;; sdss_fndlin_fitspline() defaults
      tags = tag_names(extra)
-     if not stregex(tags,'EVERYN',/boolean) then $
+     test = where(stregex(tags,'EVERYN',/boolean),ntest)
+     if ntest eq 0 then $
         extra = create_struct(extra0,'EVERYN',everyn_lcl)  
   endif else extra = {EVERYN:everyn_lcl}
   cstrct = sdss_fndlin_fitspline(wave, flux, sigma, 0.0, $
