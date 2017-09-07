@@ -595,7 +595,7 @@ pro sdss_dblfitconti, sdss_list, sdsssum, pca_fil=pca_fil, $
      else snr_strct = snrstrct_fil
 
      subsnr_strct = 1
-     sdss_getqsoinlist,sdss_list,subsnr_strct,snrstrct=snr_strct,/snr,/silent
+     sdss_getqsoinlist,sdss_list,subsnr_strct,snr=snr_strct,/silent
      tags = tag_names(subsnr_strct[0])
      snrtag = where(tags eq 'SNR_'+strupcase(strtrim(dblt.ion,2)))
      wvtag = where(tags eq 'WVOBS_'+strupcase(strtrim(dblt.ion,2)))

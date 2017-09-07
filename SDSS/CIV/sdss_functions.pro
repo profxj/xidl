@@ -376,8 +376,12 @@ pro sdss_getqsoinlist,list_fil, sdsssum, snrstrct_fil, snr=snr,$
   sdsstab = sdss_getqsostrct(_extra=extra)
   tmp = sdss_getname(sdsstab,root=qso_name)
 
-  if keyword_set(snr) or keyword_set(snrstrct_fil) then $
-     snrstrct = sdss_getsnrstrct(_extra=extra)
+  if keyword_set(snr) or keyword_set(snrstrct_fil) then begin
+     if keyword_set(snr) then begin
+        if size(snr,/type) eq 8 then snrstrct = snr $
+        else snrstrct = sdss_getsnrstrct(_extra=extra)
+     endif
+  endif
   if keyword_set(snr) then begin
      sdsstab = snrstrct
      qso_name = snrstrct.qso_name
@@ -1334,11 +1338,12 @@ pro sdss_pltconti, spec_fil, all=all, norm=norm, zabs=zabs, $
      conti = 0
   endif 
 
-  ;; Plot
+  ;; Plot; _extra= include xrange=, etc
   if keyword_set(zabs) then zin = zabs else zin = zqso
   x_specplot,fx,er,wav=wv,inflg=4,ytwo=conti,psym2=-3,$
              ythr=altconti,psym3=psym3,zin=zin,/lls,$
-             title=cfil+' zqso = '+string(zqso,format='(f8.5)'), /block
+             title=cfil+' zqso = '+string(zqso,format='(f8.5)'),$
+             _extra=extra, /block
 end                             ; sdss_pltconti
 
 
@@ -8412,11 +8417,14 @@ function sdss_mkstacksumm, inp_fil, outfil=outfil, list=list, lin_fil=lin_fil, $
 
   ;; "Ave" tags are [mean,median]
   tmpltstr = {$
-             STACK_FIL:'',MEDIAN:-1,NABS:0L,WVION:0.,$
+             STACK_FIL:'',MEDIAN:-1, PERCENTILE:fltarr(2),$
+             NABS:0L,WVION:0.,$
              ZAVE:dblarr(2),ZLIM:dblarr(2),$
-             EWAVE:fltarr(2),EWLIM:fltarr(2),ION:linstr.name,LSNR:0.,$
+             EWAVE:fltarr(4),EWLIM:fltarr(4),$ ; if sdss_stackciv_jackknife output, indices 3,4 contain info of excluded sample
+             ION:linstr.name,LSNR:0.,FVAL:linstr.fval,$ ; store oscillator strength
              WREST:linstr.wave,ZABS:fltarr(nlin),WVLIM:fltarr(nlin,2),$
-             EW:fltarr(nlin),SIGEW:fltarr(nlin),$
+             EW:fltarr(nlin),SIGEW:fltarr(nlin,2),$ ;EWMINMAX:fltarr(nlin,2),$
+             EWALT:fltarr(nlin),SIGEWALT:fltarr(nlin,2), $ ; e.g., from sdss_stackciv_jackknife_stats()
              NCOLM:fltarr(nlin),SIGNCOLM:fltarr(nlin) $ ; don't actually have these
              }    
   strct = replicate(tmpltstr,nfil)
@@ -8428,6 +8436,8 @@ function sdss_mkstacksumm, inp_fil, outfil=outfil, list=list, lin_fil=lin_fil, $
         ;; Copy meta-information
         hdr = xheadfits(strct[ff].stack_fil)
         strct[ff].median = sxpar(hdr,'MEDIAN') ; 0: mean; 1: median
+        strct[ff].percentile[0] = sxpar(hdr,'PERLOW')
+        strct[ff].percentile[1] = sxpar(hdr,'PERHIGH')
         strct[ff].nabs = sxpar(hdr,'NABS')
         strct[ff].wvion = sxpar(hdr,'WVION')
         strct[ff].zave[0] = sxpar(hdr,'ZMEAN')
@@ -8436,11 +8446,19 @@ function sdss_mkstacksumm, inp_fil, outfil=outfil, list=list, lin_fil=lin_fil, $
         strct[ff].zlim[1] = sxpar(hdr,'ZMAX')
         strct[ff].ewave[0] = sxpar(hdr,'EWMEAN')
         strct[ff].ewave[1] = sxpar(hdr,'EWMED')
+        strct[ff].ewave[2] = sxpar(hdr,'EWAVE_JK') ; "EWMEAN_JK" too long
+        strct[ff].ewave[3] = sxpar(hdr,'EWMED_JK')
         strct[ff].ewlim[0] = sxpar(hdr,'EWMIN')
         strct[ff].ewlim[1] = sxpar(hdr,'EWMAX')
+        strct[ff].ewlim[2] = sxpar(hdr,'EWMIN_JK')
+        strct[ff].ewlim[3] = sxpar(hdr,'EWMAX_JK')
 
         ;; Read in conti structure
         cstrct = xmrdfits(strct[ff].stack_fil,1,/silent)
+;        if keyword_set(sxpar(hdr,'NITER')) then $
+;           ;; for min/max EW if ran sdss_stackciv_errmc()
+;           gstrct = xmrdfits(strct[ff].stack_fil,2,/silent)
+        jkrslt = xmrdfits(strct[ff].stack_fil,3,/silent) ; may not exist
      endif else cstrct = stack_fil[ff]
      
      cindx = fix(alog(cstrct.cflg)/alog(2))
@@ -8462,7 +8480,24 @@ function sdss_mkstacksumm, inp_fil, outfil=outfil, list=list, lin_fil=lin_fil, $
         strct[ff].zabs[sub[ss]] = cstrct.centroid[mtch,cindx] / strct[ff].wrest[sub[ss]] - 1.
         strct[ff].wvlim[sub[ss],*] = cstrct.wvlim_orig[mtch,*] 
         strct[ff].ew[sub[ss]] = cstrct.ew_orig[mtch] / (1 + strct[ff].zabs[sub[ss]])
-        strct[ff].sigew[sub[ss]] = cstrct.sigew_orig[mtch] / (1 + strct[ff].zabs[sub[ss]])
+        strct[ff].sigew[sub[ss],0] = cstrct.sigew_orig[mtch] / (1 + strct[ff].zabs[sub[ss]])
+        strct[ff].sigew[sub[ss],1] = strct[ff].sigew[sub[ss],0] ; symmetric for now
+;        if keyword_set(gstrct) then begin
+;           stop,'sdss_mkstacksumm() stop: currently EWMINMAX not calculable'
+;        endif
+
+        if keyword_set(jkrslt) then begin
+           ;; Can save alternative value (ewcdf)
+           mtch = where(abs(strct[ff].wrest[sub[ss]]-jkrslt.wrest) lt dwvtol,nmtch)
+           if ntmch eq 0 then continue ; no match
+           if ntmch gt 1 then begin
+              mn = min(strct[ff].wrest[sub[ss]]-jkrslt.wrest[mtch],imn,/abs)
+              mtch = mtch[imn]
+           endif else mtch = mtch[0]
+           strct[ff].ewalt[sub[ss]] = jkrslt.ewcdf[mtch,0] ; may be /wrt_ref, so == strct[ff].ew[sub[ss]]
+           strct[ff].sigewalt[sub[ss],0] = jkrslt.ewcdf[mtch,1] ; low sigma
+           strct[ff].sigewalt[sub[ss],1] = jkrslt.ewcdf[mtch,2] ; high
+        endif
      endfor                     ; ss=nsub
      
   endfor                        ; loop ff=nfil
@@ -8519,22 +8554,36 @@ end                             ; sdss_printratedsumm
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 function sdss_getstackdat, stackstrct_fil, z_ion, ion, zrng=zrng, $
                            dztol=dztol, dwvtol=dwvtol, skip_null=skip_null, $
-                           count=count, nosrt=nosrt
+                           count=count, nosrt=nosrt, fnorm=fnorm, use_alt=use_alt
   ;; Either get all the ions at one redshift or all the redshifts for
   ;; one ion 
   if n_params() ne 3 then begin
      print,'Syntax - sdss_getstackdat( stackstrct_fil, z_ion, ion, [/zrng, '
-     print,'                           dztol=, dwvtol=, /skip_null, count=, /nosrt])'
+     print,'                           dztol=, dwvtol=, /skip_null, count=, /nosrt, /fnorm])'
      return,-1
   endif 
   if size(stackstrct_fil,/type) eq 7 then $ ; from sdss_mkstacksumm()
      stackstr = xmrdfits(stackstrct_fil,1,/silent) $
   else stackstr = stackstrct_fil
+  tags = tag_names(stackstr)
+  if keyword_set(use_alt) then begin
+     ewtag = (where(tags eq 'EWALT'))[0]
+     sigewtag = (where(tags eq 'SIGEWALT'))[0]
+  endif else begin
+     ewtag = (where(tags eq 'EW'))[0]
+     sigewtag = (where(tags eq 'SIGEW'))[0]
+  endelse
   stackstr.ion = strtrim(stackstr.ion,2)
   nstack = (size(stackstr,/dim))[0] > 1
   nlin = (size(stackstr.ion,/dim))[0] > 1
   nz_ion = (size(z_ion,/dim))[0] > 1
   nion = (size(ion,/dim))[0] > 1
+
+  if keyword_set(fnorm) then begin
+     ;; Normalize all equivalent widths by oscillator strength
+     for ss=0,nstack-1 do $
+        stackstr[ss].(ewtag) *= 1/stackstr[ss].fval
+  endif
 
   ;; Sanity ckeck on uniformity
   unq = uniq(stackstr.median)
@@ -8543,6 +8592,14 @@ function sdss_getstackdat, stackstrct_fil, z_ion, ion, zrng=zrng, $
      return,-1
   endif
   if keyword_set(stackstr[0].median) then iave = 1 else iave = 0
+
+  unqlo = uniq(stackstr.percentile[0])
+  unqhi = uniq(stackstr.percentile[1])
+  if n_elements(unqlo) ne 1 or n_elements(unqhi) ne 1 then begin
+     print,'sdss_getstackdat(): ERROR!!! stacks not all same percentile; exiting.'
+     return,-1
+  endif
+  percentile = stackstr[0].percentile ; conveyance of info
 
   if not keyword_set(dwvtol) then dwvtol = 1.e-2 ; Ang
   if not keyword_set(dztol) then dztol = 250./2.998e5 ; 250 km/s
@@ -8577,10 +8634,14 @@ function sdss_getstackdat, stackstrct_fil, z_ion, ion, zrng=zrng, $
      if sub[0] eq -1 then stop,'sdss_getstackdat() stop: no matching redshifts'
 
      stackion = stackstr[sub].wvion ; don't lose what defines stack
-     ewlim = fltarr(count,2,/nozero)
+     ewlim = fltarr(count,4,/nozero)
      ewlim[*,0] = stackstr[sub].ewlim[0]
      ewlim[*,1] = stackstr[sub].ewlim[1]
-     ewabs = stackstr[sub].ewave[iave]
+     ewlim[*,2] = stackstr[sub].ewlim[2]
+     ewlim[*,3] = stackstr[sub].ewlim[3]
+     ewabs = fltarr(count,2,/nozero) ; included and excluded
+     ewabs[*,0] = stackstr[sub].ewave[iave]
+     ewabs[*,1] = stackstr[sub].ewave[2+iave]
      wrest = stackstr[sub].wrest[mtch[0]]
      wvlim = stackstr[sub].wvlim[mtch[0],*]
      zbin = stackstr[sub].zave[iave]
@@ -8589,10 +8650,11 @@ function sdss_getstackdat, stackstrct_fil, z_ion, ion, zrng=zrng, $
      sigxdat = fltarr(count,2,/nozero)
      sigxdat[*,0] = xdat-stackstr[sub].zlim[0]
      sigxdat[*,1] = stackstr[sub].zlim[1]-xdat
-     ydat = stackstr[sub].ew[mtch[0]]
-     if count gt 1 then $
-        sigydat = rebin(stackstr[sub].sigew[mtch[0]],count,2) $
-     else sigydat = replicate(stackstr[sub].sigew[mtch[0]],1,2)
+     ydat = stackstr[sub].(ewtag)[mtch[0]]
+;     if count gt 1 then $
+;        sigydat = rebin(stackstr[sub].(sigewtag)[mtch[0]],count,2) $
+;     else sigydat = replicate(stackstr[sub].(sigewtag)[mtch[0]],1,2)
+     sigydat = stackstr[sub].(sigewtag)[mtch[0],*]
   endif else begin
      ;; Return set of ion EW at one redshift
      mtch = where(abs(stackstr.zave[iave]-z_ion) lt dztol,nmtch)
@@ -8616,18 +8678,23 @@ function sdss_getstackdat, stackstrct_fil, z_ion, ion, zrng=zrng, $
      if sub eq -1 then stop,'sdss_getstackdat() stop: no matching ions'
      
      stackion = stackstr[mtch[0]].wvion ; don't lose what defines stack
-     ewlim = fltarr(count,2,/nozero)
+     ewlim = fltarr(count,4,/nozero)
      ewlim[*,0] = stackstr[mtch[0]].ewlim[0]
      ewlim[*,1] = stackstr[mtch[0]].ewlim[1]
-     ewabs = stackstr[mtch[0]].ewave[iave]
+     ewlim[*,2] = stackstr[mtch[0]].ewlim[2]
+     ewlim[*,3] = stackstr[mtch[0]].ewlim[3]
+     ewabs = fltarr(count,2,/nozero)
+     ewabs[*,0] = stackstr[mtch[0]].ewave[iave]
+     ewabs[*,1] = stackstr[mtch[0]].ewave[2+iave]
      wrest = stackstr[mtch[0]].wrest[sub]
      zbin = stackstr[sub].zave[iave]
      zabs = stackstr[mtch[0]].zabs[sub] ; more like a delta z
      wvlim = stackstr[mtch[0]].wvlim[sub,*]
      xdat = wrest
      sigxdat = fltarr(count,2,/nozero)   ; no error
-     ydat = stackstr[mtch[0]].ew[sub]
-     sigydat = rebin(stackstr[mtch[0]].sigew[sub],nstack,2)
+     ydat = stackstr[mtch[0]].(ewtag)[sub]
+;     sigydat = rebin(stackstr[mtch[0]].(sigewtag)[sub],nstack,2)
+     sigydat = stackstr[mtch[0]].(sigewtag)[sub,*]
   endelse 
   
   if keyword_set(skip_null) then begin
@@ -8635,7 +8702,7 @@ function sdss_getstackdat, stackstrct_fil, z_ion, ion, zrng=zrng, $
      if count ne 0 then begin
         stackion = stackion[gd]
         ewlim = ewlim[gd,*]
-        ewabs = ewabs[gd]
+        ewabs = ewabs[gd,*]
         wrest = wrest[gd]
         zbin = zbin[gd]
         wvlim = wvlim[gd,*]
@@ -8650,9 +8717,12 @@ function sdss_getstackdat, stackstrct_fil, z_ion, ion, zrng=zrng, $
   else srt = sort(xdat)
   ostrct = {stackion:stackion,$ ; rest wavelength
             median:iave, $      ; 0: mean; 1: median
+            percentile:percentile, $ ; [low,high]
+            use_alt:keyword_set(use_alt), $ ; EW vs EWALT
+            fnorm:keyword_set(fnorm),$ ; 0: rest EWs; 1: scalled by f_osc
             zion:z_ion, ion:ion, mean:keyword_set(mean),$
             dztol:dztol, dwvtol:dwvtol, zrng:keyword_set(zrng), $
-            ewlim:ewlim[srt,*], ewabs:ewabs[srt], wrest:wrest[srt], $
+            ewlim:ewlim[srt,*], ewabs:ewabs[srt,*], wrest:wrest[srt], $
             zabs:zabs, zbin:zbin, wvlim:wvlim[srt,*], $
             xdat:xdat[srt], sigxdat:sigxdat[srt,*], $
             ydat:ydat[srt], sigydat:sigydat[srt,*]}

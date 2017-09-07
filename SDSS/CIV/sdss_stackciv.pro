@@ -124,7 +124,7 @@ function sdss_stackciv_fitconti, spec_fil, wave=wave, nlmax=nlmax,$
   ;; Force bsline_iterfit() to keep premask b/c we *know* where the
   ;; lines are to avoid.
   everyn_lcl = 75 ; wider breakpoint spacing; "stiffer"
-  if keyword_set(_extra) then begin
+  if keyword_set(extra) then begin
      extra0 = extra             ; preserve originl
      
      ;; Unless the user explicitly passed in values, pass in values
@@ -384,7 +384,7 @@ function sdss_stackciv_errmc, fdat, gstrct0, fexcl=fexcl, sigew=sigew, $
      ;; with hokey error estimate, as happens with median-stacks w/o
      ;; this function)
      lsnr_lcl = 0.1
-     if keyword_set(_extra) then begin
+     if keyword_set(extra) then begin
         extra0 = extra          ;  preserve original
         tags = tag_names(extra)
         test = where(stregex(extra,'LSNR',/boolean),ntest) ; might be LSNR2=
@@ -511,12 +511,15 @@ pro sdss_stackciv_jackknife, stack_fil, oroot, fjk=fjk, clobber=clobber, _extra=
      print,'Syntax -- sdss_stackciv_jackknife, stack_fil, oroot, [fjk=, /clobber, _extra=]'
      return
   endif
+
+  ;; Timing
+  tstart = systime(/seconds)
   
   ;; Read in (shortcut on the processing)
   fdat0 = xmrdfits(stack_fil,0,hdr0,/silent)
   cstrct0 = xmrdfits(stack_fil,1,/silent)
   gstrct0 = xmrdfits(stack_fil,2,/silent)
-  srt0 = gstrct0.ewabs
+  srt0 = sort(gstrct0.ewabs)
 
   nabs = fxpar(hdr0, 'NABS')    ; = (size(gstrct0.ewabs,/dim))[0]
   if not keyword_set(fjk) then begin
@@ -536,6 +539,7 @@ pro sdss_stackciv_jackknife, stack_fil, oroot, fjk=fjk, clobber=clobber, _extra=
      if istart eq 0 then sub = srt0[istop+1:*] $ ; exclude istart:istop
      else if istop eq nabs-1 then sub = srt0[0:istart-1] $
      else sub = [srt0[0:istart-1],srt0[istop+1:*]]
+     nsub = nabs - (istop-istart+1) 
 
      ewmin = min(gstrct0.ewabs[srt0[istart:istop]],max=ewmax)
      ofil = oroot+string(ewmin,ewmax,istop-istart+1,$
@@ -554,7 +558,7 @@ pro sdss_stackciv_jackknife, stack_fil, oroot, fjk=fjk, clobber=clobber, _extra=
               zabs:gstrct0.zabs[sub],$
               gwave:gstrct0.gwave,$
               gflux:gstrct0.gflux[*,sub],$
-              medsnr_spec:gstrct0.medsnr_spec,$ ; [<f>,<sig>,<f/sig>]
+              medsnr_spec:gstrct0.medsnr_spec[sub,*],$ ; [<f>,<sig>,<f/sig>]
               gvariance:gstrct0.gvariance[*,sub],$
               gweight:gstrct0.gweight[*,sub],$
               gnspec:gstrct0.gnspec[*,sub] $ ; counter and may divide
@@ -576,35 +580,51 @@ pro sdss_stackciv_jackknife, stack_fil, oroot, fjk=fjk, clobber=clobber, _extra=
           
      ;; Update header
      hdr = hdr0
-     sxaddpar,hdr,'NABS',nabs
+     sxaddpar,hdr,'NABS',nsub   ; not whole set
      sxaddpar,hdr,'ZMED',median(gstrct.zabs,/even)
      sxaddpar,hdr,'ZMEAN',mean(gstrct.zabs)
      sxaddpar,hdr,'ZMIN',min(gstrct.zabs,max=mx)
      sxaddpar,hdr,'ZMAX',mx
      sxaddpar,hdr,'EWMED',median(gstrct.ewabs,/even)
      sxaddpar,hdr,'EWMEAN',mean(gstrct.ewabs)
-     sxaddpar,hdr,'EWMIN',ewmin
-     sxaddpar,hdr,'EWMAX',ewmax
+     sxaddpar,hdr,'EWMIN',min(gstrct.ewabs,max=mx) ; incl. in stack
+     sxaddpar,hdr,'EWMAX',mx
+     sxaddpar,hdr,'EWAVE_JK',mean(gstrct0.ewabs[srt0[istart:istop]]),$
+              'Mean EW excluded in jackknife' ; new keywords; "EWMEAN_JK" too long
+     sxaddpar,hdr,'EWMED_JK',median(gstrct0.ewabs[srt0[istart:istop]],/even),$
+              'Median EW excluded in jackknife'
+     sxaddpar,hdr,'EWMIN_JK',ewmin,'Min EW excluded in jackknife'
+     sxaddpar,hdr,'EWMAX_JK',ewmax,'Max EW excluded in jackknife'
 
      ;; Write file (must match sdss_stackciv output)
-     mwrfits,fdat,ofil,header,/create,/silent ; ext = 0
-     mwrfits,cstrct,ofil,/silent              ; ext = 1
-     mwrfits,gstrct,ofil,/silent              ; ext = 2
+     mwrfits,fdat,ofil,hdr,/create,/silent ; ext = 0
+     mwrfits,cstrct,ofil,/silent           ; ext = 1
+     mwrfits,gstrct,ofil,/silent           ; ext = 2
      spawn,'gzip -f '+ofil
      print,'sdss_stackciv_jackknife: created ',ofil
 
      ;; Setup for next loop
      istart = istop + 1         ; non-overlapping
   endfor                        ; loop ii=nloop
+
+  ;; Final messages
+  if not keyword_set(silent) then $
+     print, 'sdss_stackciv_jackknife: All done!'
+  tlast = systime(/seconds)
+  dt = tlast - tstart
+  print,'sdss_stackciv: Elapsed clock time for '+strtrim(nloop,2)+$
+        ' iterations (m) = ',dt/60.
   
 end                             ; sdss_stackciv_jackknife
 
 
 function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
-                                        lin_fil=lin_fil, _extra=extra
-
+                                        lin_fil=lin_fil, wrt_ref=wrt_ref,$
+                                        append=append,clobber=clobber,$
+                                        _extra=extra
   if n_params() ne 2 then begin
-     print,'Syntax -- sdss_stackciv_jackknife_stats(stack_list)'
+     print,'Syntax -- sdss_stackciv_jackknife_stats(stack_list, refstack_fil,'
+     print,'                  [lin_fil=, /wrt_ref, /append, /clobber, _extra=])'
      return,-1
   endif
 
@@ -620,39 +640,57 @@ function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
 
   ;; Setup output (dynamically sized)
   rslt = {stack_fil:stack_fil, $
-          median:-1, $          ; 0: mean, 1: median
+          nabs:lonarr(nfil), $    ; will use average
+          ewave:fltarr(nfil,2), $ ; [mean,median] of excluded in jackknife
+          ewlim:fltarr(nfil,2), $ ; [min,max] of excluded
+          median:-1, $            ; 0: mean, 1: median
           lin_fil:lin_fil, $
           ion:linstr.name, $
           wrest:linstr.wave, $
-          ewref:fltarr(nlin,2), $ ; [EW, variance]
+          ewref:fltarr(nlin,2), $ ; [EW, variance] --> sigma at end
           nref:0L, $
-          nabs:lonarr(nlin), $  ; will use average
+          percentile:fltarr(2), $ ; be consistent with sdss_stackciv
+          wrt_ref:keyword_set(wrt_ref), $ 
+          ewcdf:fltarr(nlin,3), $ ; [ewref or mean/median(EW), low-, high-sigma]
           ewion:fltarr(nlin,nfil), $
-          ewion_excl:fltarr(nlin,nfil,2), $ ; excluding current;  mean & variance
-          ewion_est:fltarr(nlin,2), $       ; estimate of mean & variance
+          sigewion:fltarr(nlin,2,nfil), $
+          ewion_excl:fltarr(nlin,nfil,2), $ ; excluding current; mean & variance --> sigma at end
+          ewion_est:fltarr(nlin,2), $       ; estimate of mean & variance -- sigma at end
           ewion_bias:fltarr(nlin,2), $      ; bias estimate of above
           ewion_estcorr:fltarr(nlin,2) $    ; bias-corrected estimators
          }
 
   ;; _extra= includes dwvtol=
+  if size(refstack_fil,/type) ne 7 then $
+     stop,'sdss_stackciv_jackknife_stats() stop: refstack_fil must be file name'
   stackstr_ref = sdss_mkstacksumm(refstack_fil, lin_fil=lin_fil, _extra=extra)
   rslt.ewref[*,0] = stackstr_ref.ew
   rslt.ewref[*,1] = stackstr_ref.sigew^2
   rslt.nref = stackstr_ref.nabs
+  if keyword_set(wrt_ref) then $
+     rslt.ewcdf[*,0] = rslt.ewref[*,0]
+  rslt.percentile = stackstr_ref.percentile 
   stackstr = sdss_mkstacksumm(stack_fil, lin_fil=lin_fil, _extra=extra)
   rslt.nabs = stackstr.nabs
+  rslt.ewave = transpose(stackstr.ewave[2:3]) ; from EWAVE_JK and EWMED_JK header keywords
+  rslt.ewlim = transpose(stackstr.ewlim[2:3]) ; from EWMIN_JK and EWMAX_JK
 
-  ;; Sanity check on uniformity
-  unq = uniq(stackstr.median)
-  if n_elements(unq) ne 1 then begin
-     print,'sdss_stackciv_jackknife_stats(): ERROR!!! stacks not all mean or median; exiting.'
-     return,-1
-  end
+  ;; Sanity check on uniformity (stackstr uniformity handled by
+  ;; sdss_mkstacksumm())
   if stackstr_ref.median ne stackstr[0].median then begin
      print,'sdss_stackciv_jackknife_stats(): ERROR!!! reference stack and jackknife stacks not all mean or median; exiting.'
      return,-1
   endif
   rslt.median = stackstr_ref.median
+  if rslt.median then iave = 1 else iave = 0
+
+  if stackstr_ref.percentile[0] ne stackstr[0].percentile[0] or $
+     stackstr_ref.percentile[1] ne stackstr[0].percentile[1] then begin
+     print,'sdss_stackciv_jackknife_stats(): ERROR!!! reference stack and jackknife stacks do not use same percentile; exiting.'
+     return,-1
+  endif
+  rslt.percentile = stackstr_ref.percentile
+        
 
   ;; Aggregate statistics per line
   for ll=0,nlin-1 do begin
@@ -660,12 +698,23 @@ function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
      ;; _extra= includes zrng=, dztol=, dwvtol=
      ;; Use skip_null=0 to (1) ensure all lines accounted for in order
      ;; and (2) zeros *are* information for the estimators
-     iondat = sdss_getstackdat(stackstr, stackstr.zave[1], linstr[ll].name, $
+     iondat = sdss_getstackdat(stackstr, stackstr.zave[iave], linstr[ll].name, $
                                skip_null=0, /nosrt, $
-                               dztol=max(stackstr.zabs[1],min=mn)-mn,$
+                               dztol=max(stackstr.zabs[iave],min=mn)-mn,$
                                _extra=extra)
 
      rslt.ewion[ll,*] = iondat.ydat
+     if not keyword_set(wrt_ref) then begin
+        ;; weighted by number bin
+        wgt = rslt.nref-rslt.nabs
+        val = transpose(rslt.ewion[ll,*])
+        if rslt.median then $
+           rslt.ewcdf[ll,0] = sdss_medianw(val,wgt,/even) $
+        else $
+           rslt.ewcdf[ll,0] = total(val*wgt)/total(wgt)
+     endif 
+     rslt.sigewion[ll,0,*] = iondat.sigydat[*,0] ; likely symmetric
+     rslt.sigewion[ll,1,*] = iondat.sigydat[*,1]
 
      ;; Look at statistics excluding one stack each time
      ;; Following Wikipedia entry but also see _The Jackknife, the
@@ -681,7 +730,7 @@ function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
         ;; Estimator (e.g., mean) <x_(i)> of excluding i-th subsample
         ;; and variance estimation (e.g., MAD) (this latter may not be
         ;; statistically sound)
-        if keyword_set(rslt.median) then begin
+        if rslt.median then begin
            ;; <x_(i)>
            rslt.ewion_excl[ll,ff,0] = median(rslt.ewion[ll,rng],/even)
            ;; <varx_(i)>
@@ -738,17 +787,96 @@ function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
      rslt.ewion_bias[ll,0] = (nfil-1)*( rslt.ewion_est[ll,0] - $
                                         rslt.ewref[ll,0] )
      rslt.ewion_bias[ll,1] = (nfil-1)*( rslt.ewion_est[ll,1] - $
-                                        rslt.ewref[ll,1]^2 )
+                                        rslt.ewref[ll,1] )
      
      ;; Jackknife bias-corrected estiamtes
      ;; <x> = n x_ref - (n - 1) <x_(.)>
      rslt.ewion_estcorr[ll,0] = nfil*rslt.ewref[ll,0] - $
                                 (nfil-1)*rslt.ewion_est[ll,0]
-     rslt.ewion_estcorr[ll,1] = nfil*rslt.ewref[ll,1]^2 - $
+     rslt.ewion_estcorr[ll,1] = nfil*rslt.ewref[ll,1] - $
                                 (nfil-1)*rslt.ewion_est[ll,1]
+
+     ;; CDF traditional
+     srt_ewion = sort(rslt.ewion[ll,*])
+     loc = rslt.ewion[ll,srt_ewion]
+     cdf_ion = total(rslt.nref-rslt.nabs[srt_ewion],/cum)/float(rslt.nref) ; 1/nabs to 1.
      
+;     ;; CDF manually constructed around references (has failure modes)
+;     ewrng = [0.99*min(rslt.ewion[ll,*]-sqrt(rslt.sigewion[ll,0,*])),$
+;              1.01*max(rslt.ewion[ll,*]+sqrt(rslt.sigewion[ll,1,*]))]     
+;     dloc = (ewrng[1]-ewrng[0])/(nfil-1.) 
+;     loc = dloc*findgen(nfil) + ewrng[0] ; matches what histogram(loc=) would return
+;     hist = lonarr(nfil)                    ; zeros
+;     for ff=0,nfil-1 do begin
+;        sub = where(rslt.ewion[ll,*] ge loc[ff] and $
+;                    rslt.ewion[ll,*] lt loc[ff]+dloc,nsub)
+;        if nsub eq 0 then continue
+;        hist[ff] += total(rslt.nref-rslt.nabs[sub]) ; number contributing
+;     endfor                                         ; loop ff=nfil
+;     ilo = reverse(where(loc lt rslt.ewcdf[ll,0]))
+;     ihi = where(loc gt rslt.ewcdf[ll,0])
+;     ;; get fraction of prob in center pixel
+;     nfloor_lo = (rslt.ewcdf[ll,0]-loc[ilo[0]])/dloc*$
+;                 (rslt.nref-rslt.nabs[ilo[0]])
+;     nfloor_hi = (loc[ihi[0]]-rslt.ewcdf[ll,0])/dloc*$
+;                 (rslt.nref-rslt.nabs[ihi[0]])
+;     ;; sum "outwards"; total probability left/right of ewcdf[ll,0]
+;     cdf_lo = total([nfloor_lo,hist[ilo]],/cum)/$
+;              (total(hist[ilo])+nfloor_lo) ; should this be total(hist)?
+;     cdf_hi = total([nfloor_hi,hist[ihi]],/cum)/$
+;              (total(hist[ihi])+nfloor_hi)
+;     dprob = 0.5*(rslt.percentile[1] - rslt.percentile[0]) ; "area"
+;     fprob = fltarr(2)
+;     fprob[0] = interpol([rslt.ewcdf[ll,0],loc[ilo]], cdf_lo, dprob)
+;     fprob[1] = interpol([rslt.ewcdf[ll,0],loc[ihi]], cdf_hi, dprob)
+;    ;; OR (more traditionally)
+;     cdf_ion = total(hist,/cum)/float(rslt.nref)
+;;     ;; OR (even more traditionally) 
+;;     srt_ewion = sort(rslt.ewion[ll,*])
+;;     cdf_ion = total(rslt.nref-rslt.nabs[srt_ewion],/cum)/float(rslt.nref) ; 1/nabs to 1.
+;;     loc = rslt.ewion[ll,srt_ewion]
+     ;; if /wrt_ref, then ewcdf finds error estimate with respect to
+     ;; reference, otherwise, with respect to mean/median of jackknife
+     ;; sample
+     fprob = interpol(loc, cdf_ion, rslt.percentile)
+     
+     rslt.ewcdf[ll,1] = rslt.ewcdf[ll,0] - fprob[0]
+     rslt.ewcdf[ll,2] = fprob[1] - rslt.ewcdf[ll,0]
+
   endfor                        ; loop ll=nlin
-         
+
+  ;; Turn all variances to sigma (does not apply to CDF)
+  rslt0 = rslt                  ; preserve for debugging
+  rslt.ewref[*,1] = sqrt(rslt.ewref[*,1])
+  if not rslt.median then $ ; don't sqrt MAD
+     rslt.ewion_excl[*,*,1] = sqrt(rslt.ewion_excl[*,*,1])
+  rslt.ewion_est[*,1] = sqrt(rslt.ewion_est[*,1])
+  rslt.ewion_bias[*,1] = sqrt(rslt.ewion_bias[*,1]) ; is this fair?
+  rslt.ewion_estcorr[*,1] = sqrt(rslt.ewion_estcorr[*,1])
+  ;; rslt.ewcdf[*,1:2] already sigma
+
+  if keyword_set(append) then begin
+     ;; Append to/overwrite ext = 3
+     ext3strct = xmrdfits(refstack_fil,3,/silent) ; 0 or a structure
+     if size(ext3strct,/type) eq 8 and not keyword_set(clobber) then $
+        stop,'sdss_stackciv_jackknife_stats() stop: will not clobber ext=3 of ',refstack_fil 
+
+     ;; Read in
+     fdat = xmrdfits(refstack_fil,0,hdr,/silent) ; SDSS-formatted spectrum
+     cstrct = xmrdfits(refstack_fil,1,/silent) ; cstrct
+     gstrct = xmrdfits(refstack_fil,2,/silent) ; gstrct
+
+     ;; Write out
+     mwrfits,fdat,refstack_fil,hdr,/create,/silent
+     mwrfits,cstrct,refstack_fil,/silent
+     mwrfits,gstrct,refstack_fil,/silent
+     mwrfits,rslt,refstack_fil,/silent
+     spawn,'gzip -f '+refstac_fil
+
+     print,'sdss_stackciv_jackknife_stats(): wrote results to ext=3 of ',$
+           refstack_fil
+  endif
+  
   return, rslt
 end                             ; sdss_stackciv_jackknife_stats
 
@@ -772,7 +900,10 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
      print,'                   /ivarwgt, /median, percentile=, /reflux, /refit,'
      print,'                   /reerr, ndblt=, /qerr, _extra=]' 
      return
-  endif 
+  endif
+
+  ;; Timing
+  tstart = systime(/seconds)
 
   ;; Check file and clobber option
   test = file_search(outfil+'*',count=ntest)
@@ -1180,7 +1311,6 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
   endif else if keyword_set(refit) or keyword_set(reerr) then begin
      ;; Read in
      fdat = xmrdfits(outfil,0,header,/silent)
-;     civstr = xmrdfits(outfil,2,/silent)
      gstrct = xmrdfits(outfil,2,/silent) 
      print,'sdss_stackciv: re-fitting and finding in ',outfil
   endif
@@ -1220,7 +1350,7 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
   mwrfits,cstrct,outfil,/silent              ; ext = 1
 ;  mwrfits,civstr,outfil,/silent              ; ext = ...
   mwrfits,gstrct,outfil,/silent ; ext = 2
-;  mwrfits,cstrct_resmpl,outfil,/silent ; ext = 3  ; when writable to FITS
+  ;; ext=3 may be sdss_stackciv_jackknife_stats()
   spawn,'gzip -f '+outfil
   print,'sdss_stackciv: created ',outfil
 
@@ -1231,7 +1361,14 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
      print,'sdss_stackciv: created ',cstrct_resmpl
   endif
 
-  ;; plot
+  ;; Final messages
+  if not keyword_set(silent) then $
+     print, 'sdss_stackciv: All done!'
+  tlast = systime(/seconds)
+  dt = tlast - tstart
+  print,'sdss_stackciv: Elapsed clock time (m) = ',dt/60.
+
+  ;; Plot
   if keyword_set(debug) then begin
      x_specplot, outfil, ytwo=fdat[*,4], inflg=5, /lls, zin=1.e-6,/block
      stop
