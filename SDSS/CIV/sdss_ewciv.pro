@@ -302,7 +302,6 @@ function sdss_ewciv, wave, flux, sig, conti, dblt_name, zabs, istrct=istrct, $
 
            ;; Also set width, which will float for doublets
            boxw = 0.5*(wave[irhs]-wave[ilhs])
-
            if boxw gt boxmax then begin
               ;; Can't let this get too big, just set it to be
               ;; the difference.
@@ -328,31 +327,32 @@ function sdss_ewciv, wave, flux, sig, conti, dblt_name, zabs, istrct=istrct, $
                  print,'sdss_ewciv() debug: bounds grew beyond 20 Ang'
            endif 
 
-           qstrct.(wvlimtag)[ii,*] = [wave[ilhs],wave[irhs]] ;save
+           qstrct.(wvlimtag)[ii,*] = [wave[ilhs],wave[irhs]] ; save
         endif                                                ; snr_conv= set
 
 
-        ;; Also do a test to see if should extend further (though
+        ;; Also do a test to see if should extend farther (though
         ;; do not want to enclose another line), by comparing flux to
         ;; actual continua
         ;; Including the +/-sigma check makes sure the boundaries
         ;; doesn't beecome ridiculous; and use original flux because
         ;; that's how it's calibrated 
-        bd = where(flux0[0:icen]+sig[0:icen] gt conti[0:icen] and conti[0:icen] ne 0 and $
-                   finite(conti[0:icen]),nbd)
+        bd = where(flux0[0:icen]+sig[0:icen] gt conti[0:icen] and $
+                   conti[0:icen] ne 0 and finite(conti[0:icen]),nbd)
         if nbd ne 0 then begin
            if sig[bd[nbd-1]] gt 0. then ilhs_test = bd[nbd-1] $
            else ilhs_test = ilhs
         endif else ilhs_test = ilhs
-        bd = where(flux0[icen:*]+sig[icen:*] gt conti[icen:*] and conti[icen:*] ne 0 and $
-                   finite(conti[icen:*]),nbd)
+        bd = where(flux0[icen:*]+sig[icen:*] gt conti[icen:*] and $
+                   conti[icen:*] ne 0 and finite(conti[icen:*]),nbd)
         if nbd ne 0 then begin
            if sig[icen + bd[0]] gt 0. then irhs_test = icen + bd[0] $
            else irhs_test = irhs
         endif else irhs_test = irhs
 
         boxw_test = 0.5*(wave[irhs_test]-wave[ilhs_test])
-        if boxw lt boxmax then begin
+        if boxw_test lt boxmax then begin ; was boxw lt but made no sense
+;           boxw_test gt boxw then begin ; though could be asymmetric
            case ii of           ; set min/max limits based on other detected lines
               0: begin
                  wvlo = wave[0]     
@@ -381,14 +381,22 @@ function sdss_ewciv, wave, flux, sig, conti, dblt_name, zabs, istrct=istrct, $
            ;; line and do not shrink the width
            if ilhs_test lt ilhs and wave[ilhs_test] gt wvlo then ilhs = ilhs_test
            if irhs_test gt irhs and wave[irhs_test] lt wvhi then irhs = irhs_test
+;           print,boxw,boxw_test,boxmax,qstrct.(wrtag)[ii,cindx]
+;           stop,ilhs,ilhs_test,irhs,irhs_test           
 
            ;; Set up necessary numbers
-           qstrct.(wvlimtag)[ii,*] = [wave[ilhs],wave[irhs]] ;save
-           boxw = 0.5*(wave[irhs]-wave[ilhs])
-        endif                   ; boxw < boxmax
+           qstrct.(wvlimtag)[ii,*] = [wave[ilhs],wave[irhs]] ; save
+           boxw = 0.5*(wave[irhs]-wave[ilhs]) ; will not necessarily be boxw_test
+        endif                   ; boxw_test < boxmax and boxw_test > boxw [prev]
         
      endelse                    ; /keepwvlim not set
 
+     ;; Testing
+;     ilhs = (ilhs - 2) > 0
+;     irhs = (irhs + 2) < npix-1
+;     qstrct.(wvlimtag)[ii,*] = [wave[ilhs],wave[irhs]] ; save
+;     boxw = 0.5*(wave[irhs]-wave[ilhs]) 
+     
 
      ;; (Re)measure redshift; flux-weighted for good (error != 0)
      ;; and absorption (flux < 1)
