@@ -114,9 +114,10 @@ function sdss_stackciv_fitconti, spec_fil, wave=wave, nlmax=nlmax,$
   dlim = dvlin / c
   for ll=0,nlin-1 do begin
      if abs(linstr[ll].wave-1215.6701) lt 1e-4 then $ ; wider for Lya
-        sub = where(abs(wave-linstr[ll].wave) lt 2*dlim*linstr[ll].wave) $
-     else sub = where(abs(wave-linstr[ll].wave) lt dlim*linstr[ll].wave)
-     if sub[0] ne -1 then premask[sub] = 0
+        sub = where(abs(wave-linstr[ll].wave) lt 2*dlim*linstr[ll].wave,nsub) $
+     else sub = where(abs(wave-linstr[ll].wave) lt dlim*linstr[ll].wave,nsub)
+;     if nsub ne 0 then premask[sub] = 0
+     if sub[0] ne -1 then premask[sub] = 0     
   endfor
 
   ;; _extra= includes everyn=, sset=, maxrej=, lower=, upper=, nord=,
@@ -1302,18 +1303,17 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
 
 
   begin_fit:
-  if keyword_set(reflux) then begin
-     header = xheadfits(outfil,/silent)
+  if not keyword_set(header) then $
+     header = xheadfits(outfil,/silent) ; very important
+  if not keyword_set(gstrct) then $
      gstrct = xmrdfits(outfil,2,/silent) 
+  if keyword_set(reflux) then begin
      print,'sdss_stackciv: re-collapsing the stack and finding in ',outfil
      fdat = sdss_stackciv_stack(gstrct, median=gstrct.median, $
                                 percentile=gstrct.percentile) 
-  endif else if keyword_set(refit) or keyword_set(reerr) then begin
-     ;; Read in
-     fdat = xmrdfits(outfil,0,header,/silent)
-     gstrct = xmrdfits(outfil,2,/silent) 
-     print,'sdss_stackciv: re-fitting and finding in ',outfil
   endif
+  if not keyword_set(fdat) then $
+     fdat = xmrdfits(outfil,0,header,/silent)
 
   if keyword_set(qerr) then begin
      if keyword_set(reerr) then begin
@@ -1341,6 +1341,8 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
   ;; Conti and line-finding always done with /reflux, /refit, /reerr
   ;; _extra= includes lin_fil=, dvlin=, and lots of other stuff (see
   ;; function) 
+  if keyword_set(refit) or keyword_set(reerr) then $
+     print,'sdss_stackciv: re-fitting and finding in ',outfil
   cstrct = sdss_stackciv_fitconti( fdat, wave=gstrct.gwave, debug=debug, $
                                    _extra=extra)
   fdat[*,4] = cstrct.conti[0:cstrct.npix-1,fix(alog(cstrct.cflg)/alog(2))]
