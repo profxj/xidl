@@ -116,8 +116,7 @@ function sdss_stackciv_fitconti, spec_fil, wave=wave, nlmax=nlmax,$
      if abs(linstr[ll].wave-1215.6701) lt 1e-4 then $ ; wider for Lya
         sub = where(abs(wave-linstr[ll].wave) lt 2*dlim*linstr[ll].wave,nsub) $
      else sub = where(abs(wave-linstr[ll].wave) lt dlim*linstr[ll].wave,nsub)
-;     if nsub ne 0 then premask[sub] = 0
-     if sub[0] ne -1 then premask[sub] = 0     
+     if nsub gt 0 then premask[sub] = 0
   endfor
 
   ;; _extra= includes everyn=, sset=, maxrej=, lower=, upper=, nord=,

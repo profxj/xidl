@@ -409,7 +409,7 @@ function sdss_fndlin_fitspline, wave, flux, sigma, zqso, premask=premask, chi_sq
         fconti = tilt_ans
         fconti[cstrct.ipix0:ipend] = conti
      
-     ;;;;;;;;;
+        ;;;;;;;;;
         ;; Normalize
         norm = tilt[*,0]        
         norm[cstrct.ipix0:ipend] = flux[cstrct.ipix0:ipend]/conti
@@ -552,7 +552,7 @@ function sdss_fndlin_fitspline, wave, flux, sigma, zqso, premask=premask, chi_sq
              xsix=xsix,ysix=ysix,psym6=7,$ ; cross
              xtitle='Observed Wavelength (Ang)',$
              ytitle='Flux',title='sdss_fndlin_fitspline() debug',$
-             lgnd=['Flux','Flux Err','Conti','Conti Err','Bsplmask','Premask'],$
+             lgnd=['Flux','Flux Err','Conti','Conti Err','Premask','Bsplmask'],$
              /block
   endif 
 
