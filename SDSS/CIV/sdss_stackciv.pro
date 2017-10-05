@@ -74,8 +74,345 @@
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 @sdss_fndlin                    ; resolve sdss_fndlin_fitspl()
 
+function sdss_stackciv_linfit, flux, wave, error, cstrct, wavebound,$
+                               wavetoler=wavetoler, silent=silent, debug=debug
+
+  ;; If this program is in debug mode, make that clear to the user.
+  if (debug) then print,'===== Debug: sdss_stackciv_linfit ====='
+
+  ;; Defaults:
+  if not keyword_set(wavetoler) then wavetoler = 0
+  if not keyword_set(silent) then silent = 0
+  if ((not keyword_set(debug)) or silent) then debug = 0
+
+  ;; It does not make sence to run the program in silent mode, while debug is on.
+  if(debug and silent) then begin
+     print,'Warning: sdss_stackciv_linfit; I do not see the logic behind silent debugging. I am going to disable silent because debug is on.'
+     silent = 0
+  endif
+
+;; Arrange the inputs in such a way that the fucntion's code is readable.
+  waveblue = wavebound[*,0]
+  wavered = wavebound[*,1]
+  cdex = fix(alog(cstrct.cflg)/alog(2))
+
+;; Identifing the pixels that exist bewteen the ranges given for the
+;; waveblue and wavered boundries. This is for fitting purposes. 
+  pixdex = where(((wave ge waveblue[0]) and (wave lt waveblue[1]))$
+                 or ((wave ge wavered[0]) and (wave lt wavered[1])),npixdex)
+
+;; In order to be better confined within the line fitting program done
+;; in the next step, the line fit is conducted in a transformed
+;; space (the middle point between the blue and red ranges.
+  waveave = 0.5*(waveblue[1]+wavered[0])
+  waveshift = wave-waveave
+
+;; Results are stored in an array vector, the line's parameters
+;; are stored as [y-intecept,slope]. The matrix that stores the
+;; covariance is [[var_b, var_bm], [var_mb, var_m]]
+  result = linfit(waveshift[pixdex],flux[pixdex], measure_errors=error[pixdex],$
+                  prob=prob,chisq=chisq,covar=covar,$
+                  yfit=yfit)
+
+;; Transforming the results back over to the correct space.
+  result_true = [result[0]-result[1]*waveave,result[1]]
+  covar_true = covar
+; This makes the assumption that covar[0,1] = covar[1,0] is true.
+  covar_true[0,0] = covar[0,0] + covar[1,1]*waveave^2 - 2*waveave*covar[0,1]
+  if not (silent) then begin
+     if(covar_true[0,1] ne covar_true[1,0]) then begin
+        print,'--> Warning: sdss_stackciv_linfit; covar values of [0,1] and [1,0] are not equal.'
+        print,'-->    covar[0,1] = ',covar_true[0,1],$
+              '    covar[1,0] = ', corvar_true[1,0]
+     endif
+  endif
+
+;; Calculate the results of the line fitting program and plot it along
+;; with the wavelengths and flux arrays.
+  yfit_true=result_true[1]*wave + result_true[0]
+  sigyfit_true = sqrt( wave^2*covar_true[1,1] + $
+                       covar_true[0,0] + 2*wave*covar_true[0,1])
+
+;; Store the main results in some logical system in the event for the need
+;; of debugging the code.
+  xlinevalues = wave
+  ylinevalues = yfit_true
+
+;; Make sure that both the size of the continuum is the same as the wave, which
+;; both in turn should be equal to the sizes of xlinevalues and ylinevalues.
+  if(n_elements(xlinevalues) ne n_elements(ylinevalues)) then $
+     stop,'Error: sdss_stackciv_linfit; the x-axis array and y-axis array for the line fit are not the same size.'
+  if(n_elements(wave) ne n_elements(ylinevalues)) then $
+     stop,'Error: sdss_stackciv_linfit; the x-axis array and y-axis array for the line fit are not the same size as the wavelength array.'
+
+;; Debugging:
+  if (debug) then begin
+     ;; Plot the results. Within debug mode, the original spectra is plotted.
+     ;; Also, the proposed lines, and the lines one sigma above and below the
+     ;; lines are printed. The ranges are also marked in the graph.
+     x_splot,wave,flux,psym1=10,$
+             xtwo=xlinevalues,ytwo=ylinevalues,psym2=7,$
+             ythr=cstrct.conti[cstrct.ipix0:*,cdex],psym3=2,$
+             yfou=error,psym4=10,$
+             xsix=xlinevalues,ysix=ylinevalues+sigyfit_true,psym6=10,$
+             xfiv=xlinevalues,yfiv=ylinevalues-sigyfit_true,psym5=10,$
+             xsev=wave[pixdex],ysev=flux[pixdex],psym7=4
+
+     ;; In essence, if the chisq value is around 1, then the line is
+     ;; considered to be a good fit. If the probability value is less than
+     ;; 0.1 then it is also considered to be a good fit.
+     print,''
+     print,'Bluewave bounds:  ', strtrim(waveblue[0],2), '  ',$
+           strtrim(waveblue[1],2)
+     print,'Redwave bounds:  ', strtrim(wavered[0],2), '  ',$
+           strtrim(wavered[1],2)
+     print,'Pixel count for line fit      ',npixdex
+     print,'Slope value of line fit:      ',result[1],' +/- ',sqrt(covar_true[1,1]),' (',result[1]/sqrt(covar_true[1,1]),')'
+     print,'Intercept value of the fit:   ',result[0],' +/- ',sqrt(covar_true[0,0]),' (',result[0]/sqrt(covar_true[0,0]),')'
+     print,'Covarriance and redu-chisq:    ',covar_true[0,1],'   ',chisq/(npixdex-2)
+     print,'IDL probability measurement:  ',prob
+     print,''
+  endif
+
+;; If the wavelength tolerance is set, mostly for the splicing, then pass 
+;; instead the pixels that include the wavelengths, including the tolerance on
+;; both sides.
+  pixdex = where($
+           ((wave ge (waveblue[0]-wavetoler)) and (wave lt (waveblue[1]+wavetoler)))$
+           or ((wave ge (wavered[0]-wavetoler)) and (wave lt (wavered[1])+wavetoler)),$
+           npixdex)
+
+;; In order for the structures to be passed into the main function,
+;; sdss_stackciv_linsplice(), pixdex must all be the same size, in this case,
+;; the same size as the wavelength arrays.
+  temppixdex = make_array(n_elements(wave),/integer,value=-1)
+  pixdex = [pixdex,temppixdex[npixdex:*]]
+
+;; Defining the output of this function.
+  output = create_struct($
+           'xlinevalues',xlinevalues,$
+           'ylinevalues',ylinevalues,$
+           'covar',covar_true,$
+           'chisq',chisq,$
+           'wavered',wavered,$
+           'waveblue',waveblue,$
+           'pixdex',pixdex,$
+           'npixdex',npixdex)
+
+  if (debug) then begin
+     ;; Allow for the user to interact with the plot and the numbers.
+     stop,'Pause: sdss_stackciv_linfit; You can interact with the plot and numbers now, enter in .c to continue.'
+  endif
+;; If this program is in debug mode, make that clear to the user.
+  if (debug) then print,'===== End debug: sdss_stackciv_linfit ====='
+
+  return, output
+end
+
+
+
+function sdss_stackciv_linsplice, flux, wave, error, cstrct, $
+                                  wavebound_list=wavebound_list, inverse=inverse,$
+                                  wavetoler=wavetoler, fluxtoler=fluxtoler,$
+                                  silent=silent,debug=debug
+
+;; First, outlining the defaults.
+  if not keyword_set(wavebound_list) then begin
+     ;; There are two default linear fits, with the following pixel ranges.
+     ;; These defaults are for primarily SiIV stacks.
+     templine1_waveblue = [1160.0,1180.0]
+     templine1_wavered = [1225.0,1232.0]
+     templine2_waveblue = [1225.0,1232.0]
+     templine2_wavered = [1275.0,1290.0]
+
+     ;; To align better with the 3D array standard, the values are compressed.
+     templine1 = [[templine1_waveblue],[templine1_wavered]]
+     templine2 = [[templine2_waveblue],[templine2_wavered]]
+     wavebound_list = [[[templine1]],[[templine2]]]
+  endif
+  if not keyword_set(inverse) then inverse = 0
+  if not keyword_set(wavetoler) then wavetoler = 0
+  if not keyword_set(fluxtoler) then fluxtoler = 1e-3
+  if not keyword_set(silent) then silent = 0
+  if ((not keyword_set(debug)) or silent) then debug = 0
+
+;; It does not make sence to run the program in silent mode, while debug is on.
+  if(debug and silent) then begin
+     print,'Warning: sdss_stackciv_linsplice; I do not see the logic behind silent debugging. I am going to disable silent because debug is on.'
+     silent = 0
+  endif
+;; Check the size of the array, and standardize it if it is within one of the 
+;; more common recognizeable forms. If the the wavebound array is composed in
+;; the KLC method of using a 2D repeating array, convert to the Kyu method of a
+;; 3D array. 
+  case size(wavebound_list,/n_dimensions) of
+     2: begin
+        if not (silent) then begin
+           print,'--> Warning: sdss_stackciv_linsplice; The wavebound list is detected to be organized in the KLC method.'
+           print,'-->     Converting it to the Kyu method.'
+        endif
+        ;; The wavebound list array is assumed to be in the KLC method. In 
+        ;; order to read it and process it within the program, convert it to 
+        ;; the Kyu method.
+        tempwaveblue = $
+           [wavebound_list[0,0],wavebound_list[1,0]]
+        tempwavered = $
+           [wavebound_list[0,0 + 1],wavebound_list[1,0 + 1]]
+        ;; To align better with the 3D array standard, the values are 
+        ;; compressed.
+        templine = [[templine1_waveblue],[templine1_wavered]]
+        tempwavebound_list = [[[templine]]]
+        for linedex = 2, n_elements(wavebound_list[0,*]), 2 do begin
+           tempwaveblue = $
+              [wavebound_list[0,linedex],wavebound_list[1,linedex]]
+           tempwavered = $
+              [wavebound_list[0,linedex + 1],wavebound_list[1,linedex + 1]]
+           ;; To align better with the 3D array standard, the values are 
+           ;; compressed.
+           templine = [[templine1_waveblue],[templine1_wavered]]
+           tempwavebound_list = [[[tempwavebound_list]],[[templine]]]
+        endfor
+        wavebound_list = tempwavebound_list
+     end
+     3: begin
+        ;; The wavebound list array is in the Kyu method, similar to the default
+        ;; lines, and it the standard of the program. Pass it along.
+        break
+     end
+     else: begin
+        ;; The wavebound list array is not a readable format. Bark at the user.
+        print,'==> Error: sdss_stackciv_linsplice; I cannot parse the wavebound list into a readable format.'
+        print,'==>     The wavebound list does not have the right number of dimensions.'
+        print,'==>     Current size: ', size(wavebound_list,/n_dimensions),$
+              '    Supposed size: 3'
+     end
+  endcase
+
+;; If the order in which the lines are applyed is desired to be in reverse,
+;; then so be it.
+  if inverse then wavebound_list = reverse(wavebound_list,3)
+
+;; Fix the cstrct such that it will always give the continuum array.
+  cdex = fix(alog(cstrct.cflg)/alog(2))
+
+;; Find the size of some of the arrays for later purposes.
+  nwavebound_list = n_elements(wavebound_list[0,0,*])
+
+;; Find the linear fits for all of the lines requested for, storing the return
+;; values from the function in order to overwrite the continuum later.
+  linear_lines = [sdss_stackciv_linfit(flux, wave, error, cstrct, $
+                                       wavebound_list[*,*,0], wavetoler=wavetoler, silent=silent, debug=debug)]
+  for linedex = 1, nwavebound_list - 1 do begin
+     ;; If the user wants debug information, add which line is being done as
+     ;; it works nicely with sdss_stackciv_linfit().
+     if (debug) then $
+        print,'Initiating line fitting of Line ', strtrim(linedex + 1, 2)
+
+     temp_struct = sdss_stackciv_linfit(flux, wave, error, cstrct, $
+                                        wavebound_list[*,*,linedex], wavetoler=wavetoler, silent=silent,$
+                                        debug=debug)
+
+     linear_lines = [linear_lines,temp_struct]
+  endfor
+  nlinear_lines = n_elements(linear_lines)
+
+;; In order to splice the two regions together, the common overlap in both the
+;; continuum fit and the linear fit must be found. The intersection pixel seam
+;; is the closest to both of the bluewave and redwave bound's center.
+  for linedex = 0, nlinear_lines -1 do begin
+     ;; If the user wants debug information, add which line is being spliced.
+     if (debug) then $
+        print,'Initiating continuum splicing of Line ', strtrim(linedex + 1, 2)
+     
+     ;; The pixeldex of each line holds both the bluewave and the redwave pixel
+     ;; indices. It must be split into their sepeate indices. As the 
+     ;; indices are all within one for both the blue and red sides, yet more
+     ;; than once between the blue and red ranges, check for the seam
+     ;; between.
+
+     ;; Erase all negative indices in the pixel indexes.
+     gd = where(linear_lines[linedex].pixdex ge 0) ; should check valid
+     tmppixdex = linear_lines[linedex].pixdex[gd]
+     iblueend = (where(tmppixdex+1 ne shift(tmppixdex,-1)))[0]
+     bluepixdex = tmppixdex[0:iblueend]
+     redpixdex = tmppixdex[iblueend+1:*]
+
+;     bluepixdex = [linear_lines[linedex].pixdex[0]]
+;     redpixdex = [!null]
+;     for index = 1, linear_lines[linedex].npixdex - 1 do begin
+;        if (linear_lines[linedex].pixdex[index] eq $
+;            (linear_lines[linedex].pixdex[index-1] + 1)) then begin
+;           bluepixdex = [bluepixdex,linear_lines[linedex].pixdex[index]]
+;        endif else break
+;     endfor
+;     redpixdex = linear_lines[linedex].pixdex[n_elements(bluepixdex):*]
+;
+;     ;; Erase all zero indcies in the pixel indexes.
+;     bluepixdex = bluepixdex[where(bluepixdex ne 0)]
+;     redpixdex = redpixdex[where(redpixdex ne 0)]
+     nbluepixdex = n_elements(bluepixdex)
+     nredpixdex = n_elements(redpixdex)
+
+     ;; If any of the pixels within both ranges are the same, then bark at the
+     ;; user. None of the pixel ranges should overlap as this risks compromising
+     ;; a clean splice because the splitting of the pixel ranges relies on unique
+     ;; pixel indecies. However, assume the user knows what they are doing.
+     if not (silent) then begin
+        if (n_elements(tmppixdex[uniq(tmppixdex,sort(tmppixdex))]) $
+            ne n_elements(tmppixdex)) then begin
+           print,'--> Warning: sdss_stackciv_linsplice; I detect copies of the wavelength indicies, an overlap of the wavebounds.'
+           print,'-->     This may skew the splice and line fitting.'
+        endif
+     endif
+     ;; Ensure that none of the datapoints where not lost. Bark if they were.
+     if((nbluepixdex + nredpixdex) ne linear_lines[linedex].npixdex) then $
+        stop,'==> Error: sdss_stackciv_linsplice; I lost some pixels while extracting them. Please recheck your bounds and tolerances.'
+     ;; Ensure that the arrays were actually split. Apologize to the user if not.
+     if((~nredpixdex) or (nbluepixdex eq linear_lines[linedex].npixdex)) then $
+        stop,'==> Error: sdss_stackciv_linsplice; sorry, I cannot split the pixdex array.'
+     ;; Also, ensure that the bluepix and redpix array are actually blueward
+     ;; and redward of each other. Bark back if not.
+     if (mean(bluepixdex) ge mean(redpixdex)) then begin
+        stop,'==> Error: sdss_stackciv_linsplice; the blue-ward bounds are redder then redward bounds, and vice versa. They might be backwards.'
+     endif
+
+     ;; Within both the blue and red ranges, determine when the linear fit and
+     ;; the continuum fit is the closest to each other.
+     subtract_bluepixdex = abs(cstrct.conti[bluepixdex,cdex] - linear_lines[linedex].ylinevalues[bluepixdex])
+     subtract_redpixdex = abs(cstrct.conti[redpixdex,cdex] - linear_lines[linedex].ylinevalues[redpixdex])
+     srt_bluepixdex = sort(subtract_bluepixdex)
+     srt_redpixdex = sort(subtract_redpixdex)
+     ;; If the linear fit crosses the continuum, there are two local minima for
+     ;; their intersections, if not, then there is one. Always take the local
+     ;; minima closest to the center of the two regions.
+     if(bluepixdex[srt_bluepixdex[1]] gt bluepixdex[srt_bluepixdex[0]]) then $
+        bluepixseam = bluepixdex[srt_bluepixdex[1]] $
+     else bluepixseam = bluepixdex[srt_bluepixdex[0]]
+     if(redpixdex[srt_redpixdex[1]] gt redpixdex[srt_redpixdex[0]]) then $
+        redpixseam = redpixdex[srt_redpixdex[1]] $
+     else redpixseam = redpixdex[srt_redpixdex[0]]
+     ;; Bark back at the user if the difference between the continuum and the
+     ;; proposed seam for the linear fit is too large to be logically fit.
+     if(abs(cstrct.conti[bluepixseam,cdex] - linear_lines[linedex].ylinevalues[bluepixseam]) gt fluxtoler) then $
+        stop,'Error: sdss_stackciv_linsplice; blueward continuum difference is greater than the given flux tolerance, my splicing would be illogical.'
+     if(abs(cstrct.conti[redpixseam,cdex] - linear_lines[linedex].ylinevalues[redpixseam]) gt fluxtoler) then $
+        stop,'Error: sdss_stackciv_linsplice; redward continuum difference is greater than the given flux tolerance, my splicing would be illogical.'
+     
+     ;; Splice the two together, between the bluepixseam and the redpixseam, 
+     ;; replace the current continuum with the line fit. 
+     cstrct.conti[bluepixseam:redpixseam,cdex] = $
+        linear_lines[linedex].ylinevalues[bluepixseam:redpixseam]
+  endfor
+
+;; Return the cstrct, which should be modified with the approprate lines
+;; specified by the user.
+  return, cstrct
+end
+
+
 function sdss_stackciv_fitconti, spec_fil, wave=wave, nlmax=nlmax,$
-                                 lin_fil=lin_fil, dvlin=dvlin, _extra=extra
+                                 lin_fil=lin_fil, dvlin=dvlin, linsplice=linsplice, $
+                                 _extra=extra
   ;; Use as many other functions as possible
   if n_params() ne 1 then begin
      print,'sdss_stackciv_fitconti( spec_fil, [wave=, nlmax=, lin_fil=, dvlin=, _extra=])'
@@ -140,6 +477,13 @@ function sdss_stackciv_fitconti, spec_fil, wave=wave, nlmax=nlmax,$
                                  cstrct_fil=cstrct, _extra=extra)
   if keyword_set(extra0) then extra = extra0 $ ; restore
   else undefine, extra                         ; remove from downstream
+  ;; Linear splice
+  if keyword_set(linsplice) then begin
+     ;; _extra includes wavebound_list=, /inverse, wavetoler=,
+     ;; fluxtoler=, /silent, /debug
+     cstrct = sdss_stackciv_linsplice(flux, wave, sigma, cstrct, _extra=extra)
+  endif
+
 
   ;; Find absorption lines
   ;; _extra= includes lsnr=, /debug
