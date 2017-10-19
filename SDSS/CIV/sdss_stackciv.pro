@@ -108,46 +108,34 @@ function sdss_stackciv_linfit, flux, wave, error, cstrct, wavebound,$
   pixdex = where(((wave ge waveblue[0]) and (wave lt waveblue[1]))$
                  or ((wave ge wavered[0]) and (wave lt wavered[1])),npixdex)
 
-;; In order to be better confined within the line fitting program done
-;; in the next step, the line fit is conducted in a transformed
-;; space (the middle point between the blue and red ranges.
-  waveave = 0.5*(waveblue[1]+wavered[0])
-  waveshift = wave-waveave
-
 ;; Results are stored in an array vector, the line's parameters
 ;; are stored as [y-intecept,slope]. The matrix that stores the
 ;; covariance is [[var_b, var_bm], [var_mb, var_m]]
-  result = linfit(waveshift[pixdex],flux[pixdex], measure_errors=error[pixdex],$
+  result = linfit(wave[pixdex],flux[pixdex], measure_errors=error[pixdex],$
                   prob=prob,chisq=chisq,covar=covar,$
                   yfit=yfit)
 
-;; Transforming the results back over to the correct space.
-  result_true = [result[0]-result[1]*waveave,result[1]]
-  covar_true = covar
-; This makes the assumption that covar[0,1] = covar[1,0] is true.
-  covar_true[0,0] = covar[0,0] + covar[1,1]*waveave^2 - 2*waveave*covar[0,1]
   if not (silent) then begin
-     if(covar_true[0,1] ne covar_true[1,0]) then begin
+     if(covar[0,1] ne covar[1,0]) then begin
         print,'--> Warning: sdss_stackciv_linfit; covar values of [0,1] and [1,0] are not equal.'
-        print,'-->    covar[0,1] = ',covar_true[0,1],$
-              '    covar[1,0] = ', corvar_true[1,0]
+        print,'-->    covar[0,1] = ',covar[0,1],$
+              '    covar[1,0] = ', corvar[1,0]
      endif
   endif
 
 ;; Calculate the results of the line fitting program and plot it along
 ;; with the wavelengths and flux arrays. The error for this continnum fit is to
 ;; be determined to be the sum of the errors in quad.
-  yfit_true=result_true[1]*wave + result_true[0]
-  sigyfit_true = sqrt( wave^2*covar_true[1,1] + $
-                       covar_true[0,0] + 2*wave*covar_true[0,1])
-;stop
+  yfit=result[1]*wave + result[0]
+  sigyfit = sqrt( wave^2*covar[1,1] + $
+                       covar[0,0] + 2*wave*covar[0,1])
   sigconti = cstrct.sigconti[*,cdex]
-  sigconti[pixdex[0]:pixdex[npixdex-1]] = sqrt((0*cstrct.sigconti[pixdex[0]:pixdex[npixdex-1],cdex])^2 + sigyfit_true^2)
+  sigconti[pixdex[0]:pixdex[npixdex-1]] = sqrt((0*cstrct.sigconti[pixdex[0]:pixdex[npixdex-1],cdex])^2 + sigyfit^2)
 
 ;; Store the main results in some logical system in the event for the need
 ;; of debugging the code.
   xlinevalues = wave
-  ylinevalues = yfit_true
+  ylinevalues = yfit
 
 ;; Make sure that both the size of the continuum is the same as the wave, which
 ;; both in turn should be equal to the sizes of xlinevalues and ylinevalues.
@@ -165,8 +153,8 @@ function sdss_stackciv_linfit, flux, wave, error, cstrct, wavebound,$
              xtwo=xlinevalues,ytwo=ylinevalues,psym2=7,$
              ythr=cstrct.conti[cstrct.ipix0:*,cdex],psym3=2,$
              yfou=error,psym4=10,$
-             xsix=xlinevalues,ysix=ylinevalues+sigyfit_true,psym6=10,$
-             xfiv=xlinevalues,yfiv=ylinevalues-sigyfit_true,psym5=10,$
+             xsix=xlinevalues,ysix=ylinevalues+sigyfit,psym6=10,$
+             xfiv=xlinevalues,yfiv=ylinevalues-sigyfit,psym5=10,$
              xsev=wave[pixdex],ysev=flux[pixdex],psym7=4
 
      ;; In essence, if the chisq value is around 1, then the line is
@@ -179,10 +167,10 @@ function sdss_stackciv_linfit, flux, wave, error, cstrct, wavebound,$
            strtrim(wavered[1],2)
      print,'Pixel count for line fit      ',npixdex
      print,'Slope value of line fit:      ',result[1],' +/- ',$
-        sqrt(covar_true[1,1]),' (',result[1]/sqrt(covar_true[1,1]),')'
+        sqrt(covar[1,1]),' (',result[1]/sqrt(covar[1,1]),')'
      print,'Intercept value of the fit:   ',result[0],' +/- ',$
-        sqrt(covar_true[0,0]),' (',result[0]/sqrt(covar_true[0,0]),')'
-     print,'Covarriance and redu-chisq:    ',covar_true[0,1],$
+        sqrt(covar[0,0]),' (',result[0]/sqrt(covar[0,0]),')'
+     print,'Covarriance and redu-chisq:    ',covar[0,1],$
         '   ',chisq/(npixdex-2)
      print,'IDL probability measurement:  ',prob
      print,''
@@ -207,7 +195,7 @@ function sdss_stackciv_linfit, flux, wave, error, cstrct, wavebound,$
            'xlinevalues',xlinevalues,$
            'ylinevalues',ylinevalues,$
            'sigconti',sigconti,$
-           'covar',covar_true,$
+           'covar',covar,$
            'chisq',chisq,$
            'wavered',wavered,$
            'waveblue',waveblue,$
