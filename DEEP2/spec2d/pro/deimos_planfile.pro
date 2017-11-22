@@ -117,7 +117,7 @@ pro deimos_planfile, datadir
   cd, current=cwd
   rawdatadir = stregex(cwd,'([0-z]+$)',/extract)
 
-  flist = findfile('d*_*.fits*', count=ct)
+  flist = findfile('*.fits*', count=ct)
   if ct eq 0 then message, 'Where are the files?'
   
   print, 'Looping through', ct, ' files', format='(A,I4,A)'
