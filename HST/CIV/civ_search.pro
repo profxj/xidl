@@ -1,5 +1,4 @@
-pwd
-pwd;; civ_search.pro
+;; civ_search.pro
 ;; 21 Feb 2008
 @measureSN
 
