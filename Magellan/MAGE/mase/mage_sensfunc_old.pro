@@ -1,4 +1,4 @@
-pro mage_sensfunc, mage, fitsfile, arcfile=arcfile, fluxtable=fluxtable, sensfile=sensfile, pixfile=pixfile, chk=chk, pixflatfile=pixflatfile
+pro mage_sensfunc_old, mage, fitsfile, arcfile=arcfile, fluxtable=fluxtable, sensfile=sensfile, pixfile=pixfile, chk=chk, pixflatfile=pixflatfile
 
   mage_proc, fitsfile, $
              sciimg, scivar, pixflatfile=pixflatfile, hdr=hdr

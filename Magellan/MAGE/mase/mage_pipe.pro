@@ -29,6 +29,7 @@ pro mage_pipe, mage, obj_id=obj_id, chk=chk $
 
      sxdelpar, master_hdr, "NAXIS1"
      sxdelpar, master_hdr, "CDELT1"
+     sxdelpar, master_hdr, "BZERO"
      sxdelpar, master_hdr, "CD1_1"
      sxdelpar, master_hdr, "CRVAL1"
      sxaddpar, master_hdr, "COMMENT", "mage_pipe: v0.3, Build June 2009"

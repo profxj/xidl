@@ -90,7 +90,7 @@ pro mage_esi_echcombspec, allobj, echfspec, SILENT=silent $
 
 ;;Bug fix added by JFH, prevents return of obj_id =99 value which breaks 
 ;; later calls to esi routines. 
-IF n_elements(obj_id1) GT 0 THEN obj_id = obj_id1 
+  IF n_elements(obj_id1) GT 0 THEN obj_id = obj_id1 
 ;  Optional Keywords
   if not keyword_set(ORDRS) then ordrs=[6L,20L]  ;removed the orders from the call
   if not keyword_set(REFO) then refo=0L

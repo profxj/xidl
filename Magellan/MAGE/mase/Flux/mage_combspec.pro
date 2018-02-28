@@ -43,6 +43,7 @@
 
 pro mage_combspec,objstr,fspec,CHK=CHK
 
+
 fspec={magefspecstrct}
 fspec.nexp=n_elements(objstr)/15  ;because there are 15 orders
 
