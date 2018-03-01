@@ -1620,12 +1620,12 @@ end                             ; sdss_completeness_plot
 pro sdss_completeness_cum, n_per_bin, froot, civ_fil, round_scale=round_scale, $
                            dblt_name=dblt_name,final=final, z=z, $
                            proot=proot, debug=debug, nociv=nociv, $
-                           out_fil=out_fil,_extra=extra
+                           out_fil=out_fil,ewciv_lim=ewciv_lim,_extra=extra
   ;; Hardcode the various subsets desired
   if n_params() lt 2 then begin
      print,'Syntax - sdss_completeness_cum, n_per_bin, froot, [civ_fil, round_scale=, '
      print,'                           dblt_name=, /final, /z, proot=, /debug, '
-     print,'                           /nociv, out_fil=, _extra=]'
+     print,'                           /nociv, out_fil=,ewciv_lim=, _extra=]'
      return
   endif 
   sdssdir = sdss_getsdssdir()
@@ -1649,7 +1649,7 @@ pro sdss_completeness_cum, n_per_bin, froot, civ_fil, round_scale=round_scale, $
      ;; _extra includes rating=, zlim=, ewlim=, nlim=, dvgal=, dvqso=, devm=,
      ;; /noBAL, /unblend, /default, /dropbox, civstrct_fil=
      civstr = sdss_getcivstrct(civ_fil,/default,final=final,count=nciv,$
-                               _extra=extra)
+                               ewlim=ewciv_lim,_extra=extra)
      tags = tag_names(civstr[0])
      if keyword_set(final) then $
         ztag = (where(tags eq 'ZABS_FINAL'))[0] $
