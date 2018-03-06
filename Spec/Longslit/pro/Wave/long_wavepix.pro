@@ -174,7 +174,8 @@ if N_PARAMS() LT 2 then begin
          sigvec = [25.D, 20.D, 15.D, 10.D, 7.0]
          isig = 0
          while (peak_pos0[0] EQ -1L OR N_ELEMENTS(PEAK_POS0) LE 5 $
-                AND isig LT 4) do begin
+                AND isig LE 4) do begin
+;            if ii EQ nslit-1L THEN stop
             x_fndpeaks, smooth(arc1d, 3), peak_pos0, NSIG = sigvec[isig], $
                         /silent, PKWDTH = pkwdth, TOLER = TOLER, $
                         THIN = THIN, NORDB = fordr, fweight = fweight
@@ -195,7 +196,6 @@ if N_PARAMS() LT 2 then begin
             plot, arc1d, yrange = [-100, max]
             oplot, peak_pos0, (arc1d[peak_pos0] < 0.9*max) $
                    , psym = 1, color = colors.red
-;               stop
          endif
          
 

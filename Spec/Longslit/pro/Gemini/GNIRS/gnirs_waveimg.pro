@@ -1,4 +1,4 @@
-FUNCTION GNIRS_WAVEIMG, image, hdr, tset_slits $
+FUNCTION GNIRS_WAVEIMG, image1, hdr, tset_slits $
                         , piximg = piximg, MXSHIFT = MXSHIFT $
                         , LINLIST = LINLIST, SIGREJ = SIGREJ $
                         , BOX_RAD = BOX_RAD, QAFILE = QAFILE, CHK = CHK
@@ -10,7 +10,14 @@ if (NOT keyword_set(box_rad)) then box_rad = 8L
 IF NOT KEYWORD_SET(SIG2D) THEN SIG2D = 2.5D
 
 if not keyword_set(LINLIST) then $
-  linlist = getenv('XIDL_DIR')+'/Spec/Arcs/Lists/oh_linelist.lst' 
+   linlist = getenv('XIDL_DIR')+'/Spec/Arcs/Lists/oh_linelist.lst'
+
+;; Remove any overall bias level from the image.
+;; ????? This might be better to do quadrant by quadrant
+ordermask = long_slits2mask(tset_slits)
+biaslevel = djs_median(image1[where(ordermask EQ 0)])
+image = image1 - biaslevel
+
 
 dims = size(image, /dimens)
 nx = dims[0]
@@ -27,6 +34,9 @@ FWHM = pkwdth
 ; generate left and right edge of slits
 traceset2xy, tset_slits[0], rows, left_edge
 traceset2xy, tset_slits[1], rows, right_edge
+
+
+
 
 trace = (left_edge + right_edge)/2.0D
 ; Median filtering is more robust against cosmics
@@ -173,10 +183,11 @@ IF pixrms[5] GE 1.0D THEN BEGIN
                      , sz = dims, pixrms = pixrms)
 ENDIF
 
-;;chk=1
-pixset = long_wavepix(image, tset_slits, FWHM = FWHM, pkwdth = pkwdth $
+;chk=1
+pixset = long_wavepix(image, tset_slits, FWHM = FWHM, pkwdth = 1.5*pkwdth $
                       , toler = toler, CHK = chk $
-                      , med_err = [0.1, 0.1, 0.1, 0.1, 0.1, 0.3])
+                      , med_err = [0.1, 0.1, 0.1, 0.1, 0.1, 0.5] $
+                      ,sig_thresh = [3.0,3.0,3.0,3.0,3.0,2.0])
 ;;, ISLIT = [1, 2, 3, 4, 5])
 ;; Trying to trace order 8 causes many problems so don't try for now. 
 ;; Could improve this by using the arcs. 

@@ -514,13 +514,14 @@ ENDIF ELSE IF (instrument EQ 'LRIS') THEN BEGIN
             wstruct.sigrej[0:5]   = [3.0, 3.0, 3.0, 3.0, 3.0, 3.0]
             wstruct.nord[0:5]     = [4L, 4L, 4L, 4L, 4L, 4L]
             wstruct.FLG_QUAL[0:5] = [2L, 2L, 2L, 2L, 2L, 2L]
-            wstruct.LINELIST      = line_path+'/lris_red_1200.lst'
+            wstruct.LINELIST      = line_path+'/lris_red_600.lst'
             wstruct.npanic      = 4L
             wstruct.nord_panic  = 2L
             wstruct.REID        = 1
-
             wstruct.REID_FILE   = calib_path + $
-                  '/lris_red_1200_900_d560.sav'
+                  '/lris_red_1200_clm.sav' ;; This is with 680 dichroic
+            ;;wstruct.REID_FILE   = calib_path + $
+            ;;      '/lris_red_1200_900_d560.sav'
 
           END
 
