@@ -91,8 +91,8 @@ CASE GNIRS OF
       
       xleft_right  = [320, 440, 530, 590, 660, 730]
       xright_right = [380, 490, 580, 655, 720, 800]
-      ;; Hack to reduce 2017 data
-      IF year GE 2017 THEN BEGIN
+      ;; Hack to reduce 2016 data
+      IF year GE 2016 THEN BEGIN
          xleft_left =  [210,340,420,490,560,630]
          xright_left  = [265,385,465,535,600,660]
          
@@ -146,8 +146,6 @@ xstart = dblarr(norders)
 xend   = dblarr(norders)
 ;   Smash the center of the sharpness-filtered image to a 1-dimensional vector
 fsum = djs_median(cimg[*, y1:y2], 2)
-
-
 
 xstart = dblarr(norders)
 xend   = dblarr(norders)

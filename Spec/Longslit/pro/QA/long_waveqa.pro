@@ -37,9 +37,13 @@ IF n_elements(wlines.WAVE) GT 1 THEN BEGIN
    IF median(wlines.WAVE) GE 1d4 OR median(wlines.WAVE) LE 2.6 THEN IR = 1
 ENDIF ELSE IR = 1 ;; this is a hack for now to fix bad IR fits
 ;;IF strmatch(wstruct.instrument, '*SOFI*') THEN IR = 0
-micron =  cgGreek('mu') + 'm'
+micron = '\mu' + 'm'
+;;micron = cgGreek('mu') + 'm'
 ;angstrom = STRING(197B)
-angstrom = cgSymbol("angstrom", /ps)
+;angstrom = cgSymbol("angstrom", /ps)
+;;angstrom = STRING(197B)
+angstrom = '\AA'
+
 IF KEYWORD_SET(IR) THEN units = micron ELSE units = angstrom
 IF NOT KEYWORD_SET(IR) OR (strmatch(wstruct.instrument, '*SOFI*') AND wstruct.BAND EQ 'H+K') $
 THEN ylog = 1 $
@@ -87,6 +91,7 @@ IF KEYWORD_SET(YLOG) THEN yrange = [(0.05*djs_median(arc1d)) > 1.0 $
 ELSE yrange = [(0.1*djs_median(arc1d)) > 1.0, 1.3*max(djs_median(arc1d, width = 5))] 
 wrange = [min(wvfit), max(wvfit)]
 
+stop
 djs_plot, wvfit, abs(arc1d), xrange = wrange $
           , yrange = yrange $
           , xstyle = 1, ystyle = 1 $

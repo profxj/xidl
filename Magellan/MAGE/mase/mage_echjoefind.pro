@@ -54,7 +54,7 @@ function mage_echjoefind, img, sciivar, waveimg,gdtrc, slit_edg $
                           , PEAKTHRESH = PEAKTHRESH $
                           , NFIND = NFIND, ABSTHRESH = ABSTHRESH $
                           , MIN_SN = MIN_SN, ESI = ESI, CBIN = CBIN $
-                          , trcmask = trcmask, FOFSEP = FOFSEP
+                          , trcmask = trcmask, FOFSEP = FOFSEP,OBJ_SHIFT=OBJ_SHIFT
   if  N_params() LT 4  then begin 
       print, 'Syntax - ' + $
              'ostr = mage_echjoefind( img, var, gdtrc, slit_edg, cbin )  [v1.0]'
@@ -117,7 +117,7 @@ function mage_echjoefind, img, sciivar, waveimg,gdtrc, slit_edg $
   IF NOT KEYWORD_SET(FWHM) THEN FWHM = 0.6/plate_scale_med
   ;;This FWHM presumes seeing is 0.6"
   box_rad = 1.5/plate_scale_med ;; box radius is 1.5" for SN ratio core only 
-  OBJ_SHIFT=2*BOX_RAD*0.8
+  IF NOT KEYWORd_SET(OBJ_SHIFT) THEN OBJ_SHIFT=2*BOX_RAD*0.8
   lbl = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
   
   ;; Set standard
@@ -183,6 +183,17 @@ function mage_echjoefind, img, sciivar, waveimg,gdtrc, slit_edg $
   IF KEYWORD_SET(ESI) THEN  ordermask = esi_ordermask(tset_slits)  $
   ELSE ordermask = mage_ordermask(tset_slits) 
   ;; Compute S/N per object and expunge very low S/N detections
+  ;;
+  ;; JFH 12-30-2017  BUG should be fixed.
+  ;; This algorithm here of differencing the S/N could be
+  ;; significantly improved. It basically boxcar extracts one object
+  ;; and then boxcar extracts a shifted apreture, and takes the
+  ;; difference. This breaks for close pairs of objects, where the
+  ;; shifted aperture intersects another object. I've added the
+  ;; OBJ_SHIFT parameter to deal with this, but that is a hack. If you
+  ;; make OBJ_SHIFT big, it will prevent this type of collision for a
+  ;; very close pair. A more intelligent approach would be to do
+  ;; proper extractions and create an object mask. 
   FOR iobj = 0L, nobj_str-1L DO BEGIN
      qq = objstruct[iobj].slitid - 1
      ;; extract asymmetric boxcars for S/N calculation
@@ -194,7 +205,7 @@ function mage_echjoefind, img, sciivar, waveimg,gdtrc, slit_edg $
                   > (rnd_edg[*, qq, 0]+LSLITE)
      right_shift = (objstruct[iobj].xpos + obj_shift + box_rad/cbin) $
                    < (rnd_edg[*, qq, 1]-RSLITE)
-     snmask = ordermask EQ order_vec[qq] AND sciivar GT 0.0 AND waveimg GT 0.0
+     snmask = ordermask EQ order_vec[qq] AND sciivar GT 0.0 AND waveimg GT 0.0 
      ;; boxcar extraction
      fx    = extract_asymbox2(img*snmask, left_edge, right_edge)
      fvar  = extract_asymbox2(var*snmask, left_edge, right_edge)
@@ -243,12 +254,13 @@ function mage_echjoefind, img, sciivar, waveimg,gdtrc, slit_edg $
         sn_arr[iobj]=0
      endelse
   ENDFOR
+  
   ;; Expunge very low S/N ratio objects
   bad = where(sn_arr LT MIN_SN,nbad_sn)
   IF nbad_sn NE 0 THEN BEGIN
      msk[bad] = 1
      print, 'mage_echjoefind: S/N ratio too low in orders:' 
-     forprint,'                                   ', $
+     forprint,replicate('        ',nbad_sn), $
               string(order_vec[(objstruct[bad].slitid - 1)]), string(sn_arr[bad]), textout = 1
   ENDIF
   objstruct = objstruct[where(msk EQ 0)]

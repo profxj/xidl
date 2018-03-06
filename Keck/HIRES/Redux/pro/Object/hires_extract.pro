@@ -442,7 +442,7 @@ pro hires_extract, hires, setup, obj_id, chip, exp, STD=std, $
           timg = transpose(skysub[mni:mxi,*]*msk[mni:mxi,*])
           tarc = 10.^transpose(img_arc[mni:mxi,*]*msk[mni:mxi,*])
           tvar = transpose(var[mni:mxi,*]*msk[mni:mxi,*])
-          blprof = transpose(model_blaze[mni:mxi,*]*msk[mni:mxi,*])
+          IF NOT KEYWORD_SET(BOXCAR) THEN blprof = transpose(model_blaze[mni:mxi,*]*msk[mni:mxi,*])
           if keyword_set(model_sky) then $
             tsky = transpose(model_sky[mni:mxi,*]*msk[mni:mxi,*])
 

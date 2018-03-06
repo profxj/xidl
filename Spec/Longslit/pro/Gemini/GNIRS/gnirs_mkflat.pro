@@ -130,7 +130,6 @@ PRO gnirs_mkflat, bluefiles, redfiles, order5files, order6files, objfiles $
 
    ordermask = long_slits2mask(tset_slits_init)
    ordermask[WHERE(ordermask GT 0)] = ordermask[WHERE(ordermask GT 0)] + 2L
-
    
    
 ;  Generate a mask giving position on the slit

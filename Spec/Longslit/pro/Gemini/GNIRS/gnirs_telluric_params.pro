@@ -39,6 +39,9 @@ logg_sol = alog10(6.67259d-8) + alog10(1.989d33) - 2.0D*alog10(6.96d10)
 
 type_let = strmid(type, 0, 1)
 type_num =  long(strmid(type, 1, 2))
+;; JFH This routine should be updated to use this table instead:
+;; http://www.pas.rochester.edu/~emamajek/EEM_dwarf_UBVIJHK_colors_Teff.txt
+;; Seems to have more types in it. 
 file = getenv('XIDL_DIR') + $
        '/Spec/Longslit/calib/standards/kurucz93/schmidt-kaler_table.txt'
 readcol, file, stype1, logT1, T1, BminV1, M_V1, BC1, M_bol1, L1 $

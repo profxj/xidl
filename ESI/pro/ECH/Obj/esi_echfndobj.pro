@@ -60,7 +60,8 @@ pro esi_echfndobj, esi, obj_id, exp, STD = std, CHK = chk $
                    , CBIN = cbin, RBIN = rbin, APERV = aperv, APERS = apers $
                    , NFIND = NFIND, PEAKTHRESH = PEAKTHRESH, SKYSUB = SKYSUB $
                    , USESTD = USESTD, FILSTD = FILSTD, FWHM = FWHM $
-                   , ABSTHRESH = ABSTHRESH, MIN_SN = MIN_SN, FOFSEP = FOFSEP
+                   , ABSTHRESH = ABSTHRESH, MIN_SN = MIN_SN, FOFSEP = FOFSEP $
+                   ,OBJ_SHIFT=OBJ_SHIFT
 ; old keywords
 ;, FITFIL = fitfil $,refwv=refwv, SCICLM = sciclm, REFORDR = refordr
 ;, INTER = inter , FRACPK = FRACPK, MAXOFF = maxoff, NSIG = nsig, NEDG = NEDG, 
@@ -215,7 +216,7 @@ endif
                                   , PEAKTHRESH = PEAKTHRESH, NFIND = NFIND $
                                   , TRCMASK = TRCMASK $
                                   , ABSTHRESH = ABSTHRESH, MIN_SN = MIN_SN $
-                                  , FOFSEP = FOFSEP, /ESI)
+                                  , FOFSEP = FOFSEP, OBJ_SHIFT=OBJ_SHIFT,/ESI)
       
       nobj = n_elements(objstruct)/10
       IF KEYWORD_SET(NFIND) THEN BEGIN
