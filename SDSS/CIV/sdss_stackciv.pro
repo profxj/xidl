@@ -129,8 +129,8 @@ function sdss_stackciv_linfit, flux, wave, error, cstrct, wavebound,$
            'xlinevalues',wave,$
            'ylinevalues',cstrct.conti[*,cdex],$
            'sigconti',cstrct.sigconti[*,cdex],$
-           'covar',0,$
-           'chisq',0,$
+           'covar',[[-1.0,-1.0],[-1.0,-1.0]],$
+           'chisq',-1,$
            'waveblue',waveblue,$
            'wavered',wavered,$
            'pixdex',pixdex,$
