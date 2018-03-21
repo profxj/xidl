@@ -59,9 +59,11 @@
 
 PRO gnirs_sensfunc, tellfiles, type, sensfuncfile, V = V, magfunc = magfunc $
                     , loglam = loglam, flux = flux, ivar = ivar $
-                    , itell = itell, OPT = OPT, CHECK = CHECK
+                    , itell = itell $
+                    , std_loglam=loglam_std, std_flux = flux_std $
+                    , OPT = OPT, CHECK = CHECK
 
-IF NOT KEYWORD_SET(OPT) THEN BOX = 1
+  IF NOT KEYWORD_SET(OPT) THEN BOX = 1
 ;IF NOT KEYWORD_SET(ITELL) THEN ITELL = 0L
 scihdr = xheadfits(tellfiles[0])
 ; Rebin spectra onto common wavelength grid
