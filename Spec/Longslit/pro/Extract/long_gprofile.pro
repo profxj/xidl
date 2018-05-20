@@ -56,8 +56,8 @@ if NOT keyword_set(objstruct) then title_string = '' else $
 
 xnew = trace_in
 
-ncol = (size(image))[1]
-nrow = (size(image))[2]
+ncol = (size(image))[1] ;; spatial
+nrow = (size(image))[2] ;; spectral 
 
 top = max(where(total(ivar EQ 0, 2) LT nrow))
 bot = min(where(total(ivar EQ 0, 2) LT nrow)) > 0
@@ -162,6 +162,8 @@ ENDIF ELSE BEGIN
                                     , sub_wave[igood])
    ENDIF
 ENDELSE
+
+stop
 
 norm_obj = (spline_sub NE 0.0)*float(sub_obj/(spline_sub + (spline_sub EQ 0.0)))
 norm_ivar = float(sub_ivar*spline_sub^2)

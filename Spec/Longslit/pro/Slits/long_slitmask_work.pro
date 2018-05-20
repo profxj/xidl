@@ -354,7 +354,7 @@ ENDIF ELSE BEGIN
       nstart = n_elements(xstart)
       nend = n_elements(xend)
       peakval = 1
-      
+      ;;stop
       ;save, /all, filename='debug.sav'
    
       ;stop

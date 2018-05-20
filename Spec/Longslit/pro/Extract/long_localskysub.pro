@@ -201,7 +201,7 @@ function long_localskysub, sciimg, sciivar, skyimage, piximg, waveimg  $
                     fluxivar = temp_str.IVAR_OPT
                     wave = temp_str.WAVE_OPT
                 endif
-            ENDELSE
+             ENDELSE
             if max(wave) gt 0 then begin
                obj_profiles[ipix, ii] = long_gprofile(img_minsky[ipix] $
                                                       , (modelivar*mask)[ipix] $

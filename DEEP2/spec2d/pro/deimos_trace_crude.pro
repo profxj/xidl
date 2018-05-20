@@ -75,7 +75,8 @@ pro deimos_trace_crude, im, tset1, tset2, imgbin, $
     else invvar = rebin((invvar_in NE 0), nx, ny/ybin)
   if not keyword_set(nmed) then nmed = 9 ;median nmed pixels in disp. dir.
 
-  LONGSLIT=1
+  ;; JFH Added this to get longslit to work
+  LONGSLIT=0
   IF KEYWORD_SET(LONGSLIT) THEN BEGIN
      mkhdr, hdr, 4, [0,0]
      long_slitmask_work,im,invvar_in,hdr,tset_slits=tset_slits
@@ -111,7 +112,7 @@ pro deimos_trace_crude, im, tset1, tset2, imgbin, $
   ;; Added by JFH to fix bugs when scattered light and ghosts give
   ;; large fluctuations in yrow around box slits
   ;; JFH changed this line
-  ;;thresh = 5*djsig(yrow)
+  thresh = 5*djsig(yrow)
   ;djs_iterstat,yrow,sigma=sigma,sigrej=10.0
   ;thresh =5.0*sigma
   print, 'Slit edge trace thresh: ', thresh
