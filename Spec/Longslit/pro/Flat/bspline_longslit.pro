@@ -84,7 +84,6 @@ function bspline_longslit, xdata, ydata, invvar, profile_basis, $
      covariance=covariance, alpha=alpha, nord=nord, silent=silent, $
      uaction = uaction, laction=laction, action=action, DEBUG=DEBUG
 
-;  stop                          ; KHRR
    if (n_params() LT 2) then begin
       print, 'Syntax -  sset = bspline_longslit( )'
       return, 0
@@ -101,6 +100,7 @@ function bspline_longslit, xdata, ydata, invvar, profile_basis, $
    if (NOT keyword_set(nord)) then nord = 4L
    if n_elements(upper) EQ 0 then upper = 5
    if n_elements(lower) EQ 0 then lower = 5
+
 
    if (keyword_set(invvar)) then begin
       if (n_elements(invvar) NE nx) then $
@@ -143,8 +143,6 @@ function bspline_longslit, xdata, ydata, invvar, profile_basis, $
    sset.funcname = 'Bspline longslit special'
 
    action_multiple = reform(profile_basis[*] # replicate(1,nord),nx,npoly*nord) 
-
-
    if (nthese LT nord) then begin
          print, 'Number of good data points fewer the NORD'
          return, sset
@@ -179,7 +177,8 @@ function bspline_longslit, xdata, ydata, invvar, profile_basis, $
 
 
         if error[0] NE 0 then begin
-              bf1 = bspline_action(1.d*xdata, sset, lower=laction, upper=uaction) 
+           bf1 = bspline_action(1.d*xdata, sset, lower=laction, upper=uaction)
+
 ;           if keyword_set(DBL) then $
 ;              bf1 = bspline_action(xdata, sset, lower=laction, upper=uaction) $
 ;           else $
@@ -204,11 +203,11 @@ function bspline_longslit, xdata, ydata, invvar, profile_basis, $
         if total(finite(action) EQ 0) GT 0 then begin
             splog, 'ERROR: Infinities in action matrix, wavelengths may be very messed up!!!'
             return, 0
-        endif
-
+         endif
         error = bspline_workit(xdata, ydata, invvar*maskwork, action, $
             sset, alpha=alpha, lower=laction, upper=uaction, $
-            yfit=yfit, covariance=covariance)
+                               yfit=yfit, covariance=covariance)
+
       endelse
 
       iiter = iiter + 1
@@ -239,8 +238,7 @@ function bspline_longslit, xdata, ydata, invvar, profile_basis, $
          qdone = djs_reject(ydata, yfit, invvar=invvar, inmask=tempin, $
                             outmask=maskwork, upper=upper*relative_factor, $
                             lower=lower*relative_factor, _EXTRA=EXTRA)
-
-          tempin = maskwork
+         tempin = maskwork
       if NOT keyword_set(silent) then $
           splog, iiter, reduced_chi, total(maskwork EQ 0), relative_factor, $
                        format='(i4, f8.3, i7, f6.2)'
@@ -270,6 +268,8 @@ function bspline_longslit, xdata, ydata, invvar, profile_basis, $
    ; Re-sort the output arrays OUTMASK and YFIT to agree with the input data.
 
    if NOT keyword_set(silent) then splog, 'Elapsed time: ', systime(1)-t0
+
+      
 
    return, sset
 end

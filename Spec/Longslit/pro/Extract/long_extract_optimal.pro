@@ -90,7 +90,7 @@ struct = create_struct('WAVE_OPT', dblarr(nt) $      ; optimal wavelengths
 
 mincol = min(where(oprof GT 0) mod nc, max = maxcol)
 nsub = maxcol - mincol + 1L
-;stop
+
 if (mincol EQ -1 OR maxcol EQ -1) then begin
     splog, 'WARNING: Invalid trace; skipping optimal extraction'
     ;; JXP -- Set wave to -1 to indicate failures
@@ -172,6 +172,7 @@ IF badwvs[0] NE -1 then begin
 ENDIF
 
 flux_model = flux_opt ## replicate(1., nsub)*oprof_sub
+stop
 chi2 = total((img_sub - flux_model)^2*mivar_sub*mask_sub, 1, /dou, /nan)/ $
   ((total(mivar_sub*mask_sub GT 0, 1, /dou, /nan) - 1) > 1)
 ;struct.trace = trace

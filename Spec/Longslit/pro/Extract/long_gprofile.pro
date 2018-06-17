@@ -111,6 +111,7 @@ ind_nonzero = where(sn2 GT 0, nzero)
 IF nzero GT 0 THEN djs_iterstat, sn2[ind_nonzero], median = med_sn2 $
 ELSE med_sn2 = 0.0
 
+
 sn2_med = djs_median(sn2, width = 10, boundary = 'reflect')
 igood = where(sub_ivar GT 0.0, ngd)
 IF ngd GT 0 THEN BEGIN
@@ -163,7 +164,6 @@ ENDIF ELSE BEGIN
    ENDIF
 ENDELSE
 
-stop
 
 norm_obj = (spline_sub NE 0.0)*float(sub_obj/(spline_sub + (spline_sub EQ 0.0)))
 norm_ivar = float(sub_ivar*spline_sub^2)
@@ -178,6 +178,7 @@ good = where(norm_ivar GT 0, ngood)
 xtemp = total(4.d + sqrt((sn2_1 > 0.0) ## replicate(1.0d, n_sub)), /cumul)
 xtemp = xtemp/max(xtemp)
 
+
 ; norm_x is the x position along the image centered on the object  trace
 norm_x = sub_x#replicate(1.0D, nrow)-sub_trace##replicate(1.0D, n_sub)
 ;x = findgen(nrow)
@@ -191,7 +192,7 @@ if ngood LT 10  OR med_sn2 LT SN_GAUSS^2 OR KEYWORD_SET(GAUSS) then begin
            '  or GAUSS flag set'
     splog, 'Returning gaussian profile'
     sigma_x = norm_x[*]/(sigma ## replicate(1, n_sub)) - $
-      (trace_corr ## replicate(1, n_sub))
+              (trace_corr ## replicate(1, n_sub))
     profile_model[isub] = exp(-0.5*sigma_x^2)/sqrt(2.0d*!dpi)*(sigma_x^2 LT 25.)
     title_string = title_string   $
       + ' FWHM:'  + string(thisfwhm, FORMAT = '(F6.2)') $
@@ -262,10 +263,11 @@ endif else begin  ;; This is for extended or very bright objects
     bkpt = [reverse(-rb), rb]
     keep = where(bkpt GE min_sigma AND bkpt LE max_sigma)
     bkpt = bkpt[keep]
-endelse
+ endelse
+
 
 ;;  attempt b-spline fit first...
-GOOD_PIX = sn2_sub GT SN_GAUSS AND norm_ivar GT 0
+GOOD_PIX = sn2_sub GT SN_GAUSS^2 AND norm_ivar GT 0
 IN_PIX   = sigma_x GE min_sigma AND sigma_x LE max_sigma AND norm_ivar GT 0
 goodp1   = where(GOOD_PIX, ngoodpix)
 inp1     = where(IN_PIX, ninpix)
@@ -380,6 +382,8 @@ for iiter = 1, sigma_iter do begin
                                       , norm_ivar[inside], profile_basis $
                                       , fullbkpt = fullbkpt, maxiter = 1 $
                                       , yfit = mode_shift_fit, /silent)
+    
+    
     temp_set = create_bsplineset(mode_shift_set.fullbkpt, mode_shift_set.nord)
     temp_set.coeff = mode_shift_set.coeff[0, *]
     h0 = bspline_valu(xx, temp_set) 

@@ -91,6 +91,7 @@ sset = bspline_longslit(wave[good], data[good], ivar[good] $
                         , lower = sigrej, red_chi = rchi $
                         , relative = relative $
                         , outmask = outmask_good1, /groupbadpix, maxrej = 5)
+stop
 ;stop; -- sset.coeff are all zero (KHRR)
 ; safe masking of 3-sigma points
 ;chi = (data[good] - yfit)*sqrt(ivar[good])
@@ -106,7 +107,7 @@ mask1 = chi2 LT chi2_sigrej
 if NOT keyword_set(silent) then begin
     print, '2nd round...'
     print, 'Iter  Chi^2  Rejected pts'
-endif
+ endif
 sset = bspline_longslit(wave[good], data[good], ivar[good] * mask1 $
                         , profile_basis[good, *], yfit = yfit2, _EXTRA = EXTRA $
                         , upper = sigrej, lower = sigrej $
