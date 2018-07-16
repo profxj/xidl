@@ -1,4 +1,4 @@
-d
+
   
 ;; wcen = 1.62217, was this a telluric??
 ;savefile = '/Users/joe/ISAAC_redux/nite1/1007+0337/Science/Hip041640_0/tel-ISAAC_SWS_STD_0001-ISAAC_SWS_STD_0002.sav'
@@ -22,7 +22,12 @@ d
 ;savefile = '/Users/joe/ISAAC_redux/nite2/2300+0031/Science/Hip080804_1/wave-ISA;AC_SWS_STD_0032-ISAAC_SWS_STD_0033.sav'
 
 ;1.72847
-savefile = '/Users/joe/ISAAC_redux/nite3/1357+0117/Science/Hip076069_3/wave-ISAAC_SWS_STD_0009-ISAAC_SWS_STD_0010.sav'
+;savefile = '/Users/joe/ISAAC_redux/nite3/1357+0117/Science/Hip076069_3/wave-ISAAC_SWS_STD_0009-ISAAC_SWS_STD_0010.sav'
+
+; wcen = 2.370
+savefile = '/Users/joe/isaac_redux/1630+0435/Science/Hip090271_3/wave-ISAAC.2013-04-12T08_53_18.660-ISAAC.2013-04-12T08_54_35.245.sav'
+
+
 
 
 
