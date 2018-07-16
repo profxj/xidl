@@ -266,6 +266,7 @@ function long_objfind, image, tset_slits=tset_slits $
        
        flux_spec = extract_asymbox2(thisimg, left_asym, right_asym)
        fluxvec = djs_avsigclip(flux_spec, 1, sigrej = 4)
+
 ;     Changed reject threshold from sigrej=2. To allow for more 
 ;     dynamic range since some good pixels were being rejected. 
 ;     Median-filter with a filter much larger than the FWHM
@@ -459,7 +460,7 @@ function long_objfind, image, tset_slits=tset_slits $
          if fwhmmeas NE 0 then objstruct1[ipeak].fwhm = $
            sqrt((fwhmmeas^2 - fwhm^2) > 4.) $
          else objstruct1[ipeak].fwhm = fwhm
-     endfor
+      endfor
     ;stop
       ; Resort the traces by their X position
       objstruct1 = objstruct1[sort(objstruct1.xfracpos)]
@@ -530,6 +531,7 @@ function long_objfind, image, tset_slits=tset_slits $
    ;; crude trace and then use that as the input trace for flux and 
    ;; then gaussian weighted centering. 
                                 ;fwhm2 = djs_median(objstruct.FWHM)
+   stop
    IF KEYWORD_SET(CRUDE) THEN BEGIN
       xpos_slit = objstruct.xpos
       ypos = objstruct.ypos
@@ -561,6 +563,7 @@ function long_objfind, image, tset_slits=tset_slits $
       IF i LT niter/3 THEN fwhm_now = 1.3*fwhm $
       ELSE IF (i GE niter/3) AND (i LT 2*niter/3) THEN fwhm_now = 1.1*fwhm $
       ELSE fwhm_now = fwhm
+      stop
       xpos1 = trace_fweight(image*mask, xfit1, ypos, radius = fwhm_now)
       ;; set these threhsolds to avoid poorly behaved fits
       xpos1 = xpos1 > (-0.2*nx)

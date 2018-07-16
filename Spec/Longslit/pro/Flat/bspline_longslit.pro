@@ -142,7 +142,7 @@ function bspline_longslit, xdata, ydata, invvar, profile_basis, $
    sset = create_bsplineset(fullbkpt, nord, npoly=npoly) 
    sset.funcname = 'Bspline longslit special'
 
-   action_multiple = reform(profile_basis[*] # replicate(1,nord),nx,npoly*nord) 
+   action_multiple = reform(profile_basis[*] # replicate(1,nord),nx,npoly*nord)
    if (nthese LT nord) then begin
          print, 'Number of good data points fewer the NORD'
          return, sset
@@ -195,7 +195,7 @@ function bspline_longslit, xdata, ydata, invvar, profile_basis, $
           ; Same thing as above using less memory
           action = action_multiple
           for ipoly=0L, npoly-1L do $
-           action[*,lindgen(nord)*npoly+ipoly] *= bf1
+             action[*,lindgen(nord)*npoly+ipoly] *= bf1
           bf1 = 0  ; clear memory
         endif
 
@@ -207,7 +207,6 @@ function bspline_longslit, xdata, ydata, invvar, profile_basis, $
         error = bspline_workit(xdata, ydata, invvar*maskwork, action, $
             sset, alpha=alpha, lower=laction, upper=uaction, $
                                yfit=yfit, covariance=covariance)
-
       endelse
 
       iiter = iiter + 1
@@ -243,7 +242,7 @@ function bspline_longslit, xdata, ydata, invvar, profile_basis, $
           splog, iiter, reduced_chi, total(maskwork EQ 0), relative_factor, $
                        format='(i4, f8.3, i7, f6.2)'
 
-      endif
+   endif
       ;; JXP DEBUGGING
       if keyword_set(DEBUG) then begin
          ndbg = n_elements(DEBUG)
