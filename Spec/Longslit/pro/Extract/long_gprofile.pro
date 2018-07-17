@@ -90,98 +90,107 @@ indsp = WHERE(wave GT wvmnx[0] AND wave LT wvmnx[1] $
               AND finite(flux_sm) AND flux_sm LT 5.0d5 $
               AND flux_sm GT -1000.0d $
               AND fluxivar_sm GT 0.0, nsp)
-b_answer = bspline_iterfit(wave[indsp], flux_sm[indsp] $
-                           , everyn = 1.5, yfit = spline_flux $
-                           , invvar = fluxivar_sm[indsp], upper = 5 $
-                           , lower = 5, /groupbadpix, maxrej = 1 $
-                           , outmask = bmask, /silent, /relative)
-b_answer = bspline_iterfit(wave[indsp], flux_sm[indsp] $
-                           , everyn = 1.5, yfit = spline_flux  $
-                           , invvar = fluxivar_sm[indsp]*bmask, upper = 5 $
-                           , lower = 5, /groupbadpix, maxrej = 1 $
-                           , outmask = bmask2, /silent, /relative)
-c_answer = bspline_iterfit(wave[indsp], flux_sm[indsp], everyn = 30 $
-                           , yfit = cont_flux  $
-                           , invvar = fluxivar_sm[indsp]*bmask2, upper = 5 $
-                           , lower = 5, /groupbadpix, maxrej = 1 $
-                           , outmask = cmask, /silent, /relative)
-sn2 = ((spline_flux*sqrt(fluxivar_sm[indsp] >  0)*bmask2) > 0)^2
+IF nsp GT 10 THEN BEGIN 
+   b_answer = bspline_iterfit(wave[indsp], flux_sm[indsp] $
+                              , everyn = 1.5, yfit = spline_flux $
+                              , invvar = fluxivar_sm[indsp], upper = 5 $
+                              , lower = 5, /groupbadpix, maxrej = 1 $
+                              , outmask = bmask, /silent, /relative)
+   b_answer = bspline_iterfit(wave[indsp], flux_sm[indsp] $
+                              , everyn = 1.5, yfit = spline_flux  $
+                              , invvar = fluxivar_sm[indsp]*bmask, upper = 5 $
+                              , lower = 5, /groupbadpix, maxrej = 1 $
+                              , outmask = bmask2, /silent, /relative)
+   c_answer = bspline_iterfit(wave[indsp], flux_sm[indsp], everyn = 30 $
+                              , yfit = cont_flux  $
+                              , invvar = fluxivar_sm[indsp]*bmask2, upper = 5 $
+                              , lower = 5, /groupbadpix, maxrej = 1 $
+                              , outmask = cmask, /silent, /relative)
+   sn2 = ((spline_flux*sqrt(fluxivar_sm[indsp] >  0)*bmask2) > 0)^2
 ;stop
-ind_nonzero = where(sn2 GT 0, nzero)
-IF nzero GT 0 THEN djs_iterstat, sn2[ind_nonzero], median = med_sn2 $
-ELSE med_sn2 = 0.0
+   ind_nonzero = where(sn2 GT 0, nzero)
+   IF nzero GT 0 THEN djs_iterstat, sn2[ind_nonzero], median = med_sn2 $
+   ELSE med_sn2 = 0.0
 
+   sn2_med = djs_median(sn2, width = 10, boundary = 'reflect')
+   igood = where(sub_ivar GT 0.0, ngd)
+   IF ngd GT 0 THEN BEGIN
+      isrt = sort(wave[indsp])
+      sn2_sub[igood] = interpol(sn2_med[isrt], wave[indsp[isrt]] $
+                                , sub_wave[igood])
+   ENDIF
+   splog, 'sqrt(med(S/N)^2) is ', sqrt(med_sn2)
 
-sn2_med = djs_median(sn2, width = 10, boundary = 'reflect')
-igood = where(sub_ivar GT 0.0, ngd)
-IF ngd GT 0 THEN BEGIN
-    isrt = sort(wave[indsp])
-    sn2_sub[igood] = interpol(sn2_med[isrt], wave[indsp[isrt]] $
-                              , sub_wave[igood])
-ENDIF
-splog, 'sqrt(med(S/N)^2) is ', sqrt(med_sn2)
-
-min_wave = min(wave[indsp])
-max_wave = max(wave[indsp])
-spline_flux1 = fltarr(nysub)
-cont_flux1 = fltarr(nysub)
-sn2_1 = fltarr(nysub)
-ispline  = where(wave GE min_wave AND wave LE max_wave)
+   min_wave = min(wave[indsp])
+   max_wave = max(wave[indsp])
+   spline_flux1 = fltarr(nysub)
+   cont_flux1 = fltarr(nysub)
+   sn2_1 = fltarr(nysub)
+   ispline  = where(wave GE min_wave AND wave LE max_wave)
 ;; don't extrapolate
-spline_flux1[ispline] = bspline_valu(wave[ispline], b_answer)
-cont_flux1[ispline]   = bspline_valu(wave[ispline], c_answer)
-sn2_1[ispline] = interpol(sn2, wave[indsp], wave[ispline])
-bmask = lonarr(nysub) + 1L
-bmask[indsp] = bmask2
-spline_flux1 = djs_maskinterp(spline_flux1, bmask EQ 0)
-cmask2 = lonarr(nysub) + 1L
-cmask2[indsp] = cmask
-cont_flux1 = djs_maskinterp(cont_flux1, cmask2 EQ 0)
+   spline_flux1[ispline] = bspline_valu(wave[ispline], b_answer)
+   cont_flux1[ispline]   = bspline_valu(wave[ispline], c_answer)
+   sn2_1[ispline] = interpol(sn2, wave[indsp], wave[ispline])
+   bmask = lonarr(nysub) + 1L
+   bmask[indsp] = bmask2
+   spline_flux1 = djs_maskinterp(spline_flux1, bmask EQ 0)
+   cmask2 = lonarr(nysub) + 1L
+   cmask2[indsp] = cmask
+   cont_flux1 = djs_maskinterp(cont_flux1, cmask2 EQ 0)
 ;stop
 ; If SNR^2 < 2.0 then there is not enough object flux so don't normalize
-IF med_sn2 LE 2.0 THEN BEGIN
-   ;; not enough object flux to fit a profile, so just use the 
-   ;; 1-sigma fluctuation of the sky to normalize things
-   djs_iterstat, flux[indsp], sigma = sigma1
-   spline_sub[igood] = sigma1 > 1.0d
-ENDIF ELSE BEGIN 
-   IF med_sn2 LE 5.0 AND med_sn2 GT 2.0 THEN spline_flux1 = cont_flux1   
-   ;; Interp over points <= 0 in boxcar flux or masked points using cont model
-   badpix = (spline_flux1 LE 0.5) OR (bmask EQ 0)
-   indgd = WHERE(badpix EQ 0, ngood0)
-   indbad1 = WHERE(badpix AND cont_flux1 GT 0.0 AND cont_flux1 LT 5.0d5, nbad1)
-   IF nbad1 GT 0 THEN spline_flux1[indbad1] = cont_flux1[indbad1]
-   indbad2 = WHERE(badpix AND cont_flux1 LE 0.0 OR cont_flux1 GT 5.0d5, nbad2)
-   IF nbad2 GT 0 AND ngood0 GT 0 THEN $
-      spline_flux1[indbad2] = djs_median(spline_flux1[indgd])
+   IF med_sn2 LE 2.0 THEN BEGIN
+      ;; not enough object flux to fit a profile, so just use the 
+      ;; 1-sigma fluctuation of the sky to normalize things
+      djs_iterstat, flux[indsp], sigma = sigma1
+      spline_sub[igood] = sigma1 > 1.0d
+   ENDIF ELSE BEGIN 
+      IF med_sn2 LE 5.0 AND med_sn2 GT 2.0 THEN spline_flux1 = cont_flux1   
+      ;; Interp over points <= 0 in boxcar flux or masked points using cont model
+      badpix = (spline_flux1 LE 0.5) OR (bmask EQ 0)
+      indgd = WHERE(badpix EQ 0, ngood0)
+      indbad1 = WHERE(badpix AND cont_flux1 GT 0.0 AND cont_flux1 LT 5.0d5, nbad1)
+      IF nbad1 GT 0 THEN spline_flux1[indbad1] = cont_flux1[indbad1]
+      indbad2 = WHERE(badpix AND cont_flux1 LE 0.0 OR cont_flux1 GT 5.0d5, nbad2)
+      IF nbad2 GT 0 AND ngood0 GT 0 THEN $
+         spline_flux1[indbad2] = djs_median(spline_flux1[indgd])
 ;; take a 5-pixel median to filter out some hot pixels
-   spline_flux1 = djs_median(spline_flux1, width = 5, boundary = 'reflect')
+      spline_flux1 = djs_median(spline_flux1, width = 5, boundary = 'reflect')
 ; create the normalized object image
-   IF ngd GT 0 THEN BEGIN 
-       isrt = sort(wave)
-       spline_sub[igood] = interpol(spline_flux1[isrt], wave[isrt] $
-                                    , sub_wave[igood])
-   ENDIF
-ENDELSE
+      IF ngd GT 0 THEN BEGIN 
+         isrt = sort(wave)
+         spline_sub[igood] = interpol(spline_flux1[isrt], wave[isrt] $
+                                      , sub_wave[igood])
+      ENDIF
+   ENDELSE
 
 
-norm_obj = (spline_sub NE 0.0)*float(sub_obj/(spline_sub + (spline_sub EQ 0.0)))
-norm_ivar = float(sub_ivar*spline_sub^2)
+   norm_obj = (spline_sub NE 0.0)*float(sub_obj/(spline_sub + (spline_sub EQ 0.0)))
+   norm_ivar = float(sub_ivar*spline_sub^2)
 ;; Cap very large inverse variances
-ivar_mask = (norm_obj GT -0.2 AND norm_obj LT 0.7) $
-            AND (sub_ivar GT 0.0) $
-            AND finite(norm_obj) EQ 1 $
-            AND finite(norm_ivar) EQ 1
-norm_ivar = norm_ivar*ivar_mask
-good = where(norm_ivar GT 0, ngood)
+   ivar_mask = (norm_obj GT -0.2 AND norm_obj LT 0.7) $
+               AND (sub_ivar GT 0.0) $
+               AND finite(norm_obj) EQ 1 $
+               AND finite(norm_ivar) EQ 1
+   norm_ivar = norm_ivar*ivar_mask
+   good = where(norm_ivar GT 0, ngood)
+   
+   xtemp = total(4.d + sqrt((sn2_1 > 0.0) ## replicate(1.0d, n_sub)), /cumul)
+   xtemp = xtemp/max(xtemp)
 
-xtemp = total(4.d + sqrt((sn2_1 > 0.0) ## replicate(1.0d, n_sub)), /cumul)
-xtemp = xtemp/max(xtemp)
-
-
+;x = findgen(nrow)
+ENDIF ELSE BEGIN
+   ;; What to do if all pixels are bad, for example near negative
+   ;; objects in the IR. 
+   ngood=0
+   med_sn2=0
+   djs_iterstat, flux, sigma = sigma1
+   spline_sub[*] = sigma1 > 1.0d
+   norm_obj = (spline_sub NE 0.0)*float(sub_obj/(spline_sub + (spline_sub EQ 0.0)))
+ENDELSE
 ; norm_x is the x position along the image centered on the object  trace
 norm_x = sub_x#replicate(1.0D, nrow)-sub_trace##replicate(1.0D, n_sub)
-;x = findgen(nrow)
+
 
 sigma = replicate((thisfwhm/2.3548), nrow)
 fwhmfit = sigma*2.3548

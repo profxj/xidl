@@ -1764,7 +1764,7 @@ ENDIF ELSE IF strmatch(instrument, 'ISAAC') then begin
    wstruct.sigrej[*] = [3.0, 3.0, 3.0, 3.0, 3.0, 3.0]
    wstruct.nord[*] = 4
    wstruct.linelist = line_path + $
-                      '/ISAAC_modelsky_OH_linelist_' + mode + '_' +band + '.lst'
+                      '/ISAAC_modelsky_linelist_' + mode + '_' +band + '.lst'
    wstruct.npanic = 3L
    wstruct.nord_panic = 2L
    wstruct.REID = 1

@@ -43,7 +43,7 @@ ENDIF
 atm_file =  getenv('LONGSLIT_DIR') + '/calib/extinction/atm_trans_am1.0.dat'
 rdfloat, atm_file, lam_atm, trans, skip = 2
 
-micron =  cgGreek('mu') + 'm'
+micron =  Textoidl('\mu') + 'm'
 FONT = 0
 !P.FONT = 0
 xlab = Textoidl('\lambda', FONT = FONT) + ' (' + micron + ')'

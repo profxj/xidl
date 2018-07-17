@@ -531,7 +531,6 @@ function long_objfind, image, tset_slits=tset_slits $
    ;; crude trace and then use that as the input trace for flux and 
    ;; then gaussian weighted centering. 
                                 ;fwhm2 = djs_median(objstruct.FWHM)
-   stop
    IF KEYWORD_SET(CRUDE) THEN BEGIN
       xpos_slit = objstruct.xpos
       ypos = objstruct.ypos
@@ -563,7 +562,6 @@ function long_objfind, image, tset_slits=tset_slits $
       IF i LT niter/3 THEN fwhm_now = 1.3*fwhm $
       ELSE IF (i GE niter/3) AND (i LT 2*niter/3) THEN fwhm_now = 1.1*fwhm $
       ELSE fwhm_now = fwhm
-      stop
       xpos1 = trace_fweight(image*mask, xfit1, ypos, radius = fwhm_now)
       ;; set these threhsolds to avoid poorly behaved fits
       xpos1 = xpos1 > (-0.2*nx)

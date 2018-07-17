@@ -160,7 +160,7 @@ IF KEYWORD_SET(TELLURIC) THEN BEGIN
    obj_pos = long_objfind(mask*img_minsky, tset_slits = tset_slits $
                           , FWHM = FWHM_OBJ, OBJMASK = OBJMASK_POS $
                           , peakthresh = 0.1, /SILENT $
-                          , OBJTHRESH = 0.1D, STDTRACE = STDTRACE)
+                          , OBJTHRESH = 0.1D, STDTRACE = STDTRACE,NPERSLIT=1)
 ENDIF ELSE BEGIN
    FOR islit = 0L, nslit-1L DO BEGIN
       print, "Doing global B-spline sky subtraction"

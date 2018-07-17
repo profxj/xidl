@@ -65,7 +65,7 @@ iwave = where(wave_model GE wave_min AND wave_model LE wave_max)
 yrange = [0.9*min(model[iwave]), 1.1*max(model[iwave])]
 x_specplot, model, wav = wave_model $
             , xr = [wave_min, wave_max], yrang = yrange $
-            , xsize = 600, ysize = 300 $
+            , xsize = 1200, ysize = 700 $
             , ytwo = yrange[1]*0.7 + 0*lines.wave $
             , two_wave = lines.wave, psym2 = 2
 

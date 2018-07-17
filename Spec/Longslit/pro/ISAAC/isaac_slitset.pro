@@ -32,7 +32,7 @@
 FUNCTION ISAAC_SLITSET, nx, ny, NSLIT = NSLIT1
 
 ;; default to use a single side of the detector for now. 
-  IF KEYWORD_SET(NSLIT1) THEN NSLIT = NSLIT1 ELSE NSLIT = 1L
+  IF KEYWORD_SET(NSLIT1) THEN NSLIT = NSLIT1 ELSE NSLIT = 2L
   
   CASE NSLIT OF
      1: BEGIN 

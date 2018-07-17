@@ -91,7 +91,7 @@ IF KEYWORD_SET(YLOG) THEN yrange = [(0.05*djs_median(arc1d)) > 1.0 $
 ELSE yrange = [(0.1*djs_median(arc1d)) > 1.0, 1.3*max(djs_median(arc1d, width = 5))] 
 wrange = [min(wvfit), max(wvfit)]
 
-stop
+
 djs_plot, wvfit, abs(arc1d), xrange = wrange $
           , yrange = yrange $
           , xstyle = 1, ystyle = 1 $
