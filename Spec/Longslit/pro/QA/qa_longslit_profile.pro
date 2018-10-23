@@ -111,8 +111,8 @@ pro qa_longslit_profile, x_tot, y_tot, model_tot, l_limit, r_limit, ind = ind1 $
    ;;oplot, x_tot[sort(x_tot)], model_tot[sort(x_tot)], thick = 3,
    ;;color = red 
    
-
-   oplot, x, y, color = white, psym = 3
+   IF n_elements(x) GT 1 THEN oplot, x, y, color = white, psym = 3 $
+   ELSE oplot, [x], [y], color = white, psym = 3
 
       
    if keyword_set(l_limit) then $

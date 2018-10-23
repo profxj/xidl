@@ -91,7 +91,7 @@ sset = bspline_longslit(wave[good], data[good], ivar[good] $
                         , lower = sigrej, red_chi = rchi $
                         , relative = relative $
                         , outmask = outmask_good1, /groupbadpix, maxrej = 5)
-stop
+
 ;stop; -- sset.coeff are all zero (KHRR)
 ; safe masking of 3-sigma points
 ;chi = (data[good] - yfit)*sqrt(ivar[good])

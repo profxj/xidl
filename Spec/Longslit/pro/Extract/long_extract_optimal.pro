@@ -172,7 +172,6 @@ IF badwvs[0] NE -1 then begin
 ENDIF
 
 flux_model = flux_opt ## replicate(1., nsub)*oprof_sub
-stop
 chi2 = total((img_sub - flux_model)^2*mivar_sub*mask_sub, 1, /dou, /nan)/ $
   ((total(mivar_sub*mask_sub GT 0, 1, /dou, /nan) - 1) > 1)
 ;struct.trace = trace

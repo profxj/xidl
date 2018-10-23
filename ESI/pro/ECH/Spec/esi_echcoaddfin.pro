@@ -90,8 +90,8 @@ pro esi_echcoaddfin, esi, obj_id, CRVAL1=crval1, CDELT=cdelt, NPIX=npix $
      ENDIF ELSE CBIN = 1
   ENDIF
     
-  x_wrechfspec, spec2d, specfil, /READ
-  if spec2d.flg_flux EQ 0 then begin
+  x_wrechfspec, spec2d_in, specfil, /READ
+  if spec2d_in.flg_flux EQ 0 then begin
       print, 'esi_echcoaddfin: Spectrum not fluxed! Returning...', specfil
       return
   endif
@@ -138,6 +138,12 @@ pro esi_echcoaddfin, esi, obj_id, CRVAL1=crval1, CDELT=cdelt, NPIX=npix $
           ELSE: message, 'Problem with binning'
       ENDCASE
   ENDELSE
+
+  sky_flux = 1
+  IF KEYWORD_SET(SKY_FLUX) THEN $
+     spec2d = esi_sky_flux_calib(spec2d_in, bad, ordrs = ordrs) $
+  ELSE spec2d = spec2d_in 
+     
   
   tot_wave = 10^(alog10(CRVAL1) + dindgen(npix)*cdelt)
   weight = dblarr(npix)
@@ -146,6 +152,11 @@ pro esi_echcoaddfin, esi, obj_id, CRVAL1=crval1, CDELT=cdelt, NPIX=npix $
   tot_sky   = dblarr(npix)
   sig = replicate(-1.D, npix)
   nosig = replicate(-1.D, npix)
+
+  norder = ordrs[1] - ordrs[0] + 1
+  tot_flux_arr = dblarr(npix,norder)
+  tot_sky_arr = dblarr(npix,norder)
+  weight_arr = dblarr(npix,norder)
 ; Loop
 
   for qq=ordrs[0],ordrs[1] do begin
@@ -170,7 +181,8 @@ pro esi_echcoaddfin, esi, obj_id, CRVAL1=crval1, CDELT=cdelt, NPIX=npix $
       endif
 
       ;; Add em in
-      
+      tot_flux_arr[indx+a,qq] = double(spec2d.fx[a, qq])
+      tot_sky_arr[indx+a,qq] = double(spec2d.sky[a, qq])
       wtmp   = double(spec2d.var[a, qq])
       tmp    = tot_flux[indx+a]  + double(spec2d.fx[a, qq])/double(wtmp)
       novtmp = tot_novar[indx+a] + double(spec2d.novar[a, qq])/double(wtmp^2)
@@ -224,5 +236,12 @@ pro esi_echcoaddfin, esi, obj_id, CRVAL1=crval1, CDELT=cdelt, NPIX=npix $
   IF KEYWORD_SET(SKY)   THEN mwrfits, tot_sky, skyfil, head, /create, /silent
   ;;
   print, 'esi_echcoaddfin: All done'
+
+  plot,tot_wave,tot_sky_arr[*,0],/xstyle,/ystyle,/nodata
+  color_vec = ['red','blue','orange','magenta','green','yellow','white','red','blue','green']
+  for qq=ordrs[0],ordrs[1] do begin
+     oplot,tot_wave,tot_sky_arr[*,qq], col=djs_icolor(color_vec[qq])
+  endfor
+  
   return
 end

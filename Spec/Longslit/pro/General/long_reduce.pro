@@ -591,7 +591,7 @@ if (NOT keyword_set(planfile)) then planfile = findfile('plan*.par')
    
    splog, /close
    x_psclose
-   
+
    return
 end
 ;------------------------------------------------------------------------------

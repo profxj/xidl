@@ -460,6 +460,7 @@ bset = bspline_longslit(sigma_x[ss[inside]],  norm_obj[ss[inside]], $
                         norm_ivar[ss[inside]], pb[ss[inside]], $
                         nord = 4, bkpt = bkpt, outmask = outmask, $
                         upper = 10, lower = 10, yfit = profile_fit, /silent)
+IF NOT keyword_set(outmask) THEN outmask = lonarr(n_elements(ss[inside])) + 1L
 
 skymask[*] = 1 - (sigma_x GT min_sigma AND sigma_x LT max_sigma)
 ;   testing
@@ -521,8 +522,8 @@ profile_model[isub] = full_bsp * pb
 res_mode = (norm_obj[ss[inside]] - profile_model[isub[ss[inside]]])* $
   sqrt(norm_ivar[ss[inside]])
 good = where(outmask EQ 1 AND norm_ivar[ss[inside]] GT 0, ngood)
-chi_med = median(res_mode[good]^2)
-chi_zero = median(norm_obj[ss[inside]]^2 * norm_ivar[ss[inside]])
+chi_med = djs_median(res_mode[good]^2)
+chi_zero = djs_median(norm_obj[ss[inside]]^2 * norm_ivar[ss[inside]])
 
 splog, '1-d bspline is fine', $
        min(fwhmfit), max(fwhmfit), chi_med, n_elements(bkpt), $

@@ -1,7 +1,7 @@
 PRO gnirs_mkflat, bluefiles, redfiles, order5files, order6files, objfiles $
                   , VERBOSE = VERBOSE, tset_slits = tset_slits $
                   , flat = final_median, CONV = CONV, CHK = CHK $
-                  , SHIFT8 = SHIFT8_1
+                  , SHIFT8 = SHIFT8_1, piximg = piximg, unnorm_flat = unnorm_flat
 
   main_hdr = headfits(bluefiles[0], exten = 0, /silent)
    IF KEYWORD_SET(SHIFT8_1) THEN SHIFT8 = SHIFT8_1 $

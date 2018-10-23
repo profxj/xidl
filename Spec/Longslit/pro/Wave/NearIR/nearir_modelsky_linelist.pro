@@ -33,7 +33,13 @@
 ;   
 ;-
 ;------------------------------------------------------------------------------
-;; nearir_modelsky_linelist, 2700., 'TSPEC_linelist.lst', 'TSPEC_modelsky.fits', dlam=41.1, flgd=1
+;; nearir_modelsky_linelist, 2700., 'TSPEC_linelist.lst',
+;; 'TSPEC_modelsky.fits', dlam=41.1, flgd=1
+;; nearir_modelsky_linelist, 10000., 'XSHOOTER_linelist.lst',
+;; 'XSHOOTER_modelsky.fits', dlam=10.0, flgd=1, wvmnx = [0.8,2.6]
+;; nearir_modelsky_linelist, 540, 'GNIRS_linelist.lst',
+;; 'GNIRS_modelsky.fits', dlam=100.0, flgd=1, wvmnx = [0.8,2.6]
+
 PRO NEARIR_MODELSKY_LINELIST, resolution, linefile, outfile, WVMNX=wvmnx $
                               , INSTRUMENT = instrument, DLAM = dlam, FLGD = flgd $
                               , NOWRITE = nowrite, SCL_BB = scl_bb, T_BB = t_bb $
@@ -48,7 +54,7 @@ PRO NEARIR_MODELSKY_LINELIST, resolution, linefile, outfile, WVMNX=wvmnx $
   if not keyword_set(INSTRUMENT) then instrument = ''
   if not keyword_set(SCL_BB) then scl_bb = 1.
   if not keyword_set(SCL_OH) then scl_oh = 1.
-  if not keyword_set(SCL_H2O) then scl_h2o = 1.
+  if not keyword_set(SCL_H2O) then scl_h2o = 10.
   if not keyword_set(T_BB) then T_BB  = 250.
   IF NOT KEYWORD_SET(WAVE_WATER) THEN WAVE_WATER = 2.3d
 
@@ -130,16 +136,16 @@ PRO NEARIR_MODELSKY_LINELIST, resolution, linefile, outfile, WVMNX=wvmnx $
        if (oh_fx[i] GT 1.0d) then begin
 
            fwhm = oh_wv[i]/resolution
-           sigma = fwhm / 2.35
-           gd = where(abs(wave-oh_wv[i]) LT 0.001, ngd)
+           sig = fwhm / 2.35
+           gd = where(abs(wave-oh_wv[i])/sig LT 3.0, ngd)
            if (ngd GT 0) then begin
-               ohspec[gd] += oh_fx[i] / 160. * $
-;                 1/(sqrt(2*3.14159)*sigma) * $
-                 exp(-(wave[gd]-oh_wv[i])^2/(2*sigma^2)) * (resolution/1000)
+              ohspec[gd] += oh_fx[i]/20000.0 * $
+                             1.0/(sqrt(2.0*!dpi)*sig)*exp(-(wave[gd]-oh_wv[i])^2/(2*sig^2))
+               ;exp(-(wave[gd]-oh_wv[i])^2/(2*sig^2))*(resolution/1000.0)
            endif
        endif
     endfor
-
+   
    ;; ;;;;;;;;;;;;;;;;;;;;;;;
    ;; H20 lines
    if wvmnx[1] GT wave_water and not keyword_set(BBONLY) then begin
@@ -170,7 +176,7 @@ PRO NEARIR_MODELSKY_LINELIST, resolution, linefile, outfile, WVMNX=wvmnx $
       smooth_fx = convol(h2o_rad, kernel)
 
       ;; Rebin
-      x_specrebin, h2o_wv*1e4, smooth_fx, wave*1e4, h2o_spec
+      x_specrebin, h2o_wv*1e4, smooth_fx, wave*1e4, h2o_spec, /flambda
       ;; Zero out below 2.3microns (reconsider)
       zero = where(wave LT wave_water, nzero)
       if nzero GT 0 then h2o_spec[zero] = 0.
@@ -178,7 +184,8 @@ PRO NEARIR_MODELSKY_LINELIST, resolution, linefile, outfile, WVMNX=wvmnx $
 
    clr = getcolor(/load)
    sky_model = y+bb_counts+ohspec*SCL_OH+h2o_spec*scl_h2o
-   ;;x_specplot, sky, wav = wave, inflg = 4, /block
+   ;stop
+   x_specplot, sky_model, wav = wave, inflg = 4, /block
    
    case flgd of 
       0: begin ;; Linear
@@ -193,7 +200,9 @@ PRO NEARIR_MODELSKY_LINELIST, resolution, linefile, outfile, WVMNX=wvmnx $
       end
       else: stop
    endcase
-   mwrfits, sky_model, outfile, hdr, /create 
+   mwrfits, sky_model, outfile, hdr, /create
+   mwrfits, wave, outfile
+
    
    if keyword_set(NOWRITE) then return
 
@@ -222,8 +231,7 @@ PRO NEARIR_MODELSKY_LINELIST, resolution, linefile, outfile, WVMNX=wvmnx $
    
    pkwave = interpol(wave, dindgen(n_elements(wave)), peak)
    m_pkwave = interpol(sky_model, dindgen(n_elements(wave)), peak)
-
-
+   
    x_specplot, sky_model, wav = wave, ytwo = m_pkwave, two_wave = pkwave $
                , psym2 = 1, /block
 

@@ -50,8 +50,11 @@ pro long_flatfield_specillum, x, y, image, spec_set, illum_set $
                               , invvar = invvar, slitwidth = slitwidth $
                               , modelfit = modelfit, ybkpt = ybkpt $
                               , npoly = npoly, TOL_EDG = TOL_EDG, CHK = CHK $
-                              , pixfit = pixfit, SLITSAMP = SLITSAMP $
-                              , DEBUG = IGOOD, FINEBKPT=finebkpt
+                              , pixfit = pixfit $
+                              , DEBUG = IGOOD, FINEBKPT=finebkpt, xsamp = xsamp $
+                              , SLITSAMP = SLITSAMP $
+                              ,specsmoothsamp = specsmoothsamp, smoothfit=smoothfit
+    chk =1
      npix = n_elements(x)
      t0 = systime(1)
      if n_elements(y) NE npix OR n_elements(image) NE npix then begin
@@ -62,12 +65,13 @@ pro long_flatfield_specillum, x, y, image, spec_set, illum_set $
      IF NOT KEYWORD_SET(TOL_EDG) THEN TOL_EDG = 5.0
      ;; This sets smallest scale of illumuniation function features
 ;     IF NOT KEYWORD_SET(SLITSAMP) THEN SLITSAMP = 40.0D ;; Should scale with binning
-     IF NOT KEYWORD_SET(SLITSAMP) THEN SLITSAMP = 4.0D
+     IF NOT KEYWORD_SET(SLITSAMP) THEN SLITSAMP = 5.0D
+     IF NOT KEYWORD_SET(SPECSMOOTHSAMP) THEN SPECSMOOTHSAMP = 50.0 
      ;; This sets minimum rms fluctuation (about unity) required
      ;; to compute an illumination function. 
      IF NOT KEYWORD_SET(ILLUM_THRESH) THEN ILLUM_THRESH = 0.03D
 ;     IF NOT KEYWORD_SET(ILLUM_THRESH) THEN ILLUM_THRESH = 0.10D
-     if NOT keyword_set(xsamp) then xsamp = 1.2
+     if NOT keyword_set(xsamp) then xsamp = 0.8
 ;     if NOT keyword_set(ysamp) then ysamp = 0.1
      if NOT keyword_set(invvar) then invvar = 1.0/((image > 1) + 25.0)
 
@@ -75,6 +79,7 @@ pro long_flatfield_specillum, x, y, image, spec_set, illum_set $
      if n_elements(xmax) NE 1 then xmax = max(x)
      if n_elements(ymin) NE 1 then ymin = min(y)
      if n_elements(ymax) NE 1 then ymax = max(y)
+     clr = getcolor(/load)
 
      xrange = xmax - xmin
      if (xrange LE 0) then begin
@@ -90,21 +95,41 @@ pro long_flatfield_specillum, x, y, image, spec_set, illum_set $
      
      log_image = alog(image > 1)
      log_ivar = 1.0 * (image GT 1 AND invvar GT 0)
-
+     inmask_log =  (image GT 1 AND invvar GT 0)
      splog, 'Spectral fit of flatfield', npix, ' Pixels to fit'
+     logrej = 0.5
+     ;; previously was nord=2
      spec_set = bspline_longslit(x[xs], log_image[xs], log_ivar[xs], $
-                                 xs*0.+1, everyn = npix/nxbkpt, nord = 2, $
-                                 upper = 0.2, lower=0.2, maxrej=5, /groupbadpix, $
-                                 yfit=specfit1, outmask=tempmask, /silent) 
+                                 xs*0.+1, everyn = npix/nxbkpt, nord = 4, $
+                                 upper = logrej, lower=logrej, maxrej=5, /groupbadpix, $
+                                 yfit=specfit1,inmask = inmask_log, $
+                                 outmask=outmask_log, /silent)
+
 ;     spec1_set = bspline_iterfit(x[xs], log_image[xs], invvar=log_ivar[xs],  $
 ;                    everyn=npix/nxbkpt, nord=2, $
 ;                    upper = 0.2, lower=0.2, maxrej=5, /groupbadpix, $
-;                    yfit=specfit1, outmask=tempmask, /silent) 
-
+;                    yfit=specfit1, outmask=tempmask, /silent)
+     
      specmodel1 = specfit1*0.
      specmodel1[xs] = exp(specfit1) 
-     specmask1 = tempmask*0
-     specmask1[xs] = tempmask
+     specmask1 = outmask_log*0
+     specmask1[xs] = outmask_log
+
+     IF KEYWORD_SET(CHK) THEN BEGIN
+        ;; Plot chi residuals versus spectral and slit position
+        badpix = WHERE(outmask_log EQ 0 AND inmask_log GT 0, nbad)
+        goodpix = WHERE(outmask_log GT 0 AND inmask_log GT 0, ngood)
+        yrange = [0.8*min(specfit1), 1.2*max(specfit1)]
+        plot, x[xs[goodpix]], log_image[xs[goodpix]], psym = 3 $
+              , xrange = [min(x[xs]), max(x[xs])], yrange =  yrange $
+              , xstyle = 1, ystyle = 1, xtitle = 'spectral pixel' $
+              , ytitle = 'flat field counts'
+        oplot, x[xs], specfit1, col = clr.red
+        IF nbad GT 0 THEN oplot, x[xs[badpix]], log_image[xs[badpix]], psym = 1 $
+                                 , col =clr.green 
+        wait, 1.5
+     ENDIF
+     
 
 ;     Now try a slit-illumination fit
 
@@ -209,9 +234,9 @@ pro long_flatfield_specillum, x, y, image, spec_set, illum_set $
                , xrange = [0.0, 1.0], yrange =  yrange $
                , xstyle = 1, ystyle = 1, xtitle = 'slit fraction' $
                , ytitle = 'median filtered illum func'
-         oplot, yin, illumfit1, col = fsc_color('red', 245)
+         oplot, yin, illumfit1, col = clr.red
          IF KEYWORD_SET(normimg) THEN oplot, y[ys[ifit]], normimg $
-           , col = fsc_color('green', 246)
+           , col = clr.green
          wait, 1.5
      ENDIF
      IF NOT KEYWORD_SET(PIXFIT) THEN RETURN
@@ -220,29 +245,42 @@ pro long_flatfield_specillum, x, y, image, spec_set, illum_set $
       illummodel1[ys] = bspline_valu(y[ys], illum_set) 
 
       if NOT keyword_set(npoly) then npoly = 7L ;4L  
-      poly_basis = fpoly(2.0D*y[xs] - 1.0D, npoly)
-      IF illum_max LE illum_thresh THEN $
-        profile_basis = poly_basis $
-      ELSE profile_basis = [[(illummodel1[xs])], [poly_basis]]
+      profile_basis = fpoly(2.0D*y[xs] - 1.0D, npoly)
+      ;poly_basis = fpoly(2.0D*y[xs] - 1.0D, npoly)
+      ;IF illum_max LE illum_thresh THEN $
+      ;  profile_basis = poly_basis $
+      ;ELSE profile_basis = [[(illummodel1[xs])], [poly_basis]]
+      splog, 'Illumination+scattered light fit of flatfield slit image'
       ;; pre-mask pixels which are outliers from our current model. 
       ;; As these seem to be breaking the fits
       clip = 15.0d
-      sigrej_illum = 9.0
       inmask = (invvar[xs] GT 0.0) AND $
         abs((image[xs]-specmodel1*illummodel1[xs])*sqrt(invvar[xs])) LT clip
 ;        (y[xs] GE TOL_EDG/SLITWIDTH)  AND $
 ;        (y[xs] LE (1.0D - TOL_EDG/SLITWIDTH))
-      splog, 'Illumination+scattered light fit of flatfield slit image'
-      
-      scatillum_set = bspline_longslit(x[xs], image[xs] $
-                                       , invvar[xs]*inmask $
+
+      ;; Create a prelminary normalized flat from the first pass
+      ;; separable decomposition = specmodel*illumodel. Now fit out
+      ;; more complicated spectrally dependent polynomial
+      ;; dependendence using bspline_longslit
+      imag_norm_pix = image[xs]/(specmodel1*illummodel1[xs])
+      ;; Here we ignore the formal photon counting errors and simply
+      ;; assume that a typical error per pixel. This guess is somewhat aribtrary
+      ivar_imag_norm = inmask/(0.01^2)
+      sigrej_illum = 3.0
+      ;; The above presumes that we will mask ~ +-15% outliers from
+      ;; this model.
+      scatillum_set = bspline_longslit(x[xs], imag_norm_pix $
+                                       , ivar_imag_norm $
                                        , profile_basis, yfit = yfit $
-                                       , fullbkpt = spec_set.fullbkpt $
+                                       ,  bkspace = specsmoothsamp  $
                                        , outmask = outmask $
                                        , inmask = inmask $
                                        , nord = 4 $
+                                       , maxrej=10, /groupbadpix $
                                        , upper = sigrej_illum $
                                        , lower = sigrej_illum) ;, DEBUG=[IGOOD,xs])
+      IF total(yfit) LE 1.0e-6 THEN yfit = 0.0*xs + 1.0 
 ;      , upper = 7, lower = 7)
       ;scat2 = bspline_longslit(x, image $
                                        ;, invvar*inmask $
@@ -264,43 +302,30 @@ pro long_flatfield_specillum, x, y, image, spec_set, illum_set $
       ;; Plot chi residuals versus spectral and slit position
       badpix = WHERE(outmask EQ 0 AND inmask GT 0, nbad)
       goodpix = WHERE(outmask GT 0 AND inmask GT 0, ngood)
-      residual = (image[xs] - yfit) 
-      weight = invvar[xs]
+      residual = (imag_norm_pix - yfit) 
+      weight = ivar_imag_norm 
       chi    = residual*sqrt(weight)
       ;CHK=1
       IF KEYWORD_SET(CHK) THEN BEGIN
-         clr = getcolor(/load)
-          plot, x[xs[goodpix]], chi[goodpix], psym = 3 $
+          plot, x[xs[goodpix]], residual[goodpix], psym = 3 $
                 , xrange = [min(x[xs]), max(x[xs])] $
-                , yrange = [-10.0, 10.0] $
-                , xstyle = 1, xtitle = 'spectral pixel', ytitle = 'chi'
-          IF nbad GT 0 THEN oplot, x[xs[badpix]], chi[badpix], psym = 1 $
-            , col =clr.green;  fsc_color('green', 246)
+                , yrange = [-0.05, 0.05] $
+                , xstyle = 1, xtitle = 'spectral pixel', ytitle = 'residual'
+          IF nbad GT 0 THEN oplot, x[xs[badpix]], residual[badpix], psym = 1 $
+            , col =clr.green
+          wait, 3.0
+          plot, y[xs[goodpix]], residual[goodpix], psym = 3, xrange = [0.0, 1.0] $
+                , yrange = [-0.05, 0.05], xstyle = 1 $
+                , xtitle = 'slit fraction' $
+                , ytitle = 'residual'
+          IF nbad GT 0 THEN oplot, y[xs[badpix]], residual[badpix], psym = 1 $
+                                   , col =clr.green 
           wait, 1.5
-          plot, y[xs[goodpix]], chi[goodpix], psym = 3, xrange = [0.0, 1.0] $
-                , yrange = [-10.0, 10.0], xstyle = 1, xtitle = 'slit fraction' $
-                , ytitle = 'chi'
-          IF nbad GT 0 THEN oplot, y[xs[badpix]], chi[badpix], psym = 1 $
-            , col =clr.green; fsc_color('green', 246)
-          wait, 1.5
-          ;; JXP DEBUGGING
-          ;model = fltarr(355L, 2048L)
-          ;model[IGOOD] = yfit
-          ;model3 = fltarr(355L, 2048L)
-          ;model3[IGOOD] = yfit2
-          ;image2 = fltarr(355L, 2048L)
-          ;image2[IGOOD] = image
-      ENDIF
-      modelfit  =  x*0.
-      IF total(yfit) LE 1.0e-6 THEN modelfit = specmodel1 $
-      ELSE modelfit[xs] = yfit
-      ;; JXP DEBUGGING
-          ;modelfit = yfit
-          ;model2 = fltarr(355L, 2048L)
-          ;model2[IGOOD] = modelfit
-          ;xatv, model2, /bloc
-          ;stop
-;      splog, 'Mean and Median chi^2', mean(chi^2), median(chi^2)
+       ENDIF
+      smoothfit  =  x*0.
+      smoothfit[xs] = yfit
+      modelfit = x*0
+      modelfit[xs] = yfit*specmodel1*illummodel1[xs]
       splog, 'Elapsed time = ', systime(1)-t0, ' sec'
       return
   end
