@@ -412,7 +412,7 @@ function long_objfind, image, tset_slits=tset_slits $
            ;; position of trace at middle of chip
            splog, 'Using input STDTRACE as crutch for object tracing'
             x_trace = interpol(STDTRACE, dindgen(n_elements(stdtrace)), ymid)
-            shift = xx1[*, slitid-1] + (xcen[ipeak]/nsamp)*xsize - x_trace
+            shift = xx1[*, slitid-1] + (xcen[ipeak]/nsamp)*xsize[ymid] - x_trace
             objstruct1[ipeak].xpos = STDTRACE + shift
         ENDIF ELSE BEGIN
             ;; Below we set the first guess for the trace to be the

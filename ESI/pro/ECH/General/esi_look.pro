@@ -42,7 +42,6 @@ tset_slits = xmrdfits(sedg_fil, 1)
 nx = tset_slits[0].DIMS[0]
 ny = tset_slits[0].DIMS[1]
 ordermask = esi_echordermask(tset_slits)
-
 ;;fin_fil  = esi[ithis].IMG_FINAL
 fin_fil = imgfil[ithis]
 sciimg   = xmrdfits(fin_fil, 0, hdr)

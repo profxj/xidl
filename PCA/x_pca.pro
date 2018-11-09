@@ -33,7 +33,7 @@
 ;    /nofix - don't do the final real PCA
 ; OUTPUTS:
 ;    eigenvec - [p,k] matrix of k leading eigenvectors
-;    hidden - [k] matrix of "hidden" variables (the lower dimensional
+;    hidden - [k, N] matrix of "hidden" variables (the lower dimensional
 ;             representation of the data)
 ; OPTIONAL OUTPUTS:
 ;    niter - number of iterations used
