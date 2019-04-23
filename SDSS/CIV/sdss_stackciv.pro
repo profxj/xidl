@@ -71,6 +71,7 @@
 ;   11 Jul 2017  Rebin variance; change e.g., sigma ne 0. to gt 0.,
 ;                enable ivarwgt, change median /qerr, KLC
 ;   21 Jul 2017  Revamp to enable /sigew in *errmc(), KLC
+;   23 Apr 2019  Correct /wvmsk,ndblt= with the 2*dd, KLC
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 @sdss_fndlin                    ; resolve sdss_fndlin_fitspl()
 
@@ -1455,10 +1456,10 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
         for ii=0,nwvmsk-1 do begin
            for dd=0,ndblt-1 do begin
               sub = where(wave ge wvmsk[ii,0] and wave le wvmsk[ii,1] and $
-                          not (wave ge civstr[ff].(wvlimtag)[dd,0] and $
-                               wave le civstr[ff].(wvlimtag)[dd,1]) and $ ; wvI
-                          not (wave ge civstr[ff].(wvlimtag)[dd+1,0] and $
-                               wave le civstr[ff].(wvlimtag)[dd+1,1])) ; wvII
+                          not (wave ge civstr[ff].(wvlimtag)[2*dd,0] and $
+                               wave le civstr[ff].(wvlimtag)[2*dd,1]) and $ ; wvI
+                          not (wave ge civstr[ff].(wvlimtag)[2*dd+1,0] and $
+                               wave le civstr[ff].(wvlimtag)[2*dd+1,1])) ; wvII
               if sub[0] ne -1 then sigma[sub] = 0.                     ; exclude
            endfor                                                      ; loop dd=ndblt
         endfor                                                         ; loop ii=nwvmsk
