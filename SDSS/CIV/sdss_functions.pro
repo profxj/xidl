@@ -360,17 +360,28 @@ end                             ; sdss_wrqsolist()
 
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 pro sdss_getqsoinlist,list_fil, sdsssum, snrstrct_fil, snr=snr,$
-                      silent=silent,_extra=extra
+                      silent=silent,ls_name=ls_name,_extra=extra
   ;; Read list and find the matching QSOs
   if n_params() lt 2 then begin
      print,'Syntax - sdss_getqsoinlist, list_fil, sdsssum, snrstrct_fil, [/silent,'
-     print,'                            /snr, _extra=]'
+     print,'                            /snr, /ls_name, _extra=]'
      return
   endif 
 
-  readcol,list_fil,spec,format='a',skip=1,/silent
-  nspec = (size(spec,/dim))[0]
-  tmp = sdss_getname(spec,/spec,root=subqso_name)
+  if size(list_fil,/type) eq 7 and n_elements(list_fil) eq 1 then begin
+     ;; Original
+     readcol,list_fil,spec,format='a',skip=1,/silent 
+     tmp = sdss_getname(spec,/spec,root=subqso_name)
+  endif else begin
+     ;; Enable passing in array of qso_name's
+     if keyword_set(ls_name) then subqso_name = list_fil $
+     else begin
+        ;; Enable passing in array of spectra names
+        spec = list_fil
+        tmp = sdss_getname(spec,/spec,root=subqso_name)
+     endelse 
+  endelse
+  nspec = (size(subqso_name,/dim))[0]
 
   ;; _extra= includes /noBAL, /BAL
   sdsstab = sdss_getqsostrct(_extra=extra)
