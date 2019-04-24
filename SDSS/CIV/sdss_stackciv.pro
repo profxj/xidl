@@ -72,7 +72,7 @@
 ;                enable ivarwgt, change median /qerr, KLC
 ;   21 Jul 2017  Revamp to enable /sigew in *errmc(), KLC
 ;   23 Apr 2019  Correct /wvmsk,ndblt= with the 2*dd, KLC
-;                Added sdss_stackciv_pltlist
+;                Added sdss_stackciv_pltlist and sdss_stackciv_chkconti
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 @sdss_fndlin                    ; resolve sdss_fndlin_fitspl()
 
@@ -704,6 +704,21 @@ pro sdss_stackciv_pltlist,list_fil
           lgnd=spec_fil,/block
   
 end                             ; sdss_stackciv_pltlist
+
+
+
+pro sdss_stackciv_chkconti,list_fil
+  ;; Cycle through all stacks in list and plot with continuum
+  if n_elements(list_fil) gt 1 then $
+     spec_fil = list_fil $
+  else readcol,list_fil,spec_fil,format='a',/silent 
+  nspec = n_elements(spec_fil)
+
+  for ss=0,nspec-1 do begin
+     sdss_pltconti,spec_fil[ss],/stack
+  endfor 
+end                             ; sdss_stackciv_chkconti
+
 
 
 function sdss_stackciv_stack, gstrct, median=median, percentile=percentile, $
