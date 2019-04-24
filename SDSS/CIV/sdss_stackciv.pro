@@ -72,6 +72,7 @@
 ;                enable ivarwgt, change median /qerr, KLC
 ;   21 Jul 2017  Revamp to enable /sigew in *errmc(), KLC
 ;   23 Apr 2019  Correct /wvmsk,ndblt= with the 2*dd, KLC
+;                Added sdss_stackciv_pltlist
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 @sdss_fndlin                    ; resolve sdss_fndlin_fitspl()
 
@@ -606,6 +607,103 @@ function sdss_stackciv_fitconti, spec_fil, wave=wave, nlmax=nlmax,$
   
   return, cstrct
 end                             ; sdss_stackciv_fitconti()
+
+
+pro sdss_stackciv_pltlist,list_fil
+  ;; Using x_splot, overlay up to eight arrays
+  ;; To Do:
+  ;; - enable plt_err, to compare half the nubmer but with errors
+  ;; - enable err_only, to replace fluxes with just errors
+  if n_elements(list_fil) gt 1 then $
+     spec_fil = list_fil $
+  else readcol,list_fil,spec_fil,format='a',/silent 
+  nspec = n_elements(spec_fil)
+  if nspec lt 2 then begin
+     print,'sdss_stackciv_pltlist: does not make sense to plot one'
+     print,'                       Use sdss_pltconti,',spec_fil[0],',/stack'
+     return
+  endif 
+
+  ;; Zero is flag to not plot
+  fxthr = 0
+  wvthr = 0
+  erthr = 0
+  fxfou = 0
+  wvfou = 0
+  erfou = 0
+  fxfiv = 0
+  wvfiv = 0
+  erfiv = 0
+  fxsix = 0
+  wvsix = 0
+  ersix = 0
+  fxsev = 0
+  wvsev = 0
+  ersev = 0
+  fxeig = 0
+  wveig = 0
+  ereig = 0
+
+  for ss=0,nspec-1 do begin
+     parse_sdss,spec_fil[ss],flux,wave,sig=sigma
+     case ss of
+        0: begin
+           fxone = flux
+           wvone = wave
+           erone = sigma
+        end
+        1: begin
+           fxtwo = flux
+           wvtwo = wave
+           ertwo = sigma
+        end
+        2: begin
+           fxthr = flux
+           wvthr = wave
+           erthr = sigma
+        end
+        3: begin
+           fxfou = flux
+           wvfou = wave
+           erfou = sigma
+        end
+        4: begin
+           fxfiv = flux
+           wvfiv = wave
+           erfiv = sigma
+        end
+        5: begin
+           fxsix = flux
+           wvsix = wave
+           ersix = sigma
+        end
+        6: begin
+           fxsev = flux
+           wvsev = wave
+           ersev = sigma
+        end
+        7: begin
+           fxeig = flux
+           wveig = wave
+           ereig = sigma
+        end
+        else: begin
+           stop,'sdss_stackciv_pltlist stop: too many to plot'
+        end
+     endcase
+  endfor                        ; loop ss=nspec
+
+  x_splot,wvone,fxone,psym1=10,$
+          xtwo=wvtwo,ytwo=fxtwo,psym2=10,$
+          xthr=wvthr,ythr=fxthr,psym3=10,$
+          xfou=wvfou,yfou=fxfou,psym4=10,$
+          xfiv=wvfiv,yfiv=fxfiv,psym5=10,$
+          xsix=wvsix,ysix=fxsix,psym6=10,$
+          xsev=wvsev,ysev=fxsev,psym7=10,$
+          xeig=wveig,yeig=fxeig,pysm8=10,$
+          lgnd=spec_fil,/block
+  
+end                             ; sdss_stackciv_pltlist
 
 
 function sdss_stackciv_stack, gstrct, median=median, percentile=percentile, $
