@@ -245,6 +245,8 @@ function sdss_stackciv_linfit, flux, wave, error, cstrct, wavebound,$
 end
 
 
+
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 function sdss_stackciv_linsplice, flux, wave, error, cstrct, $
                                   wavebound_list=wavebound_list, inverse=inverse,$
                                   wavetoler=wavetoler, fluxtoler=fluxtoler,$
@@ -464,6 +466,8 @@ function sdss_stackciv_linsplice, flux, wave, error, cstrct, $
   return, cstrct
 end
 
+
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 function sdss_stackciv_fitconti, spec_fil, wave=wave, nlmax=nlmax,$
                                  lin_fil=lin_fil, dvlin=dvlin, linsplice=linsplice, $
                                  _extra=extra
@@ -609,11 +613,16 @@ function sdss_stackciv_fitconti, spec_fil, wave=wave, nlmax=nlmax,$
 end                             ; sdss_stackciv_fitconti()
 
 
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 pro sdss_stackciv_pltlist,list_fil
   ;; Using x_splot, overlay up to eight arrays
   ;; To Do:
   ;; - enable plt_err, to compare half the nubmer but with errors
   ;; - enable err_only, to replace fluxes with just errors
+  if n_params() ne 1 then begin
+     print,'Syntax - sdss_stackciv_pltlist,list_fil'
+     return
+  endif 
   if n_elements(list_fil) gt 1 then $
      spec_fil = list_fil $
   else readcol,list_fil,spec_fil,format='a',/silent 
@@ -707,8 +716,13 @@ end                             ; sdss_stackciv_pltlist
 
 
 
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 pro sdss_stackciv_chkconti,list_fil
   ;; Cycle through all stacks in list and plot with continuum
+  if n_params() ne 1 then begin
+     print,'Syntax - sdss_stackciv_chkconti,list_fil'
+     return
+  endif 
   if n_elements(list_fil) gt 1 then $
      spec_fil = list_fil $
   else readcol,list_fil,spec_fil,format='a',/silent 
@@ -720,10 +734,66 @@ pro sdss_stackciv_chkconti,list_fil
 end                             ; sdss_stackciv_chkconti
 
 
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+pro sdss_stackciv_compare,list_fil,dir=dir
+  ;; Grab all ions and print median & MAD (or mean & stddev)
+  if n_params() ne 1 then begin
+     print,'Syntax - sdss_stackciv_compare,list_fil,[dir=]'
+     return
+  endif
+  
+  if not keyword_set(option) then option = 'median'
+  if not keyword_set(dir) then dir = './'
 
+  if n_elements(list_fil) gt 1 then $
+     spec_fil = list_fil $
+  else readcol,list_fil,spec_fil,format='a',/silent 
+  nspec = n_elements(spec_fil)
+  ;; _extra= includes lin_fil=, dwvtol=
+  stackstr = sdss_mkstacksumm(dir+spec_fil,list=0,_extra=extra)
+  nion = n_elements(stackstr[0].wrest)
+
+  ew_ion = fltarr(nion,5) ; [ngd, mean, stddev, median, MAD]
+  for ii=0,nion-1 do begin
+     ;; Could add inverse-variance weighted 
+     bd = where(stackstr.sigew[ii] le 0.,nbd)
+     ew_ion[ii,0] = nspec - nbd
+     if nbd eq nspec then begin
+        print,'sdss_stackciv_compare: not detected ',stackstr[0].ion[ii]
+        continue
+     endif
+     ;; Mean and stddev
+     ew_ion[ii,1] = mean(stackstr.ew[ii])
+     ew_ion[ii,2] = stddev(stackstr.ew[ii]) ; sample
+     ;; Median & MAD
+     ew_ion[ii,3] = median(stackstr.ew[ii])
+     ew_ion[ii,4] = median(abs(stackstr.ew[ii]-ew_ion[ii,3]))
+  endfor                        ; loop ii=nion
+
+  ;; Print result
+  print,''
+  print,'Nmax = ',strtrim(nspec,2)
+  print,'Ion','Nincl','Mean','FracErr','Median','FracErr',$
+        format='(a10,2x,a5,2x,2(2(a7,1x),1x))'
+  for ii=0,nion-1 do begin
+     if ew_ion[ii,0] eq 0 then continue ; no data
+
+     ;; Nincl, Mean, Stddev/Mean, Median, MAD/Median
+     print,stackstr[0].ion[ii],ew_ion[ii,0],$
+           ew_ion[ii,1],ew_ion[ii,2]/ew_ion[ii,1],$
+           ew_ion[ii,3],ew_ion[ii,4]/ew_ion[ii,3],$
+           format='(a10,2x,i5,2x,2(2(f7.4,1x),1x))'
+  endfor                        ; loop ii=nion
+  print,''
+  
+end                             ; sdss_stackciv_compare
+
+
+
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 function sdss_stackciv_stack, gstrct, median=median, percentile=percentile, $
                               fonly=fonly
-
+  ;; The actual stacking algorithm
   if n_params() ne 1 then begin
      print,'Syntax - sdss_stackciv_stack( gstrct, [/median, percentile=, '
      print,'                             /fonly] )'
@@ -859,6 +929,7 @@ end                             ; sdss_stackciv_stack()
 
 
 
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 function sdss_stackciv_errmc, fdat, gstrct0, fexcl=fexcl, sigew=sigew, $
                               cstrct_resmpl=cstrct_resmpl, $
                               niter=niter, seed=seed, oseed=oseed, $
@@ -1007,6 +1078,9 @@ function sdss_stackciv_errmc, fdat, gstrct0, fexcl=fexcl, sigew=sigew, $
 end                             ; sdss_stackciv_errmc()
 
 
+
+
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 pro sdss_stackciv_jackknife, stack_fil, oroot, fjk=fjk, clobber=clobber, _extra=extra
   ;; "Deleted-d jackknife" or "group jackknife" which is more robust
   ;; for non-smooth estimators like median
@@ -1128,6 +1202,8 @@ pro sdss_stackciv_jackknife, stack_fil, oroot, fjk=fjk, clobber=clobber, _extra=
 end                             ; sdss_stackciv_jackknife
 
 
+
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
                                         lin_fil=lin_fil, wrt_ref=wrt_ref,$
                                         append=append,clobber=clobber,$
