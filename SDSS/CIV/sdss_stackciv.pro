@@ -72,7 +72,9 @@
 ;                enable ivarwgt, change median /qerr, KLC
 ;   21 Jul 2017  Revamp to enable /sigew in *errmc(), KLC
 ;   23 Apr 2019  Correct /wvmsk,ndblt= with the 2*dd, KLC
-;                Added sdss_stackciv_pltlist and sdss_stackciv_chkconti
+;                Added sdss_stackciv_pltlist and
+;                sdss_stackciv_chkconti
+;   30 Apr 2019  Added sdss_stackciv_compare, KLC
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 @sdss_fndlin                    ; resolve sdss_fndlin_fitspl()
 
@@ -735,10 +737,10 @@ end                             ; sdss_stackciv_chkconti
 
 
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-pro sdss_stackciv_compare,list_fil,dir=dir
+pro sdss_stackciv_compare,list_fil,dir=dir,ewalt=ewalt
   ;; Grab all ions and print median & MAD (or mean & stddev)
   if n_params() ne 1 then begin
-     print,'Syntax - sdss_stackciv_compare,list_fil,[dir=]'
+     print,'Syntax - sdss_stackciv_compare,list_fil,[dir=,/usealt]'
      return
   endif
   
@@ -753,26 +755,39 @@ pro sdss_stackciv_compare,list_fil,dir=dir
   stackstr = sdss_mkstacksumm(dir+spec_fil,list=0,_extra=extra)
   nion = n_elements(stackstr[0].wrest)
 
+  ;; Determine which EW and error to use
+  tags = tag_names(stackstr[0])
+  if keyword_set(ewalt) then begin
+     iew = (where(tags eq 'EWALT'))[0]
+     isigew = (where(tags eq 'SIGEWALT'))[0]
+  endif else begin
+     iew = (where(tags eq 'EW'))[0]
+     isigew = (where(tags eq 'SIGEW'))[0]
+  endelse
+  
+
   ew_ion = fltarr(nion,5) ; [ngd, mean, stddev, median, MAD]
   for ii=0,nion-1 do begin
      ;; Could add inverse-variance weighted 
-     bd = where(stackstr.sigew[ii] le 0.,nbd)
+     bd = where(stackstr.(isigew)[ii] le 0.,nbd)
      ew_ion[ii,0] = nspec - nbd
      if nbd eq nspec then begin
         print,'sdss_stackciv_compare: not detected ',stackstr[0].ion[ii]
         continue
      endif
      ;; Mean and stddev
-     ew_ion[ii,1] = mean(stackstr.ew[ii])
-     ew_ion[ii,2] = stddev(stackstr.ew[ii]) ; sample
+     ew_ion[ii,1] = mean(stackstr.(iew)[ii])
+     ew_ion[ii,2] = stddev(stackstr.(iew)[ii]) ; sample
      ;; Median & MAD
-     ew_ion[ii,3] = median(stackstr.ew[ii])
-     ew_ion[ii,4] = median(abs(stackstr.ew[ii]-ew_ion[ii,3]))
+     ew_ion[ii,3] = median(stackstr.(iew)[ii])
+     ew_ion[ii,4] = median(abs(stackstr.(iew)[ii]-ew_ion[ii,3]))
   endfor                        ; loop ii=nion
 
   ;; Print result
   print,''
   print,'Nmax = ',strtrim(nspec,2)
+  if keyword_set(ewalt) then $
+     print,'Using alternative EW and sigEW'
   print,'Ion','Nincl','Mean','FracErr','Median','FracErr',$
         format='(a10,2x,a5,2x,2(2(a7,1x),1x))'
   for ii=0,nion-1 do begin
