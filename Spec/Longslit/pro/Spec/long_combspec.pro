@@ -711,8 +711,9 @@ IF NOT KEYWORD_SET(NOREJ) THEN BEGIN
               (var_final + (var_final EQ 0.0))
             ;; Cap S/N ratio at SN_MAX to prevent overly aggressive rejection
             SN_MAX = 20.0D
-            ivar_cap = ivar_final < $
-              (SN_MAX/newflux_now + (newflux_now LE 0.0))^2
+            ;; JFH I think this is a bug below and that it should be
+            ;; SN_MAX^2. Looks like we are capping at sqrt(SN_MAX)
+            ivar_cap = ivar_final < (SN_MAX/(newflux_now + (newflux_now LE 0.0)))^2
             ;; adjust rejection to reflect the statistics of the distribtuion
             ;; of errors. This fixes cases where for not totally understood
             ;; reasons the noise model is not quite right and 

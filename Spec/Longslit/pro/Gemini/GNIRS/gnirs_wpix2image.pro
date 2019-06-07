@@ -109,7 +109,6 @@ for iorder = 0, norders-1 do begin
         wv[*] = work2d # wave_struct.res / ordr_str[iorder].order
         waveimg[in] = wv
      endif
-     
  endfor
 
 

@@ -1,8 +1,10 @@
 PRO GNIRS_FLUXCAL, scifiles, sensfuncfiles1, outfile = outfile $
                    , loglam = newloglam, flux = flux, ivar = ivar $
-                   , mask = mask, check = check, box = box, HAND_SCALE = HAND_SCALE
+                   , mask = mask, check = check, box = box $
+                   , HAND_SCALE = HAND_SCALE, sigrej=sigrej1
 
-
+  
+IF KEYWORD_SET(SIGREJ1) THEN sigrej = sigrej1 ELSE SIGREJ = 3.0D
 IF NOT KEYWORD_SET(INDLAM) THEN INDLAM = 0
 nfiles = n_elements(scifiles)
 nimgs = 2*nfiles

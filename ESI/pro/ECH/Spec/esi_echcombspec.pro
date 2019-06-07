@@ -264,7 +264,6 @@ IF n_elements(obj_id1) GT 0 THEN obj_id = obj_id1
         ENDIF
      ENDFOR
   ENDIF
-  
   ;; Loop on ORDER (reverse)
   for qq=ordrs[1],ordrs[0],-1 do begin
       all_ordr = where(esiobj.order EQ qq)

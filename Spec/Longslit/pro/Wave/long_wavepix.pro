@@ -385,6 +385,12 @@ if N_PARAMS() LT 2 then begin
       ymax = 1.0
       ymin = 0.0
       y = 2.0*(ss # replicate(1,ng) - ymin) / (ymax - ymin) - 1.
+
+      ;; t = the normalized tilt
+      ;; y = is normalized position along the slit replicated for each line
+      ;; xcen = peakfit[ns/2,good_peaks] # replicate (1,ns) = spectral
+      ;; position of the line, taken as the fit to the tilt evaluated
+      ;; at the midpoint of the slit
       
       long_surf_trace2d, t, y, peakfit[ns/2,good_peaks] ## replicate(1,ns), $
         xerr,surffit, nycoeff=ncoeff, ntcoeff=wcoeff, res=res, mask=tset2d_mask
@@ -402,7 +408,7 @@ if N_PARAMS() LT 2 then begin
       waveimg = flegendre(2.0*findgen(ny)/(ny-1.)-1, wcoeff) # $
         (reform(res, wcoeff, ncoeff) # $
          transpose(flegendre(2.0*ss - 1, ncoeff)))
-      ;CHK=1
+                                ;CHK=1
       IF KEYWORD_SET(CHK) THEN BEGIN
           waveqa = arc_rect
           traceqa = fltarr(ns, ng)

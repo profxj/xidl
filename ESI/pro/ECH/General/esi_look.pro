@@ -9,6 +9,8 @@ esi = esi_ar(esi_fits)
 indx = where(esi.flg_anly NE 0 AND esi.mode EQ 2 AND $
              strtrim(esi.type, 2) EQ 'OBJ', nindx)
 esi = esi[indx]
+
+
 IF KEYWORD_SET(FRINGE) THEN BEGIN 
    imgfil = esi_getfil('fringe_fil', subfil = esi.img_root, /name)
    objfiles = 'Extract/FringeObj_'+esi.img_root

@@ -84,7 +84,7 @@ pro esi_echfluxfin, esi, obj_id, fluxfil = fluxfil, CLOBBER = clobber, $
       print, 'esi_echfluxfin: Spec file doesnt exist! Returning..', specfil
       return
   endif
-
+  stop
   x_wrechfspec, spec, specfil, /READ
   if spec.flg_flux EQ 1 AND not keyword_set(CLOBBER) then begin
       print, 'esi_echfluxfin: Already fluxed!'
