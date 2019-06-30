@@ -107,40 +107,42 @@ function sdss_stackciv_linfit, flux, wave, error, cstrct, wavebound,$
   waveblue = wavebound[*,0]
   wavered = wavebound[*,1]
   cdex = fix(alog(cstrct.cflg)/alog(2))
-
+  
   ;; Identifying the pixels that exist between the ranges given for the
   ;; waveblue and wavered boundaries. This is for fitting purposes. 
   pixdex = where(((wave ge waveblue[0]) and (wave lt waveblue[1]))$
                  or ((wave ge wavered[0]) and (wave lt wavered[1])),npixdex)
-
+  
   ;; If the wavebounds specified by the user do not actually cover any of the
   ;;     spectrum of the specified spectra, then the linear fit has nothing to
   ;;     fit against; send warn the user and send back nothing new to the 
   ;;     splice. 
-  if ((waveblue[0] lt min(wave,max=wave_max)) or (wavered[1] gt wave_max)) or npixdex eq 0 then begin
+  if ((waveblue[0] lt min(wave,max=wave_max)) or (wavered[1] gt wave_max)) $
+     or npixdex eq 0 then begin
     if ((not silent) and debug) then begin
-      print,'--> Warning: sdss_stackciv_linfit; the wavelength bounds specified '
-      print,'    do not contain any valid data points. Canceling linear fit.'
-      print,'Waveblue: ',waveblue
-      print,'Wavered:  ',wavered
+       print,'--> Warning: sdss_stackciv_linfit; the wavelength bounds specified '
+       print,'    do not contain any valid data points. Canceling linear fit.'
+       print,'Waveblue: ',waveblue
+       print,'Wavered:  ',wavered
     endif
-
-    ;; Defining the output of this function, most of the values should be null
-    ;;     results or their equivalent. Prematurely return these values back
-    ;;      because linear fitting was canceled. 
-  pixdex = make_array(n_elements(wave),/integer,value=-1)
-  output = create_struct($
-           'xlinevalues',wave,$
-           'ylinevalues',cstrct.conti[*,cdex],$
-           'sigconti',cstrct.sigconti[*,cdex],$
-           'covar',[[-1.0,-1.0],[-1.0,-1.0]],$
-           'chisq',-1,$
-           'waveblue',waveblue,$
-           'wavered',wavered,$
-           'pixdex',pixdex,$
-           'npixdex',0) ; This may have values, but trash it all.
-     return, output
-  endif 
+    
+    
+    ;; Defining the output of this function, most of the values should
+    ;;     be null results or their equivalent. Prematurely return
+    ;;     these values back because linear fitting was canceled.
+    pixdex = make_array(n_elements(wave),/integer,value=-1)
+    output = create_struct($
+             'xlinevalues',wave,$
+             'ylinevalues',cstrct.conti[*,cdex],$
+             'sigconti',cstrct.sigconti[*,cdex],$
+             'covar',[[-1.0,-1.0],[-1.0,-1.0]],$
+             'chisq',-1,$
+             'waveblue',waveblue,$
+             'wavered',wavered,$
+             'pixdex',pixdex,$
+             'npixdex',0)       ; This may have values, but trash it all.
+    return, output
+ endif 
 
   ;; Results are stored in an array vector, the line's parameters
   ;; are stored as [y-intecept,slope]. The matrix that stores the
@@ -156,29 +158,31 @@ function sdss_stackciv_linfit, flux, wave, error, cstrct, wavebound,$
             '    covar[1,0] = ', corvar[1,0]
     endif
   endif
-
-;; Calculate the results of the line fitting program and plot it along
-;; with the wavelengths and flux arrays. The error for this continuum fit is to
-;; be determined to be the sum of the errors in quad.
+  
+  ;; Calculate the results of the line fitting program and plot it
+  ;; along with the wavelengths and flux arrays. The error for this
+  ;; continuum fit is to be determined to be the sum of the errors in
+  ;; quad.
   yfit=result[1]*wave + result[0]
   sigyfit = sqrt( wave^2*covar[1,1] + $
                        covar[0,0] + 2*wave*covar[0,1])
   sigconti = cstrct.sigconti[*,cdex]
   sigconti[pixdex[0]:pixdex[npixdex-1]] = sqrt((0*cstrct.sigconti[pixdex[0]:pixdex[npixdex-1],cdex])^2 + sigyfit^2)
 
-;; Store the main results in some logical system in the event for the need
-;; of debugging the code.
+  ;; Store the main results in some logical system in the event for
+  ;; the need of debugging the code.
   xlinevalues = wave
   ylinevalues = yfit
 
-;; Make sure that both the size of the continuum is the same as the wave, which
-;; both in turn should be equal to the sizes of xlinevalues and ylinevalues.
+  ;; Make sure that both the size of the continuum is the same as the
+  ;; wave, which both in turn should be equal to the sizes of
+  ;; xlinevalues and ylinevalues.
   if(n_elements(xlinevalues) ne n_elements(ylinevalues)) then $
     stop,'==> Error: sdss_stackciv_linfit; the x-axis array and y-axis array for the line fit are not the same size.'
   if(n_elements(wave) ne n_elements(ylinevalues)) then $
     stop,'==> Error: sdss_stackciv_linfit; the x-axis array and y-axis array for the line fit are not the same size as the wavelength array.'
 
-;; Debugging:
+  ;; Debugging:
   if (debug) then begin
     ;; Plot the results. Within debug mode, the original spectra is plotted.
     ;; Also, the proposed lines, and the lines one sigma above and below the
