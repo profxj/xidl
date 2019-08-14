@@ -36,6 +36,7 @@
 ;   06-Sep-2016  updated sdss_calcsigpoiss() to give actual c.l., DRM via KLC
 ;                updated sdss_calcsigbinom() to give actual c.l., DRM via KLC
 ;   20-Dec-2016  sdss_getcivstrct(/noBAL) bug fix, KLC
+;   13-Aug-2019  sdss_normspec() bug fix and upgrade, KLC
 ;-
 ;------------------------------------------------------------------------------
 ;; Conventions:
@@ -1240,11 +1241,11 @@ pro sdss_normspec, spec_fil, conti_fil, out_fil, cflg=cflg, clobber=clobber, $
   gdpix = where(conti[ipix0:*] gt 0.,complement=bdpix)
   
   if gdpix[0] ne -1 then begin
-     spec_norm[gdpix,0] = flux[gdpix]/conti[gdpix]
+     spec_norm[ipix0+gdpix,0] = flux[ipix0+gdpix]/conti[ipix0+gdpix]
      if keyword_set(sigconti) then $
         spec_norm[*,2] = sdss_calcnormerr(flux,error,conti0,_extra=extra) $
      else $
-        spec_norm[gdpix,2] = error[gdpix]/conti[gdpix]
+        spec_norm[ipix0+gdpix,2] = error[ipix0+gdpix]/conti[ipix0+gdpix]
   endif
 
   if keyword_set(ret_spec) then $
