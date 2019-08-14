@@ -1183,10 +1183,10 @@ end                             ;  sdss_calcnormerr()
 
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 pro sdss_normspec, spec_fil, conti_fil, out_fil, cflg=cflg, clobber=clobber, $
-                   stack=stack
+                   stack=stack, ret_spec=ret_spec
   if n_params() ne 3 then begin
      print,'Syntax - sdss_normspec, spec_fil, conti_fil, out_fil, '
-     print,'                        [cflg=, /clobber, /stack]'
+     print,'                        [cflg=, /clobber, /stack, /ret_spec]'
      return
   endif
   
@@ -1247,14 +1247,18 @@ pro sdss_normspec, spec_fil, conti_fil, out_fil, cflg=cflg, clobber=clobber, $
         spec_norm[gdpix,2] = error[gdpix]/conti[gdpix]
   endif
 
-  ;; Write out 
-  test = file_search(out_fil+'*',count=ntest)
-  if ntest eq 0 or keyword_set(clobber) then begin
-     mwrfits,spec_norm,out_fil,head,/create,/silent
-     spawn,'gzip -f '+out_fil
-     print,'sdss_normspec: created ',out_fil
-  endif else $
-     stop,'sdss_normspec stop: will not clobber file ',out_fil
+  if keyword_set(ret_spec) then $
+     out_fil = spec_norm $
+  else begin
+     ;; Write out 
+     test = file_search(out_fil+'*',count=ntest)
+     if ntest eq 0 or keyword_set(clobber) then begin
+        mwrfits,spec_norm,out_fil,head,/create,/silent
+        spawn,'gzip -f '+out_fil
+        print,'sdss_normspec: created ',out_fil
+     endif else $
+        stop,'sdss_normspec stop: will not clobber file ',out_fil
+  endelse
 
 end ; sdss_normspec
 
