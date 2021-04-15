@@ -31,7 +31,7 @@
 ; Example:
 ; History:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-pro sdss_velplt,spec_fil,zabs,dir=dir,linlst=linlst,$
+pro sdss_velplt,spec_fil,zabs,norm=norm,dir=dir,linlst=linlst,$
                 nx=nx,ny=ny, csize=csize,lthick=lthick,$
                 xrng=xrng,yrng=yrng,psfil=psfil,title=title, $
                 label=label,nbin=nbin,spec2=spec2,_extra=extra
@@ -86,7 +86,7 @@ pro sdss_velplt,spec_fil,zabs,dir=dir,linlst=linlst,$
         sub_linlst = strarr(istop-istart+1,2)
         sub_linlst[*,0] = wrest[istart:istop]
         sub_linlst[*,1] = ionnam[istart:istop]
-        sdss_velplt,spec_fil,zabs,dir=dir,linlst=sub_linlst,nx=nx,ny=ny,$
+        sdss_velplt,spec_fil,zabs,norm=norm,dir=dir,linlst=sub_linlst,nx=nx,ny=ny,$
                     csize=csize,lthick=lthick,$
                     xrng=xrng,yrng=yrng,psfil=psroot+ltr+'.ps',title=title, $
                     label=label,_extra=extra
@@ -111,13 +111,20 @@ pro sdss_velplt,spec_fil,zabs,dir=dir,linlst=linlst,$
   ;; page; [3] no. plots in z dir.; [4] 0 for L->R, T->B; 1 for T->B,
   ;; L->R 
   !p.multi = [0,nx,ny,0,1]
-  !x.omargin = [3,0]         ; left and right border
-  !y.omargin = [0,0]         ; bottom and top border
+  !x.omargin = [4,1]         ; left and right border
+  !y.omargin = [4,0.5]         ; bottom and top border
 
   clr = getcolor(/load)
 
   ;; read spectrum
   flux = x_readspec(spec_fil,wav=wave,sig=sigma,_extra=extra) ; inflg=, fil_sig=
+  if keyword_set(norm) then begin
+     ;; Normalize but need wavelength from above
+     sdss_normspec, spec_fil, norm, norm_spec, /ret_spec, _extra=extra
+     flux = norm_spec[*,0]
+     sigma = norm_spec[*,2]
+  endif 
+
   if keyword_set(spec2) then begin
 ;     tags = tag_names(extra)
 ;     chk = where(stregex(tags,'INFLG',/boolean))
@@ -128,6 +135,7 @@ pro sdss_velplt,spec_fil,zabs,dir=dir,linlst=linlst,$
      sigma = [sigma,er2]
   endif
 ;  parse_sdss,dir+spec_fil,flux,wave,sig=sigma
+
 
   ;; Smooth
   if keyword_set(nbin) then begin
@@ -146,7 +154,7 @@ pro sdss_velplt,spec_fil,zabs,dir=dir,linlst=linlst,$
 
   spaces = replicate(' ',30) 
   ymrg = [0,0]
-  xmrg = [0,0]
+  xmrg = [4,0]
   ymnr = 1
   xmnr = 1
   iion = 0
@@ -157,7 +165,8 @@ pro sdss_velplt,spec_fil,zabs,dir=dir,linlst=linlst,$
            if (xx eq 0) and (yy eq ny-1) then $
               ;; All axis
               plot,xrng,yrng,/nodata,ystyle=1,xstyle=1,background=clr.white,$
-                   color=clr.black,charsize=csize,xminor=xmnr,yminor=ymnr,xmargin=xmrg,ymargin=ymrg,$
+              color=clr.black,charsize=csize,xminor=xmnr,yminor=ymnr,$
+              xmargin=xmrg,ymargin=ymrg,$
               yticks=3,ytickv=[0.,0.5,1.] $
            else begin
               if xx eq 0 then $
@@ -217,13 +226,13 @@ pro sdss_velplt,spec_fil,zabs,dir=dir,linlst=linlst,$
   endfor                        ; loop xx=nx
   
   ;; Add labels
-  if nion le ny then $          ; one column
-     xyouts,0.55*0.5,-0.1,title[0],alignment=0.5,charsize=0.8*csize,$
+  if nion le nx then $          ; one column
+     xyouts,0.55,0.0,title[0],alignment=0.5,charsize=0.8*csize,$
             color=clr.black, /normal $ ; xtitle
   else $
-     xyouts,0.55,-0.1,title[0],alignment=0.5,charsize=0.8*csize,$
+     xyouts,0.55,0.02,title[0],alignment=0.5,charsize=0.8*csize,$
             color=clr.black, /normal ; xtitle
-  xyouts,-0.02,0.55,title[1],orientation=90,alignment=0.5,charsize=0.8*csize,$
+  xyouts,0.05,0.55,title[1],orientation=90,alignment=0.5,charsize=0.8*csize,$
          color=clr.black,/normal ; ytitle
 
   if keyword_set(label) then begin

@@ -71,6 +71,10 @@
 ;   11 Jul 2017  Rebin variance; change e.g., sigma ne 0. to gt 0.,
 ;                enable ivarwgt, change median /qerr, KLC
 ;   21 Jul 2017  Revamp to enable /sigew in *errmc(), KLC
+;   23 Apr 2019  Correct /wvmsk,ndblt= with the 2*dd, KLC
+;                Added sdss_stackciv_pltlist and
+;                sdss_stackciv_chkconti
+;   30 Apr 2019  Added sdss_stackciv_compare, KLC
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 @sdss_fndlin                    ; resolve sdss_fndlin_fitspl()
 
@@ -103,40 +107,42 @@ function sdss_stackciv_linfit, flux, wave, error, cstrct, wavebound,$
   waveblue = wavebound[*,0]
   wavered = wavebound[*,1]
   cdex = fix(alog(cstrct.cflg)/alog(2))
-
+  
   ;; Identifying the pixels that exist between the ranges given for the
   ;; waveblue and wavered boundaries. This is for fitting purposes. 
   pixdex = where(((wave ge waveblue[0]) and (wave lt waveblue[1]))$
                  or ((wave ge wavered[0]) and (wave lt wavered[1])),npixdex)
-
+  
   ;; If the wavebounds specified by the user do not actually cover any of the
   ;;     spectrum of the specified spectra, then the linear fit has nothing to
   ;;     fit against; send warn the user and send back nothing new to the 
   ;;     splice. 
-  if ((waveblue[0] lt min(wave,max=wave_max)) or (wavered[1] gt wave_max)) or npixdex eq 0 then begin
+  if ((waveblue[0] lt min(wave,max=wave_max)) or (wavered[1] gt wave_max)) $
+     or npixdex eq 0 then begin
     if ((not silent) and debug) then begin
-      print,'--> Warning: sdss_stackciv_linfit; the wavelength bounds specified '
-      print,'    do not contain any valid data points. Canceling linear fit.'
-      print,'Waveblue: ',waveblue
-      print,'Wavered:  ',wavered
+       print,'--> Warning: sdss_stackciv_linfit; the wavelength bounds specified '
+       print,'    do not contain any valid data points. Canceling linear fit.'
+       print,'Waveblue: ',waveblue
+       print,'Wavered:  ',wavered
     endif
-
-    ;; Defining the output of this function, most of the values should be null
-    ;;     results or their equivalent. Prematurely return these values back
-    ;;      because linear fitting was canceled. 
-  pixdex = make_array(n_elements(wave),/integer,value=-1)
-  output = create_struct($
-           'xlinevalues',wave,$
-           'ylinevalues',cstrct.conti[*,cdex],$
-           'sigconti',cstrct.sigconti[*,cdex],$
-           'covar',[[-1.0,-1.0],[-1.0,-1.0]],$
-           'chisq',-1,$
-           'waveblue',waveblue,$
-           'wavered',wavered,$
-           'pixdex',pixdex,$
-           'npixdex',0) ; This may have values, but trash it all.
-     return, output
-  endif 
+    
+    
+    ;; Defining the output of this function, most of the values should
+    ;;     be null results or their equivalent. Prematurely return
+    ;;     these values back because linear fitting was canceled.
+    pixdex = make_array(n_elements(wave),/integer,value=-1)
+    output = create_struct($
+             'xlinevalues',wave,$
+             'ylinevalues',cstrct.conti[*,cdex],$
+             'sigconti',cstrct.sigconti[*,cdex],$
+             'covar',[[-1.0,-1.0],[-1.0,-1.0]],$
+             'chisq',-1,$
+             'waveblue',waveblue,$
+             'wavered',wavered,$
+             'pixdex',pixdex,$
+             'npixdex',0)       ; This may have values, but trash it all.
+    return, output
+ endif 
 
   ;; Results are stored in an array vector, the line's parameters
   ;; are stored as [y-intecept,slope]. The matrix that stores the
@@ -152,29 +158,31 @@ function sdss_stackciv_linfit, flux, wave, error, cstrct, wavebound,$
             '    covar[1,0] = ', corvar[1,0]
     endif
   endif
-
-;; Calculate the results of the line fitting program and plot it along
-;; with the wavelengths and flux arrays. The error for this continuum fit is to
-;; be determined to be the sum of the errors in quad.
+  
+  ;; Calculate the results of the line fitting program and plot it
+  ;; along with the wavelengths and flux arrays. The error for this
+  ;; continuum fit is to be determined to be the sum of the errors in
+  ;; quad.
   yfit=result[1]*wave + result[0]
   sigyfit = sqrt( wave^2*covar[1,1] + $
                        covar[0,0] + 2*wave*covar[0,1])
   sigconti = cstrct.sigconti[*,cdex]
   sigconti[pixdex[0]:pixdex[npixdex-1]] = sqrt((0*cstrct.sigconti[pixdex[0]:pixdex[npixdex-1],cdex])^2 + sigyfit^2)
 
-;; Store the main results in some logical system in the event for the need
-;; of debugging the code.
+  ;; Store the main results in some logical system in the event for
+  ;; the need of debugging the code.
   xlinevalues = wave
   ylinevalues = yfit
 
-;; Make sure that both the size of the continuum is the same as the wave, which
-;; both in turn should be equal to the sizes of xlinevalues and ylinevalues.
+  ;; Make sure that both the size of the continuum is the same as the
+  ;; wave, which both in turn should be equal to the sizes of
+  ;; xlinevalues and ylinevalues.
   if(n_elements(xlinevalues) ne n_elements(ylinevalues)) then $
     stop,'==> Error: sdss_stackciv_linfit; the x-axis array and y-axis array for the line fit are not the same size.'
   if(n_elements(wave) ne n_elements(ylinevalues)) then $
     stop,'==> Error: sdss_stackciv_linfit; the x-axis array and y-axis array for the line fit are not the same size as the wavelength array.'
 
-;; Debugging:
+  ;; Debugging:
   if (debug) then begin
     ;; Plot the results. Within debug mode, the original spectra is plotted.
     ;; Also, the proposed lines, and the lines one sigma above and below the
@@ -243,6 +251,8 @@ function sdss_stackciv_linfit, flux, wave, error, cstrct, wavebound,$
 end
 
 
+
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 function sdss_stackciv_linsplice, flux, wave, error, cstrct, $
                                   wavebound_list=wavebound_list, inverse=inverse,$
                                   wavetoler=wavetoler, fluxtoler=fluxtoler,$
@@ -462,6 +472,8 @@ function sdss_stackciv_linsplice, flux, wave, error, cstrct, $
   return, cstrct
 end
 
+
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 function sdss_stackciv_fitconti, spec_fil, wave=wave, nlmax=nlmax,$
                                  lin_fil=lin_fil, dvlin=dvlin, linsplice=linsplice, $
                                  _extra=extra
@@ -607,9 +619,200 @@ function sdss_stackciv_fitconti, spec_fil, wave=wave, nlmax=nlmax,$
 end                             ; sdss_stackciv_fitconti()
 
 
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+pro sdss_stackciv_pltlist,list_fil
+  ;; Using x_splot, overlay up to eight arrays
+  ;; To Do:
+  ;; - enable plt_err, to compare half the nubmer but with errors
+  ;; - enable err_only, to replace fluxes with just errors
+  if n_params() ne 1 then begin
+     print,'Syntax - sdss_stackciv_pltlist,list_fil'
+     return
+  endif 
+  if n_elements(list_fil) gt 1 then $
+     spec_fil = list_fil $
+  else readcol,list_fil,spec_fil,format='a',/silent 
+  nspec = n_elements(spec_fil)
+  if nspec lt 2 then begin
+     print,'sdss_stackciv_pltlist: does not make sense to plot one'
+     print,'                       Use sdss_pltconti,',spec_fil[0],',/stack'
+     return
+  endif 
+
+  ;; Zero is flag to not plot
+  fxthr = 0
+  wvthr = 0
+  erthr = 0
+  fxfou = 0
+  wvfou = 0
+  erfou = 0
+  fxfiv = 0
+  wvfiv = 0
+  erfiv = 0
+  fxsix = 0
+  wvsix = 0
+  ersix = 0
+  fxsev = 0
+  wvsev = 0
+  ersev = 0
+  fxeig = 0
+  wveig = 0
+  ereig = 0
+
+  for ss=0,nspec-1 do begin
+     parse_sdss,spec_fil[ss],flux,wave,sig=sigma
+     case ss of
+        0: begin
+           fxone = flux
+           wvone = wave
+           erone = sigma
+        end
+        1: begin
+           fxtwo = flux
+           wvtwo = wave
+           ertwo = sigma
+        end
+        2: begin
+           fxthr = flux
+           wvthr = wave
+           erthr = sigma
+        end
+        3: begin
+           fxfou = flux
+           wvfou = wave
+           erfou = sigma
+        end
+        4: begin
+           fxfiv = flux
+           wvfiv = wave
+           erfiv = sigma
+        end
+        5: begin
+           fxsix = flux
+           wvsix = wave
+           ersix = sigma
+        end
+        6: begin
+           fxsev = flux
+           wvsev = wave
+           ersev = sigma
+        end
+        7: begin
+           fxeig = flux
+           wveig = wave
+           ereig = sigma
+        end
+        else: begin
+           stop,'sdss_stackciv_pltlist stop: too many to plot'
+        end
+     endcase
+  endfor                        ; loop ss=nspec
+
+  x_splot,wvone,fxone,psym1=10,$
+          xtwo=wvtwo,ytwo=fxtwo,psym2=10,$
+          xthr=wvthr,ythr=fxthr,psym3=10,$
+          xfou=wvfou,yfou=fxfou,psym4=10,$
+          xfiv=wvfiv,yfiv=fxfiv,psym5=10,$
+          xsix=wvsix,ysix=fxsix,psym6=10,$
+          xsev=wvsev,ysev=fxsev,psym7=10,$
+          xeig=wveig,yeig=fxeig,pysm8=10,$
+          lgnd=spec_fil,/block
+  
+end                             ; sdss_stackciv_pltlist
+
+
+
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+pro sdss_stackciv_chkconti,list_fil
+  ;; Cycle through all stacks in list and plot with continuum
+  if n_params() ne 1 then begin
+     print,'Syntax - sdss_stackciv_chkconti,list_fil'
+     return
+  endif 
+  if n_elements(list_fil) gt 1 then $
+     spec_fil = list_fil $
+  else readcol,list_fil,spec_fil,format='a',/silent 
+  nspec = n_elements(spec_fil)
+
+  for ss=0,nspec-1 do begin
+     sdss_pltconti,spec_fil[ss],/stack
+  endfor 
+end                             ; sdss_stackciv_chkconti
+
+
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+pro sdss_stackciv_compare,list_fil,dir=dir,ewalt=ewalt
+  ;; Grab all ions and print median & MAD (or mean & stddev)
+  if n_params() ne 1 then begin
+     print,'Syntax - sdss_stackciv_compare,list_fil,[dir=,/usealt]'
+     return
+  endif
+  
+  if not keyword_set(option) then option = 'median'
+  if not keyword_set(dir) then dir = './'
+
+  if n_elements(list_fil) gt 1 then $
+     spec_fil = list_fil $
+  else readcol,list_fil,spec_fil,format='a',/silent 
+  nspec = n_elements(spec_fil)
+  ;; _extra= includes lin_fil=, dwvtol=
+  stackstr = sdss_mkstacksumm(dir+spec_fil,list=0,_extra=extra)
+  nion = n_elements(stackstr[0].wrest)
+
+  ;; Determine which EW and error to use
+  tags = tag_names(stackstr[0])
+  if keyword_set(ewalt) then begin
+     iew = (where(tags eq 'EWALT'))[0]
+     isigew = (where(tags eq 'SIGEWALT'))[0]
+  endif else begin
+     iew = (where(tags eq 'EW'))[0]
+     isigew = (where(tags eq 'SIGEW'))[0]
+  endelse
+  
+
+  ew_ion = fltarr(nion,5) ; [ngd, mean, stddev, median, MAD]
+  for ii=0,nion-1 do begin
+     ;; Could add inverse-variance weighted 
+     bd = where(stackstr.(isigew)[ii] le 0.,nbd)
+     ew_ion[ii,0] = nspec - nbd
+     if nbd eq nspec then begin
+        print,'sdss_stackciv_compare: not detected ',stackstr[0].ion[ii]
+        continue
+     endif
+     ;; Mean and stddev
+     ew_ion[ii,1] = mean(stackstr.(iew)[ii])
+     ew_ion[ii,2] = stddev(stackstr.(iew)[ii]) ; sample
+     ;; Median & MAD
+     ew_ion[ii,3] = median(stackstr.(iew)[ii])
+     ew_ion[ii,4] = median(abs(stackstr.(iew)[ii]-ew_ion[ii,3]))
+  endfor                        ; loop ii=nion
+
+  ;; Print result
+  print,''
+  print,'Nmax = ',strtrim(nspec,2)
+  if keyword_set(ewalt) then $
+     print,'Using alternative EW and sigEW'
+  print,'Ion','Nincl','Mean','FracErr','Median','FracErr',$
+        format='(a10,2x,a5,2x,2(2(a7,1x),1x))'
+  for ii=0,nion-1 do begin
+     if ew_ion[ii,0] eq 0 then continue ; no data
+
+     ;; Nincl, Mean, Stddev/Mean, Median, MAD/Median
+     print,stackstr[0].ion[ii],ew_ion[ii,0],$
+           ew_ion[ii,1],ew_ion[ii,2]/ew_ion[ii,1],$
+           ew_ion[ii,3],ew_ion[ii,4]/ew_ion[ii,3],$
+           format='(a10,2x,i5,2x,2(2(f7.4,1x),1x))'
+  endfor                        ; loop ii=nion
+  print,''
+  
+end                             ; sdss_stackciv_compare
+
+
+
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 function sdss_stackciv_stack, gstrct, median=median, percentile=percentile, $
                               fonly=fonly
-
+  ;; The actual stacking algorithm
   if n_params() ne 1 then begin
      print,'Syntax - sdss_stackciv_stack( gstrct, [/median, percentile=, '
      print,'                             /fonly] )'
@@ -745,6 +948,7 @@ end                             ; sdss_stackciv_stack()
 
 
 
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 function sdss_stackciv_errmc, fdat, gstrct0, fexcl=fexcl, sigew=sigew, $
                               cstrct_resmpl=cstrct_resmpl, $
                               niter=niter, seed=seed, oseed=oseed, $
@@ -893,6 +1097,9 @@ function sdss_stackciv_errmc, fdat, gstrct0, fexcl=fexcl, sigew=sigew, $
 end                             ; sdss_stackciv_errmc()
 
 
+
+
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 pro sdss_stackciv_jackknife, stack_fil, oroot, fjk=fjk, clobber=clobber, _extra=extra
   ;; "Deleted-d jackknife" or "group jackknife" which is more robust
   ;; for non-smooth estimators like median
@@ -1014,6 +1221,8 @@ pro sdss_stackciv_jackknife, stack_fil, oroot, fjk=fjk, clobber=clobber, _extra=
 end                             ; sdss_stackciv_jackknife
 
 
+
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 function sdss_stackciv_jackknife_stats, stack_list, refstack_fil, $
                                         lin_fil=lin_fil, wrt_ref=wrt_ref,$
                                         append=append,clobber=clobber,$
@@ -1455,10 +1664,10 @@ pro sdss_stackciv, civstrct_fil, outfil, debug=debug, clobber=clobber, $
         for ii=0,nwvmsk-1 do begin
            for dd=0,ndblt-1 do begin
               sub = where(wave ge wvmsk[ii,0] and wave le wvmsk[ii,1] and $
-                          not (wave ge civstr[ff].(wvlimtag)[dd,0] and $
-                               wave le civstr[ff].(wvlimtag)[dd,1]) and $ ; wvI
-                          not (wave ge civstr[ff].(wvlimtag)[dd+1,0] and $
-                               wave le civstr[ff].(wvlimtag)[dd+1,1])) ; wvII
+                          not (wave ge civstr[ff].(wvlimtag)[2*dd,0] and $
+                               wave le civstr[ff].(wvlimtag)[2*dd,1]) and $ ; wvI
+                          not (wave ge civstr[ff].(wvlimtag)[2*dd+1,0] and $
+                               wave le civstr[ff].(wvlimtag)[2*dd+1,1])) ; wvII
               if sub[0] ne -1 then sigma[sub] = 0.                     ; exclude
            endfor                                                      ; loop dd=ndblt
         endfor                                                         ; loop ii=nwvmsk

@@ -36,6 +36,7 @@
 ;   06-Sep-2016  updated sdss_calcsigpoiss() to give actual c.l., DRM via KLC
 ;                updated sdss_calcsigbinom() to give actual c.l., DRM via KLC
 ;   20-Dec-2016  sdss_getcivstrct(/noBAL) bug fix, KLC
+;   13-Aug-2019  sdss_normspec() bug fix and upgrade, KLC
 ;-
 ;------------------------------------------------------------------------------
 ;; Conventions:
@@ -360,17 +361,28 @@ end                             ; sdss_wrqsolist()
 
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 pro sdss_getqsoinlist,list_fil, sdsssum, snrstrct_fil, snr=snr,$
-                      silent=silent,_extra=extra
+                      silent=silent,ls_name=ls_name,_extra=extra
   ;; Read list and find the matching QSOs
   if n_params() lt 2 then begin
      print,'Syntax - sdss_getqsoinlist, list_fil, sdsssum, snrstrct_fil, [/silent,'
-     print,'                            /snr, _extra=]'
+     print,'                            /snr, /ls_name, _extra=]'
      return
   endif 
 
-  readcol,list_fil,spec,format='a',skip=1,/silent
-  nspec = (size(spec,/dim))[0]
-  tmp = sdss_getname(spec,/spec,root=subqso_name)
+  if size(list_fil,/type) eq 7 and n_elements(list_fil) eq 1 then begin
+     ;; Original
+     readcol,list_fil,spec,format='a',skip=1,/silent 
+     tmp = sdss_getname(spec,/spec,root=subqso_name)
+  endif else begin
+     ;; Enable passing in array of qso_name's
+     if keyword_set(ls_name) then subqso_name = list_fil $
+     else begin
+        ;; Enable passing in array of spectra names
+        spec = list_fil
+        tmp = sdss_getname(spec,/spec,root=subqso_name)
+     endelse 
+  endelse
+  nspec = (size(subqso_name,/dim))[0]
 
   ;; _extra= includes /noBAL, /BAL
   sdsstab = sdss_getqsostrct(_extra=extra)
@@ -1172,10 +1184,10 @@ end                             ;  sdss_calcnormerr()
 
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 pro sdss_normspec, spec_fil, conti_fil, out_fil, cflg=cflg, clobber=clobber, $
-                   stack=stack
+                   stack=stack, ret_spec=ret_spec
   if n_params() ne 3 then begin
      print,'Syntax - sdss_normspec, spec_fil, conti_fil, out_fil, '
-     print,'                        [cflg=, /clobber, /stack]'
+     print,'                        [cflg=, /clobber, /stack, /ret_spec]'
      return
   endif
   
@@ -1229,21 +1241,25 @@ pro sdss_normspec, spec_fil, conti_fil, out_fil, cflg=cflg, clobber=clobber, $
   gdpix = where(conti[ipix0:*] gt 0.,complement=bdpix)
   
   if gdpix[0] ne -1 then begin
-     spec_norm[gdpix,0] = flux[gdpix]/conti[gdpix]
+     spec_norm[ipix0+gdpix,0] = flux[ipix0+gdpix]/conti[ipix0+gdpix]
      if keyword_set(sigconti) then $
         spec_norm[*,2] = sdss_calcnormerr(flux,error,conti0,_extra=extra) $
      else $
-        spec_norm[gdpix,2] = error[gdpix]/conti[gdpix]
+        spec_norm[ipix0+gdpix,2] = error[ipix0+gdpix]/conti[ipix0+gdpix]
   endif
 
-  ;; Write out 
-  test = file_search(out_fil+'*',count=ntest)
-  if ntest eq 0 or keyword_set(clobber) then begin
-     mwrfits,spec_norm,out_fil,head,/create,/silent
-     spawn,'gzip -f '+out_fil
-     print,'sdss_normspec: created ',out_fil
-  endif else $
-     stop,'sdss_normspec stop: will not clobber file ',out_fil
+  if keyword_set(ret_spec) then $
+     out_fil = spec_norm $
+  else begin
+     ;; Write out 
+     test = file_search(out_fil+'*',count=ntest)
+     if ntest eq 0 or keyword_set(clobber) then begin
+        mwrfits,spec_norm,out_fil,head,/create,/silent
+        spawn,'gzip -f '+out_fil
+        print,'sdss_normspec: created ',out_fil
+     endif else $
+        stop,'sdss_normspec stop: will not clobber file ',out_fil
+  endelse
 
 end ; sdss_normspec
 
