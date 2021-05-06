@@ -190,15 +190,17 @@ pro hires_fitarc, hires, setup, obj_id, chip, $
               IFSIG = [ [0,1,10], [1,150,10.]] 
               IPSIG = [ [0,1,20], [1,150,20.]] 
           endif else begin
-              IFSIG = [ [0,1,20], [1,46,5.], [46, 150, 20.]] 
-              IPSIG = [ [0,1,40], [1,46,5.], [46, 150, 40.]] 
+              ;IFSIG = [ [0,1,20], [1,46,5.], [46, 150, 20.]] 
+              ;IPSIG = [ [0,1,40], [1,46,5.], [46, 150, 40.]] 
+              ;Changed by Feige
+              IFSIG = [ [0,1,20], [1,46,5.],[46,55,5. ], [55, 150, 20.]]
+              IPSIG = [ [0,1,40], [1,46,5.],[46,55,10.], [55, 150, 40.]]
           endelse
 
           if hires[idx].lampfil EQ 'ug5' then begin
               IFSIG = [ [0,1,10], [1,150,10.]] 
               IPSIG = [ [0,1,20], [1,150,20.]] 
           endif
-
           ;; Check for arcfil
           if x_chkfil(arcfil+'*',/silent) EQ 0 then begin
               print, 'hires_fitarc: Use hires_procarc to create arc file first!!', $
@@ -227,7 +229,6 @@ pro hires_fitarc, hires, setup, obj_id, chip, $
                   guessarc = getenv('HIRES_CALIBS')+'/ARCS/'+guessarc
               endelse
           endif 
-
           ;; Peak width
           head = xheadfits(arcfil)
           sz1 = sxpar(head,'NAXIS2')
@@ -283,7 +284,8 @@ pro hires_fitarc, hires, setup, obj_id, chip, $
                           else inofit = nofit[isep+1:*]
                           if not keyword_set(TWOGUESS) then begin
                               guessarc = hires_arctempl(hires[idx], $
-                                                        ordr_str[inofit].order, $
+;                                                        The following was commented out by Feige
+;                                                        ordr_str[inofit].order, $
                                                        SINGLE=(CHIP EQ -1)) 
                           endif else guessarc = TWOGUESS
                           print, 'hires_fitarc:  Now using ', guessarc
