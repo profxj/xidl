@@ -100,7 +100,7 @@ function x_getalav, lambda, RV=rv
   ;; Far-UV
   b = where(x GT 8 AND x LE 10, nb)
   if nb NE 0 then begin 
-      ax[b] = 1.073 - 0.628*(x[b]-8) + 0.137*(x[b]-8)^2 - 0.070*(x[b]-8)^3 
+      ax[b] = - 1.073 - 0.628*(x[b]-8) + 0.137*(x[b]-8)^2 - 0.070*(x[b]-8)^3 
       bx[b] = 13.67 + 4.257*(x[b]-8) - 0.420*(x[b]-8)^2 + 0.374*(x[b]-8)^3
   endif
 
