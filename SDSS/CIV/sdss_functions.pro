@@ -1565,7 +1565,8 @@ pro sdss_pltabslin, spec_fil, abslin_fil, cflg=cflg, noplt=noplt, $
                  psym2=-3, wave=wave, /block, $
                  inflg=4, ythree=fx_lin, three_wave=wv_lin, $
                  title=cstrct.qso_name+$
-                 string(cstrct.z_qso,format='(1x,"zqso = ",f7.5)')
+                 string(cstrct.z_qso,format='(1x,"zqso = ",f7.5)'),$
+                 _extra=extra ; includes zin=,/lls, etc
   endif                         ; plot
 
 end                             ; sdss_pltabslin
